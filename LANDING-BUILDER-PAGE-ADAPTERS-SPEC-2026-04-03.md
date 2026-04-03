@@ -2,9 +2,18 @@
 
 ## Статусы
 
-- 🔴 Запланировано
+- ⚪ Не начато
+- 🟡 Запланировано
 - 🔵 В работе
+- 🧪 На проверке
 - 🟢 Готово
+- ⛔ Блокер
+
+## Навигация
+
+- Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+- Предыдущий документ: [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
+- Следующий документ: [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
 
 ## 1. Цель документа
 
@@ -77,6 +86,21 @@
 Этот режим нельзя делать “на весь DOM”.
 
 Он должен работать через заранее описанные editable zones.
+
+## 3.3. Общие режимы участия страницы в builder
+
+### 🟢 Готово: режимы участия зафиксированы
+
+Для продукта в целом нужны четыре режима:
+
+1. `full_takeover`
+2. `hybrid_overlay`
+3. `zone_injection`
+4. `data_only`
+
+Для MVP рабочими считаются первые три.
+
+`data_only` остается следующим этапом развития.
 
 ## 4. Page adapters первой версии
 
@@ -410,6 +434,8 @@ Support level:
 
 Для каждого ctype должен быть отдельный набор опций участия в конструкторе.
 
+Дополнительно для opt-in ctype нужно уметь выбирать не только adapter, но и participation mode по умолчанию.
+
 Предлагаемый набор:
 
 1. `builder_enabled`
@@ -441,6 +467,7 @@ Support level:
 1. Использовать ctype как data source для блоков.
 2. Подключать ctype list/item/category pages к builder-слою.
 3. Применять style tokens для данного ctype.
+4. Разрешать для этого ctype collection blocks и query-driven blocks.
 4. Подключать дополнительные structural zones, если это разрешено adapter'ом.
 
 ### 9.5. Критерий готовности

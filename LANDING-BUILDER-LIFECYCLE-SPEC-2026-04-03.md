@@ -2,9 +2,18 @@
 
 ## Статусы
 
-- 🔴 Запланировано
+- ⚪ Не начато
+- 🟡 Запланировано
 - 🔵 В работе
+- 🧪 На проверке
 - 🟢 Готово
+- ⛔ Блокер
+
+## Навигация
+
+- Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+- Предыдущий документ: [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
+- Индекс документов: [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
 
 ## 1. Цель документа
 

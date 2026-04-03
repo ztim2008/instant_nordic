@@ -2,9 +2,20 @@
 
 ## Статусы
 
-- 🔴 Запланировано
+- ⚪ Не начато
+- 🟡 Запланировано
 - 🔵 В работе
+- 🧪 На проверке
 - 🟢 Готово
+- ⛔ Блокер
+
+## Навигация
+
+- Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+- Предыдущий документ: [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
+- Уточняющий документ: [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
+- Уточняющий документ: [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
+- Следующий документ: [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
 
 ## 1. Цель документа
 
@@ -231,6 +242,97 @@
 3. `props`
 4. `data`
 
+### 4.5.1. Каноническая canvas-структура для секций и колонок
+
+Для первой взрослой версии page schema должна поддерживать не только плоский список `blocks`, но и каноническую модель:
+
+`section -> columns -> nodes`
+
+Это нужно для:
+
+1. 2- и 3-колоночных секций;
+2. drag-and-drop между колонками;
+3. responsive order и widths;
+4. стандартных widgets на холсте.
+
+Рекомендуемая структура section:
+
+```json
+{
+  "id": "sec_features_001",
+  "kind": "section",
+  "section_type": "content-grid",
+  "props": {},
+  "layout": {
+    "preset": "3col_equal"
+  },
+  "columns": [
+    {
+      "id": "col_1",
+      "width": {
+        "desktop": 4,
+        "tablet": 6,
+        "mobile": 12
+      },
+      "nodes": []
+    }
+  ]
+}
+```
+
+Поле `blocks` можно сохранить как короткую форму только для простых single-column секций или для миграций ранних версий.
+
+### 4.5.2. Contract: `node instance`
+
+Каждый canvas node должен содержать минимум:
+
+1. `id`
+2. `node_kind`
+3. `visibility`
+
+Допустимые `node_kind` для MVP:
+
+1. `block`
+2. `system_widget`
+
+Пример block node:
+
+```json
+{
+  "id": "node_blk_001",
+  "node_kind": "block",
+  "block_key": "core.hero-heading",
+  "props": {},
+  "data": {
+    "mode": "manual"
+  },
+  "visibility": {
+    "desktop": true,
+    "tablet": true,
+    "mobile": true
+  }
+}
+```
+
+Пример system widget node:
+
+```json
+{
+  "id": "node_wd_001",
+  "node_kind": "system_widget",
+  "widget_ref": {
+    "controller": "content",
+    "name": "list"
+  },
+  "widget_options": {},
+  "visibility": {
+    "desktop": true,
+    "tablet": true,
+    "mobile": true
+  }
+}
+```
+
 ### 4.6. Структура `data`
 
 Для каждого block instance:
@@ -249,12 +351,24 @@
 - `dynamic`
 - `hybrid`
 
+Рекомендуемые `source.type` для первой взрослой версии:
+
+- `context.item`
+- `context.list`
+- `context.category`
+- `context.profile`
+- `ctype.list`
+- `ctype.item`
+- `ctype.related`
+- `query.collection`
+
 ### 4.7. Что не хранить внутри page schema
 
 1. Draft UI-состояние боковой панели.
 2. Координаты мыши и временный drag state.
 3. Кеш рендера HTML.
 4. Информацию о конкретном SQL table name.
+5. Bootstrap-классы как пользовательскую source of truth для колонок.
 
 ## 5. Contract: `block manifest JSON`
 
@@ -282,7 +396,8 @@
     "modes": ["manual", "dynamic"],
     "page_types": ["standalone", "system_overlay", "ctype_overlay"],
     "zones": ["main", "hero", "before_content", "after_content"],
-    "repeatable": true
+    "repeatable": true,
+    "canvas_node_kinds": ["block"]
   },
   "render": {
     "type": "template_ref",
@@ -316,10 +431,14 @@
     "align": "left"
   },
   "data_contract": {
-    "sources": ["manual", "content.item", "content.list"],
+    "sources": ["manual", "context.item", "ctype.list", "query.collection"],
     "mapping": {
       "headline": ["item.title", "manual.headline"],
       "subheadline": ["item.description", "manual.subheadline"]
+    },
+    "collection": {
+      "supported": true,
+      "item_alias": "item"
     }
   },
   "meta": {
@@ -349,6 +468,8 @@
 2. `defaults` должны проходить валидацию против `props_schema`.
 3. Если `supports.modes` содержит `dynamic`, то `data_contract` обязателен.
 4. Если `meta.deprecated = true`, блок не должен исчезать из runtime, только из library по умолчанию.
+5. Если блок работает с коллекциями, это должно быть явно отражено в `data_contract.collection`.
+6. Для builder block manifest `supports.canvas_node_kinds` должен включать `block`.
 
 ### 5.4. Почему manifest нужен отдельно от instance props
 
