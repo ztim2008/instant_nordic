@@ -8,7 +8,7 @@ $this->addMenuItems('admin_toolbar', $menu);
 $this->addToolButton([
     'class' => 'add',
     'title' => 'Новая страница',
-    'href'  => '#',
+    'href'  => $is_schema_installed ? '#' : 'javascript:void(0)',
     'icon'  => 'plus-circle'
 ]);
 
@@ -25,6 +25,73 @@ $this->addToolButton([
         </p>
     </div>
 </div>
+
+<?php if ($is_schema_installed) { ?>
+    <?php ob_start(); ?>
+    <script>
+        (function () {
+            const createUrl = <?php echo json_encode($create_page_url, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+            async function createPage() {
+                const title = window.prompt('Название страницы', 'Новая страница Нордик');
+                if (!title) {
+                    return;
+                }
+
+                const key = window.prompt('Ключ страницы латиницей', title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
+                if (!key) {
+                    return;
+                }
+
+                const mode = window.prompt('Режим страницы: full_takeover / hybrid_overlay / zone_injection / data_only', 'full_takeover') || 'full_takeover';
+
+                const body = new URLSearchParams();
+                body.set('title', title);
+                body.set('key', key);
+                body.set('mode', mode);
+                body.set('status', 'draft');
+                body.set('template', 'nordic');
+
+                const response = await fetch(createUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: body.toString(),
+                    credentials: 'same-origin'
+                });
+
+                const result = await response.json();
+                if (result.error) {
+                    window.alert(result.message || 'Не удалось создать страницу');
+                    return;
+                }
+
+                window.location.href = result.page.canvas_url;
+            }
+
+            document.addEventListener('click', function (event) {
+                const target = event.target.closest('a.btn, a.tool_add, a.add');
+                if (!target) {
+                    return;
+                }
+
+                const title = (target.getAttribute('title') || '').trim();
+                if (title !== 'Новая страница') {
+                    return;
+                }
+
+                event.preventDefault();
+                createPage().catch(function (error) {
+                    console.error(error);
+                    window.alert('Ошибка создания страницы');
+                });
+            });
+        })();
+    </script>
+    <?php $this->addBottom(ob_get_clean()); ?>
+<?php } ?>
 
 <div class="card">
     <div class="card-body p-0">

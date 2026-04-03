@@ -161,3 +161,39 @@
 	- системные widgets на холсте пока только как bridge-модель, без реального сохранения и исполнения.
 - Следующий шаг:
 	- добавить persistent data model для pages/canvas documents и backend endpoint'ы сохранения.
+
+### 2026-04-03 / installable package, persistence и живой canvas backend
+
+- Что планировалось:
+	- перевести landingbuilder из mock backend в installable компонент с SQL persistence, bridge для системных widgets и рабочим backend-циклом сохранения canvas.
+- Что сделано:
+	- собран installable package в [packages/landingbuilder](../packages/landingbuilder) по схеме `manifest.ru.ini + install.sql + package/`;
+	- добавлены таблицы `landingbuilder_pages`, `landingbuilder_page_versions`, `landingbuilder_page_widgets`;
+	- model `landingbuilder` переведена на SQL-backed работу с fallback до установки пакета;
+	- добавлены backend actions для `widgets_catalog`, `widget_options`, `canvas_save`, `create_page`, `versions`, `version_restore`;
+	- admincoreui canvas переведен в интерактивный backend-экран: библиотека blocks/widgets, выбор колонки, вставка node, загрузка widget form, сохранение схемы и восстановление версий;
+	- installable package синхронизирован с исходниками компонента.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas.php](../system/controllers/landingbuilder/backend/actions/canvas.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/backend/actions/widgets_catalog.php](../system/controllers/landingbuilder/backend/actions/widgets_catalog.php)
+	- [system/controllers/landingbuilder/backend/actions/widget_options.php](../system/controllers/landingbuilder/backend/actions/widget_options.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas_save.php](../system/controllers/landingbuilder/backend/actions/canvas_save.php)
+	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [system/controllers/landingbuilder/backend/actions/versions.php](../system/controllers/landingbuilder/backend/actions/versions.php)
+	- [system/controllers/landingbuilder/backend/actions/version_restore.php](../system/controllers/landingbuilder/backend/actions/version_restore.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/manifest.ru.ini](../packages/landingbuilder/manifest.ru.ini)
+	- [packages/landingbuilder/install.sql](../packages/landingbuilder/install.sql)
+- Что проверено:
+	- `php -l` проходит на model и новых backend actions;
+	- Problems panel не показывает новых ошибок;
+	- package/ содержит актуальные копии backend actions и шаблонов.
+- Какие риски остались:
+	- admincoreui canvas уже интерактивный, но default backend template пока заметно слабее по UX;
+	- пока нет drag-and-drop, только управляемая вставка и редактирование;
+	- frontend preview/runtime-рендер builder pages еще не реализован.
+- Следующий шаг:
+	- связать сохраненный canvas document с frontend/template runtime и начать реальный page adapter/render pipeline.

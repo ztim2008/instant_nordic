@@ -42,6 +42,48 @@ class modelLandingbuilder extends cmsModel {
 		return $page;
 	}
 
+	public function createPage(array $data, $user_id = 0) {
+
+		if (!$this->hasInstalledSchema()) {
+			return false;
+		}
+
+		$key = $this->sanitizePageKey($data['key'] ?? '');
+		$title = trim((string) ($data['title'] ?? ''));
+
+		if (!$key || !$title) {
+			return false;
+		}
+
+		$exists = $this->getItemByField(self::PAGE_TABLE, 'name', $key);
+		if ($exists) {
+			return false;
+		}
+
+		$page_mode = !empty($data['mode']) ? $data['mode'] : 'full_takeover';
+		$status = !empty($data['status']) ? $data['status'] : 'draft';
+		$template = !empty($data['template']) ? $data['template'] : 'nordic';
+		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : ['sections' => []];
+		$now = date('Y-m-d H:i:s');
+
+		$page_id = $this->insert(self::PAGE_TABLE, [
+			'name'        => $key,
+			'title'       => $title,
+			'status'      => $status,
+			'page_mode'   => $page_mode,
+			'template'    => $template,
+			'schema_json' => $this->encodeJson($this->normalizeSchema($schema, $key)),
+			'created_at'  => $now,
+			'updated_at'  => $now
+		]);
+
+		if (!$page_id) {
+			return false;
+		}
+
+		return $this->savePageSchema($key, $schema, $user_id, 'Первичная версия');
+	}
+
 	public function getAvailableSystemWidgets() {
 
 		if (!$this->db->isTableExists('widgets')) {
@@ -123,6 +165,65 @@ class modelLandingbuilder extends cmsModel {
 		return $this->getPageByKey($page_key);
 	}
 
+	public function getPageVersionsByKey($page_key, $limit = 20) {
+
+		if (!$this->hasInstalledSchema() || !$this->db->isTableExists(self::VERSION_TABLE)) {
+			return [];
+		}
+
+		$page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
+		if (!$page) {
+			return [];
+		}
+
+		return $this->getPageVersions($page['id'], $limit);
+	}
+
+	public function getPageVersions($page_id, $limit = 20) {
+
+		if (!$page_id || !$this->db->isTableExists(self::VERSION_TABLE)) {
+			return [];
+		}
+
+		$this->filterEqual('page_id', $page_id);
+		$this->orderBy('id', 'desc');
+
+		if ($limit > 0) {
+			$this->limit($limit);
+		}
+
+		$versions = $this->get(self::VERSION_TABLE, function ($item) {
+			$item['is_current'] = false;
+			return $item;
+		});
+
+		return $versions ? array_values($versions) : [];
+	}
+
+	public function restorePageVersion($version_id, $user_id = 0) {
+
+		if (!$version_id || !$this->hasInstalledSchema() || !$this->db->isTableExists(self::VERSION_TABLE)) {
+			return false;
+		}
+
+		$version = $this->getItemById(self::VERSION_TABLE, $version_id);
+		if (!$version) {
+			return false;
+		}
+
+		$page = $this->getItemById(self::PAGE_TABLE, $version['page_id']);
+		if (!$page) {
+			return false;
+		}
+
+		$schema = json_decode($version['schema_json'], true);
+		if (!is_array($schema)) {
+			return false;
+		}
+
+		return $this->savePageSchema($page['name'], $schema, $user_id, 'Восстановление версии #' . $version_id);
+	}
+
 	public function getCanvasScreen(array $page, array $options = []) {
 
 		$devices = ['desktop', 'mobile'];
@@ -142,6 +243,7 @@ class modelLandingbuilder extends cmsModel {
 			'left_tabs'           => $left_tabs,
 			'sections'            => $page['schema']['sections'],
 			'widget_nodes'        => $page['widget_nodes'],
+			'versions'            => !empty($page['key']) ? $this->getPageVersionsByKey($page['key']) : [],
 			'schema_installed'    => $this->hasInstalledSchema()
 		];
 	}
@@ -434,5 +536,11 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function encodeJson(array $data) {
 		return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	}
+
+	protected function sanitizePageKey($key) {
+		$key = mb_strtolower(trim((string) $key));
+		$key = preg_replace('/[^a-z0-9_-]+/u', '-', $key);
+		return trim($key, '-');
 	}
 }

@@ -12,7 +12,9 @@ class actionLandingbuilderCanvas extends cmsAction {
         $screen['api'] = [
             'widgets_catalog_url' => href_to($this->controller->root_url, 'widgets_catalog'),
             'widget_options_url'  => href_to($this->controller->root_url, 'widget_options'),
-            'canvas_save_url'     => href_to($this->controller->root_url, 'canvas_save')
+            'canvas_save_url'     => href_to($this->controller->root_url, 'canvas_save'),
+            'versions_url'        => href_to($this->controller->root_url, 'versions'),
+            'version_restore_url' => href_to($this->controller->root_url, 'version_restore')
         ];
 
         return $this->cms_template->render('backend/canvas', [

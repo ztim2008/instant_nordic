@@ -12,7 +12,8 @@ class actionLandingbuilderPages extends cmsAction {
         return $this->cms_template->render('backend/pages', [
             'menu'               => $this->controller->getBackendMenu(),
             'pages'              => $pages,
-            'is_schema_installed'=> $this->model->hasInstalledSchema()
+            'is_schema_installed'=> $this->model->hasInstalledSchema(),
+            'create_page_url'    => href_to($this->controller->root_url, 'create_page')
         ]);
     }
 }
