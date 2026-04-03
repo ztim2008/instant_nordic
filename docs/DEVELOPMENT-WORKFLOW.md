@@ -7,6 +7,26 @@
 3. Любое изменение архитектуры, JSON-контракта или backend settings должно быть отражено в docs.
 4. Любая risky-операция на прод-сервере делается только после фиксации точки отката.
 
+## Runtime-First Workflow для Нордик
+
+Для `Нордик` принят основной режим разработки: сначала рабочий InstantCMS-контур, затем синхронизация installable package на каждом стабильном шаге.
+
+Это означает:
+
+1. Основная разработка идет в живых runtime-файлах InstantCMS.
+2. Результат сразу проверяется через админку и рабочий сайт.
+3. После каждого завершенного стабильного шага изменения зеркалятся в `packages/landingbuilder/package/`.
+4. Если меняется SQL-слой, одновременно обновляется `packages/landingbuilder/install.sql` и отдельно оценивается upgrade-path для уже установленных копий.
+5. Нельзя откладывать packaging «на потом», если runtime-слой уже изменился заметно.
+
+Основные рабочие зоны этого режима:
+
+- `system/controllers/landingbuilder`
+- `templates/admincoreui/controllers/landingbuilder`
+- `templates/default/controllers/landingbuilder`
+- `packages/landingbuilder/package`
+- `packages/landingbuilder/install.sql`
+
 ## Git-правила
 
 - Основная ветка: `main`.
@@ -49,5 +69,7 @@
 
 1. Проверить документы из `LANDING-BUILDER-*.md`.
 2. Обновить код.
-3. Обновить docs при изменении поведения.
-4. Обновить [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
+3. Проверить результат в runtime-контуре InstantCMS.
+4. Синхронизировать installable package в `packages/landingbuilder/package/`.
+5. Обновить docs при изменении поведения.
+6. Обновить [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](checklists/NEW_BLOCK_CHECKLIST_STATUS.json).

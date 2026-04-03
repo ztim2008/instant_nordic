@@ -35,5 +35,6 @@
 1. Перед рискованными изменениями создать checkpoint:
    `./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
 2. Работать маленькими, проверяемыми шагами.
-3. Обновлять docs при каждом изменении архитектуры, процесса или контракта.
-4. Если меняется блок Landing Builder, обновлять [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
+3. Для `Нордик` использовать runtime-first режим: сначала правки в рабочем InstantCMS-контуре, затем синхронизация `packages/landingbuilder/package/` на каждом стабильном шаге.
+4. Обновлять docs при каждом изменении архитектуры, процесса или контракта.
+5. Если меняется блок Landing Builder, обновлять [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
