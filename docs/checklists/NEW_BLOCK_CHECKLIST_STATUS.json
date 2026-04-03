@@ -1,0 +1,15 @@
+{
+  "updated_at": null,
+  "current_block": null,
+  "status": {
+    "spec_reviewed": false,
+    "data_model_checked": false,
+    "json_contract_checked": false,
+    "adapter_checked": false,
+    "docs_updated": false,
+    "tests_or_manual_checks_done": false,
+    "git_snapshot_created": false,
+    "deployed_to_prod": false
+  },
+  "notes": ""
+}

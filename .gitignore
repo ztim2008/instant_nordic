@@ -1,0 +1,24 @@
+# OS and editor
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime and secrets
+system/config/config.php
+cache/**
+backups/**
+
+# Uploads and generated media
+upload/000/**
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Bundles and archives
+*.zip
+
+# Vendored tool build outputs
+instantcms-mcp-main/node_modules/
+instantcms-mcp-main/coverage/
