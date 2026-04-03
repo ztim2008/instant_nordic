@@ -132,3 +132,32 @@
 	- UX экрана уже зафиксирован, но backend endpoints и tpl skeleton еще не созданы.
 - Следующий шаг:
 	- сделать checkpoint и создать минимальный skeleton `landingbuilder` backend под pages/canvas.
+
+### 2026-04-03 / backend skeleton landingbuilder
+
+- Что планировалось:
+	- начать кодовую фазу с безопасного backend skeleton под список страниц и visual canvas, без тяжелой реализации editor logic.
+- Что сделано:
+	- создан компонентный каркас `system/controllers/landingbuilder`;
+	- добавлены `backend.php`, `frontend.php`, `model.php`;
+	- добавлены backend actions `pages` и `canvas`;
+	- добавлена базовая форма опций для canvas editor;
+	- добавлены backend templates для `admincoreui` и `default`, чтобы skeleton сразу открывался в админке.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/backend.php](../system/controllers/landingbuilder/backend.php)
+	- [system/controllers/landingbuilder/frontend.php](../system/controllers/landingbuilder/frontend.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas.php](../system/controllers/landingbuilder/backend/actions/canvas.php)
+	- [system/controllers/landingbuilder/backend/forms/form_options.php](../system/controllers/landingbuilder/backend/forms/form_options.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/pages.tpl.php](../templates/default/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/canvas.tpl.php](../templates/default/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- checkpoint создан перед кодовой фазой.
+- Какие риски остались:
+	- пока это skeleton без SQL, registry и runtime persistence;
+	- системные widgets на холсте пока только как bridge-модель, без реального сохранения и исполнения.
+- Следующий шаг:
+	- добавить persistent data model для pages/canvas documents и backend endpoint'ы сохранения.
