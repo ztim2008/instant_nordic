@@ -1,6 +1,29 @@
 <?php
 
-$this->setPageTitle('Canvas: ' . $page['title']);
+$device_titles = [
+    'desktop' => 'Компьютер',
+    'tablet'  => 'Планшет',
+    'mobile'  => 'Телефон'
+];
+
+$page_mode_titles = [
+    'full_takeover'  => 'Полностью своя страница',
+    'hybrid_overlay' => 'Поверх существующей страницы',
+    'zone_injection' => 'Встраивание в зону страницы',
+    'data_only'      => 'Только данные для блоков'
+];
+
+$page_status_titles = [
+    'draft'     => 'Черновик',
+    'prototype' => 'Прототип',
+    'idea'      => 'Идея',
+    'published' => 'Опубликовано'
+];
+
+$page_mode_title = $page_mode_titles[$page['mode']] ?? $page['mode'];
+$page_status_title = $page_status_titles[$page['status']] ?? $page['status'];
+
+$this->setPageTitle('Редактор страницы: ' . $page['title']);
 $this->addBreadcrumb('Нордик');
 $this->addBreadcrumb('Страницы', href_to('admin', 'controllers', ['edit', 'landingbuilder', 'pages']));
 $this->addBreadcrumb($page['title']);
@@ -52,22 +75,38 @@ $canvas_state = [
     .lb-muted-device {
         opacity: 0.55;
     }
+
+    .lb-help {
+        display: inline-flex;
+        align-items: center;
+        margin-left: 6px;
+        color: #6c757d;
+        cursor: help;
+    }
+
+    .lb-help i {
+        font-size: 13px;
+    }
+
+    .lb-library-caption {
+        line-height: 1.25;
+    }
 </style>
 <div class="card mb-4">
     <div class="card-body d-flex justify-content-between align-items-start flex-wrap">
         <div>
             <h3 class="h5 mb-2"><?php html($page['title']); ?></h3>
-            <div class="text-muted"><span id="lb-page-meta">Ключ: <code><?php html($page['key']); ?></code> | Режим: <code><?php html($page['mode']); ?></code> | Статус: <?php html($page['status']); ?></span></div>
+            <div class="text-muted"><span id="lb-page-meta">Ключ страницы: <code><?php html($page['key']); ?></code> | Режим: <?php html($page_mode_title); ?> | Статус: <?php html($page_status_title); ?></span></div>
             <div class="small text-muted mt-2">Последнее обновление: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
         </div>
         <div class="d-flex flex-column align-items-md-end mt-3 mt-md-0">
-            <div class="btn-group mb-2" role="group" aria-label="Canvas actions">
-                <button type="button" class="btn btn-primary" id="lb-save-canvas">Сохранить canvas</button>
+            <div class="btn-group mb-2" role="group" aria-label="Действия редактора">
+                <button type="button" class="btn btn-primary" id="lb-save-canvas">Сохранить изменения</button>
                 <button type="button" class="btn btn-outline-secondary" id="lb-add-section">Добавить секцию</button>
             </div>
-            <div class="btn-group" role="group" aria-label="Devices">
+            <div class="btn-group" role="group" aria-label="Устройства">
             <?php foreach ($screen['devices'] as $device) { ?>
-                <button type="button" class="btn btn-outline-secondary lb-device-toggle<?php if ($device === 'desktop') { ?> active<?php } ?>" data-device="<?php html($device); ?>"><?php html($device); ?></button>
+                <button type="button" class="btn btn-outline-secondary lb-device-toggle<?php if ($device === 'desktop') { ?> active<?php } ?>" data-device="<?php html($device); ?>"><?php html($device_titles[$device] ?? $device); ?></button>
             <?php } ?>
             </div>
         </div>
@@ -77,7 +116,7 @@ $canvas_state = [
 <div class="row">
     <div class="col-lg-3 mb-4">
         <div class="card h-100">
-            <div class="card-header">Левая панель</div>
+            <div class="card-header">Библиотека элементов</div>
             <div class="card-body">
                 <ul class="nav nav-pills flex-column mb-3">
                     <?php foreach ($screen['left_tabs'] as $index => $tab) { ?>
@@ -87,12 +126,12 @@ $canvas_state = [
                     <?php } ?>
                 </ul>
                 <div id="lb-blocks-library">
-                    <div class="small text-muted mb-2">Быстрые block presets</div>
+                    <div class="small text-muted mb-2">Готовые блоки для быстрого старта</div>
                     <div class="list-group list-group-flush" id="lb-block-list"></div>
                 </div>
                 <div id="lb-widgets-library" class="d-none">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="small text-muted">Каталог системных widgets</div>
+                        <div class="small text-muted">Системные виджеты InstantCMS</div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-reload-widgets">Обновить</button>
                     </div>
                     <div id="lb-widget-list" class="small"></div>
@@ -103,23 +142,23 @@ $canvas_state = [
     <div class="col-lg-6 mb-4">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Canvas</span>
-                <span class="small text-muted" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>SQL schema active<?php } else { ?>Fallback mode<?php } ?></span>
+                <span>Макет страницы</span>
+                <span class="small text-muted" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Работа с базой данных<?php } else { ?>Временный режим без базы<?php } ?></span>
             </div>
             <div class="card-body" id="lb-canvas-root"></div>
             <div class="card-footer bg-white border-top-0">
-                <div class="small text-muted">Выдели колонку и вставляй элементы слева. Секции и узлы можно перетаскивать мышью между позициями и колонками.</div>
+                <div class="small text-muted">Сначала выберите колонку, затем добавляйте блоки или виджеты из библиотеки слева. Секции и элементы можно перетаскивать мышью.</div>
             </div>
         </div>
     </div>
     <div class="col-lg-3 mb-4">
         <div class="card h-100">
-            <div class="card-header">Inspector</div>
+            <div class="card-header">Панель настроек</div>
             <div class="card-body">
-                <p class="mb-2"><strong>Системные widget-узлы:</strong> <span id="lb-widget-count"><?php echo count($screen['widget_nodes']); ?></span></p>
+                <p class="mb-2"><strong>Виджетов на странице:</strong> <span id="lb-widget-count"><?php echo count($screen['widget_nodes']); ?></span></p>
                 <div class="mb-3">
                     <label class="small text-muted d-block mb-1">Комментарий версии</label>
-                    <input type="text" class="form-control form-control-sm" id="lb-version-note" placeholder="Например: перестроил hero и sidebar">
+                    <input type="text" class="form-control form-control-sm" id="lb-version-note" placeholder="Например: перестроил первый экран и боковую колонку">
                 </div>
                 <div class="mb-3">
                     <div class="small text-muted mb-1">Выделение</div>
@@ -127,8 +166,8 @@ $canvas_state = [
                 </div>
                 <div id="lb-selection-controls" class="mb-3"></div>
                 <div class="mb-3">
-                    <div class="small text-muted mb-2">Настройки system widget</div>
-                    <div id="lb-widget-form" class="border rounded p-2 bg-light small">Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.</div>
+                    <div class="small text-muted mb-2">Настройки выбранного виджета</div>
+                    <div id="lb-widget-form" class="border rounded p-2 bg-light small">Выберите системный виджет на макете, чтобы открыть его штатные настройки.</div>
                 </div>
                 <div>
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -146,16 +185,66 @@ $canvas_state = [
 <script>
     (function () {
         const state = <?php echo json_encode($canvas_state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const deviceTitles = <?php echo json_encode($device_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const pageModeTitles = <?php echo json_encode($page_mode_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const pageStatusTitles = <?php echo json_encode($page_status_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         const blockPresets = [
-            {label: 'core.hero-heading'},
-            {label: 'core.hero-actions'},
-            {label: 'core.cards-grid'},
-            {label: 'core.feature-list'},
-            {label: 'ads.category-header'},
-            {label: 'profile.cover-hero'}
+            {
+                key: 'core.hero-heading',
+                title: 'Главный экран с заголовком',
+                description: 'Крупный первый блок страницы с основным сообщением и подзаголовком.'
+            },
+            {
+                key: 'core.hero-actions',
+                title: 'Главный экран с кнопками',
+                description: 'Первый экран с призывом к действию и заметными кнопками.'
+            },
+            {
+                key: 'core.cards-grid',
+                title: 'Сетка карточек',
+                description: 'Подходит для преимуществ, услуг, тарифов или подборок.'
+            },
+            {
+                key: 'core.feature-list',
+                title: 'Список преимуществ',
+                description: 'Короткий блок с причинами выбрать предложение.'
+            },
+            {
+                key: 'ads.category-header',
+                title: 'Шапка категории объявлений',
+                description: 'Верхняя часть страницы категории с акцентом на заголовок и фильтры.'
+            },
+            {
+                key: 'profile.cover-hero',
+                title: 'Обложка профиля',
+                description: 'Широкий блок для профиля пользователя или компании.'
+            }
         ];
-        const layoutOptions = ['1col', '2col_equal', '2col_sidebar_left', '2col_sidebar_right', '3col_equal'];
-        const columnWidthOptions = ['auto', '12', '8', '6', '4', '3'];
+        const blockPresetMap = blockPresets.reduce(function (map, block) {
+            map[block.key] = block;
+            return map;
+        }, {});
+        const layoutOptions = [
+            {value: '1col', title: 'Одна колонка', hint: 'Один широкий столбец на всю ширину секции.'},
+            {value: '2col_equal', title: 'Две равные колонки', hint: 'Подходит для текста рядом с изображением или формы рядом с описанием.'},
+            {value: '2col_sidebar_left', title: 'Узкая колонка слева', hint: 'Слева узкий вспомогательный блок, справа основное содержимое.'},
+            {value: '2col_sidebar_right', title: 'Узкая колонка справа', hint: 'Справа узкий вспомогательный блок, слева основное содержимое.'},
+            {value: '3col_equal', title: 'Три равные колонки', hint: 'Подходит для карточек, этапов или трёх преимуществ.'}
+        ];
+        const columnWidthOptions = [
+            {value: 'auto', title: 'Авто'},
+            {value: '12', title: 'Во всю ширину'},
+            {value: '8', title: 'Широкая'},
+            {value: '6', title: 'Половина'},
+            {value: '4', title: 'Узкая'},
+            {value: '3', title: 'Очень узкая'}
+        ];
+        const alignOptions = [
+            {value: 'stretch', title: 'Растянуть'},
+            {value: 'start', title: 'По верхнему краю'},
+            {value: 'center', title: 'По центру'},
+            {value: 'end', title: 'По нижнему краю'}
+        ];
 
         state.widgetsCatalog = {};
         state.activeDevice = state.screen.devices[0] || 'desktop';
@@ -250,6 +339,90 @@ $canvas_state = [
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#039;');
+        }
+
+        function getDeviceTitle(device) {
+            return deviceTitles[device] || device;
+        }
+
+        function getPageModeTitle(mode) {
+            return pageModeTitles[mode] || mode;
+        }
+
+        function getPageStatusTitle(status) {
+            return pageStatusTitles[status] || status;
+        }
+
+        function getLayoutOption(value) {
+            return layoutOptions.find(function (option) {
+                return option.value === value;
+            }) || {value: value, title: value, hint: ''};
+        }
+
+        function getWidthOption(value) {
+            return columnWidthOptions.find(function (option) {
+                return option.value === value;
+            }) || {value: value, title: value};
+        }
+
+        function getAlignOption(value) {
+            return alignOptions.find(function (option) {
+                return option.value === value;
+            }) || {value: value, title: value};
+        }
+
+        function getNodeTypeTitle(type) {
+            if (type === 'system_widget') {
+                return 'Системный виджет';
+            }
+            return 'Блок';
+        }
+
+        function getBlockPreset(value) {
+            return blockPresetMap[value] || null;
+        }
+
+        function getNodeDisplayLabel(node) {
+            if (!node) {
+                return '';
+            }
+
+            if (node.type === 'block') {
+                const preset = getBlockPreset(node.source_key || node.label);
+                if (preset) {
+                    return preset.title;
+                }
+            }
+
+            if (node.type === 'system_widget') {
+                const widget = findWidgetById(node.widget_id);
+                if (widget && widget.title) {
+                    return widget.title;
+                }
+            }
+
+            return node.label || 'Элемент';
+        }
+
+        function helpIcon(text) {
+            return ' <span class="lb-help" data-toggle="tooltip" data-placement="top" title="' + escapeHtml(text) + '"><i class="fas fa-question-circle"></i></span>';
+        }
+
+        function fieldLabel(title, hint) {
+            return '<label class="small text-muted d-block mb-1">' + escapeHtml(title) + (hint ? helpIcon(hint) : '') + '</label>';
+        }
+
+        function initTooltips(root) {
+            if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.tooltip) {
+                return;
+            }
+
+            const $root = root ? window.jQuery(root) : window.jQuery(document);
+            $root.find('[data-toggle="tooltip"]').tooltip({container: 'body'});
+        }
+
+        function renderPageMeta() {
+            return 'Ключ страницы: <code>' + escapeHtml(state.page.key) + '</code> | Режим: ' + escapeHtml(getPageModeTitle(state.page.mode)) + ' | Статус: ' + escapeHtml(getPageStatusTitle(state.page.status));
         }
 
         function sectionColumnClass(count) {
@@ -347,21 +520,23 @@ $canvas_state = [
                 return '' +
                     '<div class="form-check form-check-inline mr-2">' +
                         '<input class="form-check-input" type="checkbox" id="' + inputId + '" data-field="' + pathBase + '.' + device + '"' + (visibility[device] !== false ? ' checked' : '') + '>' +
-                        '<label class="form-check-label small" for="' + inputId + '">' + escapeHtml(device) + '</label>' +
+                        '<label class="form-check-label small" for="' + inputId + '">' + escapeHtml(getDeviceTitle(device)) + '</label>' +
                     '</div>';
             }).join('');
         }
 
         function renderWidthControls(width) {
             return state.screen.devices.map(function (device) {
+                const widthOption = getWidthOption(String(width[device] || 'auto'));
                 return '' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Ширина ' + escapeHtml(device) + '</label>' +
+                        fieldLabel('Ширина для устройства «' + getDeviceTitle(device) + '»', 'Задает, сколько места колонка занимает на выбранном типе устройства.') +
                         '<select class="form-control form-control-sm" data-field="width.' + device + '">' +
                             columnWidthOptions.map(function (option) {
-                                return '<option value="' + option + '"' + (String(width[device] || 'auto') === option ? ' selected' : '') + '>' + option + '</option>';
+                                return '<option value="' + option.value + '"' + (String(width[device] || 'auto') === option.value ? ' selected' : '') + '>' + option.title + '</option>';
                             }).join('') +
                         '</select>' +
+                        '<div class="small text-muted mt-1">Сейчас: ' + escapeHtml(widthOption.title) + '</div>' +
                     '</div>';
             }).join('');
         }
@@ -450,17 +625,22 @@ $canvas_state = [
         function renderBlockLibrary() {
             blockList.innerHTML = blockPresets.map(function (block, index) {
                 return '' +
-                    '<button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" data-role="insert-block" data-block-index="' + index + '">' +
-                        '<span>' + escapeHtml(block.label) + '</span>' +
-                        '<span class="badge badge-light">Вставить</span>' +
+                    '<button type="button" class="list-group-item list-group-item-action" data-role="insert-block" data-block-index="' + index + '">' +
+                        '<div class="d-flex justify-content-between align-items-center">' +
+                            '<span class="font-weight-bold">' + escapeHtml(block.title) + '</span>' +
+                            '<span class="badge badge-light">Добавить</span>' +
+                        '</div>' +
+                        '<div class="small text-muted lb-library-caption mt-1">' + escapeHtml(block.description) + '</div>' +
                     '</button>';
             }).join('');
+
+            initTooltips(blockList);
         }
 
         function renderWidgetLibrary() {
             const groups = Object.keys(state.widgetsCatalog);
             if (!groups.length) {
-                widgetList.innerHTML = '<div class="text-muted">Каталог widgets пока пуст или ещё не загружен.</div>';
+                widgetList.innerHTML = '<div class="text-muted">Список виджетов пока пуст или еще не загружен.</div>';
                 return;
             }
 
@@ -468,16 +648,18 @@ $canvas_state = [
                 const items = state.widgetsCatalog[group] || [];
                 return '' +
                     '<div class="mb-3">' +
-                        '<div class="font-weight-bold text-uppercase small mb-2">' + escapeHtml(group) + '</div>' +
+                        '<div class="font-weight-bold text-uppercase small mb-2">' + escapeHtml(group === 'core' ? 'Система' : group) + '</div>' +
                         items.map(function (widget) {
                             return '' +
                                 '<button type="button" class="list-group-item list-group-item-action mb-1 border rounded" data-role="insert-widget" data-widget-id="' + widget.id + '">' +
                                     '<div class="font-weight-bold">' + escapeHtml(widget.title) + '</div>' +
-                                    '<div class="text-muted small">' + escapeHtml((widget.controller || 'core') + '.' + widget.name) + '</div>' +
+                                    '<div class="text-muted small">Код: ' + escapeHtml((widget.controller || 'core') + '.' + widget.name) + '</div>' +
                                 '</button>';
                         }).join('') +
                     '</div>';
             }).join('');
+
+            initTooltips(widgetList);
         }
 
         function renderCanvas() {
@@ -489,16 +671,17 @@ $canvas_state = [
 
             canvasRoot.innerHTML = state.schema.sections.map(function (section, sectionIndex) {
                 const sectionVisible = isVisibleOnDevice(section.visibility);
+                const layoutTitle = getLayoutOption(section.layout).title;
                 return '' +
                     '<div class="border rounded p-3 mb-3 lb-section' + (state.selection && state.selection.sectionIndex === sectionIndex ? ' border-primary' : '') + (!sectionVisible ? ' lb-muted-device' : '') + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
                         '<div class="d-flex justify-content-between align-items-center mb-3">' +
                             '<div>' +
                                 '<div class="d-flex align-items-center">' +
                                     '<strong>' + escapeHtml(section.title) + '</strong>' +
-                                    '<span class="badge badge-light ml-2">drag</span>' +
-                                    (!sectionVisible ? '<span class="badge badge-warning ml-2">hidden on ' + escapeHtml(state.activeDevice) + '</span>' : '') +
+                                    '<span class="badge badge-light ml-2">Перетащить</span>' +
+                                    (!sectionVisible ? '<span class="badge badge-warning ml-2">Скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»</span>' : '') +
                                 '</div>' +
-                                '<div class="small text-muted">Layout: ' + escapeHtml(section.layout) + (section.settings.background_class ? ' | bg: ' + escapeHtml(section.settings.background_class) : '') + '</div>' +
+                                '<div class="small text-muted">Схема колонок: ' + escapeHtml(layoutTitle) + (section.settings.background_class ? ' | фон: ' + escapeHtml(section.settings.background_class) : '') + '</div>' +
                             '</div>' +
                             '<div class="btn-group btn-group-sm">' +
                                 '<button type="button" class="btn btn-outline-danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
@@ -512,23 +695,24 @@ $canvas_state = [
                                         '<div class="border rounded p-2 h-100 bg-light lb-column' + (state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? ' border-primary' : '') + (!columnVisible ? ' lb-muted-device' : '') + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
                                             '<div class="d-flex justify-content-between align-items-center mb-2">' +
                                                 '<div class="small font-weight-bold">' + escapeHtml(column.title) + '</div>' +
-                                                '<div class="small text-muted">w:' + escapeHtml(column.width[state.activeDevice] || 'auto') + '</div>' +
+                                                '<div class="small text-muted">Ширина: ' + escapeHtml(getWidthOption(String(column.width[state.activeDevice] || 'auto')).title) + '</div>' +
                                             '</div>' +
-                                            '<div class="small text-muted mb-2">Кликни для выбора колонки. Drop сюда переносит node в конец.</div>' +
+                                            '<div class="small text-muted mb-2">Нажмите, чтобы выбрать колонку. Перетаскивание в эту область отправляет элемент в конец колонки.</div>' +
                                             '<div>' +
                                                 column.nodes.map(function (node, nodeIndex) {
                                                     const nodeVisible = isVisibleOnDevice(node.device_visibility);
+                                                    const nodeLabel = getNodeDisplayLabel(node);
                                                     return '' +
                                                         '<div class="border rounded bg-white p-2 mb-2 lb-node' + (state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? ' border-primary' : '') + (!nodeVisible ? ' lb-muted-device' : '') + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
                                                             '<div class="d-flex justify-content-between align-items-center mb-1">' +
-                                                                '<div class="small text-muted text-uppercase">' + escapeHtml(node.type) + '</div>' +
+                                                                '<div class="small text-muted text-uppercase">' + escapeHtml(getNodeTypeTitle(node.type)) + '</div>' +
                                                                 '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
                                                             '</div>' +
                                                             '<div class="d-flex align-items-center justify-content-between">' +
-                                                                '<div>' + escapeHtml(node.label) + '</div>' +
-                                                                '<span class="badge badge-light ml-2">drag</span>' +
+                                                                '<div>' + escapeHtml(nodeLabel) + '</div>' +
+                                                                '<span class="badge badge-light ml-2">Перетащить</span>' +
                                                             '</div>' +
-                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'class: ' + escapeHtml(node.class_name) : 'без class') + (!nodeVisible ? ' | hidden on ' + escapeHtml(state.activeDevice) : '') + '</div>' +
+                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'Стиль: ' + escapeHtml(node.class_name) : 'Дополнительный стиль не задан') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
                                                         '</div>';
                                                 }).join('') +
                                             '</div>' +
@@ -541,6 +725,7 @@ $canvas_state = [
 
             widgetCount.textContent = String(countWidgetNodes());
             renderInspector();
+            initTooltips(canvasRoot);
         }
 
         function renderInspector() {
@@ -549,7 +734,7 @@ $canvas_state = [
             if (!selection) {
                 selectionSummary.textContent = 'Ничего не выбрано';
                 selectionControls.innerHTML = '';
-                widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
+                widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
                 return;
             }
 
@@ -558,31 +743,32 @@ $canvas_state = [
                 selectionSummary.innerHTML = '<strong>Секция</strong><br><span class="text-muted">' + escapeHtml(section.title) + '</span>';
                 selectionControls.innerHTML = '' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Название секции</label>' +
+                        fieldLabel('Название секции', 'Это имя видят редакторы внутри конструктора. На сайте его можно не показывать.') +
                         '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(section.title) + '">' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Layout</label>' +
+                        fieldLabel('Схема колонок', 'Определяет, сколько колонок будет в секции и как они распределяются по ширине.') +
                         '<select class="form-control form-control-sm" data-field="layout">' +
                             layoutOptions.map(function (option) {
-                                return '<option value="' + option + '"' + (section.layout === option ? ' selected' : '') + '>' + option + '</option>';
+                                return '<option value="' + option.value + '"' + (section.layout === option.value ? ' selected' : '') + '>' + option.title + '</option>';
                             }).join('') +
                         '</select>' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Background class</label>' +
+                        fieldLabel('Класс фона', 'Нужен, если разработчик заранее подготовил готовые стили фона. Можно оставить пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                        fieldLabel('Дополнительный стиль', 'Служебное поле для подключения особого оформления секции. Оставьте пустым, если не используете стили вручную.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-3">' +
-                        '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                        fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
                         renderVisibilityControls('visibility', section.visibility) +
                     '</div>' +
                     '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-section" data-section-index="' + selection.sectionIndex + '">Удалить секцию</button>';
-                widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
+                widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
+                initTooltips(selectionControls);
                 return;
             }
 
@@ -591,28 +777,29 @@ $canvas_state = [
                 selectionSummary.innerHTML = '<strong>Колонка</strong><br><span class="text-muted">' + escapeHtml(column ? column.title : 'Колонка') + '</span>';
                 selectionControls.innerHTML = '' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Название колонки</label>' +
+                        fieldLabel('Название колонки', 'Служебное имя для редактора. Помогает не путаться в сложных секциях.') +
                         '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(column.title) + '">' +
                     '</div>' +
                     renderWidthControls(column.width) +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Align</label>' +
+                        fieldLabel('Выравнивание содержимого', 'Помогает прижать содержимое колонки к верху, центру или низу.') +
                         '<select class="form-control form-control-sm" data-field="settings.align">' +
-                            ['stretch', 'start', 'center', 'end'].map(function (option) {
-                                return '<option value="' + option + '"' + (column.settings.align === option ? ' selected' : '') + '>' + option + '</option>';
+                            alignOptions.map(function (option) {
+                                return '<option value="' + option.value + '"' + (column.settings.align === option.value ? ' selected' : '') + '>' + option.title + '</option>';
                             }).join('') +
                         '</select>' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                        fieldLabel('Дополнительный стиль', 'Служебное поле для особого оформления колонки. Можно оставить пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                        fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть колонку на нужных типах устройств.') +
                         renderVisibilityControls('visibility', column.visibility) +
                     '</div>' +
-                    '<div class="small text-muted">В эту колонку можно перетаскивать блоки и widgets из других колонок.</div>';
-                widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
+                    '<div class="small text-muted">В эту колонку можно перетаскивать блоки и виджеты из других колонок.</div>';
+                widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
+                initTooltips(selectionControls);
                 return;
             }
 
@@ -620,41 +807,43 @@ $canvas_state = [
             if (!node) {
                 selectionSummary.textContent = 'Выбранный элемент не найден';
                 selectionControls.innerHTML = '';
-                widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
+                widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
                 return;
             }
 
-            selectionSummary.innerHTML = '<strong>' + escapeHtml(node.label) + '</strong><br><span class="text-muted">Тип: ' + escapeHtml(node.type) + '</span>';
+            selectionSummary.innerHTML = '<strong>' + escapeHtml(getNodeDisplayLabel(node)) + '</strong><br><span class="text-muted">Тип: ' + escapeHtml(getNodeTypeTitle(node.type)) + '</span>';
             selectionControls.innerHTML = '' +
                 '<div class="form-group mb-2">' +
-                    '<label class="small text-muted d-block mb-1">Label</label>' +
-                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(node.label) + '">' +
+                    fieldLabel('Название элемента', 'Короткое понятное имя, по которому редактор узнает блок внутри конструктора.') +
+                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(getNodeDisplayLabel(node)) + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                    fieldLabel('Дополнительный стиль', 'Служебное поле для особого оформления конкретного элемента.') +
                     '<input type="text" class="form-control form-control-sm" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    '<label class="small text-muted d-block mb-1">Source key</label>' +
+                    fieldLabel('Ключ источника данных', 'Нужен, если блок должен подтягивать данные из заранее заданного источника или сценария.') +
                     '<input type="text" class="form-control form-control-sm" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    '<label class="small text-muted d-block mb-1">Заметки</label>' +
+                    fieldLabel('Заметки для редактора', 'Сюда можно записать, зачем нужен блок или что в нем важно не забыть.') +
                     '<textarea class="form-control form-control-sm" rows="3" data-field="notes">' + escapeHtml(node.notes || '') + '</textarea>' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                    fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть этот элемент на нужных типах устройств.') +
                     renderVisibilityControls('device_visibility', node.device_visibility) +
                 '</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-node" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '" data-node-index="' + selection.nodeIndex + '">Удалить node</button>';
+                '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-node" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '" data-node-index="' + selection.nodeIndex + '">Удалить элемент</button>';
 
             if (node.type === 'system_widget' && node.widget_id) {
                 loadWidgetOptions(node);
             } else if (node.type === 'system_widget') {
-                widgetForm.innerHTML = 'У этого widget-узла пока нет widget_id. Добавь его из системного каталога слева.';
+                widgetForm.innerHTML = 'У этого виджета пока нет связи с системным каталогом. Добавьте его заново из списка слева.';
             } else {
-                widgetForm.innerHTML = 'Для builder block здесь будет props editor. Пока доступно быстрое редактирование label.';
+                widgetForm.innerHTML = 'Для этого блока сейчас доступны базовые настройки: название, видимость, заметки и связь с источником данных.';
             }
+
+            initTooltips(selectionControls);
         }
 
         function countWidgetNodes() {
@@ -672,7 +861,7 @@ $canvas_state = [
         }
 
         async function loadWidgetCatalog() {
-            widgetList.innerHTML = '<div class="text-muted">Загрузка каталога widgets...</div>';
+            widgetList.innerHTML = '<div class="text-muted">Загрузка списка виджетов...</div>';
 
             const response = await fetch(state.screen.api.widgets_catalog_url, {
                 headers: {'X-Requested-With': 'XMLHttpRequest'},
@@ -681,12 +870,13 @@ $canvas_state = [
 
             const result = await response.json();
             if (result.error) {
-                widgetList.innerHTML = '<div class="text-danger">Не удалось загрузить каталог widgets.</div>';
+                widgetList.innerHTML = '<div class="text-danger">Не удалось загрузить список виджетов.</div>';
                 return;
             }
 
             state.widgetsCatalog = result.widgets || {};
             renderWidgetLibrary();
+            renderCanvas();
         }
 
         async function loadVersions() {
@@ -706,7 +896,7 @@ $canvas_state = [
         function renderVersions() {
             const versions = state.screen.versions || [];
             if (!versions.length) {
-                versionsList.innerHTML = '<div class="text-muted">Версий пока нет. Первая появится после сохранения canvas.</div>';
+                versionsList.innerHTML = '<div class="text-muted">Версий пока нет. Первая появится после первого сохранения страницы.</div>';
                 return;
             }
 
@@ -743,11 +933,12 @@ $canvas_state = [
 
             const result = await response.json();
             if (result.error) {
-                widgetForm.innerHTML = '<div class="text-danger">Не удалось загрузить widget form.</div>';
+                widgetForm.innerHTML = '<div class="text-danger">Не удалось загрузить форму настроек виджета.</div>';
                 return;
             }
 
             widgetForm.innerHTML = result.html;
+            initTooltips(widgetForm);
         }
 
         function moveSection(fromIndex, targetIndex) {
@@ -803,12 +994,12 @@ $canvas_state = [
         }
 
         function addSection() {
-            const title = window.prompt('Название секции', 'Новая секция');
+            const title = window.prompt('Название новой секции', 'Новая секция');
             if (!title) {
                 return;
             }
 
-            const layout = window.prompt('Layout: 1col / 2col_equal / 2col_sidebar_left / 2col_sidebar_right / 3col_equal', '2col_equal') || '2col_equal';
+            const layout = '2col_equal';
             const columnsCount = layout === '1col' ? 1 : (layout.indexOf('3col') === 0 ? 3 : 2);
             const sectionUid = uid('section');
 
@@ -836,7 +1027,7 @@ $canvas_state = [
         function insertBlock(blockIndex) {
             const column = getSelectedColumn();
             if (!column) {
-                window.alert('Сначала выбери колонку на canvas.');
+                window.alert('Сначала выберите колонку на макете страницы.');
                 return;
             }
 
@@ -848,10 +1039,10 @@ $canvas_state = [
             column.nodes.push({
                 uid: uid('node'),
                 type: 'block',
-                label: block.label,
+                label: block.title,
                 class_name: '',
                 notes: '',
-                source_key: '',
+                source_key: block.key,
                 device_visibility: defaultVisibility(),
                 options: {}
             });
@@ -880,20 +1071,20 @@ $canvas_state = [
         function insertWidget(widgetId) {
             const column = getSelectedColumn();
             if (!column) {
-                window.alert('Сначала выбери колонку на canvas.');
+                window.alert('Сначала выберите колонку на макете страницы.');
                 return;
             }
 
             const widget = findWidgetById(widgetId);
             if (!widget) {
-                window.alert('Widget не найден в каталоге.');
+                window.alert('Виджет не найден в каталоге.');
                 return;
             }
 
             column.nodes.push({
                 uid: uid('node'),
                 type: 'system_widget',
-                label: (widget.controller || 'core') + '.' + widget.name,
+                label: widget.title || 'Системный виджет',
                 widget_id: widget.id,
                 widget_name: widget.name,
                 widget_controller: widget.controller,
@@ -918,7 +1109,7 @@ $canvas_state = [
             const body = new URLSearchParams();
             body.set('page_key', state.page.key);
             body.set('schema', JSON.stringify(state.schema));
-            body.set('version_note', versionNote.value || 'Сохранение canvas');
+            body.set('version_note', versionNote.value || 'Сохранение страницы');
 
             const response = await fetch(state.screen.api.canvas_save_url, {
                 method: 'POST',
@@ -932,14 +1123,14 @@ $canvas_state = [
 
             const result = await response.json();
             if (result.error) {
-                window.alert(result.message || 'Canvas save failed');
+                window.alert(result.message || 'Не удалось сохранить страницу');
                 return;
             }
 
             state.page = Object.assign({}, state.page, result.page || {});
             updatedAt.textContent = state.page.updated_at || '';
-            pageMeta.innerHTML = 'Ключ: <code>' + escapeHtml(state.page.key) + '</code> | Режим: <code>' + escapeHtml(state.page.mode) + '</code> | Статус: ' + escapeHtml(state.page.status);
-            canvasStatus.textContent = 'Canvas сохранен';
+            pageMeta.innerHTML = renderPageMeta();
+            canvasStatus.textContent = 'Изменения сохранены';
             versionNote.value = '';
             await loadVersions();
             renderCanvas();
@@ -964,7 +1155,7 @@ $canvas_state = [
         }
 
         async function restoreVersion(versionId) {
-            if (!window.confirm('Восстановить выбранную версию canvas?')) {
+            if (!window.confirm('Восстановить выбранную сохраненную версию страницы?')) {
                 return;
             }
 
@@ -1014,6 +1205,7 @@ $canvas_state = [
                 });
                 button.classList.add('active');
                 state.activeDevice = button.dataset.device;
+                renderCanvas();
             });
         });
 
@@ -1021,13 +1213,13 @@ $canvas_state = [
         document.getElementById('lb-save-canvas').addEventListener('click', function () {
             saveCanvas().catch(function (error) {
                 console.error(error);
-                window.alert('Ошибка сохранения canvas');
+                window.alert('Ошибка сохранения страницы');
             });
         });
         document.getElementById('lb-reload-widgets').addEventListener('click', function () {
             loadWidgetCatalog().catch(function (error) {
                 console.error(error);
-                widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки widgets.</div>';
+                widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки списка виджетов.</div>';
             });
         });
         document.getElementById('lb-refresh-versions').addEventListener('click', function () {
@@ -1080,7 +1272,7 @@ $canvas_state = [
             }
 
             if (action === 'delete-node') {
-                if (window.confirm('Удалить node?')) {
+                if (window.confirm('Удалить элемент?')) {
                     syncSelectedWidgetFormIntoState();
                     state.schema.sections[sectionIndex].columns[columnIndex].nodes.splice(nodeIndex, 1);
                     state.selection = null;
@@ -1286,8 +1478,9 @@ $canvas_state = [
         renderVersions();
         loadWidgetCatalog().catch(function (error) {
             console.error(error);
-            widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки widgets.</div>';
+            widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки списка виджетов.</div>';
         });
+        initTooltips(document);
     })();
 </script>
 <?php $this->addBottom(ob_get_clean()); ?>

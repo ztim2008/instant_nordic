@@ -242,3 +242,31 @@
 	- сам workflow зафиксирован, но его еще нужно последовательно выдерживать на следующих кодовых этапах.
 - Следующий шаг:
 	- продолжить backend/frontend разработку `Нордик` уже в зафиксированном runtime-first режиме.
+
+### 2026-04-03 / русификация backend-редактора
+
+- Что планировалось:
+	- привести backend UI `Нордик` к русскому, простому и нетехническому виду для редакторов.
+- Что сделано:
+	- переведены основные пользовательские тексты в `admincoreui` и `default` шаблонах страниц и редактора;
+	- заменены технические подписи режимов, статусов, устройств, layout-схем и типов узлов на понятные русские названия;
+	- для библиотеки блоков добавлены русские названия и короткие описания;
+	- в inspector добавлены help tooltip-подсказки у ключевых полей;
+	- обновлены package-копии шаблонов после финальной правки формулировок.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/canvas.tpl.php](../templates/default/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/pages.tpl.php](../templates/default/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/backend/pages.tpl.php)
+- Что проверено:
+	- `php -l` проходит на source и package-копиях обоих canvas templates;
+	- финальная синхронизация source -> package выполнена после последних правок.
+- Какие риски остались:
+	- ручной browser smoke-test тултипов, drag-and-drop и загрузки системных виджетов еще не проведен;
+	- в следующих backend/frontend экранах нужно сразу держать тот же стандарт простого русского интерфейса.
+- Следующий шаг:
+	- вручную пройти editor flow в админке и затем перейти к frontend runtime/page adapters.

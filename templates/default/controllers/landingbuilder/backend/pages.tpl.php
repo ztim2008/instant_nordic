@@ -1,5 +1,19 @@
 <?php
 
+$page_mode_titles = [
+    'full_takeover'  => 'Полностью своя страница',
+    'hybrid_overlay' => 'Поверх существующей страницы',
+    'zone_injection' => 'Встраивание в зону страницы',
+    'data_only'      => 'Только данные для блоков'
+];
+
+$page_status_titles = [
+    'draft'     => 'Черновик',
+    'prototype' => 'Прототип',
+    'idea'      => 'Идея',
+    'published' => 'Опубликовано'
+];
+
 $this->setPageTitle('Нордик: страницы');
 $this->setMenuItems('backend', $menu);
 $this->addBreadcrumb('Нордик');
@@ -16,9 +30,9 @@ $this->addToolButton([
     <h3>Нордик: реестр страниц</h3>
     <p>
         <?php if ($is_schema_installed) { ?>
-            Компонент работает на собственных таблицах landingbuilder и хранит версии canvas.
+            Компонент работает на собственных таблицах landingbuilder и хранит версии макетов.
         <?php } else { ?>
-            Таблицы компонента ещё не установлены, поэтому сейчас показан fallback-набор страниц.
+            Таблицы компонента ещё не установлены, поэтому сейчас показан временный набор страниц.
         <?php } ?>
     </p>
 
@@ -38,10 +52,10 @@ $this->addToolButton([
                 <tr>
                     <td><?php html($page['title']); ?></td>
                     <td><code><?php html($page['key']); ?></code></td>
-                    <td><code><?php html($page['mode']); ?></code></td>
-                    <td><?php html($page['status']); ?></td>
+                    <td><?php html($page_mode_titles[$page['mode']] ?? $page['mode']); ?></td>
+                    <td><?php html($page_status_titles[$page['status']] ?? $page['status']); ?></td>
                     <td><?php html($page['updated_at']); ?></td>
-                    <td><a href="<?php html($page['canvas_url']); ?>">Открыть canvas</a></td>
+                    <td><a href="<?php html($page['canvas_url']); ?>">Открыть редактор</a></td>
                 </tr>
             <?php } ?>
         </tbody>

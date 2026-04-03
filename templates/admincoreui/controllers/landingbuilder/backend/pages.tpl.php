@@ -1,5 +1,19 @@
 <?php
 
+$page_mode_titles = [
+    'full_takeover'  => 'Полностью своя страница',
+    'hybrid_overlay' => 'Поверх существующей страницы',
+    'zone_injection' => 'Встраивание в зону страницы',
+    'data_only'      => 'Только данные для блоков'
+];
+
+$page_status_titles = [
+    'draft'     => 'Черновик',
+    'prototype' => 'Прототип',
+    'idea'      => 'Идея',
+    'published' => 'Опубликовано'
+];
+
 $this->setPageTitle('Нордик: страницы');
 $this->addBreadcrumb('Нордик');
 $this->addBreadcrumb('Страницы');
@@ -18,9 +32,9 @@ $this->addToolButton([
         <h3 class="h5 mb-3">Нордик: реестр страниц</h3>
         <p class="text-muted mb-0">
             <?php if ($is_schema_installed) { ?>
-                Компонент работает на собственных таблицах landingbuilder и уже готов хранить версии canvas и системные widget-узлы.
+                Компонент работает на собственных таблицах landingbuilder и уже готов хранить версии макетов и системные виджеты.
             <?php } else { ?>
-                Таблицы компонента ещё не установлены, поэтому сейчас показан безопасный fallback-набор страниц из кода.
+                Таблицы компонента ещё не установлены, поэтому сейчас показан безопасный временный набор страниц из кода.
             <?php } ?>
         </p>
     </div>
@@ -43,12 +57,10 @@ $this->addToolButton([
                     return;
                 }
 
-                const mode = window.prompt('Режим страницы: full_takeover / hybrid_overlay / zone_injection / data_only', 'full_takeover') || 'full_takeover';
-
                 const body = new URLSearchParams();
                 body.set('title', title);
                 body.set('key', key);
-                body.set('mode', mode);
+                body.set('mode', 'full_takeover');
                 body.set('status', 'draft');
                 body.set('template', 'nordic');
 
@@ -112,11 +124,11 @@ $this->addToolButton([
                         <tr>
                             <td><?php html($page['title']); ?></td>
                             <td><code><?php html($page['key']); ?></code></td>
-                            <td><code><?php html($page['mode']); ?></code></td>
-                            <td><?php html($page['status']); ?></td>
+                            <td><?php html($page_mode_titles[$page['mode']] ?? $page['mode']); ?></td>
+                            <td><?php html($page_status_titles[$page['status']] ?? $page['status']); ?></td>
                             <td><?php html($page['updated_at']); ?></td>
                             <td class="text-right">
-                                <a class="btn btn-sm btn-primary" href="<?php html($page['canvas_url']); ?>">Открыть canvas</a>
+                                <a class="btn btn-sm btn-primary" href="<?php html($page['canvas_url']); ?>">Открыть редактор</a>
                             </td>
                         </tr>
                     <?php } ?>
