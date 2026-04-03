@@ -420,11 +420,30 @@ class modelLandingbuilder extends cmsModel {
 			$schema['sections'][$section_index]['uid'] = !empty($section['uid']) ? $section['uid'] : 'section-' . ($section_index + 1);
 			$schema['sections'][$section_index]['title'] = !empty($section['title']) ? $section['title'] : 'Секция ' . ($section_index + 1);
 			$schema['sections'][$section_index]['layout'] = !empty($section['layout']) ? $section['layout'] : '1col';
+			$schema['sections'][$section_index]['visibility'] = isset($section['visibility']) && is_array($section['visibility']) ? array_merge($this->getDefaultVisibility(), $section['visibility']) : $this->getDefaultVisibility();
+			$schema['sections'][$section_index]['settings'] = isset($section['settings']) && is_array($section['settings']) ? array_merge([
+				'background_class' => '',
+				'padding'          => 'md',
+				'css_class'        => ''
+			], $section['settings']) : [
+				'background_class' => '',
+				'padding'          => 'md',
+				'css_class'        => ''
+			];
 			$schema['sections'][$section_index]['columns'] = isset($section['columns']) && is_array($section['columns']) ? array_values($section['columns']) : [];
 
 			foreach ($schema['sections'][$section_index]['columns'] as $column_index => $column) {
 				$schema['sections'][$section_index]['columns'][$column_index]['uid'] = !empty($column['uid']) ? $column['uid'] : $schema['sections'][$section_index]['uid'] . '-column-' . ($column_index + 1);
 				$schema['sections'][$section_index]['columns'][$column_index]['title'] = !empty($column['title']) ? $column['title'] : 'Колонка ' . ($column_index + 1);
+				$schema['sections'][$section_index]['columns'][$column_index]['visibility'] = isset($column['visibility']) && is_array($column['visibility']) ? array_merge($this->getDefaultVisibility(), $column['visibility']) : $this->getDefaultVisibility();
+				$schema['sections'][$section_index]['columns'][$column_index]['width'] = isset($column['width']) && is_array($column['width']) ? array_merge($this->getDefaultColumnWidths(), $column['width']) : $this->getDefaultColumnWidths();
+				$schema['sections'][$section_index]['columns'][$column_index]['settings'] = isset($column['settings']) && is_array($column['settings']) ? array_merge([
+					'align'     => 'stretch',
+					'css_class' => ''
+				], $column['settings']) : [
+					'align'     => 'stretch',
+					'css_class' => ''
+				];
 				$schema['sections'][$section_index]['columns'][$column_index]['nodes'] = isset($column['nodes']) && is_array($column['nodes']) ? array_values($column['nodes']) : [];
 
 				foreach ($schema['sections'][$section_index]['columns'][$column_index]['nodes'] as $node_index => $node) {
@@ -437,11 +456,32 @@ class modelLandingbuilder extends cmsModel {
 					if (empty($node['label'])) {
 						$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['label'] = $page_key . '.node.' . ($node_index + 1);
 					}
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['class_name'] = isset($node['class_name']) ? $node['class_name'] : '';
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['notes'] = isset($node['notes']) ? $node['notes'] : '';
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['source_key'] = isset($node['source_key']) ? $node['source_key'] : '';
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['device_visibility'] = isset($node['device_visibility']) && is_array($node['device_visibility']) ? array_merge($this->getDefaultVisibility(), $node['device_visibility']) : $this->getDefaultVisibility();
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['options'] = isset($node['options']) && is_array($node['options']) ? $node['options'] : [];
 				}
 			}
 		}
 
 		return $schema;
+	}
+
+	protected function getDefaultVisibility() {
+		return [
+			'desktop' => true,
+			'tablet'  => true,
+			'mobile'  => true
+		];
+	}
+
+	protected function getDefaultColumnWidths() {
+		return [
+			'desktop' => 'auto',
+			'tablet'  => 'auto',
+			'mobile'  => 'auto'
+		];
 	}
 
 	protected function getPageWidgetNodes($page_id, array $schema) {

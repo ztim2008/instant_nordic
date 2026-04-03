@@ -197,3 +197,29 @@
 	- frontend preview/runtime-рендер builder pages еще не реализован.
 - Следующий шаг:
 	- связать сохраненный canvas document с frontend/template runtime и начать реальный page adapter/render pipeline.
+
+### 2026-04-03 / drag-and-drop и расширенный inspector canvas
+
+- Что планировалось:
+	- довести backend canvas до более взрослого состояния: полноценное перемещение секций и node-элементов, а также убрать зависимость от prompt-редактирования в inspector.
+- Что сделано:
+	- `normalizeSchema()` в model расширен значениями по умолчанию для visibility, widths, settings и node meta-полей;
+	- admincoreui canvas переведен на нативный drag-and-drop для секций и node между колонками;
+	- правый inspector переведен на структурированное редактирование section/column/node свойств без prompt-диалогов;
+	- в canvas добавлена device-aware индикация скрытых элементов для текущего breakpoint;
+	- installable package синхронизирован по актуальным копиям model и admincoreui canvas template.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` проходит на model и admincoreui canvas template;
+	- Problems panel не показывает новых ошибок в измененных исходниках;
+	- package mirror обновлен после изменения исходников.
+- Какие риски остались:
+	- default backend template пока не доведен до того же UX-уровня, что и admincoreui;
+	- frontend runtime и page adapters еще не используют сохраненный canvas schema;
+	- drag-and-drop проверен на уровне структуры и синтаксиса, но еще не проходил отдельный ручной smoke-test в браузере.
+- Следующий шаг:
+	- подключить сохраненный canvas schema к frontend runtime, затем собрать первый рабочий page adapter pipeline для режимов участия страницы.

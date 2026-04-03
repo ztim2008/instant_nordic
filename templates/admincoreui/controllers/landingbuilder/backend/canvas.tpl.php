@@ -35,6 +35,24 @@ $canvas_state = [
 ];
 
 ?>
+<style>
+    .lb-section[draggable="true"],
+    .lb-node[draggable="true"] {
+        cursor: move;
+    }
+
+    .lb-dragging {
+        opacity: 0.45;
+    }
+
+    .lb-drop-target {
+        box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.45) inset;
+    }
+
+    .lb-muted-device {
+        opacity: 0.55;
+    }
+</style>
 <div class="card mb-4">
     <div class="card-body d-flex justify-content-between align-items-start flex-wrap">
         <div>
@@ -90,7 +108,7 @@ $canvas_state = [
             </div>
             <div class="card-body" id="lb-canvas-root"></div>
             <div class="card-footer bg-white border-top-0">
-                <div class="small text-muted">Выдели колонку и затем вставь block или system widget из левой библиотеки.</div>
+                <div class="small text-muted">Выдели колонку и вставляй элементы слева. Секции и узлы можно перетаскивать мышью между позициями и колонками.</div>
             </div>
         </div>
     </div>
@@ -136,10 +154,14 @@ $canvas_state = [
             {label: 'ads.category-header'},
             {label: 'profile.cover-hero'}
         ];
+        const layoutOptions = ['1col', '2col_equal', '2col_sidebar_left', '2col_sidebar_right', '3col_equal'];
+        const columnWidthOptions = ['auto', '12', '8', '6', '4', '3'];
 
         state.widgetsCatalog = {};
         state.activeDevice = state.screen.devices[0] || 'desktop';
         state.selection = null;
+        state.drag = null;
+        state.schema = normalizeSchema(state.schema || {sections: []});
 
         const canvasRoot = document.getElementById('lb-canvas-root');
         const blockList = document.getElementById('lb-block-list');
@@ -153,6 +175,73 @@ $canvas_state = [
         const versionNote = document.getElementById('lb-version-note');
         const pageMeta = document.getElementById('lb-page-meta');
         const canvasStatus = document.getElementById('lb-canvas-status');
+
+        function defaultVisibility() {
+            const visibility = {desktop: true, mobile: true};
+            if (state.screen.devices.indexOf('tablet') !== -1) {
+                visibility.tablet = true;
+            }
+            return visibility;
+        }
+
+        function defaultColumnWidth() {
+            const width = {desktop: 'auto', mobile: 'auto'};
+            if (state.screen.devices.indexOf('tablet') !== -1) {
+                width.tablet = 'auto';
+            }
+            return width;
+        }
+
+        function normalizeSchema(schema) {
+            const next = Object.assign({sections: []}, schema || {});
+            next.sections = Array.isArray(next.sections) ? next.sections.map(function (section, sectionIndex) {
+                return normalizeSection(section, sectionIndex);
+            }) : [];
+            return next;
+        }
+
+        function normalizeSection(section, sectionIndex) {
+            const next = Object.assign({}, section || {});
+            next.uid = next.uid || uid('section');
+            next.title = next.title || ('Секция ' + ((sectionIndex || 0) + 1));
+            next.layout = next.layout || '1col';
+            next.visibility = Object.assign(defaultVisibility(), next.visibility || {});
+            next.settings = Object.assign({background_class: '', padding: 'md', css_class: ''}, next.settings || {});
+            next.columns = Array.isArray(next.columns) ? next.columns.map(function (column, columnIndex) {
+                return normalizeColumn(column, next.uid, columnIndex);
+            }) : [];
+            syncSectionColumnsWithLayout(next);
+            return next;
+        }
+
+        function normalizeColumn(column, sectionUid, columnIndex) {
+            const next = Object.assign({}, column || {});
+            next.uid = next.uid || (sectionUid + '-column-' + (columnIndex + 1));
+            next.title = next.title || ('Колонка ' + (columnIndex + 1));
+            next.visibility = Object.assign(defaultVisibility(), next.visibility || {});
+            next.width = Object.assign(defaultColumnWidth(), next.width || {});
+            next.settings = Object.assign({align: 'stretch', css_class: ''}, next.settings || {});
+            next.nodes = Array.isArray(next.nodes) ? next.nodes.map(function (node, nodeIndex) {
+                return normalizeNode(node, next.uid, nodeIndex);
+            }) : [];
+            return next;
+        }
+
+        function normalizeNode(node, columnUid, nodeIndex) {
+            const next = Object.assign({}, node || {});
+            next.uid = next.uid || (columnUid + '-node-' + (nodeIndex + 1));
+            next.type = next.type || 'block';
+            next.label = next.label || ('node.' + (nodeIndex + 1));
+            next.class_name = next.class_name || '';
+            next.notes = next.notes || '';
+            next.source_key = next.source_key || '';
+            next.device_visibility = Object.assign(defaultVisibility(), next.device_visibility || {});
+            next.options = (next.options && typeof next.options === 'object') ? next.options : {};
+            next.widget_id = Number(next.widget_id || 0);
+            next.widget_name = next.widget_name || '';
+            next.widget_controller = next.widget_controller || '';
+            return next;
+        }
 
         function escapeHtml(value) {
             return String(value)
@@ -171,6 +260,110 @@ $canvas_state = [
                 return 'col-md-6';
             }
             return 'col-md-4';
+        }
+
+        function isVisibleOnDevice(visibility) {
+            if (!visibility || typeof visibility !== 'object') {
+                return true;
+            }
+            return visibility[state.activeDevice] !== false;
+        }
+
+        function getLayoutColumnCount(layout) {
+            if (layout === '1col') {
+                return 1;
+            }
+            if (layout.indexOf('3col') === 0) {
+                return 3;
+            }
+            return 2;
+        }
+
+        function syncSectionColumnsWithLayout(section) {
+            const required = getLayoutColumnCount(section.layout);
+            section.columns = Array.isArray(section.columns) ? section.columns : [];
+
+            while (section.columns.length < required) {
+                section.columns.push(normalizeColumn({title: 'Колонка ' + (section.columns.length + 1)}, section.uid, section.columns.length));
+            }
+
+            if (section.columns.length > required) {
+                const overflow = section.columns.splice(required);
+                overflow.forEach(function (column) {
+                    if (column && Array.isArray(column.nodes)) {
+                        section.columns[required - 1].nodes = section.columns[required - 1].nodes.concat(column.nodes);
+                    }
+                });
+            }
+
+            section.columns = section.columns.map(function (column, columnIndex) {
+                return normalizeColumn(column, section.uid, columnIndex);
+            });
+        }
+
+        function moveArrayItem(items, fromIndex, toIndex) {
+            const list = items.slice();
+            const chunk = list.splice(fromIndex, 1);
+            if (!chunk.length) {
+                return list;
+            }
+            list.splice(toIndex, 0, chunk[0]);
+            return list;
+        }
+
+        function setDeepValue(target, path, value) {
+            const parts = path.split('.');
+            let current = target;
+
+            for (let index = 0; index < parts.length - 1; index += 1) {
+                if (!current[parts[index]] || typeof current[parts[index]] !== 'object') {
+                    current[parts[index]] = {};
+                }
+                current = current[parts[index]];
+            }
+
+            current[parts[parts.length - 1]] = value;
+        }
+
+        function getSelectionTarget() {
+            if (!state.selection) {
+                return null;
+            }
+
+            if (state.selection.type === 'section') {
+                return state.schema.sections[state.selection.sectionIndex] || null;
+            }
+
+            if (state.selection.type === 'column') {
+                return getSelectedColumn();
+            }
+
+            return getSelectedNode();
+        }
+
+        function renderVisibilityControls(pathBase, visibility) {
+            return state.screen.devices.map(function (device) {
+                const inputId = 'lb-' + pathBase.replace(/\./g, '-') + '-' + device;
+                return '' +
+                    '<div class="form-check form-check-inline mr-2">' +
+                        '<input class="form-check-input" type="checkbox" id="' + inputId + '" data-field="' + pathBase + '.' + device + '"' + (visibility[device] !== false ? ' checked' : '') + '>' +
+                        '<label class="form-check-label small" for="' + inputId + '">' + escapeHtml(device) + '</label>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderWidthControls(width) {
+            return state.screen.devices.map(function (device) {
+                return '' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Ширина ' + escapeHtml(device) + '</label>' +
+                        '<select class="form-control form-control-sm" data-field="width.' + device + '">' +
+                            columnWidthOptions.map(function (option) {
+                                return '<option value="' + option + '"' + (String(width[device] || 'auto') === option ? ' selected' : '') + '>' + option + '</option>';
+                            }).join('') +
+                        '</select>' +
+                    '</div>';
+            }).join('');
         }
 
         function ensureSelection() {
@@ -219,15 +412,12 @@ $canvas_state = [
                 return;
             }
 
-            const form = widgetForm.querySelector('form');
-            if (!form) {
+            if (!widgetForm) {
                 return;
             }
-
-            const formData = new FormData(form);
             const options = {};
 
-            form.querySelectorAll('input, select, textarea').forEach(function (element) {
+            widgetForm.querySelectorAll('input, select, textarea').forEach(function (element) {
                 if (!element.name) {
                     return;
                 }
@@ -236,8 +426,22 @@ $canvas_state = [
                     return;
                 }
 
-                const values = formData.getAll(element.name);
-                options[element.name] = values.length > 1 ? values : values[0];
+                if (element.tagName === 'SELECT' && element.multiple) {
+                    options[element.name] = Array.from(element.selectedOptions).map(function (option) {
+                        return option.value;
+                    });
+                    return;
+                }
+
+                if (element.type === 'checkbox') {
+                    if (!Array.isArray(options[element.name])) {
+                        options[element.name] = [];
+                    }
+                    options[element.name].push(element.value || '1');
+                    return;
+                }
+
+                options[element.name] = element.value;
             });
 
             node.options = options;
@@ -284,38 +488,47 @@ $canvas_state = [
             }
 
             canvasRoot.innerHTML = state.schema.sections.map(function (section, sectionIndex) {
+                const sectionVisible = isVisibleOnDevice(section.visibility);
                 return '' +
-                    '<div class="border rounded p-3 mb-3 lb-section' + (state.selection && state.selection.sectionIndex === sectionIndex ? ' border-primary' : '') + '" data-role="section" data-section-index="' + sectionIndex + '">' +
+                    '<div class="border rounded p-3 mb-3 lb-section' + (state.selection && state.selection.sectionIndex === sectionIndex ? ' border-primary' : '') + (!sectionVisible ? ' lb-muted-device' : '') + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
                         '<div class="d-flex justify-content-between align-items-center mb-3">' +
                             '<div>' +
-                                '<strong>' + escapeHtml(section.title) + '</strong>' +
-                                '<div class="small text-muted">Layout: ' + escapeHtml(section.layout) + '</div>' +
+                                '<div class="d-flex align-items-center">' +
+                                    '<strong>' + escapeHtml(section.title) + '</strong>' +
+                                    '<span class="badge badge-light ml-2">drag</span>' +
+                                    (!sectionVisible ? '<span class="badge badge-warning ml-2">hidden on ' + escapeHtml(state.activeDevice) + '</span>' : '') +
+                                '</div>' +
+                                '<div class="small text-muted">Layout: ' + escapeHtml(section.layout) + (section.settings.background_class ? ' | bg: ' + escapeHtml(section.settings.background_class) : '') + '</div>' +
                             '</div>' +
                             '<div class="btn-group btn-group-sm">' +
-                                '<button type="button" class="btn btn-outline-secondary" data-action="rename-section" data-section-index="' + sectionIndex + '">Переименовать</button>' +
-                                '<button type="button" class="btn btn-outline-secondary" data-action="change-layout" data-section-index="' + sectionIndex + '">Layout</button>' +
                                 '<button type="button" class="btn btn-outline-danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
                             '</div>' +
                         '</div>' +
                         '<div class="row">' +
                             section.columns.map(function (column, columnIndex) {
+                                const columnVisible = isVisibleOnDevice(column.visibility);
                                 return '' +
                                     '<div class="' + sectionColumnClass(section.columns.length) + ' mb-3">' +
-                                        '<div class="border rounded p-2 h-100 bg-light lb-column' + (state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? ' border-primary' : '') + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
+                                        '<div class="border rounded p-2 h-100 bg-light lb-column' + (state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? ' border-primary' : '') + (!columnVisible ? ' lb-muted-device' : '') + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
                                             '<div class="d-flex justify-content-between align-items-center mb-2">' +
                                                 '<div class="small font-weight-bold">' + escapeHtml(column.title) + '</div>' +
-                                                '<button type="button" class="btn btn-link btn-sm p-0" data-action="rename-column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">имя</button>' +
+                                                '<div class="small text-muted">w:' + escapeHtml(column.width[state.activeDevice] || 'auto') + '</div>' +
                                             '</div>' +
-                                            '<div class="small text-muted mb-2">Кликни для выбора колонки, затем вставляй элементы слева.</div>' +
+                                            '<div class="small text-muted mb-2">Кликни для выбора колонки. Drop сюда переносит node в конец.</div>' +
                                             '<div>' +
                                                 column.nodes.map(function (node, nodeIndex) {
+                                                    const nodeVisible = isVisibleOnDevice(node.device_visibility);
                                                     return '' +
-                                                        '<div class="border rounded bg-white p-2 mb-2 lb-node' + (state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? ' border-primary' : '') + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">' +
+                                                        '<div class="border rounded bg-white p-2 mb-2 lb-node' + (state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? ' border-primary' : '') + (!nodeVisible ? ' lb-muted-device' : '') + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
                                                             '<div class="d-flex justify-content-between align-items-center mb-1">' +
                                                                 '<div class="small text-muted text-uppercase">' + escapeHtml(node.type) + '</div>' +
                                                                 '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
                                                             '</div>' +
-                                                            '<div>' + escapeHtml(node.label) + '</div>' +
+                                                            '<div class="d-flex align-items-center justify-content-between">' +
+                                                                '<div>' + escapeHtml(node.label) + '</div>' +
+                                                                '<span class="badge badge-light ml-2">drag</span>' +
+                                                            '</div>' +
+                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'class: ' + escapeHtml(node.class_name) : 'без class') + (!nodeVisible ? ' | hidden on ' + escapeHtml(state.activeDevice) : '') + '</div>' +
                                                         '</div>';
                                                 }).join('') +
                                             '</div>' +
@@ -342,21 +555,63 @@ $canvas_state = [
 
             if (selection.type === 'section') {
                 const section = state.schema.sections[selection.sectionIndex];
-                selectionSummary.textContent = 'Секция: ' + section.title;
+                selectionSummary.innerHTML = '<strong>Секция</strong><br><span class="text-muted">' + escapeHtml(section.title) + '</span>';
                 selectionControls.innerHTML = '' +
-                    '<div class="small text-muted mb-1">Быстрые действия секции</div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary mr-2" data-action="rename-section" data-section-index="' + selection.sectionIndex + '">Переименовать</button>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="change-layout" data-section-index="' + selection.sectionIndex + '">Сменить layout</button>';
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Название секции</label>' +
+                        '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(section.title) + '">' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Layout</label>' +
+                        '<select class="form-control form-control-sm" data-field="layout">' +
+                            layoutOptions.map(function (option) {
+                                return '<option value="' + option + '"' + (section.layout === option ? ' selected' : '') + '>' + option + '</option>';
+                            }).join('') +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Background class</label>' +
+                        '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                        '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
+                    '</div>' +
+                    '<div class="form-group mb-3">' +
+                        '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                        renderVisibilityControls('visibility', section.visibility) +
+                    '</div>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-section" data-section-index="' + selection.sectionIndex + '">Удалить секцию</button>';
                 widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
                 return;
             }
 
             if (selection.type === 'column') {
                 const column = getSelectedColumn();
-                selectionSummary.textContent = column ? 'Колонка: ' + column.title : 'Колонка';
+                selectionSummary.innerHTML = '<strong>Колонка</strong><br><span class="text-muted">' + escapeHtml(column ? column.title : 'Колонка') + '</span>';
                 selectionControls.innerHTML = '' +
-                    '<div class="small text-muted mb-1">В эту колонку можно вставлять block и system widget из левой панели.</div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="rename-column" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '">Переименовать колонку</button>';
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Название колонки</label>' +
+                        '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(column.title) + '">' +
+                    '</div>' +
+                    renderWidthControls(column.width) +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Align</label>' +
+                        '<select class="form-control form-control-sm" data-field="settings.align">' +
+                            ['stretch', 'start', 'center', 'end'].map(function (option) {
+                                return '<option value="' + option + '"' + (column.settings.align === option ? ' selected' : '') + '>' + option + '</option>';
+                            }).join('') +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                        '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                        renderVisibilityControls('visibility', column.visibility) +
+                    '</div>' +
+                    '<div class="small text-muted">В эту колонку можно перетаскивать блоки и widgets из других колонок.</div>';
                 widgetForm.innerHTML = 'Выбери widget-узел, чтобы загрузить штатную форму InstantCMS.';
                 return;
             }
@@ -373,9 +628,24 @@ $canvas_state = [
             selectionControls.innerHTML = '' +
                 '<div class="form-group mb-2">' +
                     '<label class="small text-muted d-block mb-1">Label</label>' +
-                    '<input type="text" class="form-control form-control-sm" id="lb-node-label" value="' + escapeHtml(node.label) + '">' +
+                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(node.label) + '">' +
                 '</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-secondary mr-2" id="lb-apply-node-label">Применить label</button>' +
+                '<div class="form-group mb-2">' +
+                    '<label class="small text-muted d-block mb-1">CSS class</label>' +
+                    '<input type="text" class="form-control form-control-sm" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
+                '</div>' +
+                '<div class="form-group mb-2">' +
+                    '<label class="small text-muted d-block mb-1">Source key</label>' +
+                    '<input type="text" class="form-control form-control-sm" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
+                '</div>' +
+                '<div class="form-group mb-2">' +
+                    '<label class="small text-muted d-block mb-1">Заметки</label>' +
+                    '<textarea class="form-control form-control-sm" rows="3" data-field="notes">' + escapeHtml(node.notes || '') + '</textarea>' +
+                '</div>' +
+                '<div class="form-group mb-2">' +
+                    '<label class="small text-muted d-block mb-1">Visibility</label>' +
+                    renderVisibilityControls('device_visibility', node.device_visibility) +
+                '</div>' +
                 '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-node" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '" data-node-index="' + selection.nodeIndex + '">Удалить node</button>';
 
             if (node.type === 'system_widget' && node.widget_id) {
@@ -480,6 +750,52 @@ $canvas_state = [
             widgetForm.innerHTML = result.html;
         }
 
+        function moveSection(fromIndex, targetIndex) {
+            if (fromIndex === targetIndex || fromIndex < 0 || targetIndex < 0) {
+                return;
+            }
+
+            const toIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+            state.schema.sections = moveArrayItem(state.schema.sections, fromIndex, toIndex);
+            state.selection = {type: 'section', sectionIndex: toIndex};
+        }
+
+        function moveNode(fromSectionIndex, fromColumnIndex, fromNodeIndex, toSectionIndex, toColumnIndex, toNodeIndex) {
+            const sourceSection = state.schema.sections[fromSectionIndex];
+            const targetSection = state.schema.sections[toSectionIndex];
+
+            if (!sourceSection || !targetSection) {
+                return;
+            }
+
+            const sourceColumn = sourceSection.columns[fromColumnIndex];
+            const targetColumn = targetSection.columns[toColumnIndex];
+
+            if (!sourceColumn || !targetColumn) {
+                return;
+            }
+
+            const movedNodes = sourceColumn.nodes.splice(fromNodeIndex, 1);
+            if (!movedNodes.length) {
+                return;
+            }
+
+            const node = movedNodes[0];
+            let insertIndex = typeof toNodeIndex === 'number' ? toNodeIndex : targetColumn.nodes.length;
+
+            if (sourceColumn === targetColumn && fromNodeIndex < insertIndex) {
+                insertIndex -= 1;
+            }
+
+            targetColumn.nodes.splice(insertIndex, 0, node);
+            state.selection = {
+                type: 'node',
+                sectionIndex: toSectionIndex,
+                columnIndex: toColumnIndex,
+                nodeIndex: insertIndex
+            };
+        }
+
         function setSelection(selection) {
             syncSelectedWidgetFormIntoState();
             state.selection = selection;
@@ -509,6 +825,8 @@ $canvas_state = [
                 uid: sectionUid,
                 title: title,
                 layout: layout,
+                visibility: defaultVisibility(),
+                settings: {background_class: '', padding: 'md', css_class: ''},
                 columns: columns
             });
 
@@ -530,7 +848,12 @@ $canvas_state = [
             column.nodes.push({
                 uid: uid('node'),
                 type: 'block',
-                label: block.label
+                label: block.label,
+                class_name: '',
+                notes: '',
+                source_key: '',
+                device_visibility: defaultVisibility(),
+                options: {}
             });
 
             setSelection({
@@ -575,7 +898,10 @@ $canvas_state = [
                 widget_name: widget.name,
                 widget_controller: widget.controller,
                 options: {},
-                device_visibility: {}
+                device_visibility: defaultVisibility(),
+                class_name: '',
+                notes: '',
+                source_key: ''
             });
 
             setSelection({
@@ -617,6 +943,24 @@ $canvas_state = [
             versionNote.value = '';
             await loadVersions();
             renderCanvas();
+        }
+
+        function clearDropTargets() {
+            canvasRoot.querySelectorAll('.lb-drop-target').forEach(function (element) {
+                element.classList.remove('lb-drop-target');
+            });
+        }
+
+        function getDropElement(event) {
+            if (!state.drag) {
+                return null;
+            }
+
+            if (state.drag.type === 'section') {
+                return event.target.closest('[data-role="section"]');
+            }
+
+            return event.target.closest('[data-role="node"], [data-role="column"]');
         }
 
         async function restoreVersion(versionId) {
@@ -692,19 +1036,32 @@ $canvas_state = [
             });
         });
 
+        selectionControls.addEventListener('change', function (event) {
+            const field = event.target.closest('[data-field]');
+            if (!field) {
+                return;
+            }
+
+            const target = getSelectionTarget();
+            if (!target) {
+                return;
+            }
+
+            syncSelectedWidgetFormIntoState();
+
+            const value = field.type === 'checkbox' ? field.checked : field.value;
+            setDeepValue(target, field.dataset.field, value);
+
+            if (state.selection && state.selection.type === 'section' && field.dataset.field === 'layout') {
+                syncSectionColumnsWithLayout(target);
+            }
+
+            renderCanvas();
+        });
+
         function handleActionTarget(actionTarget) {
             if (!actionTarget) {
                 return false;
-            }
-
-            if (actionTarget.id === 'lb-apply-node-label') {
-                const input = document.getElementById('lb-node-label');
-                const node = getSelectedNode();
-                if (input && node) {
-                    node.label = input.value.trim() || node.label;
-                    renderCanvas();
-                }
-                return true;
             }
 
             const sectionIndex = Number(actionTarget.dataset.sectionIndex);
@@ -712,38 +1069,9 @@ $canvas_state = [
             const nodeIndex = Number(actionTarget.dataset.nodeIndex);
             const action = actionTarget.dataset.action;
 
-            if (action === 'rename-section') {
-                const section = state.schema.sections[sectionIndex];
-                const title = window.prompt('Название секции', section.title);
-                if (title) {
-                    section.title = title;
-                    renderCanvas();
-                }
-                return true;
-            }
-
-            if (action === 'change-layout') {
-                const section = state.schema.sections[sectionIndex];
-                const layout = window.prompt('Layout секции', section.layout);
-                if (layout) {
-                    section.layout = layout;
-                    renderCanvas();
-                }
-                return true;
-            }
-
-            if (action === 'rename-column') {
-                const column = state.schema.sections[sectionIndex].columns[columnIndex];
-                const title = window.prompt('Название колонки', column.title);
-                if (title) {
-                    column.title = title;
-                    renderCanvas();
-                }
-                return true;
-            }
-
             if (action === 'delete-section') {
                 if (window.confirm('Удалить секцию?')) {
+                    syncSelectedWidgetFormIntoState();
                     state.schema.sections.splice(sectionIndex, 1);
                     state.selection = null;
                     renderCanvas();
@@ -753,6 +1081,7 @@ $canvas_state = [
 
             if (action === 'delete-node') {
                 if (window.confirm('Удалить node?')) {
+                    syncSelectedWidgetFormIntoState();
                     state.schema.sections[sectionIndex].columns[columnIndex].nodes.splice(nodeIndex, 1);
                     state.selection = null;
                     renderCanvas();
@@ -764,10 +1093,124 @@ $canvas_state = [
         }
 
         selectionControls.addEventListener('click', function (event) {
-            const actionTarget = event.target.closest('[data-action], #lb-apply-node-label');
+            const actionTarget = event.target.closest('[data-action]');
             if (handleActionTarget(actionTarget)) {
                 event.preventDefault();
             }
+        });
+
+        canvasRoot.addEventListener('dragstart', function (event) {
+            const target = event.target.closest('[data-drag-kind]');
+            if (!target) {
+                return;
+            }
+
+            syncSelectedWidgetFormIntoState();
+
+            if (target.dataset.dragKind === 'section') {
+                state.drag = {
+                    type: 'section',
+                    sectionIndex: Number(target.dataset.sectionIndex)
+                };
+            }
+
+            if (target.dataset.dragKind === 'node') {
+                state.drag = {
+                    type: 'node',
+                    sectionIndex: Number(target.dataset.sectionIndex),
+                    columnIndex: Number(target.dataset.columnIndex),
+                    nodeIndex: Number(target.dataset.nodeIndex)
+                };
+            }
+
+            target.classList.add('lb-dragging');
+
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', target.dataset.dragKind || 'drag');
+            }
+        });
+
+        canvasRoot.addEventListener('dragend', function () {
+            state.drag = null;
+            clearDropTargets();
+            canvasRoot.querySelectorAll('.lb-dragging').forEach(function (element) {
+                element.classList.remove('lb-dragging');
+            });
+        });
+
+        canvasRoot.addEventListener('dragover', function (event) {
+            const target = getDropElement(event);
+
+            if (!target && state.drag && state.drag.type === 'section') {
+                event.preventDefault();
+                clearDropTargets();
+                return;
+            }
+
+            if (!target) {
+                return;
+            }
+
+            event.preventDefault();
+            clearDropTargets();
+            target.classList.add('lb-drop-target');
+        });
+
+        canvasRoot.addEventListener('drop', function (event) {
+            if (!state.drag) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const target = getDropElement(event);
+
+            if (state.drag.type === 'section') {
+                if (target) {
+                    moveSection(state.drag.sectionIndex, Number(target.dataset.sectionIndex));
+                } else {
+                    const fromIndex = state.drag.sectionIndex;
+                    const lastIndex = state.schema.sections.length - 1;
+                    if (fromIndex !== lastIndex) {
+                        state.schema.sections = moveArrayItem(state.schema.sections, fromIndex, lastIndex);
+                        state.selection = {type: 'section', sectionIndex: lastIndex};
+                    }
+                }
+
+                renderCanvas();
+                clearDropTargets();
+                return;
+            }
+
+            if (!target) {
+                clearDropTargets();
+                return;
+            }
+
+            if (target.dataset.role === 'column') {
+                moveNode(
+                    state.drag.sectionIndex,
+                    state.drag.columnIndex,
+                    state.drag.nodeIndex,
+                    Number(target.dataset.sectionIndex),
+                    Number(target.dataset.columnIndex)
+                );
+            }
+
+            if (target.dataset.role === 'node') {
+                moveNode(
+                    state.drag.sectionIndex,
+                    state.drag.columnIndex,
+                    state.drag.nodeIndex,
+                    Number(target.dataset.sectionIndex),
+                    Number(target.dataset.columnIndex),
+                    Number(target.dataset.nodeIndex)
+                );
+            }
+
+            renderCanvas();
+            clearDropTargets();
         });
 
         canvasRoot.addEventListener('click', function (event) {
