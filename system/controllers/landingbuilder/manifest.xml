@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon>
+    <name>landingbuilder</name>
+    <title>Нордик: Landing Builder</title>
+    <description>Визуальный конструктор лендингов и гибридных страниц для InstantCMS 2.</description>
+    <version>0.1.0</version>
+    <build>1</build>
+    <author>
+        <name>Нордик</name>
+        <url>https://nordic-builder.store</url>
+        <email></email>
+    </author>
+    <dependencies>
+    </dependencies>
+    <hooks>
+    </hooks>
+</addon>
