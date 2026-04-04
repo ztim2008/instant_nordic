@@ -1,0 +1,268 @@
+@import url("../../modern/css/theme.css");
+
+:root {
+    --nordic-bg: #ede6d8;
+    --nordic-bg-soft: #f7f3ea;
+    --nordic-surface: rgba(255, 251, 245, 0.84);
+    --nordic-surface-strong: rgba(255, 251, 245, 0.94);
+    --nordic-ink: #23312c;
+    --nordic-muted: #66746d;
+    --nordic-accent: #9f6c42;
+    --nordic-accent-strong: #80502f;
+    --nordic-line: rgba(35, 49, 44, 0.12);
+    --nordic-shadow: 0 24px 80px rgba(35, 49, 44, 0.12);
+}
+
+html.nordic-html,
+body.nordic-template {
+    background:
+        radial-gradient(circle at top left, rgba(159, 108, 66, 0.16), transparent 26%),
+        radial-gradient(circle at top right, rgba(35, 49, 44, 0.12), transparent 24%),
+        linear-gradient(180deg, #f8f4ec 0%, var(--nordic-bg) 56%, #e6dece 100%);
+    color: var(--nordic-ink);
+}
+
+body.nordic-template {
+    font-feature-settings: "kern" 1;
+}
+
+.nordic-skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 2000;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    background: var(--nordic-ink);
+    color: #fff;
+    transition: top 0.2s ease;
+}
+
+.nordic-skip-link:focus {
+    top: 1rem;
+    color: #fff;
+}
+
+.nordic-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.nordic-shell__notice,
+.nordic-shell__slot-panel,
+.nordic-shell__content-frame {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    background: var(--nordic-surface);
+    border: 1px solid var(--nordic-line);
+    border-radius: 28px;
+    box-shadow: var(--nordic-shadow);
+    backdrop-filter: blur(18px);
+}
+
+.nordic-shell__notice {
+    padding: 1rem 1.25rem;
+    background: rgba(128, 80, 47, 0.14);
+    color: var(--nordic-accent-strong);
+}
+
+.nordic-shell__slot-panel {
+    padding: 0.75rem 1rem;
+}
+
+.nordic-shell__header .nordic-shell__slot-panel,
+.nordic-shell__footer .nordic-shell__slot-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.nordic-shell__header-primary .nordic-shell__slot,
+.nordic-shell__footer-primary .nordic-shell__slot,
+.nordic-shell__header-secondary .nordic-shell__slot,
+.nordic-shell__footer-secondary .nordic-shell__slot,
+.nordic-shell__site-top .nordic-shell__slot,
+.nordic-shell__hero .nordic-shell__slot,
+.nordic-shell__before-content .nordic-shell__slot,
+.nordic-shell__after-content .nordic-shell__slot {
+    padding: 1rem 1.25rem;
+}
+
+.nordic-shell__header-primary .nordic-shell__slot:not(:last-child),
+.nordic-shell__header-secondary .nordic-shell__slot:not(:last-child),
+.nordic-shell__footer-primary .nordic-shell__slot:not(:last-child),
+.nordic-shell__footer-secondary .nordic-shell__slot:not(:last-child) {
+    border-bottom: 1px solid var(--nordic-line);
+}
+
+.nordic-shell__header-primary .nordic-shell__slot-panel {
+    background: linear-gradient(135deg, rgba(35, 49, 44, 0.92), rgba(72, 90, 83, 0.9));
+    color: #f7f3ea;
+}
+
+.nordic-shell__header-secondary .nordic-shell__slot-panel,
+.nordic-shell__site-top .nordic-shell__slot-panel {
+    background: rgba(255, 251, 245, 0.72);
+}
+
+.nordic-shell__hero .nordic-shell__slot-panel {
+    background:
+        linear-gradient(140deg, rgba(35, 49, 44, 0.94), rgba(159, 108, 66, 0.78)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    color: #fff8ef;
+}
+
+.nordic-shell__main {
+    flex: 1 1 auto;
+}
+
+.nordic-shell__content-frame {
+    padding: 1.25rem;
+    background:
+        linear-gradient(180deg, var(--nordic-surface-strong), rgba(255, 251, 245, 0.84));
+}
+
+.nordic-shell__content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+}
+
+.nordic-shell__content-grid--with-left {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+}
+
+.nordic-shell__content-grid--with-right {
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 280px);
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(220px, 260px);
+}
+
+.nordic-shell__content-sidebar,
+.nordic-shell__content-body-slot {
+    min-width: 0;
+}
+
+.nordic-shell__content-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nordic-shell__content-body-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nordic-shell__content-body-widgets {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nordic-shell__content-body-runtime {
+    min-width: 0;
+}
+
+.nordic-shell__content-frame .container,
+.nordic-shell__content-frame .container-fluid,
+.nordic-shell__slot-panel .container,
+.nordic-shell__slot-panel .container-fluid {
+    max-width: 1240px;
+}
+
+.nordic-shell .card,
+.nordic-shell .icms-widget.card {
+    border: 1px solid rgba(35, 49, 44, 0.08);
+    border-radius: 22px;
+    box-shadow: 0 10px 30px rgba(35, 49, 44, 0.06);
+}
+
+.nordic-shell .btn-primary,
+.nordic-shell .badge-primary,
+.nordic-shell .nav-pills .nav-link.active {
+    background-color: var(--nordic-accent);
+    border-color: var(--nordic-accent);
+}
+
+.nordic-shell .btn-primary:hover,
+.nordic-shell .btn-primary:focus,
+.nordic-shell .badge-primary:hover,
+.nordic-shell .nav-pills .nav-link.active:hover {
+    background-color: var(--nordic-accent-strong);
+    border-color: var(--nordic-accent-strong);
+}
+
+.nordic-shell a,
+.nordic-shell .text-primary,
+.nordic-shell .navbar-light .navbar-brand,
+.nordic-shell .navbar-light .navbar-nav .show > .nav-link,
+.nordic-shell .navbar-light .navbar-nav .active > .nav-link,
+.nordic-shell .navbar-light .navbar-nav .nav-link.active {
+    color: var(--nordic-accent);
+}
+
+.nordic-shell .navbar .form-control:focus,
+.nordic-shell .nav-tabs .nav-link.active::before,
+.nordic-shell .icms-navbar .nav-link.active::before {
+    box-shadow: inset 0 -2px 0 var(--nordic-accent);
+    background-color: var(--nordic-accent);
+}
+
+.nordic-shell .info_bar,
+.nordic-shell .icms-comment-html,
+.nordic-shell .list-group-item,
+.nordic-shell .table,
+.nordic-shell .dropdown-menu {
+    background-color: rgba(255, 251, 245, 0.92);
+}
+
+.nordic-shell__footer-primary .nordic-shell__slot-panel,
+.nordic-shell__footer-secondary .nordic-shell__slot-panel {
+    background: linear-gradient(180deg, rgba(35, 49, 44, 0.94), rgba(24, 35, 31, 0.98));
+    color: rgba(255, 248, 239, 0.86);
+}
+
+.nordic-shell__footer-primary a,
+.nordic-shell__footer-secondary a,
+.nordic-shell__header-primary a,
+.nordic-shell__hero a {
+    color: inherit;
+}
+
+@media (max-width: 991.98px) {
+    .nordic-shell {
+        padding: 0.75rem;
+    }
+
+    .nordic-shell__notice,
+    .nordic-shell__slot-panel,
+    .nordic-shell__content-frame {
+        border-radius: 22px;
+    }
+
+    .nordic-shell__header-primary .nordic-shell__slot,
+    .nordic-shell__footer-primary .nordic-shell__slot,
+    .nordic-shell__header-secondary .nordic-shell__slot,
+    .nordic-shell__footer-secondary .nordic-shell__slot,
+    .nordic-shell__site-top .nordic-shell__slot,
+    .nordic-shell__hero .nordic-shell__slot,
+    .nordic-shell__before-content .nordic-shell__slot,
+    .nordic-shell__after-content .nordic-shell__slot,
+    .nordic-shell__content-frame {
+        padding: 1rem;
+    }
+
+    .nordic-shell__content-grid,
+    .nordic-shell__content-grid--with-left,
+    .nordic-shell__content-grid--with-right,
+    .nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

@@ -144,17 +144,32 @@
     "h1": "Summer Sale"
   },
   "layout": {
+    "template": "nordic",
     "width_mode": "contained",
     "header_mode": "theme",
-    "footer_mode": "theme"
+    "footer_mode": "theme",
+    "content_slot": "content_body"
   },
+  "shell_slots": [
+    "site_top",
+    "header_primary",
+    "header_secondary",
+    "hero",
+    "before_content",
+    "content_body",
+    "content_sidebar_left",
+    "content_sidebar_right",
+    "after_content",
+    "footer_primary",
+    "footer_secondary"
+  ],
   "tokens": {
     "preset_inherit": true,
     "overrides": {}
   },
   "zones": [
     {
-      "zone_key": "main",
+      "zone_key": "content_body",
       "title": "Main canvas",
       "sections": [
         {
@@ -215,9 +230,35 @@
 - `kind`: только `landingbuilder.page`
 - `page_type`: `standalone`, `system_overlay`, `ctype_overlay`
 - `editor_mode`: `canvas`, `overlay`
+- `layout.template`: для текущей взрослой версии `nordic`
 - `layout.width_mode`: `contained`, `wide`, `full`
 - `layout.header_mode`: `theme`, `hidden`, `custom`
 - `layout.footer_mode`: `theme`, `hidden`, `custom`
+- `layout.content_slot`: для shell Нордик базовое значение `content_body`
+
+### 4.4.1. Shell slots и zone keys для Нордик
+
+Для шаблона `nordic` page schema должна уметь явно описывать, в какой shell slot попадает системное или builder-содержимое.
+
+Минимальный канонический набор `shell_slots`:
+
+1. `site_top`
+2. `header_primary`
+3. `header_secondary`
+4. `hero`
+5. `before_content`
+6. `content_body`
+7. `content_sidebar_left`
+8. `content_sidebar_right`
+9. `after_content`
+10. `footer_primary`
+11. `footer_secondary`
+
+Практическое правило первой версии:
+
+1. для `standalone_landing` основной builder zone по умолчанию это `content_body`;
+2. для overlay-страниц нативное системное содержимое тоже маппится в `content_body`;
+3. legacy-ключи `main`, `native_content` и `sidebar` считаются миграционными и в runtime нормализуются в `content_body` или `content_sidebar_right`.
 
 ### 4.5. Структура `zones`
 
@@ -281,6 +322,22 @@
 ```
 
 Поле `blocks` можно сохранить как короткую форму только для простых single-column секций или для миграций ранних версий.
+
+Дополнительно section рекомендуется хранить `zone_key`, совпадающий с shell slot или runtime zone:
+
+```json
+{
+  "id": "sec_body_001",
+  "kind": "section",
+  "zone_key": "content_body",
+  "section_type": "content-grid",
+  "props": {},
+  "layout": {
+    "preset": "3col_equal"
+  },
+  "columns": []
+}
+```
 
 ### 4.5.2. Contract: `node instance`
 
@@ -395,7 +452,7 @@
   "supports": {
     "modes": ["manual", "dynamic"],
     "page_types": ["standalone", "system_overlay", "ctype_overlay"],
-    "zones": ["main", "hero", "before_content", "after_content"],
+    "zones": ["content_body", "hero", "before_content", "after_content", "content_sidebar_right"],
     "repeatable": true,
     "canvas_node_kinds": ["block"]
   },

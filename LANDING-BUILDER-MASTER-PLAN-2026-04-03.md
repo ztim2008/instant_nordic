@@ -115,7 +115,7 @@
 
 ### 4. Frontend template skeleton `nordic`
 
-Статус: ⚪ Не начато
+Статус: 🔵 В работе
 
 - Что входит:
   - отдельный template package
@@ -123,6 +123,15 @@
   - базовый shell template
   - регистрация как selectable default template в InstantCMS settings
   - опора на `modern` как reference или base
+
+- Готово:
+  - добавлен runtime scaffold шаблона `templates/nordic`
+  - добавлен пакет-зеркало `packages/nordic`
+  - добавлен стартовый shell со слотами `site_top`, `header_primary`, `header_secondary`, `hero`, `before_content`, `after_content`, `footer_primary`, `footer_secondary`
+  - добавлен дефолтный theme config `theme_nordic.yml`
+
+- Следующий результат:
+  - встроить явный `content_body` contract поверх shell slots и связать его с runtime `landingbuilder`
 
 - Связанные документы:
   - [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)

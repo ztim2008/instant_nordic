@@ -280,6 +280,7 @@ class modelLandingbuilder extends cmsModel {
 
 		return [
 			'adapter'     => $adapter,
+			'shell'       => $this->buildRuntimeShell($page, $adapter),
 			'page_type'   => $page['page_type'],
 			'zones'       => $this->buildRuntimeZones($page, $adapter),
 			'widget_map'  => $this->getPageWidgetMap($page)
@@ -293,15 +294,16 @@ class modelLandingbuilder extends cmsModel {
 				'key'                  => 'standalone_landing',
 				'title'                => 'Самостоятельная landing-страница',
 				'description'          => 'Полностью своя страница, собранная из секций конструктора.',
-				'shell'                => 'standalone',
-				'default_zone'         => 'main',
+				'shell'                => 'nordic',
+				'default_zone'         => 'content_body',
 				'native_content_label' => '',
 				'zones'                => [
 					[
-						'key'         => 'main',
-						'title'       => 'Основное полотно страницы',
+						'key'         => 'content_body',
+						'slot_key'    => 'content_body',
+						'title'       => 'Основное содержимое страницы',
 						'kind'        => 'builder',
-						'description' => 'В этой зоне конструктор полностью управляет содержимым страницы.'
+						'description' => 'В этой зоне конструктор управляет основным содержимым внутри shell шаблона nordic.'
 					]
 				]
 			],
@@ -315,24 +317,28 @@ class modelLandingbuilder extends cmsModel {
 				'zones'                => [
 					[
 						'key'         => 'before_content',
+						'slot_key'    => 'before_content',
 						'title'       => 'Над основным списком',
 						'kind'        => 'builder',
 						'description' => 'Подходит для шапки категории, фильтров и промо-блоков.'
 					],
 					[
-						'key'         => 'native_content',
+						'key'         => 'content_body',
+						'slot_key'    => 'content_body',
 						'title'       => 'Системное содержимое страницы',
 						'kind'        => 'native',
-						'description' => 'Эта зона остается под управлением стандартного шаблона InstantCMS.'
+						'description' => 'Эта зона занимает slot content_body и остается под управлением стандартной страницы InstantCMS.'
 					],
 					[
-						'key'         => 'sidebar',
+						'key'         => 'content_sidebar_right',
+						'slot_key'    => 'content_sidebar_right',
 						'title'       => 'Боковая колонка',
 						'kind'        => 'builder',
-						'description' => 'Сюда удобно выводить дополнительные виджеты и короткие блоки.'
+						'description' => 'Сюда удобно выводить дополнительные виджеты и короткие блоки рядом с основным content_body.'
 					],
 					[
 						'key'         => 'after_content',
+						'slot_key'    => 'after_content',
 						'title'       => 'Под основным списком',
 						'kind'        => 'builder',
 						'description' => 'Нижняя зона для CTA, подборок и связанных блоков.'
@@ -349,18 +355,21 @@ class modelLandingbuilder extends cmsModel {
 				'zones'                => [
 					[
 						'key'         => 'hero',
+						'slot_key'    => 'hero',
 						'title'       => 'Верхняя зона профиля',
 						'kind'        => 'builder',
 						'description' => 'Подходит для обложки, приветственного блока или важного акцента.'
 					],
 					[
-						'key'         => 'native_content',
+						'key'         => 'content_body',
+						'slot_key'    => 'content_body',
 						'title'       => 'Системное содержимое профиля',
 						'kind'        => 'native',
-						'description' => 'Эта зона остается под управлением штатного профиля InstantCMS.'
+						'description' => 'Эта зона занимает slot content_body и остается под управлением штатного профиля InstantCMS.'
 					],
 					[
 						'key'         => 'after_content',
+						'slot_key'    => 'after_content',
 						'title'       => 'Под профилем',
 						'kind'        => 'builder',
 						'description' => 'Зона для дополнительных карточек, CTA и связанных блоков.'
@@ -473,9 +482,12 @@ class modelLandingbuilder extends cmsModel {
 		$default_zone_key = $this->getDefaultZoneKey($page);
 
 		foreach ($schema['sections'] as $section_index => $section) {
-			$schema['sections'][$section_index]['zone_key'] = !empty($section['zone_key'])
+			$zone_key = !empty($section['zone_key'])
 				? $section['zone_key']
 				: (!empty($section['settings']['zone_key']) ? $section['settings']['zone_key'] : $default_zone_key);
+
+			$schema['sections'][$section_index]['zone_key'] = $this->normalizeRuntimeZoneKey($zone_key);
+			$schema['sections'][$section_index]['slot_key'] = $schema['sections'][$section_index]['zone_key'];
 
 			foreach ($schema['sections'][$section_index]['columns'] as $column_index => $column) {
 				foreach ($schema['sections'][$section_index]['columns'][$column_index]['nodes'] as $node_index => $node) {
@@ -518,16 +530,20 @@ class modelLandingbuilder extends cmsModel {
 		$zones = [];
 
 		foreach ($adapter['zones'] as $zone) {
+			$zone['key'] = $this->normalizeRuntimeZoneKey($zone['key']);
+			$zone['slot_key'] = $this->normalizeRuntimeZoneKey($zone['slot_key'] ?? $zone['key']);
 			$zone['sections'] = [];
 			$zones[$zone['key']] = $zone;
 		}
 
 		foreach ($page['schema']['sections'] as $section) {
 			$zone_key = !empty($section['zone_key']) ? $section['zone_key'] : $adapter['default_zone'];
+			$zone_key = $this->normalizeRuntimeZoneKey($zone_key);
 
 			if (!isset($zones[$zone_key])) {
 				$zones[$zone_key] = [
 					'key'         => $zone_key,
+					'slot_key'    => $zone_key,
 					'title'       => $zone_key,
 					'kind'        => 'builder',
 					'description' => '',
@@ -541,12 +557,28 @@ class modelLandingbuilder extends cmsModel {
 		return array_values($zones);
 	}
 
+	protected function buildRuntimeShell(array $page, array $adapter) {
+
+		$layout = isset($page['schema']['layout']) && is_array($page['schema']['layout']) ? $page['schema']['layout'] : [];
+
+		return [
+			'template'     => !empty($page['template']) ? $page['template'] : 'nordic',
+			'name'         => $adapter['shell'] ?? 'nordic',
+			'content_slot' => $this->normalizeRuntimeZoneKey($layout['content_slot'] ?? 'content_body'),
+			'slots'        => $this->normalizeShellSlots(isset($page['schema']['shell_slots']) && is_array($page['schema']['shell_slots']) ? $page['schema']['shell_slots'] : [])
+		];
+	}
+
 	protected function getDefaultZoneKey(array $page) {
 
 		$adapter_key = $this->resolveAdapterKey($page);
 		$adapter = $this->getAdapterDefinition($adapter_key);
 
-		return $adapter['default_zone'];
+		if ($adapter_key === 'standalone_landing' && !empty($page['schema']['layout']['content_slot'])) {
+			return $this->normalizeRuntimeZoneKey($page['schema']['layout']['content_slot']);
+		}
+
+		return $this->normalizeRuntimeZoneKey($adapter['default_zone']);
 	}
 
 	protected function getPageWidgetMap(array $page) {
@@ -720,6 +752,23 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function normalizeSchema(array $schema, $page_key) {
 
+		$schema['schema_version'] = !empty($schema['schema_version']) ? (string) $schema['schema_version'] : '1.0';
+		$schema['layout'] = isset($schema['layout']) && is_array($schema['layout']) ? array_merge([
+			'template'     => 'nordic',
+			'width_mode'   => 'contained',
+			'header_mode'  => 'theme',
+			'footer_mode'  => 'theme',
+			'content_slot' => 'content_body'
+		], $schema['layout']) : [
+			'template'     => 'nordic',
+			'width_mode'   => 'contained',
+			'header_mode'  => 'theme',
+			'footer_mode'  => 'theme',
+			'content_slot' => 'content_body'
+		];
+		$schema['layout']['content_slot'] = $this->normalizeRuntimeZoneKey($schema['layout']['content_slot']);
+		$schema['shell_slots'] = $this->normalizeShellSlots(isset($schema['shell_slots']) && is_array($schema['shell_slots']) ? $schema['shell_slots'] : []);
+
 		$schema['sections'] = isset($schema['sections']) && is_array($schema['sections']) ? array_values($schema['sections']) : [];
 
 		foreach ($schema['sections'] as $section_index => $section) {
@@ -788,6 +837,57 @@ class modelLandingbuilder extends cmsModel {
 			'tablet'  => 'auto',
 			'mobile'  => 'auto'
 		];
+	}
+
+	protected function getDefaultShellSlots() {
+		return [
+			'site_top',
+			'header_primary',
+			'header_secondary',
+			'hero',
+			'before_content',
+			'content_body',
+			'content_sidebar_left',
+			'content_sidebar_right',
+			'after_content',
+			'footer_primary',
+			'footer_secondary'
+		];
+	}
+
+	protected function normalizeShellSlots(array $slots) {
+
+		if (!$slots) {
+			return $this->getDefaultShellSlots();
+		}
+
+		$normalized = [];
+
+		foreach ($slots as $slot) {
+			$slot = $this->normalizeRuntimeZoneKey($slot);
+			if (!$slot || in_array($slot, $normalized, true)) {
+				continue;
+			}
+			$normalized[] = $slot;
+		}
+
+		return $normalized ?: $this->getDefaultShellSlots();
+	}
+
+	protected function normalizeRuntimeZoneKey($zone_key) {
+
+		$zone_key = trim((string) $zone_key);
+		if ($zone_key === '') {
+			return 'content_body';
+		}
+
+		$legacy_map = [
+			'main'           => 'content_body',
+			'native_content' => 'content_body',
+			'sidebar'        => 'content_sidebar_right'
+		];
+
+		return $legacy_map[$zone_key] ?? $zone_key;
 	}
 
 	protected function getPageWidgetNodes($page_id, array $schema) {

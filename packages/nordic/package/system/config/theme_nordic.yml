@@ -1,0 +1,99 @@
+---
+owner_name: ""
+owner_url: ""
+owner_year: ""
+show_top_btn: 1
+show_cookiealert: 1
+cookiealert_text: >
+  Продолжая пользоваться сайтом,
+  вы соглашаетесь с использованием
+  файлов cookie для стабильной работы
+  и персонализации интерфейса.
+scss:
+  enable-rounded: 1
+  border-radius: 1rem
+  border-radius-lg: 1.5rem
+  border-radius-sm: .65rem
+  enable-shadows: 1
+  enable-gradients: null
+  enable-responsive-font-sizes: 1
+  enable-modal-blur: 1
+  grid-gutter-width: 32px
+  font-size-base: 1rem
+  spacer: 1rem
+  avatar-inlist-size: 64px
+  body-bg: $white
+  body-color: $gray-800
+  link-color: $orange
+  header-bg: $gray-800
+  header-color: $white
+  footer-bg: $gray-900
+  footer-color: $gray-300
+  primary: $orange
+  secondary: $gray-700
+  success: $green
+  info: $teal
+  warning: $yellow
+  danger: $red
+  light: $gray-100
+  dark: $gray-900
+  white: '#fffbf5'
+  gray-100: '#f7f3ea'
+  gray-200: '#ede6d8'
+  gray-300: '#d9d0bf'
+  gray-400: '#bcb09b'
+  gray-500: '#988d7d'
+  gray-600: '#6f685f'
+  gray-700: '#485a53'
+  gray-800: '#23312c'
+  gray-900: '#18231f'
+  black: '#101715'
+  blue: '#4f7fa6'
+  indigo: '#687792'
+  purple: '#847269'
+  pink: '#c58b8b'
+  red: '#bf5c4e'
+  orange: '#9f6c42'
+  yellow: '#d4a45d'
+  green: '#4c8761'
+  teal: '#5d9c90'
+  cyan: '#70a9b0'
+body_classes: nordic-template
+font_type: gfont
+font_string: >
+  "Alegreya Sans", -apple-system,
+  BlinkMacSystemFont, "Segoe UI",
+  sans-serif
+gfont: Alegreya+Sans
+pagination_template: pagination
+js_print_head: null
+logo: null
+logo_svg: null
+logo_small: null
+logo_small_svg: null
+favicon: null
+head_html_top: ""
+favicon_head_html: ""
+custom_scss:
+  body-bg: ""
+  body-color: ""
+  link-color: ""
+  header-bg: ""
+  header-color: ""
+  footer-bg: ""
+  footer-color: ""
+  primary: ""
+  secondary: ""
+  success: ""
+  info: ""
+  warning: ""
+  danger: ""
+  light: ""
+  dark: ""
+vars:
+  1:
+    name: dropdown-item-padding-x
+    value: 1rem
+  2:
+    name: label-margin-bottom
+    value: .35rem

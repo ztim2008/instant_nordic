@@ -15,6 +15,12 @@
 
 ## 2026-04-03
 
+- Стартовала отдельная template-ветка `nordic`:
+	- добавлен runtime scaffold `templates/nordic` с отдельным `main.tpl.php`, `manifest.php`, `options.form.php` и собственным `theme.css`;
+	- добавлен стартовый shell со слотами `site_top`, `header_primary`, `header_secondary`, `hero`, `before_content`, `after_content`, `footer_primary`, `footer_secondary`;
+	- добавлен дефолтный theme config `system/config/theme_nordic.yml`;
+	- добавлен package mirror `packages/nordic` для install/update discipline шаблона.
+
 - Что планировалось:
 	- развернуть проектную основу, распаковать docs pack и упорядочить ТЗ по Landing Builder.
 - Что сделано:
