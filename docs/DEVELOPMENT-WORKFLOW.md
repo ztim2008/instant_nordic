@@ -24,8 +24,17 @@
 - `system/controllers/landingbuilder`
 - `templates/admincoreui/controllers/landingbuilder`
 - `templates/default/controllers/landingbuilder`
+- `templates/nordic`
+- `packages/nordic/package`
 - `packages/landingbuilder/package`
 - `packages/landingbuilder/install.sql`
+
+## PHP CLI для этого репозитория
+
+- Боевой сайт `nordic-builder.store` обслуживается через отдельный apache/php84 stack, а не через системный `php` 8.1.
+- Для CLI-проверок, bootstrap-скриптов и ad-hoc команд по проекту использовать `/opt/php84/bin/php`.
+- Системный `php` и `php8.1` на сервере не подходят для bootstrap этого репозитория: на них отсутствует `mbstring`, и `require 'bootstrap.php'` падает на `mb_internal_encoding()`.
+- Если нужна одноразовая проверка runtime-контекста из shell, использовать форму: `/opt/php84/bin/php -r 'require "bootstrap.php"; /* code */'`.
 
 ## Git-правила
 

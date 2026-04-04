@@ -45,3 +45,8 @@
 3. Для `Нордик` использовать runtime-first режим: сначала правки в рабочем InstantCMS-контуре, затем синхронизация `packages/landingbuilder/package/` на каждом стабильном шаге.
 4. Обновлять docs при каждом изменении архитектуры, процесса или контракта.
 5. Если меняется блок Landing Builder, обновлять [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
+
+## CLI примечание
+
+- Для shell-команд по этому проекту использовать `/opt/php84/bin/php`, потому что боевой домен работает через php84 stack.
+- Системный `php` 8.1 на этом сервере не проходит `bootstrap.php` из-за отсутствующего `mbstring`.

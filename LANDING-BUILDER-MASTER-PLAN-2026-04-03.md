@@ -129,9 +129,13 @@
   - добавлен пакет-зеркало `packages/nordic`
   - добавлен стартовый shell со слотами `site_top`, `header_primary`, `header_secondary`, `hero`, `before_content`, `after_content`, `footer_primary`, `footer_secondary`
   - добавлен дефолтный theme config `theme_nordic.yml`
+  - `content_body` закреплен как канонический runtime slot для standalone pages и native system content
+  - page contracts расширены под `shell_slots`, `layout.content_slot` и legacy migration keys
+  - выполнен временный smoke-test с переключением сайта на `nordic` и проверкой живых страниц
 
 - Следующий результат:
-  - встроить явный `content_body` contract поверх shell slots и связать его с runtime `landingbuilder`
+  - перевести legacy widget positions из схемы `modern` в осмысленные shell positions `nordic`
+  - вынести header/footer/body зоны из fallback-схемы в собственную layout scheme шаблона `nordic`
 
 - Связанные документы:
   - [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)

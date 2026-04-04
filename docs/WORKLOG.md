@@ -15,6 +15,22 @@
 
 ## 2026-04-03
 
+- Связка `content_body` доведена до рабочего контура:
+	- runtime `landingbuilder` теперь нормализует legacy zone keys `main`, `native_content`, `sidebar` в `content_body` и `content_sidebar_right`;
+	- standalone pages по умолчанию маппятся в `content_body`;
+	- page contracts расширены под `layout.content_slot` и `shell_slots`.
+
+- Проведен временный smoke-test переключения сайта на `nordic`:
+	- перед тестом создан checkpoint `snapshot/20260404-093842`;
+	- для честного теста в БД скопированы `layout_rows`, `layout_cols` и `widgets_bind_pages` из `modern` в `nordic`;
+	- главная и `/board` успешно отдали `nordic-shell` и `data-slot="content_body"`;
+	- после теста активный шаблон возвращен на `modern`.
+
+- Вывод по widget positions после smoke-test:
+	- у `nordic` пока используются legacy-позиции из `modern` (`pos_8`, `pos_9`, `con_header` и др.);
+	- собственные shell positions `header_primary`, `content_body`, `footer_primary` еще не стали основной bind-схемой;
+	- следующий этап: вынести layout scheme `nordic` из fallback-совместимости в собственную карту позиций.
+
 - Стартовала отдельная template-ветка `nordic`:
 	- добавлен runtime scaffold `templates/nordic` с отдельным `main.tpl.php`, `manifest.php`, `options.form.php` и собственным `theme.css`;
 	- добавлен стартовый shell со слотами `site_top`, `header_primary`, `header_secondary`, `hero`, `before_content`, `after_content`, `footer_primary`, `footer_secondary`;
