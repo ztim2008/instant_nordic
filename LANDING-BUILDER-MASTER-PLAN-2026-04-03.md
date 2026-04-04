@@ -14,7 +14,7 @@
 - Рабочее техническое имя компонента: `landingbuilder`
 - Рабочее техническое имя frontend template: `nordic`
 - Development base в этом репозитории: `instantcms-mcp-main`
-- Итоговый продукт: component + template + installer + update mechanism
+- Итоговый продукт: component + template + design system + installer + update mechanism
 
 ## Легенда статусов
 
@@ -28,17 +28,26 @@
 ## Порядок чтения документов
 
 1. [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-2. [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+2. [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
 3. [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
 4. [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
 5. [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
 6. [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
 7. [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
 8. [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
-9. [LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md](LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md)
-10. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
-11. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
-12. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
+9. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
+10. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
+11. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
+
+## Актуальное архитектурное решение 2026-04-04
+
+После анализа подхода `inthemer` и собственного целевого UX зафиксировано следующее:
+
+1. Overlay-путь поверх существующих шаблонов остается важным как режим миграции, но не считается единственной архитектурой продукта.
+2. Целевой продукт Нордик строится как связка отдельного компонента `landingbuilder` и отдельного frontend template `nordic`.
+3. Внутри продукта должен существовать отдельный слой global theme settings и design system tokens.
+4. `modern` остается reference и временным migration path, но не основной shell целевого продукта.
+5. Следующий крупный этап после стабилизации overlay-режима это skeleton шаблона `nordic` и управляемых theme slots.
 
 ## Главный трек работ
 

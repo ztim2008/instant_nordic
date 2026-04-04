@@ -12,7 +12,7 @@
 ## Навигация
 
 - Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-- Индекс документов: [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+- Архитектурный центр: [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
 - Следующий основной документ: [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
 
 ## Продуктовая рамка
@@ -43,7 +43,9 @@
 - шаблоны контроллеров и widget overrides;
 - SCSS middleware и theme options.
 
-Поэтому здесь правильнее думать не как о простом редакторе темы, а как о новом конструкторе страниц, встроенном в экосистему InstantCMS и использующем тему `modern` как базу рендера и дизайна.
+Поэтому здесь правильнее думать не как о простом редакторе темы, а как о собственном theme system продукте внутри InstantCMS.
+
+`modern` в этой модели нужен как reference и migration path, а не как единственный конечный shell.
 
 ## 2. Цель проекта
 
@@ -62,7 +64,8 @@
 - делать не просто правку темы `modern`;
 - делать отдельный устанавливаемый компонент-конструктор;
 - делать отдельный frontend template `nordic`, который выбирается в настройках сайта как шаблон по умолчанию;
-- использовать `modern` как reference и базу для наследования архитектурных решений шаблона;
+- делать внутри продукта отдельный слой global theme settings и design system tokens;
+- использовать `modern` как reference и migration path, а не как основной shell целевого продукта;
 - не использовать текущую админскую сетку rows/cols/widgets как конечный интерфейс пользователя;
 - сразу закладывать расширяемую систему блоков, которые могут поставляться отдельно от ядра конструктора.
 
@@ -70,8 +73,9 @@
 
 - core = отдельный installable component;
 - template = отдельный frontend template `nordic`;
+- theme system = отдельный слой глобальных design tokens и shell slots;
 - editor = часть компонента;
-- rendering = внутри продукта Нордик, с опорой на `modern`;
+- rendering = внутри продукта Нордик, с полным режимом через `nordic` и режимом миграции через overlay;
 - блоки = отдельная библиотека секций и partial templates;
 - data binding = через типы контента, категории, query collections, route context и ручные данные;
 - block packs = отдельные расширения, совместимые с ядром конструктора.

@@ -2,7 +2,7 @@
 
 ## Цель
 
-Собрать и развивать проект Nordic Builder Store как рабочую площадку для реализации Landing Builder поверх InstantCMS.
+Собрать и развивать проект Nordic Builder Store как рабочую площадку для реализации Нордик как полноценной theme system для InstantCMS.
 
 Публичное имя конструктора в проекте: `Нордик`.
 Рабочее техническое имя компонента: `landingbuilder`.
@@ -21,6 +21,7 @@
 1. Основная dev-база разработки в этом workspace: [instantcms-mcp-main](../instantcms-mcp-main).
 2. Итоговый продукт должен включать не только компонент, но и install/update pipeline.
 3. Итоговый продукт должен включать frontend template `nordic`, который будет виден в настройках сайта как шаблон по умолчанию.
+4. Целевая архитектура продукта: `landingbuilder` + `nordic` + встроенная дизайн-система + режим постепенной миграции через overlay.
 
 ## Главный принцип
 
@@ -34,7 +35,8 @@
 2. Для правил работы в текущем репозитории: документы в `docs/`.
 3. Для поведения AI-агента: [AGENTS.md](../AGENTS.md) и [.github/copilot-instructions.md](../.github/copilot-instructions.md).
 4. Для фактического маршрута работ: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md).
+5. Для новой целевой модели template + design system: [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](../LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md).
 
 ## Ближайший этап
 
-Сначала создать skeleton компонента `landingbuilder` внутри InstantCMS, затем завести SQL-модель и backend CRUD, и только после этого переходить к editor UI.
+Сначала довести безопасный regression overlay-режима, затем перейти к template skeleton `nordic`, global theme tokens и управляемым shell slots отдельной темы.

@@ -52,7 +52,7 @@
 	- roadmap и master plan пересобраны под hybrid-модель component + template.
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](../LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
 	- [LANDING-BUILDER-ROADMAP-2026-04-03.md](../LANDING-BUILDER-ROADMAP-2026-04-03.md)
 	- [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](../LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
 - Что проверено:
@@ -75,7 +75,7 @@
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](../LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
 	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](../LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
 	- [LANDING-BUILDER-ROADMAP-2026-04-03.md](../LANDING-BUILDER-ROADMAP-2026-04-03.md)
 	- [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](../LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
 	- [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](../LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
@@ -102,7 +102,7 @@
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](../LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
 	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](../LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
 	- [LANDING-BUILDER-ROADMAP-2026-04-03.md](../LANDING-BUILDER-ROADMAP-2026-04-03.md)
 	- [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](../LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
 - Что проверено:
@@ -118,13 +118,13 @@
 - Что планировалось:
 	- сделать короткий ориентир по одному главному экрану редактора, чтобы перед кодом было видно весь UX целиком.
 - Что сделано:
-	- добавлена шпаргалка [LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md](../LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md);
+	- добавлена шпаргалка [LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md);
 	- зафиксированы 4 зоны экрана: верхняя панель, левая библиотека, центральный холст, правый inspector;
 	- отдельно зафиксирован MVP-набор: секции, колонки, device toggles, builder blocks и system widgets на одном экране.
 - Какие файлы затронуты:
-	- [LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md](../LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md)
+	- [LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-CANVAS-UX-CHEATSHEET-2026-04-03.md)
 	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](../LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
+	- [LANDING-BUILDER-DOCS-PACK-2026-04-03.md](archive/landingbuilder-2026-04-04/LANDING-BUILDER-DOCS-PACK-2026-04-03.md)
 	- [docs/WORKLOG.md](WORKLOG.md)
 - Что проверено:
 	- порядок чтения docs обновлен под быстрый UX-ориентир.
@@ -354,3 +354,60 @@
 	- не трогать одновременно overlay, data-resolver и массовую локализацию новых экранов в одном заходе.
 - Цель следующей сессии:
 	- получить первый рабочий сценарий, где builder влияет уже не только на предпросмотр, а на реальную системную страницу сайта в контролируемой зоне.
+
+### 2026-04-04 / первая живая интеграция в системную страницу
+
+- Что планировалось:
+	- выбрать один безопасный реальный сценарий и провести `landingbuilder` из preview-маршрута в живую страницу сайта без тотального takeover шаблона.
+- Что сделано:
+	- в качестве первой живой цели выбрана страница категории объявлений `ads-category`;
+	- checkpoint через полный pre-change script уперся в отказ `mysqldump`, поэтому как рабочая точка отката создан git snapshot `snapshot/20260404-083022`;
+	- в `modelLandingbuilder` добавлены helper-методы для controlled overlay-интеграции category page;
+	- добавлен hook `process_render_content_category_view`, который подмешивает builder HTML в block-позиции `before_content_items_list_html` и `after_content_items_list_html` без правки активного шаблона сайта;
+	- после первого запуска исправлен контракт hook: `process_render_*` в InstantCMS передает один payload-массив, а не три отдельных аргумента;
+	- исправлен маппинг реального content type проекта: для объявлений здесь используется `board`, поэтому `ads-category` теперь резолвится от `ctype board`, а не от `ads`;
+	- добавлен reusable partial `overlay_zone.tpl.php` для живого рендера секций и системных widgets в overlay-зонах;
+	- hook зарегистрирован в таблице событий InstantCMS;
+	- package mirror синхронизирован сразу вместе с runtime-исходниками.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/hooks/process_render_content_category_view.php](../system/controllers/landingbuilder/hooks/process_render_content_category_view.php)
+	- [templates/default/controllers/landingbuilder/overlay_zone.tpl.php](../templates/default/controllers/landingbuilder/overlay_zone.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/hooks/process_render_content_category_view.php](../packages/landingbuilder/package/system/controllers/landingbuilder/hooks/process_render_content_category_view.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/overlay_zone.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/overlay_zone.tpl.php)
+- Что проверено:
+	- `php -l` проходит на новых и измененных source/package PHP-файлах;
+	- Problems panel не показывает новых ошибок в исходниках `landingbuilder`;
+	- запись `landingbuilder:process_render_content_category_view` подтверждена в таблице событий;
+	- страница `ads-category` подтверждена в БД как `prototype` + `hybrid_overlay`.
+- Какие риски остались:
+	- текущая живая интеграция для `ads-category` из-за статуса `prototype` видна только администратору;
+	- на этом шаге реально подключены зоны `before_content` и `after_content`, а не полный sidebar/overlay-контур;
+	- полный browser regression живой страницы еще нужно пройти из админ-сессии.
+- Следующий шаг:
+	- зайти в живую страницу категории объявлений под администратором и проверить полный цикл: overlay на странице, save, version restore, preview, затем решить публиковать ли `ads-category` шире или расширять интеграцию на следующую зону.
+
+### 2026-04-04 / архитектурная очистка документации
+
+- Что планировалось:
+	- привести документацию к взрослой и устойчивой схеме после пересмотра архитектуры Нордик как отдельной системы темы, а не только overlay-конструктора.
+- Что сделано:
+	- добавлен новый канонический документ [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](../LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md);
+	- обновлены опорные документы [README.md](../README.md), [docs/PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md), [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md), [LANDING-BUILDER-ROADMAP-2026-04-03.md](../LANDING-BUILDER-ROADMAP-2026-04-03.md);
+	- из канонического набора исключены промежуточные документы `DOCS-PACK` и `CANVAS-UX-CHEATSHEET`;
+	- для архивных документов добавлен индекс [docs/archive/landingbuilder-2026-04-04/README.md](archive/landingbuilder-2026-04-04/README.md).
+- Какие файлы затронуты:
+	- [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](../LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
+	- [README.md](../README.md)
+	- [docs/PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md)
+	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+	- [LANDING-BUILDER-ROADMAP-2026-04-03.md](../LANDING-BUILDER-ROADMAP-2026-04-03.md)
+	- [docs/archive/landingbuilder-2026-04-04/README.md](archive/landingbuilder-2026-04-04/README.md)
+- Что проверено:
+	- архитектурный фокус документов теперь совпадает с новой целевой моделью: `landingbuilder` + `nordic` + design system + migration mode;
+	- канонический список документов сокращен и больше не смешивает мастер-спеки с временными шпаргалками.
+- Какие риски остались:
+	- часть более глубоких технических спецификаций еще сохраняет старую терминологию и будет постепенно выравниваться под новую модель по мере реализации template layer и theme tokens.
+- Следующий шаг:
+	- физически перенести промежуточные документы в архив и затем расширить contracts под global theme settings и shell slots.

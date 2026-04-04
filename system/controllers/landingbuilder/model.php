@@ -42,6 +42,28 @@ class modelLandingbuilder extends cmsModel {
 		return $page;
 	}
 
+	public function getContentCategoryOverlay(array $ctype, array $category = [], $is_admin = false) {
+
+		$page_key = $this->resolveContentCategoryPageKey($ctype, $category);
+		if (!$page_key) {
+			return false;
+		}
+
+		$page = $this->getPageByKey($page_key);
+		if (!$page || !$this->canRenderOverlayPage($page, $is_admin)) {
+			return false;
+		}
+
+		$runtime = $this->getRuntimePage($page);
+
+		return [
+			'page_key' => $page_key,
+			'page'     => $page,
+			'runtime'  => $runtime,
+			'zones'    => $this->indexRuntimeZones($runtime['zones'] ?? [])
+		];
+	}
+
 	public function createPage(array $data, $user_id = 0) {
 
 		if (!$this->hasInstalledSchema()) {
@@ -369,6 +391,48 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		return $definitions[$adapter_key];
+	}
+
+	protected function resolveContentCategoryPageKey(array $ctype, array $category = []) {
+
+		if (empty($category['id'])) {
+			return '';
+		}
+
+		$ctype_name = (string) ($ctype['name'] ?? '');
+
+		$page_key_map = [
+			'board' => 'ads-category',
+			'ads'   => 'ads-category'
+		];
+
+		return $page_key_map[$ctype_name] ?? '';
+	}
+
+	protected function canRenderOverlayPage(array $page, $is_admin = false) {
+
+		$status = $page['status'] ?? 'draft';
+
+		if ($status === 'published') {
+			return true;
+		}
+
+		return (bool) $is_admin;
+	}
+
+	protected function indexRuntimeZones(array $zones) {
+
+		$indexed = [];
+
+		foreach ($zones as $zone) {
+			if (empty($zone['key'])) {
+				continue;
+			}
+
+			$indexed[$zone['key']] = $zone;
+		}
+
+		return $indexed;
 	}
 
 	protected function resolveAdapterKey(array $page) {
