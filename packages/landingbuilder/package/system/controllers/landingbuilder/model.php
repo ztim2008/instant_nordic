@@ -560,12 +560,15 @@ class modelLandingbuilder extends cmsModel {
 	protected function buildRuntimeShell(array $page, array $adapter) {
 
 		$layout = isset($page['schema']['layout']) && is_array($page['schema']['layout']) ? $page['schema']['layout'] : [];
+		$slot_positions = $this->getNordicShellSlotPositions();
 
 		return [
 			'template'     => !empty($page['template']) ? $page['template'] : 'nordic',
 			'name'         => $adapter['shell'] ?? 'nordic',
+			'scheme'       => !empty($layout['scheme']) ? (string) $layout['scheme'] : $this->getNordicShellSchemeKey(),
 			'content_slot' => $this->normalizeRuntimeZoneKey($layout['content_slot'] ?? 'content_body'),
-			'slots'        => $this->normalizeShellSlots(isset($page['schema']['shell_slots']) && is_array($page['schema']['shell_slots']) ? $page['schema']['shell_slots'] : [])
+			'slots'        => $this->normalizeShellSlots(isset($page['schema']['shell_slots']) && is_array($page['schema']['shell_slots']) ? $page['schema']['shell_slots'] : []),
+			'slot_positions' => $slot_positions
 		];
 	}
 
@@ -755,17 +758,20 @@ class modelLandingbuilder extends cmsModel {
 		$schema['schema_version'] = !empty($schema['schema_version']) ? (string) $schema['schema_version'] : '1.0';
 		$schema['layout'] = isset($schema['layout']) && is_array($schema['layout']) ? array_merge([
 			'template'     => 'nordic',
+			'scheme'       => $this->getNordicShellSchemeKey(),
 			'width_mode'   => 'contained',
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'content_slot' => 'content_body'
 		], $schema['layout']) : [
 			'template'     => 'nordic',
+			'scheme'       => $this->getNordicShellSchemeKey(),
 			'width_mode'   => 'contained',
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'content_slot' => 'content_body'
 		];
+		$schema['layout']['scheme'] = !empty($schema['layout']['scheme']) ? (string) $schema['layout']['scheme'] : $this->getNordicShellSchemeKey();
 		$schema['layout']['content_slot'] = $this->normalizeRuntimeZoneKey($schema['layout']['content_slot']);
 		$schema['shell_slots'] = $this->normalizeShellSlots(isset($schema['shell_slots']) && is_array($schema['shell_slots']) ? $schema['shell_slots'] : []);
 
@@ -839,7 +845,7 @@ class modelLandingbuilder extends cmsModel {
 		];
 	}
 
-	protected function getDefaultShellSlots() {
+	protected function getFallbackShellSlots() {
 		return [
 			'site_top',
 			'header_primary',
@@ -853,6 +859,65 @@ class modelLandingbuilder extends cmsModel {
 			'footer_primary',
 			'footer_secondary'
 		];
+	}
+
+	protected function getNordicShellScheme() {
+
+		static $scheme = null;
+
+		if ($scheme !== null) {
+			return $scheme;
+		}
+
+		$file = cmsConfig::get('root_path') . 'templates/nordic/shell_scheme.php';
+
+		if (is_readable($file)) {
+			$loaded = include $file;
+			if (is_array($loaded)) {
+				$scheme = $loaded;
+				return $scheme;
+			}
+		}
+
+		$scheme = [
+			'key' => 'nordic_shell_v1',
+			'slot_positions' => [],
+			'reserved_positions' => array_merge($this->getFallbackShellSlots(), ['top', 'header', 'footer'])
+		];
+
+		foreach ($this->getFallbackShellSlots() as $slot) {
+			$scheme['slot_positions'][$slot] = [$slot];
+		}
+
+		return $scheme;
+	}
+
+	protected function getNordicShellSchemeKey() {
+
+		$scheme = $this->getNordicShellScheme();
+
+		return !empty($scheme['key']) ? (string) $scheme['key'] : 'nordic_shell_v1';
+	}
+
+	protected function getNordicShellSlotPositions() {
+
+		$scheme = $this->getNordicShellScheme();
+
+		if (!empty($scheme['slot_positions']) && is_array($scheme['slot_positions'])) {
+			return $scheme['slot_positions'];
+		}
+
+		$positions = [];
+
+		foreach ($this->getFallbackShellSlots() as $slot) {
+			$positions[$slot] = [$slot];
+		}
+
+		return $positions;
+	}
+
+	protected function getDefaultShellSlots() {
+		return array_keys($this->getNordicShellSlotPositions());
 	}
 
 	protected function normalizeShellSlots(array $slots) {

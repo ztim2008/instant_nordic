@@ -15,6 +15,26 @@
 
 ## 2026-04-03
 
+- Для `nordic` заведена собственная code-level layout scheme:
+	- добавлен каноничный source of truth `templates/nordic/shell_scheme.php` и пакет-зеркало `packages/nordic/package/templates/nordic/shell_scheme.php`;
+	- shell scheme получила ключ `nordic_shell_v1`;
+	- `layout.scheme` добавлен в runtime contract страницы рядом с `layout.template` и `layout.content_slot`.
+
+- Для `nordic` зафиксирован перевод bind-позиций из copied `modern` scheme в shell slots:
+	- `pos_22` -> `site_top`;
+	- `pos_26`, `pos_27`, `pos_29`, `pos_31` -> header slots;
+	- `pos_33` -> `hero`;
+	- `con_header`, `pos_10` -> `before_content`;
+	- `pos_8` -> `content_body`;
+	- `pos_9` -> `content_sidebar_right`;
+	- `pos_38`, `pos_39`, `pos_40` -> `footer_primary`;
+	- `pos_11`, `pos_32` -> `footer_secondary`.
+
+- Чтобы новая shell scheme не дублировала header/footer в теле страницы:
+	- добавлен `templates/nordic/layout_childs/main_scheme.tpl.php`;
+	- он фильтрует reserved shell positions из dynamic layout rows перед fallback-рендером через `modern/layout_childs/main_scheme.tpl.php`;
+	- это подготавливает безопасный перевод `widgets_bind_pages.position` на новые shell keys без двойного вывода.
+
 - Связка `content_body` доведена до рабочего контура:
 	- runtime `landingbuilder` теперь нормализует legacy zone keys `main`, `native_content`, `sidebar` в `content_body` и `content_sidebar_right`;
 	- standalone pages по умолчанию маппятся в `content_body`;

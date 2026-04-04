@@ -145,6 +145,7 @@
   },
   "layout": {
     "template": "nordic",
+    "scheme": "nordic_shell_v1",
     "width_mode": "contained",
     "header_mode": "theme",
     "footer_mode": "theme",
@@ -231,6 +232,7 @@
 - `page_type`: `standalone`, `system_overlay`, `ctype_overlay`
 - `editor_mode`: `canvas`, `overlay`
 - `layout.template`: для текущей взрослой версии `nordic`
+- `layout.scheme`: для первой взрослой shell scheme значение `nordic_shell_v1`
 - `layout.width_mode`: `contained`, `wide`, `full`
 - `layout.header_mode`: `theme`, `hidden`, `custom`
 - `layout.footer_mode`: `theme`, `hidden`, `custom`
@@ -259,6 +261,49 @@
 1. для `standalone_landing` основной builder zone по умолчанию это `content_body`;
 2. для overlay-страниц нативное системное содержимое тоже маппится в `content_body`;
 3. legacy-ключи `main`, `native_content` и `sidebar` считаются миграционными и в runtime нормализуются в `content_body` или `content_sidebar_right`.
+
+### 4.4.2. Каноничная shell scheme `nordic_shell_v1`
+
+Для взрослой frontend-схемы шаблона `nordic` первой каноничной layout scheme считается `nordic_shell_v1`.
+
+Она фиксирует 3 уровня:
+
+1. shell slot keys для page schema и runtime;
+2. canonical widget bind positions в layout scheme шаблона;
+3. legacy migration map из copied `modern` positions в `nordic` positions.
+
+Для первой версии canonical bind positions совпадают с именами shell slots:
+
+1. `site_top`
+2. `header_primary`
+3. `header_secondary`
+4. `hero`
+5. `before_content`
+6. `content_body`
+7. `content_sidebar_left`
+8. `content_sidebar_right`
+9. `after_content`
+10. `footer_primary`
+11. `footer_secondary`
+
+Практическое правило runtime:
+
+1. template `nordic` сам рендерит эти positions в своем shell;
+2. layout child `scheme` не должен повторно выводить rows, которые состоят только из reserved shell positions;
+3. `layout.scheme` нужен как явный контракт для дальнейших DB-миграций и install/update pipeline.
+
+Практическое правило миграции legacy bind positions:
+
+1. `pos_22` -> `site_top`;
+2. `pos_26`, `pos_27`, `pos_29`, `pos_31` -> header slots `header_secondary` и `header_primary`;
+3. `pos_33` -> `hero`;
+4. `con_header`, `pos_10` -> `before_content`;
+5. `pos_8` -> `content_body`;
+6. `pos_34` -> `content_sidebar_left`;
+7. `pos_9` -> `content_sidebar_right`;
+8. `pos_17`, `pos_18` -> `after_content`;
+9. `pos_38`, `pos_39`, `pos_40` -> `footer_primary`;
+10. `pos_11`, `pos_32` -> `footer_secondary`.
 
 ### 4.5. Структура `zones`
 

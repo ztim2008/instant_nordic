@@ -132,10 +132,14 @@
   - `content_body` закреплен как канонический runtime slot для standalone pages и native system content
   - page contracts расширены под `shell_slots`, `layout.content_slot` и legacy migration keys
   - выполнен временный smoke-test с переключением сайта на `nordic` и проверкой живых страниц
+  - добавлена каноничная shell scheme `nordic_shell_v1` с отдельным source of truth в `templates/nordic/shell_scheme.php`
+  - добавлен runtime contract `layout.scheme` и canonical slot positions для `nordic`
+  - добавлен отдельный `templates/nordic/layout_childs/main_scheme.tpl.php`, который не дублирует shell positions в `content_body`
+  - зафиксирована code-level map для перевода copied `modern` bind positions в shell slots `nordic`
 
 - Следующий результат:
-  - перевести legacy widget positions из схемы `modern` в осмысленные shell positions `nordic`
-  - вынести header/footer/body зоны из fallback-схемы в собственную layout scheme шаблона `nordic`
+  - прогнать чистку текущих copied `nordic` rows/binds в БД под `nordic_shell_v1`
+  - оформить миграционный план и безопасный apply-path для уже созданных `nordic` записей в `layout_rows`, `layout_cols`, `widgets_bind_pages`
 
 - Связанные документы:
   - [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
