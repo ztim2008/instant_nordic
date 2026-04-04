@@ -4,6 +4,8 @@ class actionLandingbuilderCanvasSave extends cmsAction {
 
     public function run() {
 
+        try {
+
         if (!$this->request->isAjax() || !cmsUser::isAdmin()) {
             return cmsCore::error404();
         }
@@ -42,5 +44,11 @@ class actionLandingbuilderCanvasSave extends cmsAction {
             ],
             'widget_nodes' => $page['widget_nodes']
         ]);
+        } catch (Throwable $exception) {
+            return $this->cms_template->renderJSON([
+                'error'   => true,
+                'message' => 'Не удалось сохранить страницу. ' . $exception->getMessage()
+            ]);
+        }
     }
 }

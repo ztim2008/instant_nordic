@@ -1,6 +1,6 @@
 <?php
 
-class frontendLandingbuilder extends cmsFrontend {
+class landingbuilder extends cmsFrontend {
 
     protected $useOptions = true;
 

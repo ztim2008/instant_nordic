@@ -4,6 +4,8 @@ class actionLandingbuilderVersionRestore extends cmsAction {
 
     public function run() {
 
+        try {
+
         if (!$this->request->isAjax() || !cmsUser::isAdmin()) {
             return cmsCore::error404();
         }
@@ -32,5 +34,11 @@ class actionLandingbuilderVersionRestore extends cmsAction {
             'widget_nodes' => $page['widget_nodes'],
             'versions'     => $this->model->getPageVersionsByKey($page['key'])
         ]);
+        } catch (Throwable $exception) {
+            return $this->cms_template->renderJSON([
+                'error'   => true,
+                'message' => 'Не удалось восстановить версию. ' . $exception->getMessage()
+            ]);
+        }
     }
 }

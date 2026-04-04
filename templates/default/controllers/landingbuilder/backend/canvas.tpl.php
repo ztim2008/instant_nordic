@@ -1,5 +1,11 @@
 <?php
 
+$shared_template = cmsConfig::get('root_path') . 'templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php';
+if (is_readable($shared_template)) {
+    include $shared_template;
+    return;
+}
+
 $device_titles = [
     'desktop' => 'Компьютер',
     'tablet'  => 'Планшет',

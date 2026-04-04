@@ -248,14 +248,256 @@ class modelLandingbuilder extends cmsModel {
 		];
 	}
 
+	public function getRuntimePage(array $page) {
+
+		$page['adapter_key'] = $this->resolveAdapterKey($page);
+		$page['page_type'] = $this->resolvePageType($page);
+		$page['schema'] = $this->enrichSchemaForRuntime($page);
+
+		$adapter = $this->getAdapterDefinition($page['adapter_key']);
+
+		return [
+			'adapter'     => $adapter,
+			'page_type'   => $page['page_type'],
+			'zones'       => $this->buildRuntimeZones($page, $adapter),
+			'widget_map'  => $this->getPageWidgetMap($page)
+		];
+	}
+
+	public function getAdapterDefinitions() {
+
+		return [
+			'standalone_landing' => [
+				'key'                  => 'standalone_landing',
+				'title'                => 'Самостоятельная landing-страница',
+				'description'          => 'Полностью своя страница, собранная из секций конструктора.',
+				'shell'                => 'standalone',
+				'default_zone'         => 'main',
+				'native_content_label' => '',
+				'zones'                => [
+					[
+						'key'         => 'main',
+						'title'       => 'Основное полотно страницы',
+						'kind'        => 'builder',
+						'description' => 'В этой зоне конструктор полностью управляет содержимым страницы.'
+					]
+				]
+			],
+			'content_category_generic' => [
+				'key'                  => 'content_category_generic',
+				'title'                => 'Страница категории контента',
+				'description'          => 'Builder добавляет секции вокруг системной страницы категории InstantCMS.',
+				'shell'                => 'overlay',
+				'default_zone'         => 'before_content',
+				'native_content_label' => 'Здесь продолжает работать системная страница категории InstantCMS.',
+				'zones'                => [
+					[
+						'key'         => 'before_content',
+						'title'       => 'Над основным списком',
+						'kind'        => 'builder',
+						'description' => 'Подходит для шапки категории, фильтров и промо-блоков.'
+					],
+					[
+						'key'         => 'native_content',
+						'title'       => 'Системное содержимое страницы',
+						'kind'        => 'native',
+						'description' => 'Эта зона остается под управлением стандартного шаблона InstantCMS.'
+					],
+					[
+						'key'         => 'sidebar',
+						'title'       => 'Боковая колонка',
+						'kind'        => 'builder',
+						'description' => 'Сюда удобно выводить дополнительные виджеты и короткие блоки.'
+					],
+					[
+						'key'         => 'after_content',
+						'title'       => 'Под основным списком',
+						'kind'        => 'builder',
+						'description' => 'Нижняя зона для CTA, подборок и связанных блоков.'
+					]
+				]
+			],
+			'user_profile' => [
+				'key'                  => 'user_profile',
+				'title'                => 'Профиль пользователя',
+				'description'          => 'Builder встраивает дополнительные секции вокруг стандартного профиля пользователя.',
+				'shell'                => 'overlay',
+				'default_zone'         => 'hero',
+				'native_content_label' => 'Здесь остается стандартный профиль пользователя InstantCMS.',
+				'zones'                => [
+					[
+						'key'         => 'hero',
+						'title'       => 'Верхняя зона профиля',
+						'kind'        => 'builder',
+						'description' => 'Подходит для обложки, приветственного блока или важного акцента.'
+					],
+					[
+						'key'         => 'native_content',
+						'title'       => 'Системное содержимое профиля',
+						'kind'        => 'native',
+						'description' => 'Эта зона остается под управлением штатного профиля InstantCMS.'
+					],
+					[
+						'key'         => 'after_content',
+						'title'       => 'Под профилем',
+						'kind'        => 'builder',
+						'description' => 'Зона для дополнительных карточек, CTA и связанных блоков.'
+					]
+				]
+			]
+		];
+	}
+
 	protected function normalizePage(array $item) {
 
 		$item['key'] = $item['name'];
 		$item['mode'] = $item['page_mode'];
 		$item['schema'] = $this->decodeSchema(isset($item['schema_json']) ? $item['schema_json'] : '', $item['name']);
+		$item['adapter_key'] = $this->resolveAdapterKey($item);
+		$item['page_type'] = $this->resolvePageType($item);
 		$item['widget_nodes'] = [];
 
 		return $item;
+	}
+
+	protected function getAdapterDefinition($adapter_key) {
+
+		$definitions = $this->getAdapterDefinitions();
+
+		if (!isset($definitions[$adapter_key])) {
+			return $definitions['standalone_landing'];
+		}
+
+		return $definitions[$adapter_key];
+	}
+
+	protected function resolveAdapterKey(array $page) {
+
+		if (!empty($page['schema']['adapter_key']) && isset($this->getAdapterDefinitions()[$page['schema']['adapter_key']])) {
+			return $page['schema']['adapter_key'];
+		}
+
+		$page_key = $page['key'] ?? ($page['name'] ?? '');
+		$page_mode = $page['mode'] ?? ($page['page_mode'] ?? 'full_takeover');
+
+		if ($page_key === 'profile-cover' || $page_mode === 'zone_injection') {
+			return 'user_profile';
+		}
+
+		if ($page_key === 'ads-category' || $page_mode === 'hybrid_overlay') {
+			return 'content_category_generic';
+		}
+
+		return 'standalone_landing';
+	}
+
+	protected function resolvePageType(array $page) {
+
+		$page_mode = $page['mode'] ?? ($page['page_mode'] ?? 'full_takeover');
+
+		if ($page_mode === 'full_takeover') {
+			return 'standalone';
+		}
+
+		return 'system_overlay';
+	}
+
+	protected function enrichSchemaForRuntime(array $page) {
+
+		$schema = $page['schema'];
+		$widget_map = $this->getPageWidgetMap($page);
+		$default_zone_key = $this->getDefaultZoneKey($page);
+
+		foreach ($schema['sections'] as $section_index => $section) {
+			$schema['sections'][$section_index]['zone_key'] = !empty($section['zone_key'])
+				? $section['zone_key']
+				: (!empty($section['settings']['zone_key']) ? $section['settings']['zone_key'] : $default_zone_key);
+
+			foreach ($schema['sections'][$section_index]['columns'] as $column_index => $column) {
+				foreach ($schema['sections'][$section_index]['columns'][$column_index]['nodes'] as $node_index => $node) {
+
+					if (($node['type'] ?? '') === 'block' && empty($node['source_key'])) {
+						$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['source_key'] = $node['label'];
+					}
+
+					if (($node['type'] ?? '') !== 'system_widget') {
+						continue;
+					}
+
+					$widget_data = $widget_map[$node['uid']] ?? [];
+
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['widget_id'] = isset($node['widget_id'])
+						? (int) $node['widget_id']
+						: (int) ($widget_data['widget_id'] ?? 0);
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['widget_name'] = !empty($node['widget_name'])
+						? $node['widget_name']
+						: ($widget_data['widget_name'] ?? '');
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['widget_controller'] = !empty($node['widget_controller'])
+						? $node['widget_controller']
+						: ($widget_data['widget_controller'] ?? '');
+					$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['options'] = !empty($node['options']) && is_array($node['options'])
+						? $node['options']
+						: ($widget_data['options'] ?? []);
+
+					if (!empty($widget_data['widget_title']) && empty($schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['label'])) {
+						$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['label'] = $widget_data['widget_title'];
+					}
+				}
+			}
+		}
+
+		return $schema;
+	}
+
+	protected function buildRuntimeZones(array $page, array $adapter) {
+
+		$zones = [];
+
+		foreach ($adapter['zones'] as $zone) {
+			$zone['sections'] = [];
+			$zones[$zone['key']] = $zone;
+		}
+
+		foreach ($page['schema']['sections'] as $section) {
+			$zone_key = !empty($section['zone_key']) ? $section['zone_key'] : $adapter['default_zone'];
+
+			if (!isset($zones[$zone_key])) {
+				$zones[$zone_key] = [
+					'key'         => $zone_key,
+					'title'       => $zone_key,
+					'kind'        => 'builder',
+					'description' => '',
+					'sections'    => []
+				];
+			}
+
+			$zones[$zone_key]['sections'][] = $section;
+		}
+
+		return array_values($zones);
+	}
+
+	protected function getDefaultZoneKey(array $page) {
+
+		$adapter_key = $this->resolveAdapterKey($page);
+		$adapter = $this->getAdapterDefinition($adapter_key);
+
+		return $adapter['default_zone'];
+	}
+
+	protected function getPageWidgetMap(array $page) {
+
+		$widget_map = [];
+
+		foreach ($page['widget_nodes'] as $widget_node) {
+			if (empty($widget_node['node_uid'])) {
+				continue;
+			}
+
+			$widget_map[$widget_node['node_uid']] = $widget_node;
+		}
+
+		return $widget_map;
 	}
 
 	protected function getDefaultPages() {
@@ -540,14 +782,21 @@ class modelLandingbuilder extends cmsModel {
 			$active_uids[] = $node['node_uid'];
 
 			$widget = !empty($node['widget_id']) ? $this->getSystemWidgetById((int) $node['widget_id']) : false;
+			$widget_name = $widget ? (string) ($widget['name'] ?? '') : (string) ($node['widget_name'] ?? '');
+			$widget_controller = $widget ? ($widget['controller'] ?? null) : ($node['widget_controller'] ?? null);
+			$widget_title = $widget ? (string) ($widget['title'] ?? '') : (string) ($node['widget_title'] ?? ($node['label'] ?? ''));
+
+			if ($widget_controller === '') {
+				$widget_controller = null;
+			}
 
 			$row = [
 				'page_id'            => $page_id,
 				'node_uid'           => $node['node_uid'],
 				'widget_id'          => !empty($node['widget_id']) ? (int) $node['widget_id'] : 0,
-				'widget_name'        => $widget ? $widget['name'] : $node['widget_name'],
-				'widget_controller'  => $widget ? $widget['controller'] : $node['widget_controller'],
-				'widget_title'       => $widget ? $widget['title'] : $node['widget_title'],
+				'widget_name'        => $widget_name,
+				'widget_controller'  => $widget_controller,
+				'widget_title'       => $widget_title,
 				'options'            => $this->encodeJson($node['options']),
 				'device_visibility'  => $this->encodeJson($node['device_visibility']),
 				'updated_at'         => $timestamp

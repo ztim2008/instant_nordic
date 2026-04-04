@@ -270,3 +270,87 @@
 	- в следующих backend/frontend экранах нужно сразу держать тот же стандарт простого русского интерфейса.
 - Следующий шаг:
 	- вручную пройти editor flow в админке и затем перейти к frontend runtime/page adapters.
+
+### 2026-04-03 / первый frontend runtime и adapter pipeline
+
+- Что планировалось:
+	- подключить сохраненную canvas schema к frontend runtime, собрать первый adapter pipeline и убрать функциональный разрыв между `admincoreui` и `default` backend templates.
+- Что сделано:
+	- добавлен frontend action preview/runtime для `landingbuilder` с маршрутом просмотра страницы по ключу;
+	- в model добавлен первый adapter registry и runtime pipeline для `standalone_landing`, `content_category_generic`, `user_profile`;
+	- runtime теперь группирует секции по adapter zones и подмешивает реальные данные системных виджетов в schema перед рендером;
+	- добавлен frontend template runtime с рендером builder blocks, штатных widgets и preview-состояния для неопубликованных страниц;
+	- в backend добавлены ссылки предпросмотра из списка страниц и из canvas editor;
+	- `default` backend templates переведены на общий источник `admincoreui`, чтобы больше не отставать по UX и не дублировать логику;
+	- добиты русские названия для блоков `ads.filter-bar` и `profile.quick-stats`.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/actions/view.php](../system/controllers/landingbuilder/actions/view.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas.php](../system/controllers/landingbuilder/backend/actions/canvas.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/pages.tpl.php](../templates/default/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/default/controllers/landingbuilder/backend/canvas.tpl.php](../templates/default/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php](../packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php)
+- Что проверено:
+	- `php -l` проходит на source и package-копиях model, frontend action, backend actions и шаблонов;
+	- Problems panel не показывает новых ошибок в измененных файлах;
+	- source и package mirror синхронизированы после всех правок этой фазы.
+- Какие риски остались:
+	- ручной smoke-test drag-and-drop, сохранения и восстановления версий в браузере все еще нужно пройти руками;
+	- runtime пока работает как первый preview/pipeline и еще не внедрен в системные страницы сайта через hooks/overlay поверх их реального HTML.
+- Следующий шаг:
+	- вручную пройти smoke-test в админке и затем развивать runtime из preview в полноценный overlay/injection pipeline для системных страниц.
+
+### 2026-04-03 / стабилизация сохранения, предпросмотра и закрытие дня
+
+- Что планировалось:
+	- добить рабочий цикл редактора без 503-ошибок, убрать остатки технических формулировок и подтвердить, что пользовательский сценарий реально проходит в живой админке.
+- Что сделано:
+	- найдена и исправлена причина падения сохранения и восстановления версий: при синхронизации widget-узлов `widget_name` больше не уходит в `NULL`;
+	- сохранение и восстановление версий обернуты в защитный `try/catch` с понятным русским сообщением об ошибке;
+	- найден и исправлен runtime-сбой предпросмотра: frontend-контроллер `landingbuilder` приведен к ожидаемому контракту InstantCMS по имени класса;
+	- в frontend runtime добавлены безопасные ключи данных для системных виджетов, чтобы рендер не падал на внутренних ожиданиях ядра;
+	- дочищены видимые технические формулировки в редакторе, чтобы не торчало слово `class` в пользовательских подписях;
+	- после исправлений source и package mirror повторно синхронизированы.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas_save.php](../system/controllers/landingbuilder/backend/actions/canvas_save.php)
+	- [system/controllers/landingbuilder/backend/actions/version_restore.php](../system/controllers/landingbuilder/backend/actions/version_restore.php)
+	- [system/controllers/landingbuilder/frontend.php](../system/controllers/landingbuilder/frontend.php)
+	- [system/controllers/landingbuilder/actions/view.php](../system/controllers/landingbuilder/actions/view.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/frontend.php](../packages/landingbuilder/package/system/controllers/landingbuilder/frontend.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php)
+- Что проверено:
+	- `php -l` проходит на исходниках и package-копиях измененных PHP-файлов;
+	- просмотр логов показал устранение предыдущих корневых причин: ошибки по `widget_name = NULL`, падение preview и загрузчик frontend-контроллера были разобраны и исправлены;
+	- итоговый пользовательский smoke-test пройден: сохранение, предпросмотр и общий рабочий сценарий в админке снова работают.
+- Какие риски остались:
+	- preview/runtime уже стабилен для текущего сценария, но следующий этап с overlay/injection в системные страницы все равно потребует отдельной ручной проверки;
+	- CLI-проверки полного runtime-контура ограничены локальной конфигурацией PHP CLI, поэтому основная валидация по-прежнему завязана на живой контур и логи сайта.
+- Следующий шаг:
+	- на следующей сессии переходить от preview-маршрута к встраиванию builder в реальные системные страницы и зоны.
+
+### 2026-04-03 / ориентир на следующую сессию
+
+- С чего начать без повторной раскопки:
+	- сначала создать новый checkpoint перед этапом интеграции в реальные страницы;
+	- затем определить первую целевую системную страницу для внедрения: лучше начать с одной управляемой точки, а не со всего сайта сразу.
+- Ближайший рабочий порядок:
+	- подключить `landingbuilder` не только к preview route, а к реальной странице через безопасный hook/adapter pipeline;
+	- выбрать и реализовать первый режим участия страницы: `zone_injection` или `hybrid_overlay` для одного конкретного сценария;
+	- проверить, как builder-секции встраиваются в живой HTML страницы без поломки штатного layout и системных widgets;
+	- после этого пройти короткий regression-check: canvas save, version restore, preview, реальная страница;
+	- в конце шага снова синхронизировать `packages/landingbuilder/package/` и обновить docs.
+- Что не делать в лоб:
+	- не пытаться сразу подключать все типы страниц;
+	- не разъезжаться между runtime и package mirror;
+	- не трогать одновременно overlay, data-resolver и массовую локализацию новых экранов в одном заходе.
+- Цель следующей сессии:
+	- получить первый рабочий сценарий, где builder влияет уже не только на предпросмотр, а на реальную системную страницу сайта в контролируемой зоне.

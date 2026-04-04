@@ -103,6 +103,7 @@ $canvas_state = [
             <div class="btn-group mb-2" role="group" aria-label="Действия редактора">
                 <button type="button" class="btn btn-primary" id="lb-save-canvas">Сохранить изменения</button>
                 <button type="button" class="btn btn-outline-secondary" id="lb-add-section">Добавить секцию</button>
+                <a class="btn btn-outline-secondary" href="<?php html($screen['preview_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
             </div>
             <div class="btn-group" role="group" aria-label="Устройства">
             <?php foreach ($screen['devices'] as $device) { ?>
@@ -215,9 +216,19 @@ $canvas_state = [
                 description: 'Верхняя часть страницы категории с акцентом на заголовок и фильтры.'
             },
             {
+                key: 'ads.filter-bar',
+                title: 'Панель фильтров',
+                description: 'Блок для фильтров и быстрых уточнений списка на странице категории.'
+            },
+            {
                 key: 'profile.cover-hero',
                 title: 'Обложка профиля',
                 description: 'Широкий блок для профиля пользователя или компании.'
+            },
+            {
+                key: 'profile.quick-stats',
+                title: 'Короткая статистика профиля',
+                description: 'Компактный блок с числами, показателями и важными фактами профиля.'
             }
         ];
         const blockPresetMap = blockPresets.reduce(function (map, block) {
@@ -712,7 +723,7 @@ $canvas_state = [
                                                                 '<div>' + escapeHtml(nodeLabel) + '</div>' +
                                                                 '<span class="badge badge-light ml-2">Перетащить</span>' +
                                                             '</div>' +
-                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'Стиль: ' + escapeHtml(node.class_name) : 'Дополнительный стиль не задан') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
+                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
                                                         '</div>';
                                                 }).join('') +
                                             '</div>' +
@@ -755,11 +766,11 @@ $canvas_state = [
                         '</select>' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        fieldLabel('Класс фона', 'Нужен, если разработчик заранее подготовил готовые стили фона. Можно оставить пустым.') +
+                        fieldLabel('Оформление фона', 'Нужно только если для секции заранее подготовлено отдельное оформление. Можно оставить пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        fieldLabel('Дополнительный стиль', 'Служебное поле для подключения особого оформления секции. Оставьте пустым, если не используете стили вручную.') +
+                        fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-3">' +
@@ -790,7 +801,7 @@ $canvas_state = [
                         '</select>' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
-                        fieldLabel('Дополнительный стиль', 'Служебное поле для особого оформления колонки. Можно оставить пустым.') +
+                        fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления колонки. Если оно не нужно, оставьте поле пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-2">' +
@@ -818,11 +829,11 @@ $canvas_state = [
                     '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(getNodeDisplayLabel(node)) + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    fieldLabel('Дополнительный стиль', 'Служебное поле для особого оформления конкретного элемента.') +
+                    fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления конкретного элемента.') +
                     '<input type="text" class="form-control form-control-sm" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
-                    fieldLabel('Ключ источника данных', 'Нужен, если блок должен подтягивать данные из заранее заданного источника или сценария.') +
+                    fieldLabel('Источник данных блока', 'Нужен только если блок должен брать данные из заранее заданного сценария или источника.') +
                     '<input type="text" class="form-control form-control-sm" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
@@ -914,7 +925,7 @@ $canvas_state = [
         }
 
         async function loadWidgetOptions(node) {
-            widgetForm.innerHTML = 'Загрузка формы widget...';
+            widgetForm.innerHTML = 'Загрузка формы настроек виджета...';
 
             const body = new URLSearchParams();
             body.set('widget_id', node.widget_id);

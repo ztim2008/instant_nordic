@@ -128,6 +128,7 @@ $this->addToolButton([
                             <td><?php html($page_status_titles[$page['status']] ?? $page['status']); ?></td>
                             <td><?php html($page['updated_at']); ?></td>
                             <td class="text-right">
+                                <a class="btn btn-sm btn-outline-secondary mr-2" href="<?php html($page['view_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
                                 <a class="btn btn-sm btn-primary" href="<?php html($page['canvas_url']); ?>">Открыть редактор</a>
                             </td>
                         </tr>

@@ -7,6 +7,7 @@ class actionLandingbuilderPages extends cmsAction {
 
         foreach ($pages as &$page) {
             $page['canvas_url'] = href_to($this->controller->root_url, 'canvas', [$page['key']]);
+            $page['view_url'] = href_to('landingbuilder', 'view', [$page['key']]);
         }
 
         return $this->cms_template->render('backend/pages', [

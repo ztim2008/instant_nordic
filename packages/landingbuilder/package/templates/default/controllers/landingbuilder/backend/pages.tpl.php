@@ -1,5 +1,11 @@
 <?php
 
+$shared_template = cmsConfig::get('root_path') . 'templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php';
+if (is_readable($shared_template)) {
+    include $shared_template;
+    return;
+}
+
 $page_mode_titles = [
     'full_takeover'  => 'Полностью своя страница',
     'hybrid_overlay' => 'Поверх существующей страницы',

@@ -16,6 +16,7 @@ class actionLandingbuilderCanvas extends cmsAction {
             'versions_url'        => href_to($this->controller->root_url, 'versions'),
             'version_restore_url' => href_to($this->controller->root_url, 'version_restore')
         ];
+        $screen['preview_url'] = href_to('landingbuilder', 'view', [$page['key']]);
 
         return $this->cms_template->render('backend/canvas', [
             'menu'   => $this->controller->getBackendMenu(),
