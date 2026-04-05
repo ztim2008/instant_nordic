@@ -14,6 +14,8 @@
 
 <?php $this->renderChild('profile_header', ['profile' => $profile, 'meta_profile' => $meta_profile, 'tabs' => $tabs, 'fields' => $fields]); ?>
 
+<?php $this->block('users_profile_view_top'); ?>
+
 <div id="user_profile" class="icms-users-profile__view row mt-3 mt-md-4">
 
     <div id="left_column" class="col-md-3">

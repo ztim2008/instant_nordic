@@ -19,6 +19,8 @@
     <?php $this->renderChild('profile_header', ['profile'=>$profile, 'meta_profile' => $meta_profile, 'tabs'=>$tabs]); ?>
 </div>
 
+<?php $this->block('users_profile_view_top'); ?>
+
 <div id="user_profile">
 
     <div id="left_column" class="column">

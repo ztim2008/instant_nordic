@@ -16,6 +16,8 @@
 3. встроенная дизайн-система;
 4. режимы полного управления страницей и постепенного внедрения в существующий сайт.
 
+Отдельный продуктовый UX visual builder и связь с global design system подробно зафиксированы в [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md).
+
 ## 1. Что считаем целевой моделью
 
 Нордик это не просто page builder.
@@ -118,6 +120,19 @@
 11. footer layout;
 12. мобильные breakpoints.
 
+### 4.1. Продуктовый принцип global design system
+
+Пользователь должен редактировать не CSS-классы, а глобальные tokens и presets.
+
+Визуальный конструктор страницы должен брать оттуда:
+
+1. brand colors;
+2. typography;
+3. section spacing scale;
+4. container presets;
+5. button/card/form variants;
+6. header/footer variants.
+
 ## 5. Что должно быть настраиваемо по страницам
 
 Отдельно от глобальной дизайн-системы страница должна уметь описывать:
@@ -128,6 +143,8 @@
 4. placement widgets;
 5. page-level token overrides;
 6. режим участия страницы: full takeover, hybrid overlay, zone injection.
+
+При этом page builder должен оставаться визуальным section editor, а не техническим shell/grid editor.
 
 ## 6. Как маппить это на InstantCMS
 
@@ -176,6 +193,12 @@
 3. отдельно выделяется слой theme system settings;
 4. page contracts должны дальше расширяться под shell slots и global tokens.
 
+Текущее уточнение runtime-слоя:
+
+1. page-level theme presets должны жить не только в editor state, но и попадать в runtime через единый helper context;
+2. standalone preview и overlay runtime должны использовать один и тот же mapping preset -> CSS variables -> section presentation classes;
+3. канонический catalog preset-ов должен определяться на стороне модели, а не дублироваться вручную в canvas и runtime.
+
 ## 9. Практический порядок реализации
 
 Следующий порядок считаем правильным:
@@ -193,14 +216,15 @@
 
 1. [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
 2. [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
-3. [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
-4. [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
-5. [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
-6. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
-7. [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
-8. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
-9. [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
-10. [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
-11. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
+3. [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
+4. [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
+5. [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
+6. [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
+7. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
+8. [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
+9. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
+10. [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
+11. [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
+12. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
 
 Промежуточные шпаргалки и экспортные навигационные файлы переводятся в архив.

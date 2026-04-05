@@ -24,6 +24,7 @@ class cmsWidget {
     public $groups_hide;
     public $options;
     public $css_class;
+    public $tpl_wrap_style = '';
 
     /**
      * Подключать css контроллера

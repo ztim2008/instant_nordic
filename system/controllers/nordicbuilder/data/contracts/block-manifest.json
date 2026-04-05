@@ -1,0 +1,27 @@
+{
+  "kind": "nordicbuilder.contract",
+  "schema_version": "1.0",
+  "key": "block-manifest",
+  "title": "Block Manifest",
+  "contract_kind": "nordicbuilder.block",
+  "bridge_kind": "landingbuilder.block",
+  "storage_target": "component_library.block_registry",
+  "description": "Контракт типа блока для component library, editor library и runtime validation.",
+  "required_fields": [
+    "kind",
+    "schema_version",
+    "key",
+    "title",
+    "category",
+    "supports",
+    "render",
+    "props_schema",
+    "defaults",
+    "meta"
+  ],
+  "notes": [
+    "describes block type not block instance",
+    "defaults must validate against props_schema",
+    "supports.canvas_node_kinds must include block"
+  ]
+}

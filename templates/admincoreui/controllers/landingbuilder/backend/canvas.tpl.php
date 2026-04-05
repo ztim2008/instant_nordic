@@ -23,6 +23,15 @@ $page_status_titles = [
 $page_mode_title = $page_mode_titles[$page['mode']] ?? $page['mode'];
 $page_status_title = $page_status_titles[$page['status']] ?? $page['status'];
 
+$theme_helper = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_theme.php';
+$theme_runtime_catalog = [];
+if (is_readable($theme_helper)) {
+    require_once $theme_helper;
+    if (function_exists('landingbuilder_get_theme_runtime_catalog')) {
+        $theme_runtime_catalog = landingbuilder_get_theme_runtime_catalog();
+    }
+}
+
 $this->setPageTitle('Редактор страницы: ' . $page['title']);
 $this->addBreadcrumb('Нордик');
 $this->addBreadcrumb('Страницы', href_to('admin', 'controllers', ['edit', 'landingbuilder', 'pages']));
@@ -59,6 +68,639 @@ $canvas_state = [
 
 ?>
 <style>
+    .lb-workspace {
+        position: relative;
+        margin-bottom: 2rem;
+        border: 1px solid #d6dfe8;
+        border-radius: 26px;
+        background: linear-gradient(180deg, #f6f8fb 0%, #edf2f7 100%);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+        overflow: hidden;
+    }
+
+    .lb-workspace__topbar {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: grid;
+        grid-template-columns: minmax(300px, 1fr) auto minmax(320px, 1fr);
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: rgba(17, 24, 39, 0.94);
+        color: #f8fafc;
+        backdrop-filter: blur(18px);
+    }
+
+    .lb-topbar__start,
+    .lb-topbar__center,
+    .lb-topbar__end {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .lb-topbar__center {
+        justify-content: center;
+    }
+
+    .lb-topbar__end {
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .lb-topbar__page {
+        min-width: 0;
+    }
+
+    .lb-topbar__eyebrow {
+        margin-bottom: 0.15rem;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(248, 250, 252, 0.62);
+    }
+
+    .lb-topbar__title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #f8fafc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lb-topbar__meta,
+    .lb-topbar__save {
+        font-size: 12px;
+        color: rgba(248, 250, 252, 0.72);
+    }
+
+    .lb-topbar__meta code {
+        padding: 0.1rem 0.3rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #f8fafc;
+    }
+
+    .lb-device-switcher .btn,
+    .lb-topbar__end .btn {
+        white-space: nowrap;
+    }
+
+    .lb-device-width {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        font-size: 12px;
+        color: rgba(248, 250, 252, 0.84);
+    }
+
+    .lb-workspace__body {
+        position: relative;
+        min-height: 720px;
+        padding: 1.5rem;
+    }
+
+    .lb-workspace__canvas {
+        position: relative;
+        z-index: 1;
+        min-height: 640px;
+        padding: 0 4.5rem;
+    }
+
+    .lb-canvas-stage {
+        width: 100%;
+        max-width: 1760px;
+        margin: 0 auto;
+    }
+
+    .lb-canvas-stage__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .lb-canvas-stage__eyebrow {
+        margin-bottom: 0.25rem;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .lb-canvas-stage__title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 700;
+        color: #122033;
+    }
+
+    .lb-canvas-stage__desc {
+        margin: 0.35rem 0 0;
+        max-width: 760px;
+        font-size: 14px;
+        color: #5f7083;
+    }
+
+    .lb-canvas-stage__status {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.55rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid #d6dfe8;
+        background: rgba(255, 255, 255, 0.82);
+        font-size: 12px;
+        color: #425466;
+        white-space: nowrap;
+    }
+
+    .lb-canvas-viewport {
+        position: relative;
+        min-height: 620px;
+        padding: 2rem;
+        border: 1px solid #d6dfe8;
+        border-radius: 30px;
+        background:
+            radial-gradient(circle at top left, rgba(148, 163, 184, 0.18), transparent 32%),
+            linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+    }
+
+    .lb-canvas-frame {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+        transition: max-width 0.2s ease;
+    }
+
+    .lb-canvas-surface {
+        min-height: 520px;
+        padding: 1rem;
+        border: 1px solid #dce4ec;
+        border-radius: 26px;
+        background: #ffffff;
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+    }
+
+    .lb-live-page {
+        max-width: var(--lb-page-max-width, 1120px);
+        margin: 0 auto;
+        padding: 1.5rem;
+        border-radius: 28px;
+        background: var(--lb-page-background, #f4f7fa);
+        color: var(--lb-text-color, #173042);
+        font-family: var(--lb-font-body, "Segoe UI", Tahoma, sans-serif);
+        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.08);
+    }
+
+    .lb-live-page h1,
+    .lb-live-page h2,
+    .lb-live-page h3,
+    .lb-live-page h4 {
+        font-family: var(--lb-font-heading, "Segoe UI", Tahoma, sans-serif);
+        color: var(--lb-heading-color, #142c3d);
+    }
+
+    .lb-live-page__hero {
+        margin-bottom: var(--lb-section-gap, 32px);
+        padding: 1.5rem;
+        border: 1px solid var(--lb-border-color, #dce4ea);
+        border-radius: var(--lb-radius-lg, 24px);
+        background: var(--lb-hero-background, linear-gradient(135deg, #f4f6f8 0%, #ffffff 60%, #eef3f8 100%));
+        box-shadow: var(--lb-shadow-lg, 0 18px 48px rgba(19, 41, 61, 0.10));
+    }
+
+    .lb-live-page__kicker,
+    .lb-live-section__kicker,
+    .lb-live-column__eyebrow,
+    .lb-live-node__eyebrow {
+        margin-bottom: 0.35rem;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--lb-text-muted, #64748b);
+    }
+
+    .lb-live-page__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .lb-live-page__title {
+        margin: 0;
+        font-size: clamp(28px, 4vw, var(--lb-hero-title-size, 40px));
+        line-height: 1.08;
+    }
+
+    .lb-live-page__lead {
+        margin: 0.7rem 0 0;
+        max-width: 48rem;
+        color: var(--lb-text-muted, #5b7282);
+        font-size: 15px;
+        line-height: 1.55;
+    }
+
+    .lb-live-page__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin-top: 1rem;
+    }
+
+    .lb-live-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--lb-border-color, #dce4ea);
+        background: var(--lb-zone-pill-background, rgba(255, 255, 255, 0.9));
+        color: var(--lb-zone-pill-color, #335168);
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .lb-live-pill strong {
+        color: var(--lb-heading-color, #142c3d);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .lb-live-sections {
+        display: grid;
+        gap: var(--lb-section-gap, 32px);
+    }
+
+    .lb-live-page__empty {
+        padding: 1.4rem;
+        border: 1px dashed var(--lb-border-color, #cbd5df);
+        border-radius: var(--lb-radius-lg, 24px);
+        background: var(--lb-surface-soft, #f8fbfd);
+        color: var(--lb-text-muted, #5b7282);
+    }
+
+    .lb-live-section {
+        padding: 1.4rem;
+        border: 1px solid var(--lb-border-color, #dce4ea);
+        border-radius: var(--lb-radius-lg, 22px);
+        background: var(--lb-surface-color, #ffffff);
+        box-shadow: var(--lb-shadow-md, 0 12px 32px rgba(18, 36, 52, 0.08));
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .lb-live-section--selected,
+    .lb-live-column--selected,
+    .lb-live-node--selected {
+        box-shadow: 0 0 0 2px rgba(47, 122, 161, 0.34), var(--lb-shadow-md, 0 12px 32px rgba(18, 36, 52, 0.08));
+    }
+
+    .lb-live-section__topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .lb-live-section__title {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.15;
+    }
+
+    .lb-live-section__meta,
+    .lb-live-node__meta,
+    .lb-live-column__meta {
+        margin-top: 0.35rem;
+        color: var(--lb-text-muted, #5b7282);
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .lb-live-columns {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .lb-live-columns--1col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lb-live-columns--2col_equal,
+    .lb-live-columns--2col_sidebar_left,
+    .lb-live-columns--2col_sidebar_right {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lb-live-columns--2col_sidebar_left {
+        grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.55fr);
+    }
+
+    .lb-live-columns--2col_sidebar_right {
+        grid-template-columns: minmax(0, 1.55fr) minmax(220px, 0.8fr);
+    }
+
+    .lb-live-columns--3col_equal {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .lb-live-column {
+        min-height: 100%;
+        padding: 1rem;
+        border: 1px solid var(--lb-border-color, #dbe6ee);
+        border-radius: var(--lb-radius-md, 18px);
+        background: var(--lb-surface-soft, #f8fbfd);
+    }
+
+    .lb-live-column__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .lb-live-column__title {
+        font-weight: 700;
+        color: var(--lb-heading-color, #142c3d);
+    }
+
+    .lb-live-column__empty {
+        padding: 0.95rem;
+        border: 1px dashed var(--lb-border-color, #cfd9e2);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.62);
+        color: var(--lb-text-muted, #667b8d);
+        font-size: 13px;
+    }
+
+    .lb-live-node {
+        margin-top: 0.85rem;
+        padding: 0.95rem 1rem;
+        border: 1px solid var(--lb-card-border, var(--lb-border-color, #dce5ec));
+        border-radius: 16px;
+        background: var(--lb-card-background, #ffffff);
+        box-shadow: var(--lb-card-shadow, 0 8px 20px rgba(22, 38, 52, 0.05));
+    }
+
+    .lb-live-node:first-child {
+        margin-top: 0;
+    }
+
+    .lb-live-node--block {
+        border-left: 4px solid var(--lb-accent-color, #2f7aa1);
+    }
+
+    .lb-live-node--widget {
+        border-left: 4px solid #2a6752;
+    }
+
+    .lb-live-node__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .lb-live-node__label {
+        font-weight: 700;
+        color: var(--lb-heading-color, #173042);
+    }
+
+    .lb-live-section.lb-section--container-text .lb-live-section__inner {
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    .lb-live-section.lb-section--tone-brand-soft {
+        background: var(--lb-accent-soft, #e8f3f8);
+    }
+
+    .lb-live-section.lb-section--tone-brand-strong {
+        background: var(--lb-accent-color, #2f7aa1);
+        color: var(--lb-accent-contrast, #ffffff);
+    }
+
+    .lb-live-section.lb-section--tone-brand-strong h2,
+    .lb-live-section.lb-section--tone-brand-strong h3,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-column__title,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-node__label,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-pill strong {
+        color: var(--lb-accent-contrast, #ffffff);
+    }
+
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-section__meta,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-node__meta,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-column__meta {
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-column,
+    .lb-live-section.lb-section--tone-brand-strong .lb-live-node,
+    .lb-live-section.lb-section--tone-contrast .lb-live-column,
+    .lb-live-section.lb-section--tone-contrast .lb-live-node,
+    .lb-live-section.lb-section--tone-inverse .lb-live-column,
+    .lb-live-section.lb-section--tone-inverse .lb-live-node {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .lb-live-section.lb-section--tone-muted {
+        background: var(--lb-surface-muted, #eef3f8);
+    }
+
+    .lb-live-section.lb-section--tone-contrast,
+    .lb-live-section.lb-section--tone-inverse {
+        background: var(--lb-contrast-surface, #173042);
+        color: var(--lb-contrast-text, #f7fbff);
+    }
+
+    .lb-live-section.lb-section--tone-contrast h2,
+    .lb-live-section.lb-section--tone-contrast h3,
+    .lb-live-section.lb-section--tone-contrast .lb-live-column__title,
+    .lb-live-section.lb-section--tone-contrast .lb-live-node__label,
+    .lb-live-section.lb-section--tone-inverse h2,
+    .lb-live-section.lb-section--tone-inverse h3,
+    .lb-live-section.lb-section--tone-inverse .lb-live-column__title,
+    .lb-live-section.lb-section--tone-inverse .lb-live-node__label,
+    .lb-live-section.lb-section--tone-contrast .lb-live-pill strong,
+    .lb-live-section.lb-section--tone-inverse .lb-live-pill strong {
+        color: var(--lb-contrast-text, #f7fbff);
+    }
+
+    .lb-live-section.lb-section--tone-contrast .lb-live-section__meta,
+    .lb-live-section.lb-section--tone-contrast .lb-live-node__meta,
+    .lb-live-section.lb-section--tone-contrast .lb-live-column__meta,
+    .lb-live-section.lb-section--tone-inverse .lb-live-section__meta,
+    .lb-live-section.lb-section--tone-inverse .lb-live-node__meta,
+    .lb-live-section.lb-section--tone-inverse .lb-live-column__meta {
+        color: rgba(247, 251, 255, 0.78);
+    }
+
+    .lb-live-section.lb-section--style-hero,
+    .lb-live-section.lb-section--style-hero-split,
+    .lb-live-section.lb-section--style-cta {
+        background: var(--lb-hero-background, linear-gradient(135deg, #f4f6f8 0%, #ffffff 60%, #eef3f8 100%));
+    }
+
+    .lb-live-section.lb-section--spacing-sm {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .lb-live-section.lb-section--spacing-lg {
+        padding-top: 1.9rem;
+        padding-bottom: 1.9rem;
+    }
+
+    .lb-live-section.lb-section--spacing-xl {
+        padding-top: 2.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    .lb-drawer {
+        position: absolute;
+        top: 1.5rem;
+        bottom: 1.5rem;
+        z-index: 25;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(210, 219, 228, 0.95);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12);
+        backdrop-filter: blur(14px);
+        transition: transform 0.25s ease, opacity 0.25s ease;
+        overflow: hidden;
+    }
+
+    .lb-drawer--left {
+        left: 1.5rem;
+        width: 340px;
+        transform: translateX(calc(-100% - 52px));
+        opacity: 0.98;
+    }
+
+    .lb-drawer--right {
+        right: 1.5rem;
+        width: 390px;
+        transform: translateX(calc(100% + 52px));
+        opacity: 0.98;
+    }
+
+    .lb-workspace--library-open .lb-drawer--left,
+    .lb-workspace--inspector-open .lb-drawer--right {
+        transform: translateX(0);
+    }
+
+    .lb-drawer__head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1.1rem 1.15rem 0.85rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .lb-drawer__title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-drawer__desc {
+        margin: 0.3rem 0 0;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #617286;
+    }
+
+    .lb-drawer__body {
+        flex: 1 1 auto;
+        padding: 1rem 1.15rem 1.2rem;
+        overflow: auto;
+    }
+
+    .lb-panel-block {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border: 1px solid #e7edf3;
+        border-radius: 18px;
+        background: #fbfdff;
+    }
+
+    .lb-panel-block:last-child {
+        margin-bottom: 0;
+    }
+
+    .lb-panel-block__title {
+        margin: 0 0 0.75rem;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #607186;
+    }
+
+    .lb-drawer-handle {
+        position: absolute;
+        top: 6.75rem;
+        z-index: 30;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        min-height: 128px;
+        padding: 0.65rem 0.35rem;
+        border: 1px solid #d6dfe8;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.98);
+        color: #132236;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transition: left 0.25s ease, right 0.25s ease, background-color 0.25s ease;
+    }
+
+    .lb-drawer-handle:hover,
+    .lb-drawer-handle:focus {
+        background: #ffffff;
+        text-decoration: none;
+    }
+
+    .lb-drawer-handle--left {
+        left: 0.7rem;
+    }
+
+    .lb-workspace--library-open .lb-drawer-handle--left {
+        left: 21.3rem;
+    }
+
+    .lb-drawer-handle--right {
+        right: 0.7rem;
+    }
+
+    .lb-workspace--inspector-open .lb-drawer-handle--right {
+        right: 24.4rem;
+    }
+
     .lb-section[draggable="true"],
     .lb-node[draggable="true"] {
         cursor: move;
@@ -91,94 +733,249 @@ $canvas_state = [
     .lb-library-caption {
         line-height: 1.25;
     }
+
+    .lb-library-tab {
+        border-radius: 14px;
+        background: transparent;
+        color: #425466;
+        font-weight: 600;
+    }
+
+    .lb-library-tab.active {
+        background: #132236 !important;
+        color: #ffffff !important;
+    }
+
+    .lb-workspace .list-group-item {
+        border-radius: 16px !important;
+        border: 1px solid #e3eaf1;
+        margin-bottom: 0.5rem;
+    }
+
+    .lb-workspace .list-group-item:last-child {
+        margin-bottom: 0;
+    }
+
+    #lb-widget-form form {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 1399.98px) {
+        .lb-workspace__canvas {
+            padding-left: 3.5rem;
+            padding-right: 3.5rem;
+        }
+    }
+
+    @media (max-width: 1199.98px) {
+        .lb-workspace__topbar {
+            grid-template-columns: 1fr;
+        }
+
+        .lb-topbar__center,
+        .lb-topbar__end {
+            justify-content: flex-start;
+        }
+
+        .lb-workspace__body {
+            padding: 1rem;
+        }
+
+        .lb-workspace__canvas {
+            padding: 0 1.5rem;
+        }
+
+        .lb-drawer--left,
+        .lb-drawer--right {
+            top: 1rem;
+            bottom: 1rem;
+            width: calc(100% - 2rem);
+        }
+
+        .lb-drawer--left {
+            left: 1rem;
+            transform: translateX(calc(-100% - 24px));
+        }
+
+        .lb-drawer--right {
+            right: 1rem;
+            transform: translateX(calc(100% + 24px));
+        }
+
+        .lb-drawer-handle {
+            top: auto;
+            bottom: 1rem;
+            min-height: 44px;
+            width: auto;
+            padding: 0.7rem 0.9rem;
+            writing-mode: horizontal-tb;
+        }
+
+        .lb-drawer-handle--left {
+            left: 1rem;
+        }
+
+        .lb-workspace--library-open .lb-drawer-handle--left {
+            left: 1rem;
+        }
+
+        .lb-drawer-handle--right {
+            right: 1rem;
+        }
+
+        .lb-workspace--inspector-open .lb-drawer-handle--right {
+            right: 1rem;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .lb-workspace__canvas {
+            padding: 0 0.25rem;
+        }
+
+        .lb-canvas-stage__header {
+            display: block;
+        }
+
+        .lb-canvas-stage__status {
+            margin-top: 0.75rem;
+        }
+
+        .lb-canvas-viewport {
+            padding: 0.85rem;
+            border-radius: 22px;
+        }
+
+        .lb-canvas-surface {
+            padding: 1rem;
+            border-radius: 18px;
+        }
+    }
 </style>
-<div class="card mb-4">
-    <div class="card-body d-flex justify-content-between align-items-start flex-wrap">
-        <div>
-            <h3 class="h5 mb-2"><?php html($page['title']); ?></h3>
-            <div class="text-muted"><span id="lb-page-meta">Ключ страницы: <code><?php html($page['key']); ?></code> | Режим: <?php html($page_mode_title); ?> | Статус: <?php html($page_status_title); ?></span></div>
-            <div class="small text-muted mt-2">Последнее обновление: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
-        </div>
-        <div class="d-flex flex-column align-items-md-end mt-3 mt-md-0">
-            <div class="btn-group mb-2" role="group" aria-label="Действия редактора">
-                <button type="button" class="btn btn-primary" id="lb-save-canvas">Сохранить изменения</button>
-                <button type="button" class="btn btn-outline-secondary" id="lb-add-section">Добавить секцию</button>
-                <a class="btn btn-outline-secondary" href="<?php html($screen['preview_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
+<div class="lb-workspace lb-workspace--library-open lb-workspace--inspector-open" id="lb-workspace">
+    <div class="lb-workspace__topbar">
+        <div class="lb-topbar__start">
+            <a class="btn btn-outline-light btn-sm" href="<?php html(href_to('admin', 'controllers', ['edit', 'landingbuilder', 'pages'])); ?>">К страницам</a>
+            <div class="lb-topbar__page">
+                <div class="lb-topbar__eyebrow">Редактор страницы</div>
+                <h1 class="lb-topbar__title"><?php html($page['title']); ?></h1>
+                <div class="lb-topbar__meta"><span id="lb-page-meta">Ключ страницы: <code><?php html($page['key']); ?></code> | Режим: <?php html($page_mode_title); ?> | Статус: <?php html($page_status_title); ?></span></div>
             </div>
-            <div class="btn-group" role="group" aria-label="Устройства">
-            <?php foreach ($screen['devices'] as $device) { ?>
-                <button type="button" class="btn btn-outline-secondary lb-device-toggle<?php if ($device === 'desktop') { ?> active<?php } ?>" data-device="<?php html($device); ?>"><?php html($device_titles[$device] ?? $device); ?></button>
+        </div>
+        <div class="lb-topbar__center">
+            <div class="btn-group lb-device-switcher" role="group" aria-label="Устройства">
+            <?php foreach ($screen['devices'] as $index => $device) { ?>
+                <button type="button" class="btn btn-outline-light btn-sm lb-device-toggle<?php if ($index === 0) { ?> active<?php } ?>" data-device="<?php html($device['key']); ?>"><?php html($device['title']); ?></button>
             <?php } ?>
             </div>
+            <span class="lb-device-width">Viewport: <span class="ml-1" id="lb-device-width-label"><?php echo !empty($screen['devices'][0]['viewport_width']) ? (int) $screen['devices'][0]['viewport_width'] . 'px' : 'Авто'; ?></span></span>
+        </div>
+        <div class="lb-topbar__end">
+            <div class="lb-topbar__save">Последнее обновление: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
+            <button type="button" class="btn btn-outline-light btn-sm" data-drawer-toggle="library">Библиотека</button>
+            <button type="button" class="btn btn-outline-light btn-sm" data-drawer-toggle="inspector">Инспектор</button>
+            <button type="button" class="btn btn-outline-light btn-sm" id="lb-add-section">Добавить секцию</button>
+                <a class="btn btn-outline-light btn-sm" href="<?php html($screen['design_url']); ?>">Глобальные стили</a>
+                <button type="button" class="btn btn-outline-light btn-sm" id="lb-edit-page-theme">Стиль на холсте</button>
+            <a class="btn btn-outline-light btn-sm" href="<?php html($screen['preview_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
+            <button type="button" class="btn btn-primary btn-sm" id="lb-save-canvas">Сохранить</button>
         </div>
     </div>
-</div>
 
-<div class="row">
-    <div class="col-lg-3 mb-4">
-        <div class="card h-100">
-            <div class="card-header">Библиотека элементов</div>
-            <div class="card-body">
-                <ul class="nav nav-pills flex-column mb-3">
-                    <?php foreach ($screen['left_tabs'] as $index => $tab) { ?>
-                        <li class="nav-item mb-2">
-                            <button type="button" class="nav-link text-left w-100 border-0 lb-library-tab<?php if ($index === 0) { ?> active<?php } ?>" data-tab="<?php echo $index === 0 ? 'blocks' : 'widgets'; ?>"><?php html($tab); ?></button>
-                        </li>
-                    <?php } ?>
-                </ul>
-                <div id="lb-blocks-library">
-                    <div class="small text-muted mb-2">Готовые блоки для быстрого старта</div>
-                    <div class="list-group list-group-flush" id="lb-block-list"></div>
+    <div class="lb-workspace__body">
+        <button type="button" class="lb-drawer-handle lb-drawer-handle--left" data-drawer-toggle="library">Библиотека</button>
+        <aside class="lb-drawer lb-drawer--left" id="lb-library-drawer">
+            <div class="lb-drawer__head">
+                <div>
+                    <h2 class="lb-drawer__title">Библиотека и навигация</h2>
+                    <p class="lb-drawer__desc">Добавляй секции, блоки и виджеты без потери ширины canvas. Панель можно прятать за край окна.</p>
                 </div>
-                <div id="lb-widgets-library" class="d-none">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="small text-muted">Системные виджеты InstantCMS</div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-reload-widgets">Обновить</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-drawer-toggle="library">Скрыть</button>
+            </div>
+            <div class="lb-drawer__body">
+                <div class="lb-panel-block">
+                    <div class="lb-panel-block__title">Что можно сделать</div>
+                    <div class="small text-muted">Сначала выбери секцию, колонку или страницу. Затем добавляй готовые секции, блоки и системные виджеты.</div>
+                </div>
+                <div class="lb-panel-block">
+                    <ul class="nav nav-pills flex-column mb-3">
+                        <?php foreach ($screen['left_tabs'] as $index => $tab) { ?>
+                            <li class="nav-item mb-2">
+                                <button type="button" class="nav-link text-left w-100 border-0 lb-library-tab<?php if ($index === 0) { ?> active<?php } ?>" data-tab="<?php html($tab['key']); ?>"><?php html($tab['title']); ?></button>
+                            </li>
+                        <?php } ?>
+                    </ul>
+                    <div id="lb-sections-library" class="lb-library-panel">
+                        <div class="small text-muted mb-2">Готовые секции для быстрого старта страницы и адаптации под устройства</div>
+                        <div class="list-group list-group-flush" id="lb-section-list"></div>
                     </div>
-                    <div id="lb-widget-list" class="small"></div>
+                    <div id="lb-blocks-library" class="lb-library-panel d-none">
+                        <div class="small text-muted mb-2">Готовые блоки для быстрого старта</div>
+                        <div class="list-group list-group-flush" id="lb-block-list"></div>
+                    </div>
+                    <div id="lb-widgets-library" class="lb-library-panel d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="small text-muted">Системные виджеты InstantCMS</div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-reload-widgets">Обновить</button>
+                        </div>
+                        <div id="lb-widget-list" class="small"></div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="lb-workspace__canvas">
+            <div class="lb-canvas-stage">
+                <div class="lb-canvas-stage__header">
+                    <div>
+                        <div class="lb-canvas-stage__eyebrow">Canvas workspace</div>
+                        <h2 class="lb-canvas-stage__title">Живой холст страницы</h2>
+                        <p class="lb-canvas-stage__desc">Главная работа со стилем должна происходить здесь: кликните по странице, секции или элементу, меняйте настройки справа и сразу видьте результат на самом холсте.</p>
+                    </div>
+                    <div class="lb-canvas-stage__status" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Работа с базой данных<?php } else { ?>Временный режим без базы<?php } ?></div>
+                </div>
+                <div class="lb-canvas-viewport">
+                    <div class="lb-canvas-frame" id="lb-canvas-frame">
+                        <div class="lb-canvas-surface" id="lb-canvas-root"></div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="col-lg-6 mb-4">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Макет страницы</span>
-                <span class="small text-muted" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Работа с базой данных<?php } else { ?>Временный режим без базы<?php } ?></span>
+
+        <button type="button" class="lb-drawer-handle lb-drawer-handle--right" data-drawer-toggle="inspector">Инспектор</button>
+        <aside class="lb-drawer lb-drawer--right" id="lb-inspector-drawer">
+            <div class="lb-drawer__head">
+                <div>
+                    <h2 class="lb-drawer__title">Инспектор</h2>
+                    <p class="lb-drawer__desc">Настройки страницы, секции, колонки или элемента. Основная visual-first работа со стилем должна происходить здесь, а не на отдельном экране настроек.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-drawer-toggle="inspector">Скрыть</button>
             </div>
-            <div class="card-body" id="lb-canvas-root"></div>
-            <div class="card-footer bg-white border-top-0">
-                <div class="small text-muted">Сначала выберите колонку, затем добавляйте блоки или виджеты из библиотеки слева. Секции и элементы можно перетаскивать мышью.</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-3 mb-4">
-        <div class="card h-100">
-            <div class="card-header">Панель настроек</div>
-            <div class="card-body">
-                <p class="mb-2"><strong>Виджетов на странице:</strong> <span id="lb-widget-count"><?php echo count($screen['widget_nodes']); ?></span></p>
-                <div class="mb-3">
+            <div class="lb-drawer__body">
+                <div class="lb-panel-block">
+                    <div class="lb-panel-block__title">Статус страницы</div>
+                    <p class="mb-2"><strong>Виджетов на странице:</strong> <span id="lb-widget-count"><?php echo count($screen['widget_nodes']); ?></span></p>
                     <label class="small text-muted d-block mb-1">Комментарий версии</label>
                     <input type="text" class="form-control form-control-sm" id="lb-version-note" placeholder="Например: перестроил первый экран и боковую колонку">
                 </div>
-                <div class="mb-3">
-                    <div class="small text-muted mb-1">Выделение</div>
+                <div class="lb-panel-block">
+                    <div class="lb-panel-block__title">Выделение</div>
                     <div id="lb-selection-summary" class="small">Ничего не выбрано</div>
+                    <div id="lb-selection-controls" class="mt-3"></div>
                 </div>
-                <div id="lb-selection-controls" class="mb-3"></div>
-                <div class="mb-3">
-                    <div class="small text-muted mb-2">Настройки выбранного виджета</div>
+                <div class="lb-panel-block">
+                    <div class="lb-panel-block__title">Настройки виджета</div>
                     <div id="lb-widget-form" class="border rounded p-2 bg-light small">Выберите системный виджет на макете, чтобы открыть его штатные настройки.</div>
                 </div>
-                <div>
+                <div class="lb-panel-block">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="small text-muted">История версий</div>
+                        <div class="lb-panel-block__title mb-0">История версий</div>
                         <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-refresh-versions">Обновить</button>
                     </div>
                     <div id="lb-versions-list" class="small"></div>
                 </div>
             </div>
-        </div>
+        </aside>
     </div>
 </div>
 
@@ -256,15 +1053,111 @@ $canvas_state = [
             {value: 'center', title: 'По центру'},
             {value: 'end', title: 'По нижнему краю'}
         ];
+        const pageThemeOptions = state.screen.theme_option_catalog || {
+            global_style_preset: [
+                {value: 'nordic_balanced', title: 'Сбалансированный Нордик'},
+                {value: 'nordic_contrast', title: 'Контрастный Нордик'},
+                {value: 'nordic_editorial', title: 'Редакционный Нордик'},
+                {value: 'nordic_catalog', title: 'Каталоговый Нордик'}
+            ],
+            color_preset: [
+                {value: 'nordic_day', title: 'Дневная палитра'},
+                {value: 'slate_contrast', title: 'Сланцевый контраст'},
+                {value: 'forest_accent', title: 'Лесной акцент'}
+            ],
+            typography_preset: [
+                {value: 'editorial', title: 'Редакционная'},
+                {value: 'neutral', title: 'Нейтральная'},
+                {value: 'compact', title: 'Компактная'}
+            ],
+            container_preset: [
+                {value: 'text', title: 'Узкий текстовый'},
+                {value: 'standard', title: 'Стандартный'},
+                {value: 'wide', title: 'Широкий'},
+                {value: 'full', title: 'Во всю ширину'}
+            ],
+            button_preset: [
+                {value: 'soft_accent', title: 'Мягкий акцент'},
+                {value: 'solid_brand', title: 'Плотный брендовый'},
+                {value: 'ghost', title: 'Прозрачный'}
+            ],
+            card_preset: [
+                {value: 'quiet', title: 'Спокойные'},
+                {value: 'raised', title: 'Поднятые'},
+                {value: 'outline', title: 'С обводкой'}
+            ],
+            section_spacing: [
+                {value: 'compact', title: 'Компактный'},
+                {value: 'comfortable', title: 'Комфортный'},
+                {value: 'airy', title: 'Воздушный'}
+            ]
+        };
+        const themeRuntimeCatalog = <?php echo json_encode($theme_runtime_catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> || {};
+        const pageShellScreen = state.screen.page_shell || {};
+        const sectionTypeOptions = [
+            {value: 'hero', title: 'Первый экран'},
+            {value: 'content', title: 'Контент'},
+            {value: 'proof', title: 'Доверие'},
+            {value: 'cta', title: 'Действие'},
+            {value: 'faq', title: 'Вопросы и ответы'},
+            {value: 'catalog', title: 'Каталог'},
+            {value: 'contacts', title: 'Контакты'},
+            {value: 'custom', title: 'Произвольная'}
+        ];
+        const sectionStyleOptions = [
+            {value: 'hero', title: 'Первый экран'},
+            {value: 'hero-split', title: 'Первый экран с разделением'},
+            {value: 'cards', title: 'Карточки'},
+            {value: 'feature-list', title: 'Список преимуществ'},
+            {value: 'logos', title: 'Логотипы'},
+            {value: 'stats', title: 'Статистика'},
+            {value: 'faq', title: 'FAQ'},
+            {value: 'cta', title: 'Призыв к действию'},
+            {value: 'content', title: 'Контент'},
+            {value: 'catalog', title: 'Каталог'},
+            {value: 'profile', title: 'Профиль'},
+            {value: 'custom', title: 'Произвольный'}
+        ];
+        const backgroundToneOptions = [
+            {value: 'base', title: 'Базовый'},
+            {value: 'brand-soft', title: 'Мягкий брендовый'},
+            {value: 'brand-strong', title: 'Плотный брендовый'},
+            {value: 'muted', title: 'Приглушенный'},
+            {value: 'contrast', title: 'Контрастный'},
+            {value: 'inverse', title: 'Инверсный'}
+        ];
+        const spacingPresetOptions = [
+            {value: 'sm', title: 'Компактный'},
+            {value: 'md', title: 'Средний'},
+            {value: 'lg', title: 'Свободный'},
+            {value: 'xl', title: 'Воздушный'}
+        ];
 
         state.widgetsCatalog = {};
-        state.activeDevice = state.screen.devices[0] || 'desktop';
+        state.deviceKeys = Array.isArray(state.screen.device_keys) && state.screen.device_keys.length
+            ? state.screen.device_keys.slice()
+            : (Array.isArray(state.screen.devices) ? state.screen.devices.map(function (device) {
+                return typeof device === 'string' ? device : device.key;
+            }).filter(Boolean) : ['desktop', 'mobile']);
+        state.deviceMap = Array.isArray(state.screen.devices) ? state.screen.devices.reduce(function (map, device) {
+            if (typeof device === 'string') {
+                map[device] = {key: device, title: deviceTitles[device] || device, canvas_width: '100%'};
+            } else if (device && device.key) {
+                map[device.key] = device;
+            }
+            return map;
+        }, {}) : {};
+        state.activeDevice = state.deviceKeys[0] || 'desktop';
         state.selection = null;
         state.drag = null;
         state.schema = normalizeSchema(state.schema || {sections: []});
+        state.ui = loadWorkspaceUIState();
 
+        const workspace = document.getElementById('lb-workspace');
         const canvasRoot = document.getElementById('lb-canvas-root');
+        const canvasFrame = document.getElementById('lb-canvas-frame');
         const blockList = document.getElementById('lb-block-list');
+        const sectionList = document.getElementById('lb-section-list');
         const widgetList = document.getElementById('lb-widget-list');
         const widgetForm = document.getElementById('lb-widget-form');
         const versionsList = document.getElementById('lb-versions-list');
@@ -275,25 +1168,96 @@ $canvas_state = [
         const versionNote = document.getElementById('lb-version-note');
         const pageMeta = document.getElementById('lb-page-meta');
         const canvasStatus = document.getElementById('lb-canvas-status');
+        const deviceWidthLabel = document.getElementById('lb-device-width-label');
+        const pageThemeButton = document.getElementById('lb-edit-page-theme');
+        const drawerToggleButtons = document.querySelectorAll('[data-drawer-toggle]');
+
+        function sanitizeThemeToken(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        function getNormalizedPageTheme(theme) {
+            const defaults = Object.assign({}, themeRuntimeCatalog.defaults || {}, state.screen.theme_defaults || {});
+            const normalized = Object.assign({}, defaults, theme || {});
+
+            Object.keys(themeRuntimeCatalog.defaults || {}).forEach(function (key) {
+                if (!normalized[key]) {
+                    normalized[key] = themeRuntimeCatalog.defaults[key];
+                }
+            });
+
+            return normalized;
+        }
+
+        function getThemeVars(theme) {
+            const catalog = themeRuntimeCatalog || {};
+
+            return Object.assign({}, catalog.base_vars || {}, {
+                '--lb-page-max-width': ((catalog.container_presets || {})[theme.container_preset]) || '1120px',
+                '--lb-section-gap': ((catalog.section_spacing || {})[theme.section_spacing]) || '32px'
+            }, ((catalog.global_style_presets || {})[theme.global_style_preset]) || {}, ((catalog.color_presets || {})[theme.color_preset]) || {}, ((catalog.typography_presets || {})[theme.typography_preset]) || {}, ((catalog.button_presets || {})[theme.button_preset]) || {}, ((catalog.card_presets || {})[theme.card_preset]) || {});
+        }
+
+        function renderThemeVars(vars) {
+            return Object.keys(vars || {}).reduce(function (parts, key) {
+                if (vars[key] === '' || vars[key] === null || typeof vars[key] === 'undefined') {
+                    return parts;
+                }
+
+                parts.push(key + ':' + vars[key]);
+                return parts;
+            }, []).join(';');
+        }
+
+        function getCurrentPageTheme() {
+            return getNormalizedPageTheme(state.schema.theme || {});
+        }
+
+        function getSectionPresentation(section) {
+            const theme = getCurrentPageTheme();
+            const classes = [
+                'lb-section--style-' + sanitizeThemeToken(section.style_preset || 'content'),
+                'lb-section--tone-' + sanitizeThemeToken(section.background_tone || 'base'),
+                'lb-section--container-' + sanitizeThemeToken(section.container_preset || theme.container_preset || 'standard'),
+                'lb-section--spacing-' + sanitizeThemeToken(section.spacing_preset || 'md')
+            ];
+
+            if (section.settings && section.settings.css_class) {
+                classes.push(section.settings.css_class);
+            }
+
+            return {
+                className: classes.filter(Boolean).join(' ')
+            };
+        }
+
+        function getSectionLayoutClass(layout) {
+            return 'lb-live-columns--' + sanitizeThemeToken(layout || '1col');
+        }
 
         function defaultVisibility() {
-            const visibility = {desktop: true, mobile: true};
-            if (state.screen.devices.indexOf('tablet') !== -1) {
-                visibility.tablet = true;
-            }
+            const visibility = {};
+            state.deviceKeys.forEach(function (device) {
+                visibility[device] = true;
+            });
             return visibility;
         }
 
         function defaultColumnWidth() {
-            const width = {desktop: 'auto', mobile: 'auto'};
-            if (state.screen.devices.indexOf('tablet') !== -1) {
-                width.tablet = 'auto';
-            }
+            const width = {};
+            state.deviceKeys.forEach(function (device) {
+                width[device] = 'auto';
+            });
             return width;
         }
 
         function normalizeSchema(schema) {
-            const next = Object.assign({sections: []}, schema || {});
+            const next = Object.assign({sections: [], theme: {}, layout: {}}, schema || {});
+            next.theme = Object.assign({}, state.screen.theme_defaults || {}, next.theme || {});
+            next.layout = Object.assign({shell_variant: '', content_slot: 'content_body'}, next.layout || {});
             next.sections = Array.isArray(next.sections) ? next.sections.map(function (section, sectionIndex) {
                 return normalizeSection(section, sectionIndex);
             }) : [];
@@ -305,6 +1269,11 @@ $canvas_state = [
             next.uid = next.uid || uid('section');
             next.title = next.title || ('Секция ' + ((sectionIndex || 0) + 1));
             next.layout = next.layout || '1col';
+            next.section_type = next.section_type || 'content';
+            next.style_preset = next.style_preset || 'content';
+            next.background_tone = next.background_tone || 'base';
+            next.container_preset = next.container_preset || 'standard';
+            next.spacing_preset = next.spacing_preset || 'md';
             next.visibility = Object.assign(defaultVisibility(), next.visibility || {});
             next.settings = Object.assign({background_class: '', padding: 'md', css_class: ''}, next.settings || {});
             next.columns = Array.isArray(next.columns) ? next.columns.map(function (column, columnIndex) {
@@ -353,7 +1322,11 @@ $canvas_state = [
         }
 
         function getDeviceTitle(device) {
-            return deviceTitles[device] || device;
+            return (state.deviceMap[device] && state.deviceMap[device].title) || deviceTitles[device] || device;
+        }
+
+        function getDeviceConfig(device) {
+            return state.deviceMap[device] || {key: device, title: getDeviceTitle(device), canvas_width: '100%'};
         }
 
         function getPageModeTitle(mode) {
@@ -382,6 +1355,14 @@ $canvas_state = [
             }) || {value: value, title: value};
         }
 
+        function getOptionTitle(options, value) {
+            const option = Array.isArray(options) ? options.find(function (item) {
+                return String(item.value) === String(value);
+            }) : null;
+
+            return option ? option.title : value;
+        }
+
         function getNodeTypeTitle(type) {
             if (type === 'system_widget') {
                 return 'Системный виджет';
@@ -396,6 +1377,10 @@ $canvas_state = [
         function getNodeDisplayLabel(node) {
             if (!node) {
                 return '';
+            }
+
+            if (node.label) {
+                return node.label;
             }
 
             if (node.type === 'block') {
@@ -423,6 +1408,22 @@ $canvas_state = [
             return '<label class="small text-muted d-block mb-1">' + escapeHtml(title) + (hint ? helpIcon(hint) : '') + '</label>';
         }
 
+        function renderSelectOptions(options, currentValue) {
+            return options.map(function (option) {
+                return '<option value="' + escapeHtml(option.value) + '"' + (String(currentValue) === String(option.value) ? ' selected' : '') + '>' + escapeHtml(option.title) + '</option>';
+            }).join('');
+        }
+
+        function renderSelectField(title, hint, field, options, value) {
+            return '' +
+                '<div class="form-group mb-2">' +
+                    fieldLabel(title, hint) +
+                    '<select class="form-control form-control-sm" data-field="' + field + '">' +
+                        renderSelectOptions(options, value) +
+                    '</select>' +
+                '</div>';
+        }
+
         function initTooltips(root) {
             if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.tooltip) {
                 return;
@@ -433,7 +1434,253 @@ $canvas_state = [
         }
 
         function renderPageMeta() {
-            return 'Ключ страницы: <code>' + escapeHtml(state.page.key) + '</code> | Режим: ' + escapeHtml(getPageModeTitle(state.page.mode)) + ' | Статус: ' + escapeHtml(getPageStatusTitle(state.page.status));
+            const effectiveShell = getEffectiveShellVariantState();
+            const shellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Shell не определен';
+
+            return 'Ключ страницы: <code>' + escapeHtml(state.page.key) + '</code> | Режим: ' + escapeHtml(getPageModeTitle(state.page.mode)) + ' | Статус: ' + escapeHtml(getPageStatusTitle(state.page.status)) + ' | Shell: ' + escapeHtml(shellTitle);
+        }
+
+        function getShellVariantCatalog() {
+            return pageShellScreen.variant_catalog || {};
+        }
+
+        function getShellVariantOptions() {
+            return Array.isArray(pageShellScreen.variant_options) && pageShellScreen.variant_options.length
+                ? pageShellScreen.variant_options
+                : [{value: '', title: 'Авто по правилам'}];
+        }
+
+        function normalizeShellSlotKeys(activeSlots) {
+            if (!Array.isArray(activeSlots)) {
+                return [];
+            }
+
+            return activeSlots.map(function (item) {
+                return typeof item === 'string' ? item : item && item.key;
+            }).filter(Boolean);
+        }
+
+        function getShellSlotTitle(slotKey) {
+            return (pageShellScreen.slot_titles && pageShellScreen.slot_titles[slotKey]) || slotKey;
+        }
+
+        function getShellAssignmentSourceTitle(source) {
+            return (pageShellScreen.assignment_source_titles && pageShellScreen.assignment_source_titles[source]) || source;
+        }
+
+        function getEffectiveShellVariantState() {
+            const layout = state.schema.layout || {};
+            const catalog = getShellVariantCatalog();
+            const override = String(layout.shell_variant || '');
+
+            if (override && catalog[override]) {
+                return {
+                    variant: catalog[override],
+                    assignment_source: 'page-layout'
+                };
+            }
+
+            const autoKey = pageShellScreen.auto_variant_key || '';
+            const fallbackVariant = pageShellScreen.effective_variant || {};
+
+            return {
+                variant: catalog[autoKey] || {
+                    key: autoKey,
+                    title: fallbackVariant.title || autoKey || 'Базовый shell',
+                    active_slots: normalizeShellSlotKeys(fallbackVariant.active_slots || []),
+                    body_layout: fallbackVariant.body_layout || 'no_sidebars'
+                },
+                assignment_source: pageShellScreen.auto_assignment_source || fallbackVariant.assignment_source || 'default'
+            };
+        }
+
+        function getPageContentSlotOptions() {
+            const layout = state.schema.layout || {};
+            const effectiveShell = getEffectiveShellVariantState();
+            const allowedSlots = {
+                hero: true,
+                before_content: true,
+                content_body: true,
+                content_sidebar_left: true,
+                content_sidebar_right: true,
+                after_content: true
+            };
+
+            let slotKeys = normalizeShellSlotKeys((effectiveShell.variant && effectiveShell.variant.active_slots) || []);
+
+            if (!slotKeys.length && Array.isArray(pageShellScreen.content_slot_options)) {
+                slotKeys = pageShellScreen.content_slot_options.map(function (option) {
+                    return option.value;
+                }).filter(Boolean);
+            }
+
+            if (layout.content_slot && allowedSlots[layout.content_slot] && slotKeys.indexOf(layout.content_slot) === -1) {
+                slotKeys.push(layout.content_slot);
+            }
+
+            slotKeys = slotKeys.filter(function (slotKey) {
+                return allowedSlots[slotKey];
+            });
+
+            if (!slotKeys.length) {
+                slotKeys = ['content_body'];
+            }
+
+            return slotKeys.map(function (slotKey) {
+                return {
+                    value: slotKey,
+                    title: getShellSlotTitle(slotKey)
+                };
+            });
+        }
+
+        function syncPageLayoutWithEffectiveShell() {
+            state.schema.layout = state.schema.layout || {shell_variant: '', content_slot: 'content_body'};
+
+            const options = getPageContentSlotOptions();
+            const hasCurrent = options.some(function (option) {
+                return String(option.value) === String(state.schema.layout.content_slot || '');
+            });
+
+            if (!hasCurrent && options.length) {
+                state.schema.layout.content_slot = options[0].value;
+            }
+        }
+
+        function renderPageShellSummary() {
+            const effectiveShell = getEffectiveShellVariantState();
+            const variant = effectiveShell.variant || {title: 'Базовый shell', active_slots: [], body_layout: 'no_sidebars'};
+            const slotBadges = normalizeShellSlotKeys(variant.active_slots).map(function (slotKey) {
+                return '<span class="badge badge-light border mr-1 mb-1">' + escapeHtml(getShellSlotTitle(slotKey)) + '</span>';
+            }).join('');
+
+            return '' +
+                '<div class="border rounded p-2 mb-3 bg-light">' +
+                    '<div class="font-weight-bold mb-1">Эффективный shell: ' + escapeHtml(variant.title || variant.key || 'Базовый shell') + '</div>' +
+                    '<div class="small text-muted mb-1">Источник: ' + escapeHtml(getShellAssignmentSourceTitle(effectiveShell.assignment_source)) + '</div>' +
+                    '<div class="small text-muted mb-2">Сценарий корпуса: ' + escapeHtml(variant.body_layout || 'no_sidebars') + '</div>' +
+                    (state.page.mode === 'full_takeover'
+                        ? '<div class="small text-muted mb-2">Основной slot страницы: ' + escapeHtml(getShellSlotTitle((state.schema.layout && state.schema.layout.content_slot) || 'content_body')) + '</div>'
+                        : '<div class="small text-muted mb-2">Для overlay-страниц основной системный content slot задается adapter-ом.</div>') +
+                    '<div>' + (slotBadges || '<span class="small text-muted">Активные shell slots не определены.</span>') + '</div>' +
+                '</div>';
+        }
+
+        function getWorkspaceStorageKey() {
+            return 'landingbuilder.canvas.workspace.v1';
+        }
+
+        function getWorkspaceMode() {
+            return window.matchMedia('(max-width: 1199.98px)').matches ? 'mobile' : 'desktop';
+        }
+
+        function getDefaultDrawers(mode) {
+            return mode === 'desktop'
+                ? {library: true, inspector: true}
+                : {library: false, inspector: false};
+        }
+
+        function loadWorkspaceUIState() {
+            const baseState = {
+                drawers: {
+                    desktop: getDefaultDrawers('desktop'),
+                    mobile: getDefaultDrawers('mobile')
+                }
+            };
+
+            try {
+                const rawState = window.localStorage.getItem(getWorkspaceStorageKey());
+                if (!rawState) {
+                    return baseState;
+                }
+
+                const parsedState = JSON.parse(rawState);
+                if (!parsedState || typeof parsedState !== 'object') {
+                    return baseState;
+                }
+
+                baseState.drawers.desktop = Object.assign({}, baseState.drawers.desktop, parsedState.drawers && parsedState.drawers.desktop ? parsedState.drawers.desktop : {});
+                baseState.drawers.mobile = Object.assign({}, baseState.drawers.mobile, parsedState.drawers && parsedState.drawers.mobile ? parsedState.drawers.mobile : {});
+            } catch (error) {
+                return baseState;
+            }
+
+            return baseState;
+        }
+
+        function saveWorkspaceUIState() {
+            try {
+                window.localStorage.setItem(getWorkspaceStorageKey(), JSON.stringify(state.ui));
+            } catch (error) {
+                return;
+            }
+        }
+
+        function isDrawerOpen(name) {
+            const mode = getWorkspaceMode();
+            const drawers = state.ui && state.ui.drawers ? state.ui.drawers[mode] : null;
+
+            return !!(drawers && drawers[name]);
+        }
+
+        function syncWorkspaceShell() {
+            if (!workspace) {
+                return;
+            }
+
+            const mode = getWorkspaceMode();
+            const libraryOpen = isDrawerOpen('library');
+            const inspectorOpen = isDrawerOpen('inspector');
+
+            workspace.classList.toggle('lb-workspace--mobile', mode === 'mobile');
+            workspace.classList.toggle('lb-workspace--library-open', libraryOpen);
+            workspace.classList.toggle('lb-workspace--inspector-open', inspectorOpen);
+
+            drawerToggleButtons.forEach(function (button) {
+                const drawerName = button.dataset.drawerToggle;
+                if (!drawerName) {
+                    return;
+                }
+
+                const isOpen = drawerName === 'library' ? libraryOpen : inspectorOpen;
+                button.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        }
+
+        function setDrawerOpen(name, isOpen) {
+            const mode = getWorkspaceMode();
+            const defaults = getDefaultDrawers(mode);
+
+            if (!state.ui.drawers[mode]) {
+                state.ui.drawers[mode] = defaults;
+            }
+
+            if (mode === 'mobile' && isOpen) {
+                state.ui.drawers[mode].library = false;
+                state.ui.drawers[mode].inspector = false;
+            }
+
+            state.ui.drawers[mode][name] = isOpen;
+            saveWorkspaceUIState();
+            syncWorkspaceShell();
+        }
+
+        function toggleDrawer(name) {
+            setDrawerOpen(name, !isDrawerOpen(name));
+        }
+
+        function applyDeviceViewport() {
+            const config = getDeviceConfig(state.activeDevice);
+            if (!canvasFrame) {
+                return;
+            }
+
+            canvasFrame.style.maxWidth = config.canvas_width || '100%';
+            canvasFrame.setAttribute('data-device', config.key || state.activeDevice);
+
+            if (deviceWidthLabel) {
+                deviceWidthLabel.textContent = config.viewport_width ? String(config.viewport_width) + 'px' : 'Авто';
+            }
         }
 
         function sectionColumnClass(count) {
@@ -518,6 +1765,10 @@ $canvas_state = [
                 return state.schema.sections[state.selection.sectionIndex] || null;
             }
 
+            if (state.selection.type === 'page') {
+                return state.schema || null;
+            }
+
             if (state.selection.type === 'column') {
                 return getSelectedColumn();
             }
@@ -526,7 +1777,7 @@ $canvas_state = [
         }
 
         function renderVisibilityControls(pathBase, visibility) {
-            return state.screen.devices.map(function (device) {
+            return state.deviceKeys.map(function (device) {
                 const inputId = 'lb-' + pathBase.replace(/\./g, '-') + '-' + device;
                 return '' +
                     '<div class="form-check form-check-inline mr-2">' +
@@ -537,7 +1788,7 @@ $canvas_state = [
         }
 
         function renderWidthControls(width) {
-            return state.screen.devices.map(function (device) {
+            return state.deviceKeys.map(function (device) {
                 const widthOption = getWidthOption(String(width[device] || 'auto'));
                 return '' +
                     '<div class="form-group mb-2">' +
@@ -558,7 +1809,8 @@ $canvas_state = [
             }
 
             if (!state.schema.sections.length) {
-                return false;
+                state.selection = {type: 'page'};
+                return true;
             }
 
             state.selection = {type: 'section', sectionIndex: 0};
@@ -633,6 +1885,32 @@ $canvas_state = [
             node.options = options;
         }
 
+        function renderSectionLibrary() {
+            const presets = Array.isArray(state.screen.section_presets) ? state.screen.section_presets : [];
+
+            sectionList.innerHTML = '' +
+                '<button type="button" class="list-group-item list-group-item-action mb-2" data-role="insert-empty-section">' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                        '<span class="font-weight-bold">Пустая секция</span>' +
+                        '<span class="badge badge-light">Создать</span>' +
+                    '</div>' +
+                    '<div class="small text-muted lb-library-caption mt-1">Чистая секция без контента. Удобно, если нужен свой состав колонок и блоков.</div>' +
+                '</button>' +
+                presets.map(function (preset, index) {
+                    const columnsCount = Array.isArray(preset.columns) ? preset.columns.length : getLayoutColumnCount(preset.layout || '1col');
+                    return '' +
+                        '<button type="button" class="list-group-item list-group-item-action mb-2" data-role="insert-section-preset" data-preset-index="' + index + '">' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                                '<span class="font-weight-bold">' + escapeHtml(preset.title) + '</span>' +
+                                '<span class="badge badge-light">' + escapeHtml(String(columnsCount)) + ' кол.</span>' +
+                            '</div>' +
+                            '<div class="small text-muted lb-library-caption mt-1">' + escapeHtml(preset.description || 'Готовый стартовый состав секции.') + '</div>' +
+                        '</button>';
+                }).join('');
+
+            initTooltips(sectionList);
+        }
+
         function renderBlockLibrary() {
             blockList.innerHTML = blockPresets.map(function (block, index) {
                 return '' +
@@ -674,65 +1952,109 @@ $canvas_state = [
         }
 
         function renderCanvas() {
-            if (!state.schema.sections.length) {
-                canvasRoot.innerHTML = '<div class="alert alert-light border">Секция ещё не добавлена. Нажми «Добавить секцию».</div>';
-                renderInspector();
-                return;
-            }
+            applyDeviceViewport();
 
-            canvasRoot.innerHTML = state.schema.sections.map(function (section, sectionIndex) {
-                const sectionVisible = isVisibleOnDevice(section.visibility);
-                const layoutTitle = getLayoutOption(section.layout).title;
-                return '' +
-                    '<div class="border rounded p-3 mb-3 lb-section' + (state.selection && state.selection.sectionIndex === sectionIndex ? ' border-primary' : '') + (!sectionVisible ? ' lb-muted-device' : '') + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
-                        '<div class="d-flex justify-content-between align-items-center mb-3">' +
-                            '<div>' +
-                                '<div class="d-flex align-items-center">' +
-                                    '<strong>' + escapeHtml(section.title) + '</strong>' +
-                                    '<span class="badge badge-light ml-2">Перетащить</span>' +
-                                    (!sectionVisible ? '<span class="badge badge-warning ml-2">Скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»</span>' : '') +
+            const pageTheme = getCurrentPageTheme();
+            const pageThemeStyle = renderThemeVars(getThemeVars(pageTheme));
+            const effectiveShell = getEffectiveShellVariantState();
+            const effectiveShellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Базовый shell';
+            const sectionsMarkup = state.schema.sections.length
+                ? state.schema.sections.map(function (section, sectionIndex) {
+                    const sectionVisible = isVisibleOnDevice(section.visibility);
+                    const layoutTitle = getLayoutOption(section.layout).title;
+                    const sectionPresentation = getSectionPresentation(section);
+                    const sectionClasses = [
+                        'lb-live-section',
+                        sectionPresentation.className,
+                        state.selection && state.selection.sectionIndex === sectionIndex ? 'lb-live-section--selected' : '',
+                        !sectionVisible ? 'lb-muted-device' : ''
+                    ].filter(Boolean).join(' ');
+
+                    return '' +
+                        '<section class="' + escapeHtml(sectionClasses) + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
+                            '<div class="lb-live-section__topbar">' +
+                                '<div>' +
+                                    '<div class="lb-live-section__kicker">' + escapeHtml(getOptionTitle(sectionTypeOptions, section.section_type || 'content')) + '</div>' +
+                                    '<h3 class="lb-live-section__title">' + escapeHtml(section.title) + '</h3>' +
+                                    '<div class="lb-live-section__meta">Схема: ' + escapeHtml(layoutTitle) + ' | стиль: ' + escapeHtml(getOptionTitle(sectionStyleOptions, section.style_preset || 'content')) + ' | тон: ' + escapeHtml(getOptionTitle(backgroundToneOptions, section.background_tone || 'base')) + '</div>' +
+                                    (!sectionVisible ? '<div class="lb-live-section__meta">Секция скрыта на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '».</div>' : '') +
                                 '</div>' +
-                                '<div class="small text-muted">Схема колонок: ' + escapeHtml(layoutTitle) + (section.settings.background_class ? ' | фон: ' + escapeHtml(section.settings.background_class) : '') + '</div>' +
+                                '<div class="btn-group btn-group-sm">' +
+                                    '<button type="button" class="btn btn-outline-danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
+                                '</div>' +
                             '</div>' +
-                            '<div class="btn-group btn-group-sm">' +
-                                '<button type="button" class="btn btn-outline-danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
+                            '<div class="lb-live-section__inner">' +
+                                '<div class="lb-live-columns ' + escapeHtml(getSectionLayoutClass(section.layout)) + '">' +
+                                    section.columns.map(function (column, columnIndex) {
+                                        const columnVisible = isVisibleOnDevice(column.visibility);
+                                        const columnClasses = [
+                                            'lb-live-column',
+                                            state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? 'lb-live-column--selected' : '',
+                                            !columnVisible ? 'lb-muted-device' : ''
+                                        ].filter(Boolean).join(' ');
+
+                                        return '' +
+                                            '<div class="' + escapeHtml(columnClasses) + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
+                                                '<div class="lb-live-column__head">' +
+                                                    '<div>' +
+                                                        '<div class="lb-live-column__eyebrow">Колонка</div>' +
+                                                        '<div class="lb-live-column__title">' + escapeHtml(column.title) + '</div>' +
+                                                    '</div>' +
+                                                    '<div class="lb-live-column__meta">' + escapeHtml(getWidthOption(String(column.width[state.activeDevice] || 'auto')).title) + '</div>' +
+                                                '</div>' +
+                                                '<div class="lb-live-column__meta">Нажмите, чтобы выбрать колонку. Перетаскивание в эту область отправляет элемент в конец колонки.</div>' +
+                                                (column.nodes.length
+                                                    ? column.nodes.map(function (node, nodeIndex) {
+                                                        const nodeVisible = isVisibleOnDevice(node.device_visibility);
+                                                        const nodeLabel = getNodeDisplayLabel(node);
+                                                        const nodeClasses = [
+                                                            'lb-live-node',
+                                                            node.type === 'system_widget' ? 'lb-live-node--widget' : 'lb-live-node--block',
+                                                            state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? 'lb-live-node--selected' : '',
+                                                            !nodeVisible ? 'lb-muted-device' : ''
+                                                        ].filter(Boolean).join(' ');
+
+                                                        return '' +
+                                                            '<div class="' + escapeHtml(nodeClasses) + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
+                                                                '<div class="lb-live-node__head">' +
+                                                                    '<div>' +
+                                                                        '<div class="lb-live-node__eyebrow">' + escapeHtml(getNodeTypeTitle(node.type)) + '</div>' +
+                                                                        '<div class="lb-live-node__label">' + escapeHtml(nodeLabel) + '</div>' +
+                                                                    '</div>' +
+                                                                    '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
+                                                                '</div>' +
+                                                                '<div class="lb-live-node__meta">' + (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
+                                                            '</div>';
+                                                    }).join('')
+                                                    : '<div class="lb-live-column__empty">Колонка пока пустая. Добавьте блок или системный виджет из библиотеки слева.</div>') +
+                                            '</div>';
+                                    }).join('') +
+                                '</div>' +
+                            '</div>' +
+                        '</section>';
+                }).join('')
+                : '<div class="lb-live-page__empty" data-role="page">Секция ещё не добавлена. Нажмите «Добавить секцию» и начните собирать страницу прямо на живом холсте.</div>';
+
+            canvasRoot.innerHTML = '' +
+                '<div class="lb-live-page" style="' + escapeHtml(pageThemeStyle) + '" data-role="page">' +
+                    '<section class="lb-live-page__hero" data-role="page">' +
+                        '<div class="lb-live-page__kicker">Visual-first canvas</div>' +
+                        '<div class="lb-live-page__header">' +
+                            '<div>' +
+                                '<h2 class="lb-live-page__title">' + escapeHtml(state.page.title) + '</h2>' +
+                                '<p class="lb-live-page__lead">Это рабочее превью страницы. Главная идея нового потока: вы меняете стиль прямо здесь, а отдельный экран глобальных стилей нужен только для редких site-wide defaults.</p>' +
                             '</div>' +
                         '</div>' +
-                        '<div class="row">' +
-                            section.columns.map(function (column, columnIndex) {
-                                const columnVisible = isVisibleOnDevice(column.visibility);
-                                return '' +
-                                    '<div class="' + sectionColumnClass(section.columns.length) + ' mb-3">' +
-                                        '<div class="border rounded p-2 h-100 bg-light lb-column' + (state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? ' border-primary' : '') + (!columnVisible ? ' lb-muted-device' : '') + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
-                                            '<div class="d-flex justify-content-between align-items-center mb-2">' +
-                                                '<div class="small font-weight-bold">' + escapeHtml(column.title) + '</div>' +
-                                                '<div class="small text-muted">Ширина: ' + escapeHtml(getWidthOption(String(column.width[state.activeDevice] || 'auto')).title) + '</div>' +
-                                            '</div>' +
-                                            '<div class="small text-muted mb-2">Нажмите, чтобы выбрать колонку. Перетаскивание в эту область отправляет элемент в конец колонки.</div>' +
-                                            '<div>' +
-                                                column.nodes.map(function (node, nodeIndex) {
-                                                    const nodeVisible = isVisibleOnDevice(node.device_visibility);
-                                                    const nodeLabel = getNodeDisplayLabel(node);
-                                                    return '' +
-                                                        '<div class="border rounded bg-white p-2 mb-2 lb-node' + (state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? ' border-primary' : '') + (!nodeVisible ? ' lb-muted-device' : '') + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
-                                                            '<div class="d-flex justify-content-between align-items-center mb-1">' +
-                                                                '<div class="small text-muted text-uppercase">' + escapeHtml(getNodeTypeTitle(node.type)) + '</div>' +
-                                                                '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
-                                                            '</div>' +
-                                                            '<div class="d-flex align-items-center justify-content-between">' +
-                                                                '<div>' + escapeHtml(nodeLabel) + '</div>' +
-                                                                '<span class="badge badge-light ml-2">Перетащить</span>' +
-                                                            '</div>' +
-                                                            '<div class="small text-muted mt-1">' + (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
-                                                        '</div>';
-                                                }).join('') +
-                                            '</div>' +
-                                        '</div>' +
-                                    '</div>';
-                            }).join('') +
+                        '<div class="lb-live-page__chips">' +
+                            '<span class="lb-live-pill"><strong>Shell</strong><span>' + escapeHtml(effectiveShellTitle) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Стиль</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.global_style_preset, pageTheme.global_style_preset)) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Цвет</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.color_preset, pageTheme.color_preset)) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Типографика</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.typography_preset, pageTheme.typography_preset)) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Кнопки</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.button_preset, pageTheme.button_preset)) + '</span></span>' +
                         '</div>' +
-                    '</div>';
-            }).join('');
+                    '</section>' +
+                    '<div class="lb-live-sections">' + sectionsMarkup + '</div>' +
+                '</div>';
 
             widgetCount.textContent = String(countWidgetNodes());
             renderInspector();
@@ -749,6 +2071,34 @@ $canvas_state = [
                 return;
             }
 
+            if (selection.type === 'page') {
+                const theme = state.schema.theme || {};
+                const layout = state.schema.layout || {};
+                const contentSlotOptions = getPageContentSlotOptions();
+                selectionSummary.innerHTML = '<strong>Страница</strong><br><span class="text-muted">' + escapeHtml(state.page.title) + ' · live styling на canvas</span>';
+                selectionControls.innerHTML = '' +
+                        '<div class="small text-muted mb-3">Это основной слой визуальной работы со страницей. Меняйте стиль прямо здесь и сразу проверяйте результат на холсте. Экран глобальных стилей нужен только для редких site-wide defaults.</div>' +
+                    '<div class="small font-weight-bold text-uppercase text-muted mb-2">Каркас страницы</div>' +
+                    renderSelectField('Shell variant страницы', 'Можно явно назначить shell variant для этой страницы. Если оставить авто-режим, resolver выберет вариант сам.', 'layout.shell_variant', getShellVariantOptions(), layout.shell_variant || '') +
+                    (state.page.mode === 'full_takeover'
+                        ? renderSelectField('Основной slot builder-содержимого', 'Куда должен вставляться основной runtime-контент страницы внутри shell.', 'layout.content_slot', contentSlotOptions, layout.content_slot || 'content_body')
+                        : '') +
+                    renderPageShellSummary() +
+                    '<div class="small font-weight-bold text-uppercase text-muted mt-3 mb-2">Визуальный язык страницы</div>' +
+                        renderSelectField('Общий стиль страницы', 'Локальный page-level preset. Для глобального стиля всего сайта используйте экран «Дизайн сайта».', 'theme.global_style_preset', pageThemeOptions.global_style_preset, theme.global_style_preset) +
+                    renderSelectField('Цветовая схема', 'Базовый набор цветов интерфейса и контента.', 'theme.color_preset', pageThemeOptions.color_preset, theme.color_preset) +
+                    renderSelectField('Типографика', 'Пресет для заголовков, текста и ритма набора.', 'theme.typography_preset', pageThemeOptions.typography_preset, theme.typography_preset) +
+                    renderSelectField('Контейнеры', 'Базовая ширина контейнеров по странице.', 'theme.container_preset', pageThemeOptions.container_preset, theme.container_preset) +
+                    renderSelectField('Кнопки', 'Главный стиль кнопок и призывов к действию.', 'theme.button_preset', pageThemeOptions.button_preset, theme.button_preset) +
+                    renderSelectField('Карточки', 'Пресет карточек для списков и блоков.', 'theme.card_preset', pageThemeOptions.card_preset, theme.card_preset) +
+                    renderSelectField('Ритм между секциями', 'Общий вертикальный ритм страницы.', 'theme.section_spacing', pageThemeOptions.section_spacing, theme.section_spacing) +
+                        '<div class="small text-muted mt-3"><a href="' + escapeHtml(state.screen.design_url || '#') + '">Открыть глобальные стили</a> для редких site-wide defaults. Повседневная работа со страницей должна происходить здесь, на canvas.</div>' +
+                    '<div class="small text-muted mt-3">Устройства предпросмотра: ' + escapeHtml(state.deviceKeys.map(getDeviceTitle).join(', ')) + '</div>';
+                widgetForm.innerHTML = 'Выберите секцию, колонку или системный виджет, чтобы открыть локальные настройки.';
+                initTooltips(selectionControls);
+                return;
+            }
+
             if (selection.type === 'section') {
                 const section = state.schema.sections[selection.sectionIndex];
                 selectionSummary.innerHTML = '<strong>Секция</strong><br><span class="text-muted">' + escapeHtml(section.title) + '</span>';
@@ -760,18 +2110,21 @@ $canvas_state = [
                     '<div class="form-group mb-2">' +
                         fieldLabel('Схема колонок', 'Определяет, сколько колонок будет в секции и как они распределяются по ширине.') +
                         '<select class="form-control form-control-sm" data-field="layout">' +
-                            layoutOptions.map(function (option) {
-                                return '<option value="' + option.value + '"' + (section.layout === option.value ? ' selected' : '') + '>' + option.title + '</option>';
-                            }).join('') +
+                            renderSelectOptions(layoutOptions, section.layout) +
                         '</select>' +
                     '</div>' +
-                    '<div class="form-group mb-2">' +
-                        fieldLabel('Оформление фона', 'Нужно только если для секции заранее подготовлено отдельное оформление. Можно оставить пустым.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
-                    '</div>' +
+                    renderSelectField('Тип секции', 'Смысл секции на странице: первый экран, контент, действие, каталог и так далее.', 'section_type', sectionTypeOptions, section.section_type) +
+                    renderSelectField('Стилевой пресет', 'Готовый пресет оформления секции.', 'style_preset', sectionStyleOptions, section.style_preset) +
+                    renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
+                    renderSelectField('Пресет контейнера', 'Управляет рабочей шириной секции.', 'container_preset', pageThemeOptions.container_preset, section.container_preset) +
+                    renderSelectField('Вертикальный ритм', 'Отступы сверху и снизу для секции.', 'spacing_preset', spacingPresetOptions, section.spacing_preset) +
                     '<div class="form-group mb-2">' +
                         fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
                         '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
+                    '</div>' +
+                    '<div class="form-group mb-2">' +
+                        fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
+                        '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
                     '</div>' +
                     '<div class="form-group mb-3">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
@@ -826,7 +2179,7 @@ $canvas_state = [
             selectionControls.innerHTML = '' +
                 '<div class="form-group mb-2">' +
                     fieldLabel('Название элемента', 'Короткое понятное имя, по которому редактор узнает блок внутри конструктора.') +
-                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(getNodeDisplayLabel(node)) + '">' +
+                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(node.label || '') + '">' +
                 '</div>' +
                 '<div class="form-group mb-2">' +
                     fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления конкретного элемента.') +
@@ -1001,36 +2354,69 @@ $canvas_state = [
         function setSelection(selection) {
             syncSelectedWidgetFormIntoState();
             state.selection = selection;
+
+            if (selection && getWorkspaceMode() === 'mobile') {
+                setDrawerOpen('inspector', true);
+            }
+
             renderCanvas();
         }
 
         function addSection() {
-            const title = window.prompt('Название новой секции', 'Новая секция');
-            if (!title) {
+            const sectionUid = uid('section');
+            const layout = state.screen.default_section_layout || '1col';
+            const section = normalizeSection({
+                uid: sectionUid,
+                title: 'Секция ' + (state.schema.sections.length + 1),
+                layout: layout,
+                section_type: 'content',
+                style_preset: 'content',
+                background_tone: 'base',
+                container_preset: state.schema.theme.container_preset || 'standard',
+                spacing_preset: 'md',
+                visibility: defaultVisibility(),
+                settings: {background_class: '', padding: 'md', css_class: ''},
+                columns: []
+            }, state.schema.sections.length);
+
+            state.schema.sections.push(section);
+            setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+        }
+
+        function insertSectionPreset(presetIndex) {
+            const preset = Array.isArray(state.screen.section_presets) ? state.screen.section_presets[presetIndex] : null;
+            if (!preset) {
                 return;
             }
 
-            const layout = '2col_equal';
-            const columnsCount = layout === '1col' ? 1 : (layout.indexOf('3col') === 0 ? 3 : 2);
             const sectionUid = uid('section');
+            const columns = Array.isArray(preset.columns) ? preset.columns.map(function (column, columnIndex) {
+                const columnUid = sectionUid + '-column-' + (columnIndex + 1);
+                return {
+                    uid: columnUid,
+                    title: column.title || ('Колонка ' + (columnIndex + 1)),
+                    visibility: defaultVisibility(),
+                    width: defaultColumnWidth(),
+                    settings: {align: 'stretch', css_class: ''},
+                    nodes: Array.isArray(column.nodes) ? column.nodes.map(function (node, nodeIndex) {
+                        return normalizeNode(Object.assign({}, node || {}), columnUid, nodeIndex);
+                    }) : []
+                };
+            }) : [];
 
-            const columns = [];
-            for (let index = 0; index < columnsCount; index += 1) {
-                columns.push({
-                    uid: sectionUid + '-column-' + (index + 1),
-                    title: 'Колонка ' + (index + 1),
-                    nodes: []
-                });
-            }
-
-            state.schema.sections.push({
+            state.schema.sections.push(normalizeSection({
                 uid: sectionUid,
-                title: title,
-                layout: layout,
+                title: preset.title || ('Секция ' + (state.schema.sections.length + 1)),
+                layout: preset.layout || '1col',
+                section_type: preset.section_type || 'content',
+                style_preset: preset.style_preset || 'content',
+                background_tone: preset.background_tone || 'base',
+                container_preset: preset.container_preset || state.schema.theme.container_preset || 'standard',
+                spacing_preset: preset.spacing_preset || 'md',
                 visibility: defaultVisibility(),
                 settings: {background_class: '', padding: 'md', css_class: ''},
                 columns: columns
-            });
+            }, state.schema.sections.length));
 
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
         }
@@ -1204,8 +2590,13 @@ $canvas_state = [
                     item.classList.remove('active');
                 });
                 button.classList.add('active');
-                document.getElementById('lb-blocks-library').classList.toggle('d-none', button.dataset.tab !== 'blocks');
-                document.getElementById('lb-widgets-library').classList.toggle('d-none', button.dataset.tab !== 'widgets');
+                document.querySelectorAll('.lb-library-panel').forEach(function (panel) {
+                    panel.classList.add('d-none');
+                });
+                const activePanel = document.getElementById('lb-' + button.dataset.tab + '-library');
+                if (activePanel) {
+                    activePanel.classList.remove('d-none');
+                }
             });
         });
 
@@ -1220,7 +2611,21 @@ $canvas_state = [
             });
         });
 
+        drawerToggleButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                if (!button.dataset.drawerToggle) {
+                    return;
+                }
+
+                toggleDrawer(button.dataset.drawerToggle);
+            });
+        });
+
         document.getElementById('lb-add-section').addEventListener('click', addSection);
+        pageThemeButton.addEventListener('click', function () {
+            setDrawerOpen('inspector', true);
+            setSelection({type: 'page'});
+        });
         document.getElementById('lb-save-canvas').addEventListener('click', function () {
             saveCanvas().catch(function (error) {
                 console.error(error);
@@ -1257,6 +2662,10 @@ $canvas_state = [
 
             if (state.selection && state.selection.type === 'section' && field.dataset.field === 'layout') {
                 syncSectionColumnsWithLayout(target);
+            }
+
+            if (state.selection && state.selection.type === 'page' && field.dataset.field === 'layout.shell_variant') {
+                syncPageLayoutWithEffectiveShell();
             }
 
             renderCanvas();
@@ -1450,6 +2859,12 @@ $canvas_state = [
                     type: 'section',
                     sectionIndex: Number(sectionTarget.dataset.sectionIndex)
                 });
+                return;
+            }
+
+            const pageTarget = event.target.closest('[data-role="page"]');
+            if (pageTarget || event.target === canvasRoot) {
+                setSelection({type: 'page'});
             }
         });
 
@@ -1471,6 +2886,21 @@ $canvas_state = [
             insertBlock(Number(button.dataset.blockIndex));
         });
 
+        sectionList.addEventListener('click', function (event) {
+            const emptyButton = event.target.closest('[data-role="insert-empty-section"]');
+            if (emptyButton) {
+                addSection();
+                return;
+            }
+
+            const presetButton = event.target.closest('[data-role="insert-section-preset"]');
+            if (!presetButton) {
+                return;
+            }
+
+            insertSectionPreset(Number(presetButton.dataset.presetIndex));
+        });
+
         versionsList.addEventListener('click', function (event) {
             const button = event.target.closest('[data-action="restore-version"]');
             if (!button) {
@@ -1483,13 +2913,19 @@ $canvas_state = [
             });
         });
 
+        renderSectionLibrary();
         renderBlockLibrary();
         ensureSelection();
+        syncWorkspaceShell();
         renderCanvas();
         renderVersions();
         loadWidgetCatalog().catch(function (error) {
             console.error(error);
             widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки списка виджетов.</div>';
+        });
+        window.addEventListener('resize', function () {
+            syncWorkspaceShell();
+            applyDeviceViewport();
         });
         initTooltips(document);
     })();

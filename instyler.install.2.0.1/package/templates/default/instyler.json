@@ -1,0 +1,150 @@
+{
+	"Структура": {
+		"Страница": {
+			"Шапка": {
+				"Верхнее меню": {
+					"Меню": "header > .menu",
+					"Пункт": "header > .menu > li",
+					"Ссылка": "header > .menu > li > a",
+					"Папка": "header > .menu > .folder",
+					"Ссылка папки": "header > .menu > .folder > a",
+					"Подменю": "header > .menu > li ul",
+					"Пункт подменю": "header > .menu ul li",
+					"Ссылка подменю": "header > .menu ul li a",
+					"Папка подменю": "header > .menu ul .folder",
+					"Ссылка папки подменю": "header > .menu ul .folder a"
+				},				
+				"Шапка": "header",
+				"Логотип": "header #logo a"
+			},			
+			"Подвал": {
+				"Подвал": "footer",
+				"Блок": "footer > ul li",
+				"Ссылки": "footer > ul > li > a",
+				"Нижнее меню": {
+					"Меню": "footer #nav .menu",
+					"Пункт": "footer #nav .menu > li",
+					"Ссылка": "footer #nav .menu > li > a"
+				}
+			},			
+			"Тело": "body",
+			"Обертка": "#layout",
+			"Основная колонка": "section",
+			"Боковая колонка": "aside"
+		},
+		"Навигация": {
+			"Главное меню": {
+				"Контейнер": "nav",
+				"Меню": "nav > .menu",
+				"Пункт": "nav > .menu > li",
+				"Ссылка": "nav > .menu > li > a",
+				"Папка": "nav > .menu > .folder",
+				"Ссылка папки": "nav > .menu > .folder > a",
+				"Подменю": "nav > .menu > li ul",
+				"Пункт подменю": "nav > .menu ul li",
+				"Ссылка подменю": "nav > .menu ul li a",
+				"Папка подменю": "nav > .menu ul .folder",
+				"Ссылка папки подменю": "nav > .menu ul .folder a"
+			},
+			"Боковые меню": {
+				"Меню": "aside .body > .menu",
+				"Пункт": "aside .body > .menu > li",
+				"Ссылка": "aside .body > .menu > li > a",
+				"Папка": "aside .body > .menu > .folder",
+				"Ссылка папки": "aside .body > .menu > .folder > a",
+				"Подменю": "aside .body > .menu > li ul",
+				"Пункт подменю": "aside .body > .menu ul li",
+				"Ссылка подменю": "aside .body > .menu ul li a",
+				"Папка подменю": "aside .body > .menu ul .folder",
+				"Ссылка папки подменю": "aside .body > .menu ul .folder a"
+			}			
+		},
+		"Виджеты": {
+			"Виджет": {
+				"Блок": ".widget",
+				"Заголовок": ".widget > .title",
+				"Ссылка заголовка": ".widget > .title .links a",
+				"Тело": ".widget > .body"
+			},
+			"Группа виджетов": {
+				"Блок": ".widget_tabbed",
+				"Заголовок": ".widget_tabbed .tabs ul",
+				"Таб": ".widget_tabbed .tabs a",
+				"Активный таб": ".widget_tabbed .tabs a.active",
+				"Ссылка заголовка": ".widget_tabbed > .tabs .links a",
+				"Тело": ".widget_tabbed .body"
+			}
+		},
+		"Глубиномер": {
+			"Блок": "#breadcrumbs",
+			"Элемент": "#breadcrumbs li",
+			"Ссылка": "#breadcrumbs a",
+			"Разделитель": "#breadcrumbs li.sep",
+			"Главная": "#breadcrumbs li.home a"
+		},
+		"Заголовки": {
+			"Заголовок H1": "h1",
+			"Заголовок H2": "h2",
+			"Заголовок H3": "h3"
+		},
+		"Попап": {
+			"Окно": ".nyroModalCont",
+			"Кнопка Закрыть": ".nyroModalCloseButton",						
+			"Затемнение": ".nyroModalBg"
+		}
+	},
+	"Контент": {
+		"Список контента": {
+			"Весь список": ".content_list",
+			"Запись": ".content_list_item",
+			"Тело записи": ".content_list_item .fields",
+			"Панель": ".content_list_item .info_bar",
+			"Элемент панели": ".content_list_item .info_bar .bar_item",
+			"Поле записи": ".content_list_item .field",
+			"Ссылка родителя": ".content_list_item .parent_title",
+			"Заголовок записи": ".content_list_item .info_bar",			
+			"Текст записи": ".content_list_item .ft_html"
+		},
+		"Запись": {
+			"Тело": ".content_item",
+			"Поле": ".content_item .field",
+			"Заголовок поля верт.": ".content_item .field .title_left",
+			"Заголовок поля гор.": ".content_item .field .title_top",
+			"Значение поля": ".content_item .field .value",
+			"Поле Изображение": ".content_item .ft_image",
+			"Свойства": ".content_item_props",
+			"Ячейка свойства": ".content_item_props table tr td",
+			"Заголовок свойства": ".content_item_props table .title",
+			"Значение свойства": ".content_item_props table .value",
+			"Группа свойств": ".content_item_props table .heading",
+			"Панель": ".content_list_item .info_bar",
+			"Элемент панели": ".content_list_item .info_bar .bar_item",
+			"Поделиться": ".content_list_item .info_bar .bi_share"
+		},
+		"Комментарии": {
+			"Комментарий": {				
+				"Блок": "#comments_widget .comment",
+				"Заголовок": "#comments_widget .comment .info",
+				"Тело": "#comments_list .comment .body",
+				"Автор": "#comments_widget .comment .info .name a",
+				"Аватар": "#comments_list .comment .avatar",
+				"Контент": "#comments_list .comment .content",
+				"Текст": "#comments_list .comment .text",
+				"Ссылки": "#comments_list .comment .links",
+				"Ссылка": "#comments_list .comment .links a",				
+				"Якорь": "#comments_widget .comment .info .nav"
+			},
+			"Форма комментария": {
+				"Блок": "#comments_add_form",
+				"Тулбар": "#comments_add_form .markItUpHeader ul",
+				"Кнопка тулбара": "#comments_add_form .markItUpHeader ul li a",
+				"Поле текста": "#comments_add_form .textarea",
+				"Кнопки": "#comments_add_form .buttons",
+				"Кнопка": "#comments_add_form .buttons .button"
+			},
+			"Блок": "#comments_widget",
+			"Заголовок": "#comments_widget h2",
+			"Подписаться": "#comments_widget .title .track"
+		}
+	}
+}

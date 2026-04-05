@@ -45,18 +45,19 @@
 
 Продукт должен состоять минимум из трех частей.
 
-### 3.1. Компонент `landingbuilder`
+### 3.1. Компонент `nordicbuilder`
 
 Назначение:
 
-- backend;
-- frontend runtime логика;
-- bindings;
+- contract-first builder core;
+- backend tooling;
 - registry;
-- editor;
-- presets;
-- page versions;
+- component library;
+- adapter registry;
+- foundation layer evolution;
 - update logic компонента.
+
+Текущий `landingbuilder` при этом остается bridge-слоем миграции, а не целевой коммерческой границей продукта.
 
 ### 3.2. Шаблон `nordic`
 
@@ -83,10 +84,11 @@
 
 Новая модель такая:
 
-1. `landingbuilder` живет как отдельный компонент;
+1. `nordicbuilder` живет как отдельный installable component;
 2. `nordic` живет как отдельный frontend template;
 3. в настройках сайта пользователь может выбрать `nordic` как шаблон по умолчанию;
-4. сам конструктор при этом продолжает иметь собственный backend и собственные сущности.
+4. сам конструктор при этом продолжает иметь собственный backend и собственные сущности;
+5. `landingbuilder`, если остается в кодовой базе, рассматривается только как bridge-layer миграции.
 
 Итого:
 
@@ -99,12 +101,23 @@
 
 На первую установку нужны:
 
-1. install package компонента `landingbuilder`;
+1. install package компонента `nordicbuilder`;
 2. install package шаблона `nordic`;
-3. начальная регистрация block manifests и adapter manifests;
+3. начальная регистрация foundation contracts, block manifests и adapter manifests;
 4. начальная SQL-структура builder;
 5. начальный preset layer;
 6. документация по установке и первому запуску.
+
+### 5.1. Коммерческий installable zip
+
+Для пользователей конструктор должен поставляться не как папка `packages/`, а как готовый installable zip.
+
+Для `nordicbuilder` это означает:
+
+1. source-of-truth для релиза лежит в `packages/nordicbuilder/`;
+2. в корне дистрибутива должны лежать `manifest.ru.ini`, `install.sql` и `package/`;
+3. архив должен собираться в repeatable режиме, без ручного zip из файлового менеджера;
+4. build-процесс должен давать versioned output, пригодный для коммерческой поставки.
 
 ## 6. Механизм обновлений
 
@@ -157,7 +170,8 @@
 3. install/update hooks;
 4. диагностику несовместимых pack versions;
 5. release notes и changelog discipline;
-6. точку миграции данных между версиями.
+6. точку миграции данных между версиями;
+7. reproducible build installable zip для конечного пользователя.
 
 ## 10. Роль instantcms-mcp-main
 

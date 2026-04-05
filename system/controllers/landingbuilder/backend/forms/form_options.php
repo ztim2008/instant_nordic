@@ -7,10 +7,10 @@ class formLandingbuilderOptions extends cmsForm {
         return [
             [
                 'type' => 'fieldset',
-                'title' => 'Canvas editor',
+                'title' => 'Редактор холста',
                 'childs' => [
                     new fieldCheckbox('enable_system_widgets', [
-                        'title' => 'Разрешить системные widgets на холсте',
+                        'title' => 'Разрешить системные виджеты на холсте',
                         'default' => 1
                     ]),
                     new fieldCheckbox('enable_tablet_mode', [
@@ -18,11 +18,11 @@ class formLandingbuilderOptions extends cmsForm {
                         'default' => 1
                     ]),
                     new fieldCheckbox('enable_device_toggles', [
-                        'title' => 'Показывать device toggles в редакторе',
+                        'title' => 'Показывать переключатели устройств в редакторе',
                         'default' => 1
                     ]),
                     new fieldList('default_section_layout', [
-                        'title' => 'Layout секции по умолчанию',
+                        'title' => 'Схема секции по умолчанию',
                         'default' => '1col',
                         'items' => [
                             '1col' => '1 колонка',
@@ -32,7 +32,7 @@ class formLandingbuilderOptions extends cmsForm {
                         ]
                     ]),
                     new fieldList('preview_template', [
-                        'title' => 'Базовый шаблон preview',
+                        'title' => 'Базовый шаблон предпросмотра',
                         'default' => 'nordic',
                         'items' => [
                             'nordic' => 'nordic',

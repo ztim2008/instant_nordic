@@ -12,12 +12,15 @@
 ## Навигация
 
 - Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+- Продуктовый blueprint: [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
 - Предыдущий документ: [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
 - Следующий документ: [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
 
 ## 1. Цель документа
 
 Этот документ фиксирует, каким должен быть реальный visual canvas в Нордик.
+
+Конкретный продуктовый UX экрана, sidebar и MVP-пакета секций дополнительно зафиксирован в [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md).
 
 Главный вопрос здесь не в том, как хранить данные, а в том, какой UX и какая внутренняя модель нужны, чтобы:
 
@@ -81,6 +84,15 @@
 Вывод:
 
 InstantCMS grid нужно использовать как внутренний compatibility layer, а не как финальный пользовательский интерфейс.
+
+### 🟢 Готово: продуктовое уточнение
+
+Для Нордик это означает следующее:
+
+1. widgets scheme шаблона не считается главным builder UX;
+2. основной экран должен быть section-based canvas;
+3. sidebar должен работать через presets и tokens;
+4. grid semantics остаются внутренним runtime-слоем.
 
 ## 4. Каноническая модель canvas
 

@@ -13,7 +13,234 @@
 - Какие риски остались:
 - Следующий шаг:
 
+## 2026-04-05
+
+- Что планировалось:
+	- зафиксировать разворот разработки Нордик из form-first логики в visual-first builder и синхронизировать ключевые продуктовые документы.
+	- определить, остается ли текущий `landingbuilder` финальным продуктовым контейнером или становится переходным мостом к взрослой архитектуре.
+- Что сделано:
+	- создан отдельный pivot-документ, который фиксирует новый главный маршрут: работа на живом canvas, а не через отдельный экран настроек;
+	- сначала active plan был переписан под промежуточный visual-first срез: `Visual Page Builder`, `Live Inspector`, `Global Style Defaults`, `Shell / Expert Layer`, `Widget/Data Layer`;
+	- дополнительно зафиксирована взрослая архитектура: `InstantCMS 2 backend -> nordic runtime template -> design system / global defaults -> visual builder workspace -> component library -> widget/data adapter layer`;
+	- текущий `landingbuilder` формально переведен в статус переходного bridge-слоя, а не финальной продуктовой границы;
+	- product blueprint переписан так, чтобы canvas и live inspector стали центром продукта, а MVP был разложен на 3 этапа: foundation, editor core, system integration;
+	- техспека экрана `Дизайн сайта` перепозиционирована в secondary screen `Глобальные стили` для редких site-wide defaults и отделена от design system как слоя продукта;
+	- product map и master plan синхронизируются под новую взрослую архитектуру, а не только под локальный UX-pivot текущего компонента;
+	- в документах явно заморожено дальнейшее развитие form-first сценария как главного UX builder-а;
+	- active plan затем досинхронизирован уже под взрослый execution order: foundation layer -> visual editor core -> system integration layer;
+	- создан отдельный документ [LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md](../LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md), который стартует stage 1 contract-first и опирает его на schema-first дисциплину из `instantcms-mcp-main`;
+	- зафиксировано имя нового целевого builder component: `nordicbuilder`;
+	- поднят минимальный scaffold компонента `nordicbuilder` и его installable package mirror;
+	- внутри `nordicbuilder` поднят file-based contract registry для пяти foundation contracts и backend browser `Контракты`, который читает registry как source-of-truth;
+	- поверх contract registry добавлены storage stub и detail screen, чтобы foundation layer описывал не только schema-реестр, но и целевой persistence map для каждого контракта;
+	- в `packages/nordicbuilder/install.sql` добавлены первые три builder-хранилища, а в модели `nordicbuilder` появился минимальный SQL-backed persistence layer и базовая validation проверка required fields по contract registry;
+	- workspace `nordicbuilder` теперь показывает состояние foundation persistence layer, чтобы следующий save/load loop строился уже от реальных таблиц, а не от абстрактной схемы;
+	- workspace `nordicbuilder` расширен до первого живого цикла page document: список сохраненных документов, JSON editor, save/load flow и bridge import страницы из `landingbuilder`;
+	- validation для `page-document` усилена beyond required fields: теперь отдельно проверяются `kind`, `page_type`, `editor_mode`, `meta` и структура `zones`.
+	- bridge-слой `landingbuilder` теперь умеет читать `page-document` из `nordicbuilder` и сохранять canvas-изменения обратно в новый contract storage, если страница уже переведена на новый документ;
+	- section/block semantics для `page-document` усилены: валидируются zone sections, section uid/title/columns, column uid/nodes и базовые требования к block/system widget nodes.
+	- добавлен массовый migration route `landingbuilder -> nordicbuilder`: import теперь читает legacy source напрямую, не через bridge-resolved page, а workspace показывает pending/imported статус, bulk import all и подробный migration report;
+	- добавлен build-script `scripts/build-nordicbuilder-package.sh`, чтобы `packages/nordicbuilder/` собирался в versioned installable zip для коммерческой поставки пользователям.
+- Какие файлы затронуты:
+	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+	- [LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md](../LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md)
+	- [LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md](../LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md)
+	- [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](../LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
+	- [LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md](../LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md)
+	- [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](../LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
+	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- ключевые документы читаются в одном направлении и больше не спорят между собой о primary flow;
+	- отдельный экран глобальных стилей больше не описан как главный экран ежедневной работы;
+	- зафиксировано, что новый builder boundary должен проектироваться отдельно от текущего bridge-слоя;
+	- active plan больше не отрывается от взрослой архитектуры и не живет в старой промежуточной visual-first формуле.
+- Какие риски остались:
+	- кодовая реализация foundation уже перевела bridge read/save на page-document для импортированных страниц и получила массовый migration route, но еще не покрывает полноценную schema-aware validation конкретных block props и не делает более умные policy-миграции для сложных legacy edge-cases;
+	- runtime и editor пока переведены только частично: bridge для уже импортированных страниц читает и пишет `nordicbuilder page-document`, но полноценный contract-aware runtime для всех block semantics еще не завершен.
+- Следующий шаг:
+	- продолжить phase 1 реализацию: перевести runtime/editor глубже на contract-aware block semantics и добавить policy-слой для управляемой миграции сложных legacy layouts.
+
+## 2026-04-04
+
+- Что планировалось:
+	- довести `Shell Builder` от backend storage до реального runtime composition layer.
+- Что сделано:
+	- в `landingbuilder` добавлен runtime resolver, который выбирает shell variant по page layout override, page key, adapter и page mode;
+	- runtime shell теперь возвращает resolved variant metadata: `variant_key`, `assignment_source`, `body_layout`, `active_slots`, `chrome`, `body_classes`;
+	- runtime zones фильтруются по active shell slots, чтобы overlay и shell zones не рендерили отключенные области;
+	- page inspector в canvas теперь показывает page-level `shell_variant` и `content_slot`, поэтому resolver управляется не только code/schema слоем, но и UX страницы;
+	- добавлен общий helper `runtime_renderer.php`, который централизует rendering для zones, sections, Nordic blocks и system widgets в preview и overlay;
+	- preview и overlay templates переведены на shared slot-aware renderer и больше не держат дублирующие closures для block/widget/section rendering;
+	- preview action и content-category overlay hook теперь прокидывают resolved shell в layout params шаблона;
+	- `templates/nordic/main.tpl.php` и package mirror переведены на чтение active slots из runtime, поэтому shell regions и sidebars теперь управляются variant, а не только статической схемой и наличием widget positions.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [system/controllers/landingbuilder/actions/view.php](../system/controllers/landingbuilder/actions/view.php)
+	- [system/controllers/landingbuilder/hooks/process_render_content_category_view.php](../system/controllers/landingbuilder/hooks/process_render_content_category_view.php)
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- [templates/default/controllers/landingbuilder/overlay_zone.tpl.php](../templates/default/controllers/landingbuilder/overlay_zone.tpl.php)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php](../packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/hooks/process_render_content_category_view.php](../packages/landingbuilder/package/system/controllers/landingbuilder/hooks/process_render_content_category_view.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/view.tpl.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/overlay_zone.tpl.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/overlay_zone.tpl.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+- Что проверено:
+	- `php -l` проходит на всех измененных live и package PHP-файлах;
+	- editor diagnostics по измененным файлам не показывают новых ошибок.
+- Какие риски остались:
+	- live system overlay пока связан только с content categories, а не со всеми типами системных страниц;
+	- page-level override пока вынесен в canvas inspector, но еще не представлен в отдельных быстрых edit forms вне canvas;
+	- shared renderer уже общий для preview и overlay, но Nordic blocks пока в основном показывают runtime placeholders, а не полный data-driven props layer.
+- Следующий шаг:
+	- расширить shared renderer и overlay coverage на следующие adapters/system routes, затем открыть отдельный экран `Design System`.
+
+- Что планировалось:
+	- начать реальную реализацию MVP `Shell Builder` после фиксации новой продуктовой карты.
+- Что сделано:
+	- в backend меню `landingbuilder` добавлен отдельный экран `Shell Builder`;
+	- в model `landingbuilder` добавлены option-backed helpers для shell variants без SQL-миграции;
+	- заведены системные shell variants: базовый shell сайта, главная, материалы, категории, профили и лендинги;
+	- добавлен backend flow `список вариантов -> редактирование -> сохранение`;
+	- на экране variant добавлен preview shell slots по `nordic_shell_v1`, чтобы настройки читались в терминах продукта, а не raw positions;
+	- live и package mirror синхронизированы по backend/menu/model/actions/forms/templates.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/backend.php](../system/controllers/landingbuilder/backend.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/shell.php](../system/controllers/landingbuilder/backend/actions/shell.php)
+	- [system/controllers/landingbuilder/backend/actions/shell_edit.php](../system/controllers/landingbuilder/backend/actions/shell_edit.php)
+	- [system/controllers/landingbuilder/backend/forms/form_shell_variant.php](../system/controllers/landingbuilder/backend/forms/form_shell_variant.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/shell.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/shell.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/shell_edit.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/shell_edit.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_shell_variant.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_shell_variant.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php)
+	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+- Что проверено:
+	- для новых live и package PHP-файлов будет выполнен `php -l`;
+	- editor diagnostics будут проверены отдельно после патча.
+- Какие риски остались:
+	- текущий MVP пока не применяет shell variants в runtime `nordic`, это только backend-level storage и admin UX;
+	- пока нет custom create/delete flow для новых variant, редактируются системно заданные сценарии первой очереди.
+- Следующий шаг:
+	- связать shell variant с runtime shell resolution и page-level режимами участия.
+
+- Что планировалось:
+	- убрать англоязычие из canvas theme controls и довести page theme presets до реального runtime/frontend применения.
+- Что сделано:
+	- backend menu, form options, section preset titles и canvas controls переведены на русский язык;
+	- в model contract добавлены канонические `theme_option_catalog` и `default_section_layout`;
+	- section presentation contract выровнен между canvas, save path и runtime через top-level поля `style_preset`, `background_tone`, `container_preset`, `spacing_preset`;
+	- добавлен общий helper `runtime_theme.php` для standalone preview и overlay runtime;
+	- `view.tpl.php`, `overlay_zone.tpl.php` и overlay hook переведены на CSS variables и runtime classes, чтобы page theme presets реально влияли на frontend.
+	- собран отдельный ручной чек-лист для smoke-test canvas в админке и overlay/runtime-проверки.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/forms/form_options.php](../system/controllers/landingbuilder/backend/forms/form_options.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/default/controllers/landingbuilder/runtime_theme.php](../templates/default/controllers/landingbuilder/runtime_theme.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- [templates/default/controllers/landingbuilder/overlay_zone.tpl.php](../templates/default/controllers/landingbuilder/overlay_zone.tpl.php)
+	- [system/controllers/landingbuilder/hooks/process_render_content_category_view.php](../system/controllers/landingbuilder/hooks/process_render_content_category_view.php)
+	- [docs/checklists/LANDINGBUILDER-CANVAS-ADMIN-SMOKE-TEST-2026-04-04.md](checklists/LANDINGBUILDER-CANVAS-ADMIN-SMOKE-TEST-2026-04-04.md)
+- Что проверено:
+	- редакторские проверки ошибок по live и package mirror не показывают новых проблем;
+	- `php -l` проходит на изменённых live PHP-файлах;
+	- публичный HTTP-ответ сайта `https://nordic-builder.store/` возвращает `200 OK`.
+- Какие риски остались:
+	- живой preview route `landingbuilder/view/*` для draft/prototype страниц по-прежнему закрыт для неадмина, поэтому полноценный frontend smoke-test без админ-сессии не завершён;
+	- визуальная тема теперь применяется через CSS variables, но финальную UX-полировку canvas лучше делать уже по живому админскому проходу.
+- Следующий шаг:
+	- зайти в админский canvas, руками проверить пресеты страницы и device preview, затем собрать список точечных UX-шероховатостей.
+
+- Дополнительное продуктовое уточнение по canvas workspace:
+	- зафиксирован отдельный UX spec для взрослой editor shell-оболочки;
+	- принято решение двигаться не от локальной косметики, а от refactor canvas shell: wide desktop canvas, overlay drawers, viewport-based device switching и улучшенная навигация;
+	- в качестве референса учтён паттерн editor workspace из соседнего `nordic-builder.ru`, где desktop panel state запоминается и панели не должны разрушать рабочую ширину preview.
+
+- Phase 1 canvas workspace shell выполнен в коде:
+	- `templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php` переведен с трехколоночного bootstrap-layout на sticky top bar, широкий workspace viewport и overlay drawers слева/справа;
+	- библиотека и инспектор теперь живут поверх canvas, могут скрываться и запоминают состояние отдельно для desktop и mobile через `localStorage`;
+	- top bar получил явный возврат к списку страниц, device viewport label и быстрые drawer toggles;
+	- package mirror `packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php` синхронизирован с live-шаблоном.
+
+- Что проверено дополнительно:
+	- editor diagnostics не показывают новых ошибок в live и package canvas template;
+	- `php -l templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php` проходит;
+	- `php -l packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php` проходит.
+
+- Точка отката:
+	- создан локальный git tag `checkpoint/lb-canvas-phase1-base-20260404` на текущем HEAD `c933d20` без коммита dirty tree.
+
+- Продуктовая модель Нордик дополнительно формализована:
+	- создана каноническая карта продукта [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](../LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md), которая разводит `InstantCMS 2 backend`, `nordic runtime template`, `design system / global defaults`, `visual builder workspace`, `component library` и `widget/data adapter layer`;
+	- создан отдельный документ [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](../LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md) с MVP-требованиями к header, footer, menu placement, global slots и homepage shell layout;
+	- master plan, roadmap и backend settings spec синхронизированы с новой канонической моделью экранов продукта.
+
+- Новый критерий выбора следующего кода:
+	- после этой фиксации следующим кодовым шагом не считать дальнейшую локальную полировку page canvas;
+	- выбирать между foundation layer, MVP `Shell Builder`, secondary UI `Глобальные стили` и `Visual Builder Workspace`.
+
+- Дополнительно затронуты файлы:
+	- [LANDING-BUILDER-CANVAS-WORKSPACE-UX-SPEC-2026-04-04.md](../LANDING-BUILDER-CANVAS-WORKSPACE-UX-SPEC-2026-04-04.md)
+	- [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](../LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
+	- [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](../LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
+	- [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](../LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md)
+
 ## 2026-04-03
+
+- Добавлен единый active tracker [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md), чтобы текущая реализация не расползалась между несколькими plan-документами.
+- Стартовала реализация MVP `Shell Builder` без SQL-миграции: первый backend-срез хранит shell variants в options компонента `landingbuilder`.
+
+- Зафиксирован отдельный продуктовый blueprint visual builder:
+	- добавлен [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](../LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md);
+	- в blueprint конкретно описаны главный экран конструктора, допустимые sidebar controls, MVP section presets и связь builder с global design system Нордик;
+	- отдельно зафиксировано, что widgets scheme `nordic` остается служебным shell editor и не становится главным UX для новичка.
+
+- Каноничные архитектурные документы синхронизированы с этим продуктовым решением:
+	- master plan теперь включает отдельный visual builder blueprint в верхний порядок чтения;
+	- canvas editor spec ссылается на blueprint как на продуктовый UX-источник;
+	- theme system architecture spec уточняет связь visual builder с global tokens и preset-слоем.
+
+- `nordic_shell_v1` вынесен из одноразового CLI в общий install/runtime helper:
+	- добавлен общий helper `templates/nordic/install_helpers/shell_migration.php` и пакет-зеркало `packages/nordic/package/templates/nordic/install_helpers/shell_migration.php`;
+	- `scripts/nordic-shell-migration.php` переведен на использование общего helper вместо дублирования SQL-логики;
+	- dry-run после рефакторинга подтвердил прежний результат: `rows = 9`, `cols = 11`, `binds_to_touch = 0`, `unmapped_positions = none`.
+
+- Для пакета `nordic` добавлен install/update hook:
+	- создан root installer `packages/nordic/install.php`;
+	- после копирования файлов пакета installer автоматически вызывает apply-path для `nordic_shell_v1` и очищает widget/layout cache тем же helper.
+
+- Для admin widgets UX добавлена отдельная shell-map схема `nordic`:
+	- добавлен `templates/nordic/scheme.php` и пакет-зеркало;
+	- `system/controllers/admin/actions/widgets.php` для `nordic` теперь рендерит статичную shell map сверху и сохраняет обычный dynamic layout editor ниже;
+	- preview не создает live `{position:*}` placeholders, чтобы не дублировать `pos-*` контейнеры и не ломать drag-and-drop.
+
+- Под `nordic_shell_v1` собран и прогнан reproducible migration script:
+	- добавлен [scripts/nordic-shell-migration.php](scripts/nordic-shell-migration.php) с режимами dry-run и apply;
+	- перед apply создан ручной DB backup `backups/db/manual-before-nordic-shell-apply-20260404-100229.sql`;
+	- перед apply создан git snapshot `snapshot/20260404-100230`.
+
+- Выполнена чистка copied `nordic` layout scheme в БД:
+	- `layout_rows` для `nordic` пересобраны из copied `modern` схемы в 9 собственных shell rows;
+	- `layout_cols` для `nordic` пересобраны в 11 canonical positions `site_top`, `header_primary`, `header_secondary`, `hero`, `before_content`, `content_body`, `content_sidebar_left`, `content_sidebar_right`, `after_content`, `footer_primary`, `footer_secondary`;
+	- `widgets_bind_pages.position` для `nordic` переведены с legacy keys `pos_*` и `con_header` на canonical shell positions.
+
+- Повторный smoke-test после apply прошел:
+	- пользовательский `system/config/config.php` уже был переключен на `nordic`, поэтому отдельное временное переключение не выполнялось;
+	- главная и `/board` продолжают отдавать `templates/nordic/css/theme.css` и `nordic-shell`;
+	- итоговая bind-карта `nordic` в БД больше не использует legacy positions `pos_*` и `con_header`.
 
 - Для `nordic` заведена собственная code-level layout scheme:
 	- добавлен каноничный source of truth `templates/nordic/shell_scheme.php` и пакет-зеркало `packages/nordic/package/templates/nordic/shell_scheme.php`;

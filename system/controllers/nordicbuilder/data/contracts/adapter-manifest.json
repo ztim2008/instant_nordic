@@ -1,0 +1,27 @@
+{
+  "kind": "nordicbuilder.contract",
+  "schema_version": "1.0",
+  "key": "adapter-manifest",
+  "title": "Adapter Manifest",
+  "contract_kind": "nordicbuilder.adapter",
+  "bridge_kind": "landingbuilder.adapter",
+  "storage_target": "adapter_registry.manifests",
+  "description": "Декларативный контракт page adapter для подключения builder к InstantCMS context.",
+  "required_fields": [
+    "kind",
+    "schema_version",
+    "key",
+    "title",
+    "target_scope",
+    "supports",
+    "matching",
+    "zones",
+    "runtime",
+    "meta"
+  ],
+  "notes": [
+    "matching is declarative",
+    "runtime.handler_ref is logical ref not filesystem path",
+    "adapter zones define styling and structural participation"
+  ]
+}

@@ -1,0 +1,1 @@
+<a href="<?php echo href_to('instyler'); ?>"><?php echo LANG_INSTYLER_RUN; ?></a>

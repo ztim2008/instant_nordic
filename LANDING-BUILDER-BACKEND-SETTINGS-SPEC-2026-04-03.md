@@ -12,6 +12,8 @@
 ## Навигация
 
 - Главный трекер: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+- Уточняющий документ по слоям продукта: [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
+- Уточняющий документ по shell-уровню: [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md)
 - Предыдущий документ: [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
 - Уточняющий документ: [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
 - Следующий документ: [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
@@ -104,13 +106,14 @@ Template `nordic` выбирается в глобальных настройк�
 Рекомендуемый набор разделов:
 
 1. Страницы
-2. Bindings
-3. Блоки
-4. Block Packs
-5. Adapters
-6. Style Presets
-7. Опции
-8. Права доступа
+2. Shell Builder
+3. Глобальные стили
+4. Bindings
+5. Блоки
+6. Block Packs
+7. Adapters
+8. Опции
+9. Права доступа
 
 ### 5.1. `Страницы`
 
@@ -131,7 +134,36 @@ Template `nordic` выбирается в глобальных настройк�
 - inspector выбранного элемента;
 - device toggles: desktop, tablet, mobile.
 
-### 5.2. `Bindings`
+### 5.2. `Shell Builder`
+
+Назначение:
+
+- управление shell-слоями сайта;
+- header variants;
+- footer variants;
+- menu placement;
+- homepage shell layout;
+- global slot composition для `nordic`.
+
+Это отдельный экран каркаса сайта.
+
+Он не должен быть спрятан внутри page canvas или `options`.
+
+### 5.3. `Глобальные стили`
+
+Назначение:
+
+- global design tokens;
+- colors;
+- typography;
+- containers;
+- spacing scale;
+- buttons, cards, forms;
+- global style presets и component presets.
+
+Это secondary screen над слоем `design system / global defaults`, а не главный ежедневный центр продукта.
+
+### 5.4. `Bindings`
 
 Назначение:
 
@@ -146,7 +178,7 @@ Template `nordic` выбирается в глобальных настройк�
 - user profile;
 - других системных page types.
 
-### 5.3. `Блоки`
+### 5.5. `Блоки`
 
 Назначение:
 
@@ -157,7 +189,7 @@ Template `nordic` выбирается в глобальных настройк�
 
 Это не магазин паков, а именно реестр доступных блоков внутри уже установленной системы.
 
-### 5.4. `Block Packs`
+### 5.6. `Block Packs`
 
 Назначение:
 
@@ -170,7 +202,7 @@ Template `nordic` выбирается в глобальных настройк�
 
 Именно этот раздел важен для будущей монетизации.
 
-### 5.5. `Adapters`
+### 5.7. `Adapters`
 
 Назначение:
 
@@ -181,17 +213,7 @@ Template `nordic` выбирается в глобальных настройк�
 
 Это системный экран для администратора и разработчика.
 
-### 5.6. `Style Presets`
-
-Назначение:
-
-- наборы style tokens;
-- пресеты для news/profile/category/landing;
-- дефолтные style layers для ctype и bindings.
-
-Этот раздел должен быть отделён от глобальных опций темы `modern`.
-
-### 5.7. `Опции`
+### 5.8. `Опции`
 
 Назначение:
 
@@ -199,7 +221,7 @@ Template `nordic` выбирается в глобальных настройк�
 
 Этот экран должен использовать стандартный options action InstantCMS.
 
-### 5.8. `Права доступа`
+### 5.9. `Права доступа`
 
 Назначение:
 
@@ -223,6 +245,16 @@ public function getBackendMenu() {
             'options' => ['icon' => 'file-alt']
         ],
         [
+            'title' => 'Shell Builder',
+            'url'   => href_to($this->root_url, 'shell'),
+            'options' => ['icon' => 'window-maximize']
+        ],
+        [
+            'title' => 'Глобальные стили',
+            'url'   => href_to($this->root_url, 'design'),
+            'options' => ['icon' => 'palette']
+        ],
+        [
             'title' => 'Bindings',
             'url'   => href_to($this->root_url, 'bindings'),
             'options' => ['icon' => 'link']
@@ -241,11 +273,6 @@ public function getBackendMenu() {
             'title' => 'Adapters',
             'url'   => href_to($this->root_url, 'adapters'),
             'options' => ['icon' => 'project-diagram']
-        ],
-        [
-            'title' => 'Style Presets',
-            'url'   => href_to($this->root_url, 'presets'),
-            'options' => ['icon' => 'palette']
         ],
         [
             'title' => LANG_OPTIONS,
@@ -475,17 +502,20 @@ system/controllers/landingbuilder/
     actions/
       pages.php
       page_edit.php
+            shell.php
+            shell_variant_edit.php
+            design.php
       bindings.php
       binding_edit.php
       blocks.php
       packs.php
       adapters.php
-      presets.php
     forms/
       form_options.php
       form_page.php
+            form_shell_variant.php
+            form_design_system.php
       form_binding.php
-      form_preset.php
 ```
 
 ## 12. Что уже можно считать зафиксированным
@@ -499,6 +529,7 @@ system/controllers/landingbuilder/
 5. Экран подключения должен быть отдельной формой привязки, а не просто одним чекбоксом.
 6. Для страниц и ctype должен настраиваться participation mode.
 7. Для ctype должны отдельно настраиваться dynamic sources и collection-доступ.
+8. Внутри продукта должны существовать отдельные экранные роли `Shell Builder`, `Глобальные стили` и `Visual Builder Workspace`, при этом design system, component library и adapters не должны схлопываться в один сценарий.
 
 ## 13. Следующий логичный шаг
 

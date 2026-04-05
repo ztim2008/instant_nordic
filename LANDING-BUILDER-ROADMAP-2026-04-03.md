@@ -355,17 +355,21 @@
 4. Universal builder для любых страниц оставить на следующую фазу.
 5. Ядро поставляется как installable component package.
 6. Блоки проектируются как расширяемая plugin-подобная система пакетов.
+7. Продукт разделяется на шесть канонических слоев: `InstantCMS 2 backend`, `nordic runtime template`, `design system / global defaults`, `visual builder workspace`, `component library`, `widget/data adapter layer`.
+8. Отдельно фиксируются экранные роли `Shell Builder`, `Глобальные стили` и `Visual Builder Workspace`, но канонический продукт больше не сводится только к набору экранов.
 
 Результат этапа:
 
 - согласованная архитектурная схема;
 - список сущностей системы;
 - понятные границы первой версии.
+- отдельная продуктовая карта слоев и экранов.
 - backend-структура компонента и settings-модель отдельно зафиксированы в `LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md`.
 
 Критерий готовности:
 
 - после этого этапа можно без спорных трактовок проектировать данные и UI.
+- после этого этапа следующий код выбирается по взрослой архитектуре: foundation layer, `Shell Builder`, secondary UI `Глобальные стили` и `Visual Builder Workspace`, а не по инерции вокруг page canvas.
 
 ### 🔴 Этап 1.1. Спроектировать модель поставки и монетизации
 
@@ -546,13 +550,19 @@
 
 Цель этапа:
 
-- создать современный и понятный UX для сборки страниц.
+- создать современный и понятный UX не только для страницы, но и для верхних уровней продукта.
+
+На этом этапе нужно разводить три разных UI-направления:
+
+1. `Shell Builder`;
+2. `Глобальные стили` как secondary UI для `design system / global defaults`;
+3. `Visual Builder Workspace`.
 
 Предлагаемая структура интерфейса:
 
-1. Левая панель: библиотека блоков и поиск.
-2. Центральная область: canvas-preview страницы.
-3. Правая панель: inspector и настройки выбранного блока.
+1. `Shell Builder`: shell preview + variant list + inspector.
+2. `Глобальные стили`: global tokens, palettes, typography, spacing, component presets.
+3. `Visual Builder Workspace`: page tree + section/block insertion + canvas-preview страницы + inspector.
 
 Что обязательно должно быть в редакторе:
 
@@ -568,6 +578,12 @@
 - выбор динамического источника данных.
 - добавление стандартных widgets InstantCMS прямо на canvas.
 
+Что обязательно должно быть зафиксировано отдельно от page canvas:
+
+1. shell-level экран для header, footer, menu placement и homepage layout;
+2. secondary screen `Глобальные стили` для global colors, typography, containers, buttons, cards и forms;
+3. явная граница между shell structure, global defaults, component library и page assembly.
+
 Что не должно попадать в интерфейс пользователя:
 
 - Bootstrap-классы;
@@ -577,12 +593,13 @@
 
 Результат этапа:
 
-- подробное UX-описание админского редактора.
+- подробное UX-описание трех UI-поверхностей: `Shell Builder`, `Глобальные стили` и `Visual Builder Workspace`, плюс их границы относительно component library и adapter layer.
 
 Критерий готовности:
 
 - редактор понятен пользователю без знания внутренней архитектуры InstantCMS.
 - секции, колонки, блоки и системные widgets редактируются в одном визуальном режиме.
+- пользователь понимает разницу между редактированием каркаса сайта, site-wide defaults и ежедневной сборкой конкретной страницы.
 
 ### 🔴 Этап 7. Спроектировать data binding
 
@@ -811,7 +828,12 @@
 1. Новый компонент конструктора.
 2. Страницы конструктора.
 3. Библиотека блоков первой очереди.
-4. Canvas editor.
+4. Один верхнеуровневый архитектурный слой дорабатывается раньше локальной canvas-полировки:
+   - либо foundation layer с contracts и tokens;
+   - либо MVP `Shell Builder`;
+   - либо secondary UI `Глобальные стили`;
+   - либо `Visual Builder Workspace`.
+5. Canvas editor.
 5. Preview.
 6. Рендер страниц через `modern`.
 7. Manual + dynamic content modes.

@@ -18,6 +18,9 @@ class actionLandingbuilderView extends cmsAction {
 			$runtime = $this->model->getRuntimePage($page);
 			$runtime['device_type'] = cmsRequest::getDeviceType();
 			$runtime['is_preview'] = $is_preview;
+			$this->cms_template->addLayoutParams([
+				'landingbuilder_shell_runtime' => $runtime['shell']
+			]);
 
 			$this->cms_template->setPageTitle($page['title'], 'Нордик');
 

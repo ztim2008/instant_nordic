@@ -10,6 +10,19 @@ class tags extends cmsFrontend {
 
     public function getTagsWidgetParams($options) {
 
+        $options = array_merge([
+            'subjects' => [],
+            'min_len'  => 0,
+            'limit'    => 0,
+            'min_freq' => 0,
+            'style'    => 'cloud',
+            'ordering' => 'frequency',
+            'shuffle'  => 0,
+            'max_fs'   => 22,
+            'min_fs'   => 12,
+            'colors'   => ''
+        ], is_array($options) ? $options : []);
+
         if (!empty($options['subjects'])) {
             $options['subjects'] = array_filter($options['subjects']);
         }

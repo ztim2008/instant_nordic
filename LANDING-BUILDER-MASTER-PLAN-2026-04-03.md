@@ -1,5 +1,9 @@
 # Главный план: Нордик для InstantCMS 2
 
+> Статус файла: reference-уровень.
+>
+> Текущий рабочий execution tracker теперь ведется в [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md).
+
 ## Что это за файл
 
 Это главный трекер проекта.
@@ -11,10 +15,11 @@
 - Публичное имя продукта: `Нордик`
 - Язык интерфейса MVP: русский
 - Целевая платформа: InstantCMS 2
-- Рабочее техническое имя компонента: `landingbuilder`
+- Текущий переходный компонент в репозитории: `landingbuilder`
+- Канонический целевой builder component: отдельный visual-builder компонент `nordicbuilder`
 - Рабочее техническое имя frontend template: `nordic`
 - Development base в этом репозитории: `instantcms-mcp-main`
-- Итоговый продукт: component + template + design system + installer + update mechanism
+- Итоговый продукт: backend foundation + builder component + `nordic` template runtime + design system + component library + widget/data adapter + installer/update mechanism
 
 ## Легенда статусов
 
@@ -27,27 +32,35 @@
 
 ## Порядок чтения документов
 
-1. [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
-2. [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
-3. [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
-4. [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
-5. [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
-6. [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
-7. [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
-8. [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
-9. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
-10. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
-11. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
+1. [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+2. [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
+3. [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md)
+4. [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
+5. [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
+6. [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md)
+7. [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
+8. [LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md](LANDING-BUILDER-PACKAGING-AND-UPDATES-SPEC-2026-04-03.md)
+9. [LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md](LANDING-BUILDER-BACKEND-SETTINGS-SPEC-2026-04-03.md)
+10. [LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-MODEL-SPEC-2026-04-03.md)
+11. [LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md](LANDING-BUILDER-DATA-SOURCES-AND-PAGE-MODES-SPEC-2026-04-03.md)
+12. [LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md](LANDING-BUILDER-CANVAS-EDITOR-SPEC-2026-04-03.md)
+13. [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
+14. [LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md](LANDING-BUILDER-PAGE-ADAPTERS-SPEC-2026-04-03.md)
+15. [LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md](LANDING-BUILDER-LIFECYCLE-SPEC-2026-04-03.md)
 
-## Актуальное архитектурное решение 2026-04-04
+## Актуальное архитектурное решение 2026-04-05
 
 После анализа подхода `inthemer` и собственного целевого UX зафиксировано следующее:
 
 1. Overlay-путь поверх существующих шаблонов остается важным как режим миграции, но не считается единственной архитектурой продукта.
-2. Целевой продукт Нордик строится как связка отдельного компонента `landingbuilder` и отдельного frontend template `nordic`.
-3. Внутри продукта должен существовать отдельный слой global theme settings и design system tokens.
-4. `modern` остается reference и временным migration path, но не основной shell целевого продукта.
-5. Следующий крупный этап после стабилизации overlay-режима это skeleton шаблона `nordic` и управляемых theme slots.
+2. Текущий `landingbuilder` считается переходным bridge-слоем, а не окончательной продуктовой границей.
+3. Целевой продукт Нордик строится как отдельный visual-builder слой над InstantCMS 2 и отдельный frontend template `nordic`.
+4. Внутри продукта должен существовать отдельный design system token-layer с secondary screen `Глобальные стили`.
+5. `modern` остается reference и временным migration path, но не основной shell целевого продукта.
+6. Основной пользовательский UX дальше строится как guided visual builder: `страница -> секции -> блоки -> элементы`, а не как Bootstrap/grid editor.
+7. Component library и widget/data adapter считаются обязательными слоями взрослой архитектуры, а не опциональным довеском.
+8. Канонический MVP теперь идет в три этапа: foundation layer, visual editor core, system integration layer.
+9. Следующий осознанный кодовый выбор должен проверяться не по инерции текущего `landingbuilder`, а по тому, приближает ли он boundary нового builder-компонента.
 
 ## Главный трек работ
 
@@ -75,10 +88,15 @@
   - продуктовая рамка `Нордик`
   - границы scope
   - решение по dev-базе `instantcms-mcp-main`
-  - решение по hybrid-модели `landingbuilder` + `nordic`
+  - решение по bridge-модели `landingbuilder` -> `nordicbuilder` + `nordic`
   - решение по install/update продукту
+  - продуктовый blueprint visual builder и design system defaults UX
+  - каноническая карта продукта и границы между backend, runtime, builder, component library и adapter-layer
 - Артефакты:
   - [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)
+  - [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
+  - [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
+  - [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md)
 - Готово:
   - зафиксирована dev-база `instantcms-mcp-main`
   - зафиксирован отдельный installable component
@@ -86,7 +104,7 @@
   - зафиксирован подход core + packs
   - зафиксирован русский продуктовый фокус
 - Следующий результат:
-  - закрепить технические имена component/template в коде skeleton
+  - зафиксировать stage 1 foundation для `nordicbuilder`: schema contract, design token model, component library core и bridge-стратегию переиспользования текущего кода
 
 ### 2. Packaging and update architecture
 
@@ -136,10 +154,16 @@
   - добавлен runtime contract `layout.scheme` и canonical slot positions для `nordic`
   - добавлен отдельный `templates/nordic/layout_childs/main_scheme.tpl.php`, который не дублирует shell positions в `content_body`
   - зафиксирована code-level map для перевода copied `modern` bind positions в shell slots `nordic`
+  - собран и прогнан dry-run/apply migration script для `nordic` rows, cols и bind positions
+  - copied `nordic` rows и bind positions в БД переведены на canonical shell scheme `nordic_shell_v1`
+  - повторный smoke-test на live `nordic` после apply прошел
+  - migration logic вынесена в общий helper `templates/nordic/install_helpers/shell_migration.php` и пакет-зеркало
+  - пакет `packages/nordic` получил root installer hook `packages/nordic/install.php` с auto-apply `nordic_shell_v1` после install/update pipeline
+  - для админки добавлен `templates/nordic/scheme.php`, который показывает shell map и не отключает dynamic layout editor
 
 - Следующий результат:
-  - прогнать чистку текущих copied `nordic` rows/binds в БД под `nordic_shell_v1`
-  - оформить миграционный план и безопасный apply-path для уже созданных `nordic` записей в `layout_rows`, `layout_cols`, `widgets_bind_pages`
+  - прогнать ручной UI smoke-test страницы `/admin/widgets?template_name=nordic` и проверить итоговый UX на живых bind-операциях
+  - при необходимости добавить package-level update manifest, если будем собирать отдельный update-архив для `nordic`
 
 - Связанные документы:
   - [LANDING-BUILDER-ROADMAP-2026-04-03.md](LANDING-BUILDER-ROADMAP-2026-04-03.md)

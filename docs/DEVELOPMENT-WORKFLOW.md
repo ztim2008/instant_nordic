@@ -16,18 +16,22 @@
 1. Основная разработка идет в живых runtime-файлах InstantCMS.
 2. Результат сразу проверяется через админку и рабочий сайт.
 3. После каждого завершенного стабильного шага изменения зеркалятся в `packages/landingbuilder/package/`.
-4. Если меняется SQL-слой, одновременно обновляется `packages/landingbuilder/install.sql` и отдельно оценивается upgrade-path для уже установленных копий.
-5. Нельзя откладывать packaging «на потом», если runtime-слой уже изменился заметно.
+4. Для нового contract-first core-компонента `nordicbuilder` изменения зеркалятся в `packages/nordicbuilder/package/`, а installable zip собирается из `packages/nordicbuilder/` как пользовательский коммерческий дистрибутив.
+5. Если меняется SQL-слой, одновременно обновляется соответствующий `install.sql` и отдельно оценивается upgrade-path для уже установленных копий.
+6. Нельзя откладывать packaging «на потом», если runtime-слой уже изменился заметно.
 
 Основные рабочие зоны этого режима:
 
 - `system/controllers/landingbuilder`
+- `system/controllers/nordicbuilder`
 - `templates/admincoreui/controllers/landingbuilder`
 - `templates/default/controllers/landingbuilder`
 - `templates/nordic`
 - `packages/nordic/package`
 - `packages/landingbuilder/package`
 - `packages/landingbuilder/install.sql`
+- `packages/nordicbuilder/package`
+- `packages/nordicbuilder/install.sql`
 
 ## PHP CLI для этого репозитория
 
@@ -79,6 +83,17 @@
 1. Проверить документы из `LANDING-BUILDER-*.md`.
 2. Обновить код.
 3. Проверить результат в runtime-контуре InstantCMS.
-4. Синхронизировать installable package в `packages/landingbuilder/package/`.
+4. Синхронизировать installable package в `packages/landingbuilder/package/` или `packages/nordicbuilder/package/` в зависимости от слоя.
 5. Обновить docs при изменении поведения.
 6. Обновить [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
+
+## Коммерческий zip `nordicbuilder`
+
+Для `nordicbuilder` целевой формат поставки это installable zip для пользователей конструктора.
+
+Базовый поток такой:
+
+1. синхронизировать `packages/nordicbuilder/` с live source;
+2. проверить `manifest.ru.ini`, `install.sql` и `package/`;
+3. собрать архив командой `bash scripts/build-nordicbuilder-package.sh`;
+4. получить versioned дистрибутив в `dist/`.

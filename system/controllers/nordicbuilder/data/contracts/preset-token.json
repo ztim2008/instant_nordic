@@ -1,0 +1,24 @@
+{
+  "kind": "nordicbuilder.contract",
+  "schema_version": "1.0",
+  "key": "preset-token",
+  "title": "Preset Token",
+  "contract_kind": "nordicbuilder.preset",
+  "bridge_kind": "landingbuilder.preset",
+  "storage_target": "presets.tokens_json",
+  "description": "Reusable token layer для global defaults, page presets и zone overrides.",
+  "required_fields": [
+    "kind",
+    "schema_version",
+    "key",
+    "title",
+    "scope",
+    "tokens",
+    "meta"
+  ],
+  "notes": [
+    "token keys must be namespaced",
+    "inherits merges left to right",
+    "must not store html or page structure"
+  ]
+}

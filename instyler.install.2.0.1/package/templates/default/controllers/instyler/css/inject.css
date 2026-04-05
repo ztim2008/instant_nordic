@@ -1,0 +1,19 @@
+.picker-cursor {
+	position:absolute;
+	z-index:99998;
+	background:rgba(52, 152, 219,0.65);
+	border:solid 1px #2980b9;
+    box-shadow: 0 0 8px #2980b9;
+}
+.picker-cursor.single {
+	background:rgba(39, 174, 96,0.65);
+	border:solid 1px #27AE60;
+    box-shadow: 0 0 8px #27AE60;
+}
+#picker-hint {
+	position:absolute;
+	z-index:99999;
+	border:solid 1px #FFA800;
+    background:rgba(255, 168, 0, 0.5);
+    pointer-events: none;
+}

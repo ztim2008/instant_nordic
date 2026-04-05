@@ -9,9 +9,29 @@
 $shell_scheme_file = cmsConfig::get('root_path') . 'templates/nordic/shell_scheme.php';
 $shell_scheme = is_readable($shell_scheme_file) ? include $shell_scheme_file : [];
 $slot_positions = !empty($shell_scheme['slot_positions']) && is_array($shell_scheme['slot_positions']) ? $shell_scheme['slot_positions'] : [];
+$shell_runtime = !empty($landingbuilder_shell_runtime) && is_array($landingbuilder_shell_runtime) ? $landingbuilder_shell_runtime : [];
+$shell_chrome = !empty($shell_runtime['chrome']) && is_array($shell_runtime['chrome']) ? $shell_runtime['chrome'] : [];
+$active_shell_slots = !empty($shell_runtime['active_slots']) && is_array($shell_runtime['active_slots']) ? array_fill_keys($shell_runtime['active_slots'], true) : [];
+$menu_placement = !empty($shell_chrome['menu_placement']) ? (string) $shell_chrome['menu_placement'] : 'header_primary';
+
+if (!in_array($menu_placement, ['header_primary', 'header_secondary', 'site_top'], true)) {
+    $menu_placement = 'header_primary';
+}
+
+if (!empty($shell_runtime['body_classes']) && is_array($shell_runtime['body_classes'])) {
+    $body_classes = array_values(array_unique(array_merge($body_classes ?? [], $shell_runtime['body_classes'])));
+}
 
 $getSlotPositions = function($slot, array $fallback = []) use ($slot_positions) {
     return !empty($slot_positions[$slot]) ? $slot_positions[$slot] : $fallback;
+};
+
+$isSlotEnabled = function($slot) use ($active_shell_slots) {
+    if (!$active_shell_slots) {
+        return true;
+    }
+
+    return isset($active_shell_slots[$slot]);
 };
 
 $renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_plain', $itemBaseClass = 'nordic-shell__slot') {
@@ -53,12 +73,33 @@ $renderSlot = function($positions, $slotClass, $wrapper = 'wrapper_plain') use (
     echo '</section>';
 };
 
-$left_sidebar_positions = $getSlotPositions('content_sidebar_left', ['content_sidebar_left']);
-$right_sidebar_positions = $getSlotPositions('content_sidebar_right', ['content_sidebar_right']);
-$content_body_positions = $getSlotPositions('content_body', ['content_body']);
+$slot_fallbacks = [
+    'site_top' => ['site_top', 'top'],
+    'header_primary' => ['header_primary'],
+    'header_secondary' => ['header_secondary'],
+    'hero' => ['hero'],
+    'before_content' => ['before_content'],
+    'content_body' => ['content_body'],
+    'content_sidebar_left' => ['content_sidebar_left'],
+    'content_sidebar_right' => ['content_sidebar_right'],
+    'after_content' => ['after_content'],
+    'footer_primary' => ['footer_primary', 'footer'],
+    'footer_secondary' => ['footer_secondary']
+];
 
-$has_left_content_sidebar = $this->hasWidgetsOn($left_sidebar_positions);
-$has_right_content_sidebar = $this->hasWidgetsOn($right_sidebar_positions);
+$slot_fallbacks[$menu_placement][] = 'header';
+
+$resolveSlotPositions = function($slot) use ($getSlotPositions, $slot_fallbacks) {
+    $fallback = $slot_fallbacks[$slot] ?? [$slot];
+    return $getSlotPositions($slot, array_values(array_unique($fallback)));
+};
+
+$left_sidebar_positions = $resolveSlotPositions('content_sidebar_left');
+$right_sidebar_positions = $resolveSlotPositions('content_sidebar_right');
+$content_body_positions = $resolveSlotPositions('content_body');
+
+$has_left_content_sidebar = $isSlotEnabled('content_sidebar_left') && $this->hasWidgetsOn($left_sidebar_positions);
+$has_right_content_sidebar = $isSlotEnabled('content_sidebar_right') && $this->hasWidgetsOn($right_sidebar_positions);
 $has_content_body_widgets = $this->hasWidgetsOn($content_body_positions);
 
 $content_grid_class = 'nordic-shell__content-grid';
@@ -108,9 +149,9 @@ if ($has_right_content_sidebar) {
         <link rel="icon" href="<?php echo $config->root; ?>templates/modern/images/favicons/favicon.ico" type="image/x-icon">
     <?php } ?>
     </head>
-    <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>" class="d-flex flex-column min-vh-100 nordic-template<?php if (!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
+    <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>"<?php if (!empty($shell_runtime['variant_key'])) { ?> data-shell-variant="<?php html($shell_runtime['variant_key']); ?>"<?php } ?><?php if (!empty($shell_runtime['body_layout'])) { ?> data-shell-layout="<?php html($shell_runtime['body_layout']); ?>"<?php } ?><?php if (!empty($shell_chrome['header_variant'])) { ?> data-shell-header="<?php html($shell_chrome['header_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['footer_variant'])) { ?> data-shell-footer="<?php html($shell_chrome['footer_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['menu_placement'])) { ?> data-shell-menu="<?php html($shell_chrome['menu_placement']); ?>"<?php } ?><?php if (!empty($shell_chrome['mobile_menu_mode'])) { ?> data-shell-mobile-menu="<?php html($shell_chrome['mobile_menu_mode']); ?>"<?php } ?><?php if (!empty($shell_chrome['homepage_shell_mode'])) { ?> data-shell-homepage-mode="<?php html($shell_chrome['homepage_shell_mode']); ?>"<?php } ?> class="d-flex flex-column min-vh-100 nordic-template<?php if (!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
         <a class="nordic-skip-link" href="#nordic-content-frame">Перейти к содержимому</a>
-        <div class="nordic-shell">
+        <div class="nordic-shell nordic-shell--header-<?php html($shell_chrome['header_variant'] ?? 'classic'); ?> nordic-shell--footer-<?php html($shell_chrome['footer_variant'] ?? 'columns_4'); ?> nordic-shell--menu-<?php html($menu_placement); ?> nordic-shell--mobile-menu-<?php html($shell_chrome['mobile_menu_mode'] ?? 'drawer'); ?> nordic-shell--homepage-mode-<?php html($shell_chrome['homepage_shell_mode'] ?? 'inherit'); ?>">
 
             <?php if (!$config->is_site_on) { ?>
                 <div class="nordic-shell__notice">
@@ -122,15 +163,15 @@ if ($has_right_content_sidebar) {
                 </div>
             <?php } ?>
 
-            <?php $renderSlot($getSlotPositions('site_top', ['site_top', 'top']), 'nordic-shell__site-top'); ?>
+            <?php if ($isSlotEnabled('site_top')) { $renderSlot($resolveSlotPositions('site_top'), 'nordic-shell__site-top'); } ?>
 
             <header class="nordic-shell__header">
-                <?php $renderSlot($getSlotPositions('header_primary', ['header_primary', 'header']), 'nordic-shell__header-primary'); ?>
-                <?php $renderSlot($getSlotPositions('header_secondary', ['header_secondary']), 'nordic-shell__header-secondary'); ?>
+                <?php if ($isSlotEnabled('header_primary')) { $renderSlot($resolveSlotPositions('header_primary'), 'nordic-shell__header-primary'); } ?>
+                <?php if ($isSlotEnabled('header_secondary')) { $renderSlot($resolveSlotPositions('header_secondary'), 'nordic-shell__header-secondary'); } ?>
             </header>
 
-            <?php $renderSlot($getSlotPositions('hero', ['hero']), 'nordic-shell__hero'); ?>
-            <?php $renderSlot($getSlotPositions('before_content', ['before_content']), 'nordic-shell__before-content'); ?>
+            <?php if ($isSlotEnabled('hero')) { $renderSlot($resolveSlotPositions('hero'), 'nordic-shell__hero'); } ?>
+            <?php if ($isSlotEnabled('before_content')) { $renderSlot($resolveSlotPositions('before_content'), 'nordic-shell__before-content'); } ?>
 
             <main class="nordic-shell__main">
                 <div class="nordic-shell__content-frame" id="nordic-content-frame" data-slot="content_body">
@@ -157,11 +198,11 @@ if ($has_right_content_sidebar) {
                 </div>
             </main>
 
-            <?php $renderSlot($getSlotPositions('after_content', ['after_content']), 'nordic-shell__after-content'); ?>
+            <?php if ($isSlotEnabled('after_content')) { $renderSlot($resolveSlotPositions('after_content'), 'nordic-shell__after-content'); } ?>
 
             <footer class="nordic-shell__footer">
-                <?php $renderSlot($getSlotPositions('footer_primary', ['footer_primary', 'footer']), 'nordic-shell__footer-primary'); ?>
-                <?php $renderSlot($getSlotPositions('footer_secondary', ['footer_secondary']), 'nordic-shell__footer-secondary'); ?>
+                <?php if ($isSlotEnabled('footer_primary')) { $renderSlot($resolveSlotPositions('footer_primary'), 'nordic-shell__footer-primary'); } ?>
+                <?php if ($isSlotEnabled('footer_secondary')) { $renderSlot($resolveSlotPositions('footer_secondary'), 'nordic-shell__footer-secondary'); } ?>
             </footer>
         </div>
 

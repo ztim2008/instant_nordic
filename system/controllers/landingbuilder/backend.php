@@ -20,6 +20,20 @@ class backendLandingbuilder extends cmsBackend {
                 ]
             ],
             [
+                'title' => 'Shell Builder',
+                'url'   => href_to($this->root_url, 'shell'),
+                'options' => [
+                    'icon' => 'window-maximize'
+                ]
+            ],
+            [
+                'title' => 'Глобальный стиль',
+                'url'   => href_to($this->root_url, 'design'),
+                'options' => [
+                    'icon' => 'paint-brush'
+                ]
+            ],
+            [
                 'title' => 'Опции',
                 'url'   => href_to($this->root_url, 'options'),
                 'options' => [
