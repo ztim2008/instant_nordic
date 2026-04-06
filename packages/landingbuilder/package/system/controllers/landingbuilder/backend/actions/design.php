@@ -20,6 +20,7 @@ class actionLandingbuilderDesign extends cmsAction {
 			}
 
 			$theme = $this->model->getSiteThemeDefaults(array_merge((array) $this->options, [
+				'default_template_preset' => $data['template_preset'] ?? '',
 				'default_global_style_preset' => $data['global_style_preset'] ?? '',
 				'default_color_preset' => $data['color_preset'] ?? '',
 				'default_typography_preset' => $data['typography_preset'] ?? '',

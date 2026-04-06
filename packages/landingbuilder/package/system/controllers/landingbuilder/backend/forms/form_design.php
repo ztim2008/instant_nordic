@@ -7,8 +7,13 @@ class formLandingbuilderDesign extends cmsForm {
 		return [
 			[
 				'type' => 'fieldset',
-				'title' => 'Базовый пресет и палитра',
+				'title' => 'Шаблон сайта и палитра',
 				'childs' => [
+					new fieldList('template_preset', [
+						'title' => 'Шаблон сайта',
+						'default' => 'nordic_classic',
+						'items' => $catalog['template_preset']
+					]),
 					new fieldList('global_style_preset', [
 						'title' => 'Базовый пресет сайта',
 						'default' => 'nordic_balanced',

@@ -216,7 +216,13 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
-		return $this->getOverlayIntegrationByPageKey('profile-cover', $is_admin);
+		$resolved_page_key = $this->resolveOverlayPageKeyFromBindings('user_profile', [
+			'overlay'  => 'user_profile',
+			'user_id'  => (string) ($profile['id'] ?? ''),
+			'group_id' => (string) ($profile['group_id'] ?? ''),
+		], 'profile-cover');
+
+		return $this->getOverlayIntegrationByPageKey($resolved_page_key, $is_admin);
 	}
 
 	public function createPage(array $data, $user_id = 0) {
@@ -240,7 +246,10 @@ class modelLandingbuilder extends cmsModel {
 		$page_mode = !empty($data['mode']) ? $data['mode'] : 'full_takeover';
 		$status = !empty($data['status']) ? $data['status'] : 'draft';
 		$template = !empty($data['template']) ? $data['template'] : 'nordic';
-		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : ['sections' => []];
+		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : [];
+		if (empty($schema['sections']) && empty($schema['zones'])) {
+			$schema = $this->getStarterSchemaForNewPage($key, $title, $template, $page_mode);
+		}
 		$now = date('Y-m-d H:i:s');
 
 		$page_id = $this->insert(self::PAGE_TABLE, [
@@ -259,6 +268,112 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		return $this->savePageSchema($key, $schema, $user_id, 'Первичная версия');
+	}
+
+	public function deletePageByKey($page_key) {
+
+		if (!$this->hasInstalledSchema()) {
+			return false;
+		}
+
+		$page_key = $this->sanitizePageKey($page_key);
+		if (!$page_key) {
+			return false;
+		}
+
+		if (!$this->db->isTableExists(self::PAGE_TABLE)) {
+			return false;
+		}
+
+		$page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
+		if (!$page) {
+			return false;
+		}
+
+		$page_id = (int) ($page['id'] ?? 0);
+		if (!$page_id) {
+			return false;
+		}
+
+		if ($this->db->isTableExists(self::PAGE_WIDGET_TABLE)) {
+			$this->filterEqual('page_id', $page_id);
+			$this->deleteFiltered(self::PAGE_WIDGET_TABLE);
+		}
+
+		if ($this->db->isTableExists(self::VERSION_TABLE)) {
+			$this->filterEqual('page_id', $page_id);
+			$this->deleteFiltered(self::VERSION_TABLE);
+		}
+
+		return (bool) $this->delete(self::PAGE_TABLE, $page_id);
+	}
+
+	public function setPageStatusByKey($page_key, $status, $user_id = 0) {
+
+		if (!$this->hasInstalledSchema()) {
+			return false;
+		}
+
+		$page_key = $this->sanitizePageKey($page_key);
+		if (!$page_key) {
+			return false;
+		}
+
+		$status = (string) $status;
+		$allowed_statuses = ['draft', 'prototype', 'idea', 'published'];
+		if (!in_array($status, $allowed_statuses, true)) {
+			return false;
+		}
+
+		$page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
+		if (!$page) {
+			return false;
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$updated = $this->update(self::PAGE_TABLE, $page['id'], [
+			'status'     => $status,
+			'updated_at' => $now
+		]);
+
+		if (!$updated) {
+			return false;
+		}
+
+		return $this->getItemByField(self::PAGE_TABLE, 'name', $page_key, function ($item) {
+			return $this->normalizePage($item);
+		});
+	}
+
+	protected function getStarterSchemaForNewPage($page_key, $title = '', $template = 'nordic', $page_mode = 'full_takeover') {
+
+		$schema = ['sections' => []];
+		$bridge_model = $this->getNordicbuilderBridgeModel();
+
+		if ($bridge_model && method_exists($bridge_model, 'buildEmptyLandingbuilderSchema')) {
+			$starter_schema = $bridge_model->buildEmptyLandingbuilderSchema($page_key, $title, $schema);
+
+			if (is_array($starter_schema)) {
+				$schema = $starter_schema;
+			}
+		} elseif ($bridge_model && method_exists($bridge_model, 'buildStarterLandingbuilderSchema')) {
+			$starter_schema = $bridge_model->buildStarterLandingbuilderSchema($page_key, $title, $schema);
+
+			if (is_array($starter_schema)) {
+				$schema = $starter_schema;
+			}
+		}
+
+		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+			$schema['layout'] = [];
+		}
+
+		$schema['layout']['template'] = $template ?: 'nordic';
+		if (empty($schema['layout']['page_mode'])) {
+			$schema['layout']['page_mode'] = $page_mode ?: 'full_takeover';
+		}
+
+		return $schema;
 	}
 
 	public function getAvailableSystemWidgets() {
@@ -308,6 +423,9 @@ class modelLandingbuilder extends cmsModel {
 
 		if ($bridge_model && $bridge_page) {
 			$fallback_page = $legacy_page ?: $this->getDefaultPageByKey($page_key);
+			if (!empty($schema['layout']['template'])) {
+				$fallback_page['template'] = (string) $schema['layout']['template'];
+			}
 			$result = $bridge_model->saveBridgePageSchema($page_key, $this->normalizeSchema($schema, $page_key), $fallback_page ?: [], $user_id, (string) (($fallback_page['status'] ?? 'draft')));
 
 			if (!empty($result['is_valid'])) {
@@ -329,6 +447,7 @@ class modelLandingbuilder extends cmsModel {
 		$schema = $this->normalizeSchema($schema, $page_key);
 		$schema_json = $this->encodeJson($schema);
 		$now = date('Y-m-d H:i:s');
+		$template_name = !empty($schema['layout']['template']) ? (string) $schema['layout']['template'] : (!empty($page['template']) ? (string) $page['template'] : 'nordic');
 
 		$version_id = $this->insert(self::VERSION_TABLE, [
 			'page_id'       => $page['id'],
@@ -345,6 +464,7 @@ class modelLandingbuilder extends cmsModel {
 		$updated = $this->update(self::PAGE_TABLE, $page['id'], [
 			'schema_json'         => $schema_json,
 			'current_version_id'  => $version_id,
+			'template'            => $template_name,
 			'updated_at'          => $now
 		]);
 
@@ -436,9 +556,11 @@ class modelLandingbuilder extends cmsModel {
 			'devices'             => $this->getCanvasDevices($device_keys),
 			'device_keys'         => $device_keys,
 			'left_tabs'           => $left_tabs,
+			'block_catalog'       => array_values($this->getCanvasBlockCatalog()),
 			'section_presets'     => $this->getCanvasSectionPresets(),
 			'theme_defaults'      => $theme_defaults,
 			'theme_option_catalog'=> $this->getCanvasThemeOptionCatalog(),
+			'template_preset_catalog' => array_values($this->getTemplatePresetCatalog()),
 			'default_section_layout' => !empty($options['default_section_layout']) ? (string) $options['default_section_layout'] : '1col',
 			'screen_map'          => [
 				'topbar' => ['page_summary', 'page_theme', 'device_preview', 'page_versions'],
@@ -629,7 +751,18 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	public function getThemeOptionCatalog() {
+		$template_preset_items = [];
+
+		foreach ($this->getTemplatePresetCatalog() as $preset) {
+			$template_preset_items[] = [
+				'value'       => $preset['key'],
+				'title'       => $preset['title'],
+				'description' => $preset['description']
+			];
+		}
+
 		return [
+			'template_preset' => $template_preset_items,
 			'global_style_preset' => [
 				['value' => 'nordic_balanced', 'title' => 'Сбалансированный Нордик', 'description' => 'Универсальный пресет для сайта компании, сервиса и смешанных страниц.'],
 				['value' => 'nordic_contrast', 'title' => 'Контрастный Нордик', 'description' => 'Более плотный и контрастный стиль для акцентного бренда и первого экрана.'],
@@ -704,6 +837,7 @@ class modelLandingbuilder extends cmsModel {
 		$options = $options ?: (array) cmsController::loadOptions('landingbuilder');
 
 		return $this->normalizeThemeState([
+			'template_preset'     => !empty($options['default_template_preset']) ? (string) $options['default_template_preset'] : '',
 			'global_style_preset' => !empty($options['default_global_style_preset']) ? (string) $options['default_global_style_preset'] : '',
 			'color_preset'        => !empty($options['default_color_preset']) ? (string) $options['default_color_preset'] : '',
 			'typography_preset'   => !empty($options['default_typography_preset']) ? (string) $options['default_typography_preset'] : '',
@@ -719,6 +853,7 @@ class modelLandingbuilder extends cmsModel {
 		$theme = $this->normalizeThemeState($settings);
 		$options = (array) cmsController::loadOptions('landingbuilder');
 
+		$options['default_template_preset'] = $theme['template_preset'];
 		$options['default_global_style_preset'] = $theme['global_style_preset'];
 		$options['default_color_preset'] = $theme['color_preset'];
 		$options['default_typography_preset'] = $theme['typography_preset'];
@@ -741,6 +876,7 @@ class modelLandingbuilder extends cmsModel {
 			'theme'   => $theme,
 			'catalog' => $catalog,
 			'summary' => [
+				['label' => 'Шаблон сайта', 'value' => $this->getThemeOptionTitle('template_preset', $theme['template_preset'], $catalog)],
 				['label' => 'Стартовый пресет', 'value' => $this->getThemeOptionTitle('global_style_preset', $theme['global_style_preset'], $catalog)],
 				['label' => 'Палитра', 'value' => $this->getThemeOptionTitle('color_preset', $theme['color_preset'], $catalog)],
 				['label' => 'Типографика', 'value' => $this->getThemeOptionTitle('typography_preset', $theme['typography_preset'], $catalog)],
@@ -756,217 +892,476 @@ class modelLandingbuilder extends cmsModel {
 		return $this->getThemeOptionCatalog();
 	}
 
+	public function getTemplatePresetCatalog() {
+		return [
+			'nordic_classic' => [
+				'key'              => 'nordic_classic',
+				'title'            => 'Классический Нордик',
+				'description'      => 'Привычный шаблон сайта как в старом Нордике: универсальный shell, спокойный ритм и базовая навигация.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'site-default',
+					'homepage' => 'homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'landing-pages'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_balanced',
+					'color_preset'        => 'nordic_day',
+					'typography_preset'   => 'editorial',
+					'container_preset'    => 'standard',
+					'button_preset'       => 'soft_accent',
+					'card_preset'         => 'quiet',
+					'section_spacing'     => 'comfortable'
+				]
+			],
+			'nordic_editorial' => [
+				'key'              => 'nordic_editorial',
+				'title'            => 'Nordic Editorial',
+				'description'      => 'Редакционный шаблон для статей, help-страниц и спокойного контентного сценария с более журнальным ритмом.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'content-pages',
+					'homepage' => 'homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'landing-pages'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_editorial',
+					'color_preset'        => 'nordic_day',
+					'typography_preset'   => 'editorial',
+					'container_preset'    => 'text',
+					'button_preset'       => 'ghost',
+					'card_preset'         => 'outline',
+					'section_spacing'     => 'airy'
+				]
+			],
+			'nordic_catalog' => [
+				'key'              => 'nordic_catalog',
+				'title'            => 'Nordic Catalog',
+				'description'      => 'Каталоговый шаблон для listing-страниц, витрин и рабочих экранов с карточками и фильтрами.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'category-pages',
+					'homepage' => 'homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'landing-pages'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_catalog',
+					'color_preset'        => 'nordic_day',
+					'typography_preset'   => 'compact',
+					'container_preset'    => 'wide',
+					'button_preset'       => 'solid_brand',
+					'card_preset'         => 'raised',
+					'section_spacing'     => 'compact'
+				]
+			],
+			'nordic_warm_market' => [
+				'key'              => 'nordic_warm_market',
+				'title'            => 'Nordic Warm Market',
+				'description'      => 'Более мягкий рыночный шаблон для витрин, сервисов и продающих страниц без резкого контраста.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'site-default',
+					'homepage' => 'homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'landing-pages'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_balanced',
+					'color_preset'        => 'forest_accent',
+					'typography_preset'   => 'neutral',
+					'container_preset'    => 'wide',
+					'button_preset'       => 'soft_accent',
+					'card_preset'         => 'raised',
+					'section_spacing'     => 'comfortable'
+				]
+			],
+			'nordic_compact' => [
+				'key'              => 'nordic_compact',
+				'title'            => 'Nordic Compact',
+				'description'      => 'Компактный шаблон для плотных рабочих страниц, где важны скорость просмотра и утилитарная подача.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'category-pages',
+					'homepage' => 'homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'landing-pages'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_catalog',
+					'color_preset'        => 'slate_contrast',
+					'typography_preset'   => 'compact',
+					'container_preset'    => 'standard',
+					'button_preset'       => 'ghost',
+					'card_preset'         => 'outline',
+					'section_spacing'     => 'compact'
+				]
+			],
+			'nm_landing' => [
+				'key'              => 'nm_landing',
+				'title'            => 'NM: лендинговый шаблон',
+				'description'      => 'Первый управляемый preset по вашему NM-наброску: компактный header, акцентный первый экран и более собранный продающий корпус.',
+				'preview_template' => 'nordic',
+				'route_variants'   => [
+					'site'     => 'nm-site',
+					'homepage' => 'nm-homepage',
+					'category' => 'category-pages',
+					'profile'  => 'profile-pages',
+					'landing'  => 'nm-landing'
+				],
+				'theme_defaults'   => [
+					'global_style_preset' => 'nordic_contrast',
+					'color_preset'        => 'slate_contrast',
+					'typography_preset'   => 'neutral',
+					'container_preset'    => 'wide',
+					'button_preset'       => 'solid_brand',
+					'card_preset'         => 'raised',
+					'section_spacing'     => 'comfortable'
+				]
+			]
+		];
+	}
+
+	protected function getTemplatePresetByKey($key) {
+		$key = trim((string) $key);
+		$catalog = $this->getTemplatePresetCatalog();
+
+		if (isset($catalog[$key])) {
+			return $catalog[$key];
+		}
+
+		return $catalog['nordic_classic'];
+	}
+
+	protected function resolveTemplatePresetVariantKey($template_preset, array $page, array $adapter) {
+		$preset = $this->getTemplatePresetByKey($template_preset);
+		$route_variants = isset($preset['route_variants']) && is_array($preset['route_variants']) ? $preset['route_variants'] : [];
+
+		$page_key = (string) ($page['key'] ?? $page['name'] ?? '');
+		if ($page_key === 'homepage' && !empty($route_variants['homepage'])) {
+			return (string) $route_variants['homepage'];
+		}
+
+		$adapter_key = (string) ($adapter['key'] ?? '');
+		if ($adapter_key === 'content_category_generic' && !empty($route_variants['category'])) {
+			return (string) $route_variants['category'];
+		}
+
+		if ($adapter_key === 'user_profile' && !empty($route_variants['profile'])) {
+			return (string) $route_variants['profile'];
+		}
+
+		if (($page['page_mode'] ?? $page['mode'] ?? '') === 'full_takeover' && !empty($route_variants['landing'])) {
+			return (string) $route_variants['landing'];
+		}
+
+		return !empty($route_variants['site']) ? (string) $route_variants['site'] : '';
+	}
+
 	protected function getCanvasThemeDefaults(array $options = []) {
 		return $this->getSiteThemeDefaults($options);
+	}
+
+	protected function getCanvasBlockCatalog() {
+		$catalog = $this->getBlockCatalog();
+		return array_values(is_array($catalog) ? $catalog : []);
+	}
+
+	protected function getBlockCatalog() {
+		$menu_choices = [['value' => '', 'title' => 'Выберите меню…']];
+		try {
+			$menus = cmsCore::getModel('menu')->getMenus();
+			if ($menus) {
+				foreach ($menus as $menu) {
+					$menu_choices[] = [
+						'value' => (string) ($menu['name'] ?? ''),
+						'title' => (string) ($menu['title'] ?? ($menu['name'] ?? ''))
+					];
+				}
+			}
+		} catch (Throwable $exception) {
+			// noop
+		}
+
+		$menu_template_choices = [];
+		try {
+			$templates = cmsTemplate::getInstance()->getAvailableTemplatesFiles('assets/ui', 'menu*.tpl.php');
+			if ($templates) {
+				foreach ($templates as $key => $title) {
+					$menu_template_choices[] = [
+						'value' => (string) $key,
+						'title' => (string) $title
+					];
+				}
+			}
+		} catch (Throwable $exception) {
+			// noop
+		}
+		if (!$menu_template_choices) {
+			$menu_template_choices = [
+				['value' => 'menu', 'title' => 'menu']
+			];
+		}
+
+		return [
+			'core.hero' => [
+				'key'           => 'core.hero',
+				'title'         => 'Первый экран (Hero)',
+				'default_label' => 'Первый экран',
+				'description'   => 'Крупный hero-блок с градиентным фоном, заголовком, подзаголовком, кнопкой и необязательной картинкой.',
+				'summary'       => 'Основной блок для первого экрана страницы.',
+				'fields'        => [
+					['key' => 'eyebrow', 'title' => 'Надзаголовок', 'type' => 'text', 'placeholder' => 'Например: Нордик Builder'],
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Сильный заголовок первого экрана'],
+					['key' => 'text', 'title' => 'Подзаголовок', 'type' => 'textarea', 'placeholder' => 'Коротко объясните пользу страницы.'],
+					['key' => 'button_label', 'title' => 'Текст кнопки', 'type' => 'text', 'placeholder' => 'Например: Оставить заявку'],
+					['key' => 'button_url', 'title' => 'Ссылка кнопки', 'type' => 'text', 'placeholder' => 'https://... или /contact'],
+					['key' => 'image_url', 'title' => 'Картинка (URL)', 'type' => 'text', 'placeholder' => 'https://.../hero.jpg']
+				],
+				'defaults'      => [
+					'eyebrow'      => 'Нордик Builder',
+					'title'        => 'Сильный заголовок первого экрана',
+					'text'         => 'Короткое пояснение, которое помогает понять предложение с первого взгляда.',
+					'button_label' => 'Начать',
+					'button_url'   => '',
+					'image_url'    => ''
+				]
+			],
+			'core.navigation' => [
+				'key'           => 'core.navigation',
+				'title'         => 'Навигация',
+				'default_label' => 'Навигация',
+				'description'   => 'Выводит выбранное меню InstantCMS с нужным стилем и подсветкой активного пункта.',
+				'summary'       => 'Используйте для шапки/подвала и системной навигации.',
+				'fields'        => [
+					[
+						'key' => 'menu',
+						'title' => 'Меню',
+						'type' => 'select',
+						'options' => $menu_choices,
+						'hint' => 'Выберите одно из меню из раздела «Меню» в админке.'
+					],
+					[
+						'key' => 'template',
+						'title' => 'Шаблон меню',
+						'type' => 'select',
+						'options' => $menu_template_choices,
+						'hint' => 'Шаблон вывода берется из assets/ui (menu*.tpl.php), учитывая наследование шаблона сайта.'
+					],
+					['key' => 'class', 'title' => 'CSS класс', 'type' => 'text', 'placeholder' => 'menu nav', 'hint' => 'Дополнительные классы для контейнера меню.'],
+					[
+						'key' => 'navbar_color_scheme',
+						'title' => 'Цветовая схема',
+						'type' => 'select',
+						'options' => [
+							['value' => '', 'title' => 'По умолчанию'],
+							['value' => 'navbar-light', 'title' => 'Светлое меню'],
+							['value' => 'navbar-dark', 'title' => 'Тёмное меню']
+						]
+					],
+					[
+						'key' => 'menu_nav_style',
+						'title' => 'Расположение меню',
+						'type' => 'select',
+						'options' => [
+							['value' => '', 'title' => 'Горизонтальное, по левому краю'],
+							['value' => 'justify-content-between', 'title' => 'Горизонтальное, по краям'],
+							['value' => 'justify-content-center', 'title' => 'Горизонтальное, по центру'],
+							['value' => 'justify-content-end', 'title' => 'Горизонтальное, по правому краю'],
+							['value' => 'flex-column', 'title' => 'Вертикальное']
+						]
+					],
+					[
+						'key' => 'menu_nav_style_add',
+						'title' => 'Расположение на других разрешениях',
+						'type' => 'select',
+						'options' => [
+							['value' => '', 'title' => '—'],
+							['value' => 'flex-sm-row justify-content-sm-start', 'title' => 'Горизонтальное ≥576px'],
+							['value' => 'flex-md-row justify-content-md-start', 'title' => 'Горизонтальное ≥768px'],
+							['value' => 'flex-lg-row justify-content-lg-start', 'title' => 'Горизонтальное ≥992px'],
+							['value' => 'flex-xl-row justify-content-xl-start', 'title' => 'Горизонтальное ≥1200px'],
+							['value' => 'flex-sm-column', 'title' => 'Вертикальное ≥576px'],
+							['value' => 'flex-md-column', 'title' => 'Вертикальное ≥768px'],
+							['value' => 'flex-lg-column', 'title' => 'Вертикальное ≥992px'],
+							['value' => 'flex-xl-column', 'title' => 'Вертикальное ≥1200px']
+						]
+					],
+					[
+						'key' => 'is_detect',
+						'title' => 'Выделять активный пункт',
+						'type' => 'checkbox'
+					],
+					[
+						'key' => 'is_detect_strict',
+						'title' => 'Строгое выделение активного пункта',
+						'type' => 'checkbox',
+						'hint' => 'Если выключено — может подсветить несколько пунктов по URL-совпадению.'
+					],
+					[
+						'key' => 'max_items',
+						'title' => 'Максимальное количество пунктов',
+						'type' => 'number',
+						'hint' => 'Остальные пункты будут помещены в пункт «Еще…». 0 — без ограничений.'
+					]
+				],
+				'defaults'      => [
+					'menu' => '',
+					'template' => 'menu',
+					'class' => 'menu nav',
+					'navbar_color_scheme' => '',
+					'menu_nav_style' => '',
+					'menu_nav_style_add' => '',
+					'is_detect' => 1,
+					'is_detect_strict' => 0,
+					'max_items' => 0
+				]
+			],
+			'ads.category-header' => [
+				'key'           => 'ads.category-header',
+				'title'         => 'Шапка категории объявлений',
+				'default_label' => 'Шапка категории',
+				'description'   => 'Контекстный верхний блок для категории, фильтров и вводного текста.',
+				'summary'       => 'Используйте для усиления overlay-страницы категории.',
+				'fields'        => [
+					['key' => 'eyebrow', 'title' => 'Надзаголовок', 'type' => 'text', 'placeholder' => 'Например: Категория'],
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Заголовок категории'],
+					['key' => 'text', 'title' => 'Пояснение', 'type' => 'textarea', 'placeholder' => 'Помогите пользователю быстрее понять контекст категории.']
+				],
+				'defaults'      => [
+					'eyebrow' => 'Категория',
+					'title'   => 'Шапка категории объявлений',
+					'text'    => 'Добавьте вводный контекст перед системным списком и фильтрами.'
+				]
+			],
+			'ads.filter-bar' => [
+				'key'           => 'ads.filter-bar',
+				'title'         => 'Панель фильтров',
+				'default_label' => 'Фильтры',
+				'description'   => 'Лента быстрых фильтров, уточнений или подсказок для списка.',
+				'summary'       => 'Каждая строка станет отдельным фильтром или смысловым чипом.',
+				'fields'        => [
+					['key' => 'title', 'title' => 'Заголовок блока', 'type' => 'text', 'placeholder' => 'Быстрые уточнения'],
+					['key' => 'items_text', 'title' => 'Фильтры по строкам', 'type' => 'textarea', 'placeholder' => "Новые\nС доставкой\nПроверенные продавцы"]
+				],
+				'defaults'      => [
+					'title'      => 'Быстрые уточнения',
+					'items_text' => "Новые\nС доставкой\nПроверенные продавцы"
+				]
+			],
+			'profile.cover-hero' => [
+				'key'           => 'profile.cover-hero',
+				'title'         => 'Обложка профиля',
+				'default_label' => 'Обложка профиля',
+				'description'   => 'Крупный верхний блок профиля с именем, подводкой и визуальным акцентом.',
+				'summary'       => 'Подходит для верхней части страницы пользователя или компании.',
+				'fields'        => [
+					['key' => 'eyebrow', 'title' => 'Надзаголовок', 'type' => 'text', 'placeholder' => 'Например: Профиль'],
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Имя профиля или компании'],
+					['key' => 'text', 'title' => 'Пояснение', 'type' => 'textarea', 'placeholder' => 'Короткое описание профиля.']
+				],
+				'defaults'      => [
+					'eyebrow' => 'Профиль',
+					'title'   => 'Имя профиля или компании',
+					'text'    => 'Добавьте краткое описание, специализацию или ключевое позиционирование.'
+				]
+			],
+			'profile.quick-stats' => [
+				'key'           => 'profile.quick-stats',
+				'title'         => 'Короткая статистика профиля',
+				'default_label' => 'Статистика',
+				'description'   => 'Набор коротких показателей профиля в компактной сетке.',
+				'summary'       => 'Каждая строка в формате «значение|подпись» станет отдельной карточкой.',
+				'fields'        => [
+					['key' => 'title', 'title' => 'Заголовок блока', 'type' => 'text', 'placeholder' => 'Ключевые показатели'],
+					['key' => 'items_text', 'title' => 'Показатели по строкам', 'type' => 'textarea', 'placeholder' => "120|завершенных заказов\n4.9|средний рейтинг\n7 лет|на рынке"]
+				],
+				'defaults'      => [
+					'title'      => 'Ключевые показатели',
+					'items_text' => "120|завершенных заказов\n4.9|средний рейтинг\n7 лет|на рынке"
+				]
+			]
+		];
+	}
+
+	protected function mergeBlockDefinitionOptions(array $definition, $options) {
+
+		$defaults = isset($definition['defaults']) && is_array($definition['defaults']) ? $definition['defaults'] : [];
+		$options = is_array($options) ? $options : [];
+
+		return array_merge($defaults, $options);
+	}
+
+	protected function getBlockDefinition($source_key) {
+
+		$source_key = (string) $source_key;
+		$catalog = $this->getBlockCatalog();
+
+		if (isset($catalog[$source_key])) {
+			return $catalog[$source_key];
+		}
+
+		return [
+			'key'           => $source_key,
+			'title'         => $source_key ?: 'Пользовательский блок',
+			'default_label' => $source_key ?: 'Пользовательский блок',
+			'description'   => 'Пользовательский блок без зарегистрированного semantic-пресета.',
+			'summary'       => 'Для этого блока пока нет описанного semantic-контракта.',
+			'fields'        => [],
+			'defaults'      => []
+		];
+	}
+
+	protected function enrichRuntimeBlockNode(array $node) {
+
+		$source_key = trim((string) ($node['source_key'] ?? ($node['label'] ?? '')));
+		$definition = $this->getBlockDefinition($source_key);
+
+		$node['source_key'] = $source_key;
+		$node['options'] = $this->mergeBlockDefinitionOptions($definition, $node['options'] ?? []);
+
+		if (empty($node['label']) || $node['label'] === $source_key) {
+			$node['label'] = $definition['default_label'] ?: $definition['title'];
+		}
+
+		$node['block_meta'] = [
+			'key'           => $definition['key'],
+			'title'         => $definition['title'],
+			'default_label' => $definition['default_label'],
+			'description'   => $definition['description'],
+			'summary'       => $definition['summary'],
+			'fields'        => $definition['fields']
+		];
+
+		return $node;
 	}
 
 	protected function getCanvasSectionPresets() {
 		return [
 			[
 				'key' => 'hero_simple',
-				'title' => 'Первый экран с кнопкой',
-				'description' => 'Крупный первый экран с заголовком, текстом и кнопкой.',
+				'title' => 'Первый экран (Hero)',
+				'description' => 'Крупный первый экран с градиентным фоном, кнопкой и картинкой (опционально).',
 				'layout' => '1col',
 				'section_type' => 'hero',
 				'style_preset' => 'hero',
 				'background_tone' => 'brand-soft',
-				'container_preset' => 'standard',
-				'spacing_preset' => 'xl',
-				'columns' => [
-					[
-						'title' => 'Основной контент',
-						'nodes' => [
-							['type' => 'block', 'label' => 'Главный заголовок', 'source_key' => 'core.hero-heading'],
-							['type' => 'block', 'label' => 'Кнопки первого экрана', 'source_key' => 'core.hero-actions']
-						]
-					]
-				]
-			],
-			[
-				'key' => 'hero_media_left',
-				'title' => 'Первый экран с медиа слева',
-				'description' => 'Медиа слева, контент справа. Подходит для продукта и категории.',
-				'layout' => '2col_equal',
-				'section_type' => 'hero',
-				'style_preset' => 'hero-split',
-				'background_tone' => 'base',
 				'container_preset' => 'wide',
 				'spacing_preset' => 'xl',
 				'columns' => [
 					[
-						'title' => 'Медиа',
+						'title' => 'Hero',
 						'nodes' => [
-							['type' => 'block', 'label' => 'Карточка медиа', 'source_key' => 'core.cards-grid']
-						]
-					],
-					[
-						'title' => 'Контент',
-						'nodes' => [
-							['type' => 'block', 'label' => 'Главный заголовок', 'source_key' => 'core.hero-heading'],
-							['type' => 'block', 'label' => 'Список преимуществ', 'source_key' => 'core.feature-list']
+							['type' => 'block', 'label' => 'Первый экран', 'source_key' => 'core.hero']
 						]
 					]
-				]
-			],
-			[
-				'key' => 'hero_media_right',
-				'title' => 'Первый экран с медиа справа',
-				'description' => 'Контент слева, медиа справа.',
-				'layout' => '2col_equal',
-				'section_type' => 'hero',
-				'style_preset' => 'hero-split',
-				'background_tone' => 'base',
-				'container_preset' => 'wide',
-				'spacing_preset' => 'xl',
-				'columns' => [
-					[
-						'title' => 'Контент',
-						'nodes' => [
-							['type' => 'block', 'label' => 'Главный заголовок', 'source_key' => 'core.hero-heading'],
-							['type' => 'block', 'label' => 'Кнопки первого экрана', 'source_key' => 'core.hero-actions']
-						]
-					],
-					[
-						'title' => 'Медиа',
-						'nodes' => [
-							['type' => 'block', 'label' => 'Карточка медиа', 'source_key' => 'core.cards-grid']
-						]
-					]
-				]
-			],
-			[
-				'key' => 'benefits_3_cards',
-				'title' => 'Три карточки преимуществ',
-				'description' => 'Три карточки преимуществ.',
-				'layout' => '3col_equal',
-				'section_type' => 'benefits',
-				'style_preset' => 'cards',
-				'background_tone' => 'base',
-				'container_preset' => 'standard',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Преимущество 1', 'nodes' => [['type' => 'block', 'label' => 'Карточка 1', 'source_key' => 'core.cards-grid']]],
-					['title' => 'Преимущество 2', 'nodes' => [['type' => 'block', 'label' => 'Карточка 2', 'source_key' => 'core.cards-grid']]],
-					['title' => 'Преимущество 3', 'nodes' => [['type' => 'block', 'label' => 'Карточка 3', 'source_key' => 'core.cards-grid']]]
-				]
-			],
-			[
-				'key' => 'features_2_columns',
-				'title' => 'Две колонки с особенностями',
-				'description' => 'Список особенностей в двух колонках.',
-				'layout' => '2col_equal',
-				'section_type' => 'features',
-				'style_preset' => 'feature-list',
-				'background_tone' => 'base',
-				'container_preset' => 'standard',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Колонка 1', 'nodes' => [['type' => 'block', 'label' => 'Список преимуществ', 'source_key' => 'core.feature-list']]],
-					['title' => 'Колонка 2', 'nodes' => [['type' => 'block', 'label' => 'Сетка карточек', 'source_key' => 'core.cards-grid']]]
-				]
-			],
-			[
-				'key' => 'logo_cloud',
-				'title' => 'Облако логотипов',
-				'description' => 'Логотипы клиентов или партнёров.',
-				'layout' => '1col',
-				'section_type' => 'logos',
-				'style_preset' => 'logos',
-				'background_tone' => 'muted',
-				'container_preset' => 'wide',
-				'spacing_preset' => 'md',
-				'columns' => [
-					['title' => 'Логотипы', 'nodes' => [['type' => 'block', 'label' => 'Сетка карточек', 'source_key' => 'core.cards-grid']]]
-				]
-			],
-			[
-				'key' => 'stats_row',
-				'title' => 'Ряд со статистикой',
-				'description' => 'Короткий блок со статистикой.',
-				'layout' => '3col_equal',
-				'section_type' => 'stats',
-				'style_preset' => 'stats',
-				'background_tone' => 'contrast',
-				'container_preset' => 'standard',
-				'spacing_preset' => 'md',
-				'columns' => [
-					['title' => 'Стат 1', 'nodes' => [['type' => 'block', 'label' => 'Показатель 1', 'source_key' => 'profile.quick-stats']]],
-					['title' => 'Стат 2', 'nodes' => [['type' => 'block', 'label' => 'Показатель 2', 'source_key' => 'profile.quick-stats']]],
-					['title' => 'Стат 3', 'nodes' => [['type' => 'block', 'label' => 'Показатель 3', 'source_key' => 'profile.quick-stats']]]
-				]
-			],
-			[
-				'key' => 'testimonials',
-				'title' => 'Отзывы',
-				'description' => 'Отзывы в карточках.',
-				'layout' => '3col_equal',
-				'section_type' => 'testimonials',
-				'style_preset' => 'cards',
-				'background_tone' => 'base',
-				'container_preset' => 'standard',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Отзыв 1', 'nodes' => [['type' => 'block', 'label' => 'Карточка 1', 'source_key' => 'core.cards-grid']]],
-					['title' => 'Отзыв 2', 'nodes' => [['type' => 'block', 'label' => 'Карточка 2', 'source_key' => 'core.cards-grid']]],
-					['title' => 'Отзыв 3', 'nodes' => [['type' => 'block', 'label' => 'Карточка 3', 'source_key' => 'core.cards-grid']]]
-				]
-			],
-			[
-				'key' => 'faq_accordion',
-				'title' => 'FAQ-аккордеон',
-				'description' => 'Вопросы и ответы.',
-				'layout' => '1col',
-				'section_type' => 'faq',
-				'style_preset' => 'faq',
-				'background_tone' => 'base',
-				'container_preset' => 'text',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'FAQ', 'nodes' => [['type' => 'block', 'label' => 'Список преимуществ', 'source_key' => 'core.feature-list']]]
-				]
-			],
-			[
-				'key' => 'cta_banner',
-				'title' => 'Баннер с действием',
-				'description' => 'Финальный блок с призывом к действию.',
-				'layout' => '2col_equal',
-				'section_type' => 'cta',
-				'style_preset' => 'cta',
-				'background_tone' => 'brand-strong',
-				'container_preset' => 'wide',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Текст', 'nodes' => [['type' => 'block', 'label' => 'Главный заголовок', 'source_key' => 'core.hero-heading']]],
-					['title' => 'Действие', 'nodes' => [['type' => 'block', 'label' => 'Кнопки первого экрана', 'source_key' => 'core.hero-actions']]]
-				]
-			],
-			[
-				'key' => 'contacts_map',
-				'title' => 'Контакты и карта',
-				'description' => 'Контакты рядом с картой или формой.',
-				'layout' => '2col_sidebar_right',
-				'section_type' => 'contacts',
-				'style_preset' => 'contacts',
-				'background_tone' => 'muted',
-				'container_preset' => 'wide',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Контакты', 'nodes' => [['type' => 'block', 'label' => 'Список преимуществ', 'source_key' => 'core.feature-list']]],
-					['title' => 'Карта / форма', 'nodes' => []]
-				]
-			],
-			[
-				'key' => 'rich_text',
-				'title' => 'Текстовая секция',
-				'description' => 'Текстовый блок для описания, условий или статьи.',
-				'layout' => '1col',
-				'section_type' => 'content',
-				'style_preset' => 'content',
-				'background_tone' => 'base',
-				'container_preset' => 'text',
-				'spacing_preset' => 'lg',
-				'columns' => [
-					['title' => 'Текст', 'nodes' => [['type' => 'block', 'label' => 'Главный заголовок', 'source_key' => 'core.hero-heading']]]
 				]
 			],
 			[
@@ -1173,7 +1568,162 @@ class modelLandingbuilder extends cmsModel {
 			'ads'   => 'ads-category'
 		];
 
-		return $page_key_map[$ctype_name] ?? '';
+		$default_page_key = $page_key_map[$ctype_name] ?? '';
+
+		return $this->resolveOverlayPageKeyFromBindings('content_category', [
+			'overlay'      => 'content_category',
+			'ctype'        => $ctype_name,
+			'category_id'  => (string) ($category['id'] ?? ''),
+			'category_key' => (string) ($category['slug'] ?? $category['slug_key'] ?? ''),
+		], $default_page_key);
+	}
+
+	public function resolveFullTakeoverPageKeyFromBindings(array $route_params, $fallback_page_key = '') {
+		return $this->resolvePageKeyFromBindingsByPrefix('page.', $route_params, $fallback_page_key);
+	}
+
+	protected function resolveOverlayPageKeyFromBindings($overlay_kind, array $route_params, $fallback_page_key) {
+		$fallback_page_key = (string) $fallback_page_key;
+		$overlay_kind = trim((string) $overlay_kind);
+
+		if ($overlay_kind === '') {
+			return $fallback_page_key;
+		}
+
+		return $this->resolvePageKeyFromBindingsByPrefix('overlay.' . $overlay_kind, $route_params, $fallback_page_key);
+	}
+
+	protected function resolvePageKeyFromBindingsByPrefix($binding_prefix, array $route_params, $fallback_page_key = '') {
+		$fallback_page_key = (string) $fallback_page_key;
+		$binding_prefix = trim((string) $binding_prefix);
+
+		if ($binding_prefix === '') {
+			return $fallback_page_key;
+		}
+
+		$bridge_model = $this->getNordicbuilderBridgeModel();
+		if (!$bridge_model || !method_exists($bridge_model, 'getBindingOptionsCandidatesByPrefix')) {
+			return $fallback_page_key;
+		}
+
+		$core = cmsCore::getInstance();
+		$uri = trim((string) ($core->uri ?? ''), '/');
+		$is_secure = !empty($core->request) && method_exists($core->request, 'isSecure') ? (bool) $core->request->isSecure() : false;
+
+		$candidates = $bridge_model->getBindingOptionsCandidatesByPrefix($binding_prefix, 50);
+		if (!$candidates) {
+			return $fallback_page_key;
+		}
+
+		$best_key = '';
+		$best_score = -1;
+
+		foreach ($candidates as $candidate) {
+			$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
+			$page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
+			if ($page_key === '') {
+				continue;
+			}
+
+			if (!$this->matchesBindingOptionsDocument($document, $uri, $route_params, $is_secure)) {
+				continue;
+			}
+
+			$score = $this->scoreBindingOptionsDocument($document);
+			if ($score > $best_score) {
+				$best_score = $score;
+				$best_key = $page_key;
+			}
+		}
+
+		if ($best_key !== '') {
+			if ($fallback_page_key === '' || $best_key !== $fallback_page_key) {
+				$page = $this->getPageByKey($best_key);
+				if (!$page) {
+					return $fallback_page_key;
+				}
+			}
+		}
+
+		return $best_key !== '' ? $best_key : $fallback_page_key;
+	}
+
+	protected function matchesBindingOptionsDocument(array $document, $uri, array $route_params, $is_secure) {
+		$matching = isset($document['matching']) && is_array($document['matching']) ? $document['matching'] : [];
+
+		if (!empty($matching['require_https']) && !$is_secure) {
+			return false;
+		}
+
+		$uri = trim((string) $uri, '/');
+		$url_masks = isset($matching['url_masks']) && is_array($matching['url_masks']) ? $matching['url_masks'] : [];
+		$exclude_masks = isset($matching['exclude_masks']) && is_array($matching['exclude_masks']) ? $matching['exclude_masks'] : [];
+
+		if ($exclude_masks) {
+			foreach ($exclude_masks as $mask) {
+				if ($this->matchesSimpleUrlMask($mask, $uri)) {
+					return false;
+				}
+			}
+		}
+
+		if ($url_masks) {
+			$ok = false;
+			foreach ($url_masks as $mask) {
+				if ($this->matchesSimpleUrlMask($mask, $uri)) {
+					$ok = true;
+					break;
+				}
+			}
+			if (!$ok) {
+				return false;
+			}
+		}
+
+		$required_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
+		foreach ($required_params as $key => $expected) {
+			if (!array_key_exists($key, $route_params)) {
+				return false;
+			}
+
+			$actual = $route_params[$key];
+			if (is_array($expected)) {
+				$expected_strings = array_map('strval', $expected);
+				if (!in_array((string) $actual, $expected_strings, true)) {
+					return false;
+				}
+				continue;
+			}
+
+			if ((string) $actual !== (string) $expected) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	protected function scoreBindingOptionsDocument(array $document) {
+		$matching = isset($document['matching']) && is_array($document['matching']) ? $document['matching'] : [];
+		$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
+		$url_masks = isset($matching['url_masks']) && is_array($matching['url_masks']) ? $matching['url_masks'] : [];
+
+		return (count($route_params) * 100) + (count($url_masks) * 10);
+	}
+
+	protected function matchesSimpleUrlMask($mask, $uri) {
+		$mask = trim((string) $mask);
+		if ($mask === '') {
+			return false;
+		}
+
+		$mask = trim($mask, '/');
+		$uri = trim((string) $uri, '/');
+
+		$pattern = preg_quote($mask, '#');
+		$pattern = str_replace('\\*', '.*', $pattern);
+
+		return (bool) preg_match('#^' . $pattern . '$#u', $uri);
 	}
 
 	protected function getOverlayIntegrationByPageKey($page_key, $is_admin = false) {
@@ -1275,6 +1825,13 @@ class modelLandingbuilder extends cmsModel {
 					if (($node['type'] ?? '') === 'block' && empty($node['source_key'])) {
 						$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]['source_key'] = $node['label'];
 					}
+
+						if (($node['type'] ?? '') === 'block') {
+							$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index] = $this->enrichRuntimeBlockNode(
+								$schema['sections'][$section_index]['columns'][$column_index]['nodes'][$node_index]
+							);
+							continue;
+						}
 
 					if (($node['type'] ?? '') !== 'system_widget') {
 						continue;
@@ -1459,6 +2016,12 @@ class modelLandingbuilder extends cmsModel {
 			return $explicit_variant;
 		}
 
+		$template_preset = (string) ($page['schema']['theme']['template_preset'] ?? '');
+		$template_variant = $this->resolveTemplatePresetVariantKey($template_preset, $page, $adapter);
+		if ($template_variant !== '' && $this->getShellVariantByKey($template_variant)) {
+			return $template_variant;
+		}
+
 		$page_key = (string) ($page['key'] ?? $page['name'] ?? '');
 		if ($page_key === 'homepage') {
 			return 'homepage';
@@ -1489,6 +2052,12 @@ class modelLandingbuilder extends cmsModel {
 			return 'page-layout';
 		}
 
+		$template_preset = (string) ($page['schema']['theme']['template_preset'] ?? '');
+		$template_variant = $this->resolveTemplatePresetVariantKey($template_preset, $page, $adapter);
+		if ($template_variant !== '' && $template_variant === $variant_key) {
+			return 'template-preset';
+		}
+
 		$page_key = (string) ($page['key'] ?? $page['name'] ?? '');
 		if ($page_key === 'homepage') {
 			return 'page-key';
@@ -1509,6 +2078,7 @@ class modelLandingbuilder extends cmsModel {
 	protected function getShellAssignmentSourceTitles() {
 		return [
 			'page-layout' => 'Переопределение страницы',
+			'template-preset' => 'Шаблон страницы или сайта',
 			'page-key'    => 'Системный ключ страницы',
 			'adapter'     => 'Adapter страницы',
 			'page-mode'   => 'Режим участия страницы',
@@ -1812,6 +2382,9 @@ class modelLandingbuilder extends cmsModel {
 			'shell_variant'=> '',
 			'content_slot' => 'content_body'
 		];
+		$template_preset = (string) ($schema['theme']['template_preset'] ?? 'nordic_classic');
+		$template_config = $this->getTemplatePresetByKey($template_preset);
+		$schema['layout']['template'] = !empty($schema['layout']['template']) ? (string) $schema['layout']['template'] : (string) ($template_config['preview_template'] ?? 'nordic');
 		$schema['layout']['scheme'] = !empty($schema['layout']['scheme']) ? (string) $schema['layout']['scheme'] : $this->getNordicShellSchemeKey();
 		$schema['layout']['shell_variant'] = $this->sanitizeShellVariantKey($schema['layout']['shell_variant']);
 		$schema['layout']['content_slot'] = $this->normalizeRuntimeZoneKey($schema['layout']['content_slot']);
@@ -1897,6 +2470,7 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function getBaseThemeState() {
 		return [
+			'template_preset'     => 'nordic_classic',
 			'global_style_preset' => 'nordic_balanced',
 			'color_preset'        => 'nordic_day',
 			'typography_preset'   => 'editorial',
@@ -1909,8 +2483,14 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function normalizeThemeState(array $theme = []) {
 
-		$defaults = $this->getBaseThemeState();
 		$form_catalog = $this->getThemeFormCatalog();
+		$template_preset = isset($theme['template_preset']) ? (string) $theme['template_preset'] : 'nordic_classic';
+		if (!array_key_exists($template_preset, $form_catalog['template_preset'] ?? [])) {
+			$template_preset = 'nordic_classic';
+		}
+
+		$defaults = array_merge($this->getBaseThemeState(), $this->getTemplatePresetByKey($template_preset)['theme_defaults'] ?? []);
+		$defaults['template_preset'] = $template_preset;
 		$normalized = [];
 
 		foreach ($defaults as $key => $default_value) {
@@ -1926,7 +2506,7 @@ class modelLandingbuilder extends cmsModel {
 			'site-default' => [
 				'title'               => 'Базовый shell сайта',
 				'description'         => 'Главный каркас сайта по умолчанию для большинства страниц.',
-				'target_label'        => 'Все страницы по умолчанию',
+				'target_label'        => 'Для всех страниц (по умолчанию)',
 				'scope'               => 'site',
 				'is_system'           => 1,
 				'header_variant'      => 'split_navigation',
@@ -2017,6 +2597,60 @@ class modelLandingbuilder extends cmsModel {
 				'title'               => 'Лендинги',
 				'description'         => 'Упрощенный shell для страниц, которые полностью собираются в page builder.',
 				'target_label'        => 'Landing pages и промо-страницы',
+				'scope'               => 'landing',
+				'is_system'           => 1,
+				'header_variant'      => 'compact',
+				'footer_variant'      => 'minimal',
+				'menu_placement'      => 'header_primary',
+				'show_site_top'       => 0,
+				'show_hero'           => 0,
+				'show_before_content' => 0,
+				'show_after_content'  => 0,
+				'body_layout'         => 'no_sidebars',
+				'homepage_shell_mode' => 'page_hero',
+				'sticky_header'       => 'off',
+				'mobile_menu_mode'    => 'inline_compact'
+			],
+			'nm-site' => [
+				'title'               => 'NM: основной шаблон сайта',
+				'description'         => 'Собранный продающий shell по NM-сценарию: компактный header, акцент на основном контенте и минимальный footer.',
+				'target_label'        => 'Основные страницы сайта в шаблоне NM',
+				'scope'               => 'site-template',
+				'is_system'           => 1,
+				'header_variant'      => 'compact',
+				'footer_variant'      => 'minimal',
+				'menu_placement'      => 'header_primary',
+				'show_site_top'       => 0,
+				'show_hero'           => 0,
+				'show_before_content' => 0,
+				'show_after_content'  => 1,
+				'body_layout'         => 'no_sidebars',
+				'homepage_shell_mode' => 'inherit',
+				'sticky_header'       => 'smart',
+				'mobile_menu_mode'    => 'drawer'
+			],
+			'nm-homepage' => [
+				'title'               => 'NM: главная страница',
+				'description'         => 'Главная в стиле NM: builder управляет первым экраном, shell не перегружает страницу боковыми зонами.',
+				'target_label'        => 'Маршрут / и стартовые страницы в шаблоне NM',
+				'scope'               => 'homepage',
+				'is_system'           => 1,
+				'header_variant'      => 'compact',
+				'footer_variant'      => 'minimal',
+				'menu_placement'      => 'header_primary',
+				'show_site_top'       => 0,
+				'show_hero'           => 0,
+				'show_before_content' => 0,
+				'show_after_content'  => 0,
+				'body_layout'         => 'no_sidebars',
+				'homepage_shell_mode' => 'page_hero',
+				'sticky_header'       => 'on',
+				'mobile_menu_mode'    => 'drawer'
+			],
+			'nm-landing' => [
+				'title'               => 'NM: лендинги',
+				'description'         => 'Лендинговый shell по NM-наброску: компактный chrome и чистый корпус под page builder.',
+				'target_label'        => 'Landing pages и промо-страницы в шаблоне NM',
 				'scope'               => 'landing',
 				'is_system'           => 1,
 				'header_variant'      => 'compact',

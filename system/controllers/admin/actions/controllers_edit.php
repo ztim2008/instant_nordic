@@ -4,6 +4,18 @@ class actionAdminControllersEdit extends cmsAction {
 
     public function run($controller_name) {
 
+        if ($controller_name === 'admin' && count($this->params) >= 4 && $this->params[1] === 'controllers' && $this->params[2] === 'edit') {
+
+            $target_controller = $this->params[3] ?? '';
+            $target_action = $this->params[4] ?? '';
+            $target_params = $target_action !== '' ? array_slice($this->params, 5) : [];
+
+            if ($target_controller !== '') {
+                $redirect_params = array_merge(['edit', $target_controller], $target_action !== '' ? [$target_action] : [], $target_params);
+                return $this->redirectToAction('controllers', $redirect_params);
+            }
+        }
+
         if (!$controller_name) {
             return cmsCore::error404();
         }

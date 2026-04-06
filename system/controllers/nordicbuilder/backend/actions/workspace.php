@@ -26,7 +26,7 @@ class actionNordicbuilderWorkspace extends cmsAction {
 
                     if (!empty($result['is_valid'])) {
                         $saved_key = (string) ($decoded['key'] ?? '');
-                        cmsUser::addSessionMessage('Page document сохранен.', 'success');
+                        cmsUser::addSessionMessage('Документ страницы сохранен.', 'success');
                         return $this->redirect(href_to($this->root_url, 'workspace') . '?document_key=' . urlencode($saved_key));
                     }
 
@@ -48,7 +48,7 @@ class actionNordicbuilderWorkspace extends cmsAction {
                 ]);
 
                 if (empty($migration_report['summary']['requested_count'])) {
-                    cmsUser::addSessionMessage('Для миграции не найдено подходящих landingbuilder-страниц.', 'info');
+                    cmsUser::addSessionMessage('Для миграции не найдено подходящих страниц landingbuilder.', 'info');
                 } elseif (empty($migration_report['summary']['failed_count'])) {
                     cmsUser::addSessionMessage('Массовая миграция landingbuilder -> nordicbuilder завершена без ошибок.', 'success');
                 }
@@ -70,10 +70,16 @@ class actionNordicbuilderWorkspace extends cmsAction {
             $form_document_json = json_encode($active_document['document'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         }
 
+        $primary_document_key = $this->model->resolvePrimaryVisualDocumentKey($active_document_key);
+        $visual_workspace_url = href_to_abs('admin', 'controllers', ['edit', $this->controller->root_url, 'canvas']) . '?document_key=' . urlencode($primary_document_key);
+        $starter_canvas_url = href_to_abs('admin', 'controllers', ['edit', $this->controller->root_url, 'canvas']) . '?document_key=' . urlencode('vertical-slice-home');
+
         return $this->cms_template->render([
-            'page_title'        => 'Workspace',
-            'page_note'         => 'Contract-aware foundation layer `nordicbuilder`: page document save/load, bridge import и SQL-backed persistence base.',
+            'page_title'        => 'Служебная панель',
+            'page_note'         => 'Внутренний dev/system слой: документы, миграция и диагностика. Основная пользовательская работа должна идти через живой canvas.',
             'workspace_url'     => href_to($this->root_url, 'workspace'),
+            'visual_workspace_url' => $visual_workspace_url,
+            'starter_canvas_url' => $starter_canvas_url,
             'workspace_summary' => $workspace_summary,
             'persistence'       => $workspace_summary['persistence'],
             'migration'         => $workspace_summary['migration'],
@@ -81,6 +87,7 @@ class actionNordicbuilderWorkspace extends cmsAction {
             'landing_pages'     => $this->model->getLandingbuilderPagesForImport(),
             'active_document'   => $active_document,
             'active_document_key' => $active_document_key,
+            'primary_document_key' => $primary_document_key,
             'form_document_json'=> $form_document_json,
             'form_errors'       => $form_errors,
             'migration_report'  => $migration_report,

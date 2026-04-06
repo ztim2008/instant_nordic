@@ -45,7 +45,5 @@ CREATE TABLE IF NOT EXISTS `{#}landingbuilder_page_widgets` (
     KEY `widget_id` (`widget_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `{#}landingbuilder_pages` (`name`, `title`, `status`, `page_mode`, `template`, `created_at`, `updated_at`) VALUES
-('homepage', 'Главная страница', 'draft', 'full_takeover', 'nordic', NOW(), NOW()),
-('ads-category', 'Категория Объявлений', 'prototype', 'hybrid_overlay', 'nordic', NOW(), NOW()),
-('profile-cover', 'Профиль пользователя', 'idea', 'zone_injection', 'nordic', NOW(), NOW());
+-- NOTE: В установочном пакете не создаём демо-страницы автоматически.
+-- Пользовательский UX должен начинаться с чистого листа (создание через UI).

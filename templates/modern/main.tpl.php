@@ -4,6 +4,76 @@
  * https://docs.instantcms.ru/dev/templates/layouts
  */
 /** @var cmsTemplate $this */
+
+$lb_takeover_active = false;
+$lb_takeover_html = '';
+
+try {
+    $is_homepage = empty($core->uri);
+    if ($is_homepage) {
+        $lb_model = cmsCore::getModel('landingbuilder');
+        if ($lb_model && method_exists($lb_model, 'getPageByKey') && method_exists($lb_model, 'getRuntimePage')) {
+            $takeover_page = $lb_model->getPageByKey('homepage');
+            if ($takeover_page) {
+                $is_preview = ($takeover_page['status'] ?? 'draft') !== 'published';
+                if (!$is_preview || cmsUser::isAdmin()) {
+                    $theme_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_theme.php';
+                    $renderer_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_renderer.php';
+                    $styles_lib = cmsConfig::get('root_path') . 'system/controllers/landingbuilder/helpers/runtime_styles.php';
+                    if (is_readable($theme_lib)) {
+                        require_once $theme_lib;
+                    }
+                    if (is_readable($renderer_lib)) {
+                        require_once $renderer_lib;
+                    }
+                    if (is_readable($styles_lib)) {
+                        require_once $styles_lib;
+                    }
+
+                    $takeover_runtime = $lb_model->getRuntimePage($takeover_page);
+                    $takeover_runtime['device_type'] = cmsRequest::getDeviceType();
+                    $device_type = $takeover_runtime['device_type'] ?? 'desktop';
+                    $zones = is_array($takeover_runtime['zones'] ?? null) ? $takeover_runtime['zones'] : [];
+                    $slot_map = is_array($takeover_runtime['slot_map'] ?? null) ? $takeover_runtime['slot_map'] : [];
+
+                    if (function_exists('landingbuilder_get_runtime_theme_context') && function_exists('landingbuilder_render_css_vars') && function_exists('landingbuilder_render_runtime_zone_sections')) {
+                        $theme_context = landingbuilder_get_runtime_theme_context($takeover_page);
+                        $page_theme = $theme_context['theme'] ?? [];
+                        $page_theme_style = landingbuilder_render_css_vars($theme_context['vars'] ?? []);
+
+                        ob_start();
+                        ?>
+                        <div class="lb-runtime-embed" style="<?php html($page_theme_style); ?>" data-global-style-preset="<?php html($page_theme['global_style_preset'] ?? ''); ?>" data-color-preset="<?php html($page_theme['color_preset'] ?? ''); ?>" data-typography-preset="<?php html($page_theme['typography_preset'] ?? ''); ?>" data-container-preset="<?php html($page_theme['container_preset'] ?? ''); ?>">
+                            <?php foreach ($zones as $zone) { ?>
+                                <?php if (($zone['kind'] ?? 'builder') !== 'builder') { continue; } ?>
+                                <?php if (empty($zone['sections']) || !is_array($zone['sections'])) { continue; } ?>
+                                <?php echo landingbuilder_render_runtime_zone_sections($zone, [
+                                    'device_type'   => $device_type,
+                                    'theme_context' => $theme_context,
+                                    'slot_map'      => $slot_map,
+                                    'surface'       => 'site'
+                                ]); ?>
+                            <?php } ?>
+                        </div>
+                        <?php
+                        $lb_takeover_html = (string) ob_get_clean();
+                        $lb_takeover_active = trim($lb_takeover_html) !== '';
+
+                        if ($lb_takeover_active && function_exists('landingbuilder_get_runtime_site_styles_css')) {
+                            $css = landingbuilder_get_runtime_site_styles_css();
+                            if ($css !== '') {
+                                $this->addHead('<style>' . $css . '</style>');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+} catch (Throwable $exception) {
+    $lb_takeover_active = false;
+    $lb_takeover_html = '';
+}
 ?>
 <!DOCTYPE html>
 <html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
@@ -45,7 +115,11 @@
     <?php } ?>
     </head>
     <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>" class="d-flex flex-column min-vh-100<?php if(!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
-        <?php $this->renderLayoutChild('scheme', ['rows' => $rows]); ?>
+		<?php if ($lb_takeover_active) { ?>
+			<?php echo $lb_takeover_html; ?>
+		<?php } else { ?>
+			<?php $this->renderLayoutChild('scheme', ['rows' => $rows]); ?>
+		<?php } ?>
         <?php if (!empty($this->options['show_top_btn'])){ ?>
             <a class="btn btn-secondary btn-lg" href="#<?php echo $device_type; ?>_device_type" id="scroll-top">
                 <?php html_svg_icon('solid', 'chevron-up'); ?>

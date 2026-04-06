@@ -21,7 +21,7 @@ class actionNordicbuilderContract extends cmsAction {
 
 		return $this->cms_template->render([
 			'page_title'    => $contract['title'],
-			'page_note'     => 'Детальный просмотр contract registry entry и storage stub.',
+			'page_note'     => 'Детальный просмотр контракта и его схемы хранения.',
 			'back_url'      => href_to($this->root_url, 'contracts'),
 			'contract'      => $contract,
 			'storage_stub'  => $contract['storage_stub'],

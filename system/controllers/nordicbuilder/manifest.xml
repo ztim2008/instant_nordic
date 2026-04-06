@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <addon>
     <name>nordicbuilder</name>
-    <title>Нордик: Builder Core</title>
-    <description>Новый contract-first builder core для Нордик поверх InstantCMS 2.</description>
-    <version>0.1.4</version>
+    <title>Нордик: Конструктор</title>
+    <description>Новый базовый конструктор Нордик поверх InstantCMS 2.</description>
+    <version>0.1.5</version>
     <build>1</build>
     <author>
         <name>Нордик</name>

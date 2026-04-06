@@ -19,14 +19,14 @@
 Базовые адреса:
 
 1. Админский список страниц: `/admin/landingbuilder/pages`
-2. Canvas главной: `/admin/landingbuilder/canvas/homepage`
-3. Canvas overlay-страницы: `/admin/landingbuilder/canvas/ads-category`
+2. Canvas главной: `/admin/controllers/edit/landingbuilder/canvas/homepage`
+3. Canvas overlay-страницы: `/admin/controllers/edit/landingbuilder/canvas/ads-category`
 
 ## Проход 1. Открытие canvas
 
 Что открыть:
 
-1. Открыть `/admin/landingbuilder/canvas/homepage`.
+1. Открыть `/admin/controllers/edit/landingbuilder/canvas/homepage`.
 
 Что нажать:
 
@@ -45,7 +45,7 @@
 
 Что открыть:
 
-1. Оставаться на `/admin/landingbuilder/canvas/homepage`.
+1. Оставаться на `/admin/controllers/edit/landingbuilder/canvas/homepage`.
 
 Что нажать:
 
@@ -254,7 +254,7 @@
 
 Что открыть:
 
-1. Открыть `/admin/landingbuilder/canvas/ads-category`.
+1. Открыть `/admin/controllers/edit/landingbuilder/canvas/ads-category`.
 2. При необходимости задать заметные theme presets и сохранить.
 3. Открыть живую страницу категории объявлений под админом.
 

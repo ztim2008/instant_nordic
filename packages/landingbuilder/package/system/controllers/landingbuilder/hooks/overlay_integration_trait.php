@@ -1,5 +1,7 @@
 <?php
 
+require_once __DIR__ . '/../helpers/runtime_styles.php';
+
 trait landingbuilderOverlayIntegrationTrait {
 
 	protected function applyOverlayIntegration(array $integration, array $placements) {
@@ -39,6 +41,10 @@ trait landingbuilderOverlayIntegrationTrait {
 
 		if (!$rendered_blocks) {
 			return false;
+		}
+
+		if (function_exists('landingbuilder_inject_runtime_site_styles')) {
+			landingbuilder_inject_runtime_site_styles($this->cms_template);
 		}
 
 		$this->injectOverlayStyles();

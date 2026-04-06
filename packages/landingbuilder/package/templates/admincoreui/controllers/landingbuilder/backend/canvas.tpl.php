@@ -34,7 +34,7 @@ if (is_readable($theme_helper)) {
 
 $this->setPageTitle('Редактор страницы: ' . $page['title']);
 $this->addBreadcrumb('Нордик');
-$this->addBreadcrumb('Страницы', href_to('admin', 'controllers', ['edit', 'landingbuilder', 'pages']));
+$this->addBreadcrumb('Страницы', $screen['api']['pages_url'] ?? $this->href_to('pages'));
 $this->addBreadcrumb($page['title']);
 $this->addMenuItems('admin_toolbar', $menu);
 
@@ -59,6 +59,7 @@ $canvas_state = [
         'title'      => $page['title'],
         'status'     => $page['status'],
         'mode'       => $page['mode'],
+        'adapter_key'=> $page['adapter_key'] ?? '',
         'updated_at' => $page['updated_at'],
         'template'   => !empty($page['template']) ? $page['template'] : 'nordic'
     ],
@@ -147,9 +148,123 @@ $canvas_state = [
         color: #f8fafc;
     }
 
-    .lb-device-switcher .btn,
-    .lb-topbar__end .btn {
+    .lb-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        min-height: 38px;
+        padding: 0.6rem 0.9rem;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #173042;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 1;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
         white-space: nowrap;
+    }
+
+    .lb-btn:hover,
+    .lb-btn:focus {
+        color: #122033;
+        text-decoration: none;
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+    }
+
+    .lb-btn--topbar {
+        border-color: rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.08);
+        color: #f8fafc;
+    }
+
+    .lb-btn--topbar:hover,
+    .lb-btn--topbar:focus,
+    .lb-btn--topbar.is-active,
+    .lb-btn--topbar.active {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.22);
+    }
+
+    .lb-btn--accent {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        border-color: transparent;
+        color: #fff7f2;
+        box-shadow: 0 14px 30px rgba(234, 88, 12, 0.3);
+    }
+
+    .lb-btn--accent:hover,
+    .lb-btn--accent:focus {
+        color: #ffffff;
+        box-shadow: 0 18px 34px rgba(234, 88, 12, 0.34);
+    }
+
+    .lb-btn--panel {
+        border-color: #d6e1ea;
+        background: #fbfdff;
+        color: #183247;
+    }
+
+    .lb-btn--panel:hover,
+    .lb-btn--panel:focus {
+        background: #ffffff;
+        border-color: #c5d5e1;
+    }
+
+    .lb-btn--danger {
+        border-color: #fecaca;
+        background: #fff5f5;
+        color: #b42318;
+    }
+
+    .lb-btn--danger:hover,
+    .lb-btn--danger:focus {
+        color: #991b1b;
+        background: #fee2e2;
+        border-color: #fca5a5;
+    }
+
+    .lb-btn--block {
+        width: 100%;
+    }
+
+    .lb-btn--link {
+        min-height: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: #b42318;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        box-shadow: none;
+    }
+
+    .lb-btn--link:hover,
+    .lb-btn--link:focus {
+        color: #7f1d1d;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .lb-device-switcher {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .lb-device-toggle {
+        min-width: 98px;
     }
 
     .lb-device-width {
@@ -349,6 +464,72 @@ $canvas_state = [
         border: 1px dashed var(--lb-border-color, #cbd5df);
         border-radius: var(--lb-radius-lg, 24px);
         background: var(--lb-surface-soft, #f8fbfd);
+        color: var(--lb-text-muted, #5b7282);
+    }
+
+    .lb-starter {
+        padding: 2rem 1.75rem 2.25rem;
+        border: 1px dashed var(--lb-border-color, #cbd5df);
+        border-radius: var(--lb-radius-lg, 24px);
+        background: var(--lb-surface-soft, #f8fbfd);
+        text-align: center;
+    }
+
+    .lb-starter__icon {
+        font-size: 2.25rem;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .lb-starter__title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--lb-text-color, #1a2636);
+        margin: 0 0 0.35rem;
+    }
+
+    .lb-starter__desc {
+        font-size: 0.8rem;
+        color: var(--lb-text-muted, #5b7282);
+        margin: 0 0 1.5rem;
+        line-height: 1.5;
+    }
+
+    .lb-starter__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.625rem;
+        margin-bottom: 0.875rem;
+    }
+
+    .lb-starter__btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.8rem 0.625rem;
+        border: 1px solid var(--lb-border-color, #cbd5df);
+        border-radius: var(--lb-radius-md, 14px);
+        background: #ffffff;
+        cursor: pointer;
+        transition: box-shadow 0.15s, border-color 0.15s;
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--lb-text-color, #1a2636);
+    }
+
+    .lb-starter__btn:hover {
+        border-color: var(--lb-accent-color, #2f7aa1);
+        box-shadow: 0 4px 12px rgba(47, 122, 161, 0.12);
+    }
+
+    .lb-starter__btn-icon {
+        font-size: 1.3rem;
+        line-height: 1;
+    }
+
+    .lb-starter__hint {
+        font-size: 0.75rem;
         color: var(--lb-text-muted, #5b7282);
     }
 
@@ -656,6 +837,376 @@ $canvas_state = [
         color: #607186;
     }
 
+    .lb-library-tabs {
+        display: grid;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .lb-library-tab {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0.8rem 0.95rem;
+        border: 1px solid #dce5ed;
+        border-radius: 16px;
+        background: #ffffff;
+        color: #425466;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-align: left;
+        transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    }
+
+    .lb-library-tab:hover,
+    .lb-library-tab:focus {
+        color: #132236;
+        border-color: #c4d3df;
+        background: #ffffff;
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .lb-library-tab.active {
+        background: #132236;
+        color: #ffffff;
+        border-color: #132236;
+        box-shadow: 0 14px 30px rgba(19, 34, 54, 0.18);
+    }
+
+    .lb-library-card {
+        display: block;
+        width: 100%;
+        margin-bottom: 0.65rem;
+        padding: 0.95rem 1rem;
+        border: 1px solid #dfe7ee;
+        border-radius: 18px;
+        background: #ffffff;
+        color: #132236;
+        text-align: left;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .lb-library-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .lb-library-card:hover,
+    .lb-library-card:focus {
+        border-color: #c8d6e1;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.09);
+        transform: translateY(-1px);
+        text-decoration: none;
+    }
+
+    .lb-library-card__row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.85rem;
+    }
+
+    .lb-library-card__title {
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-library-card__meta {
+        margin-top: 0.45rem;
+        font-size: 13px;
+        line-height: 1.45;
+        color: #637689;
+    }
+
+    .lb-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.38rem 0.62rem;
+        border-radius: 999px;
+        background: #eef4f8;
+        color: #375167;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .lb-field {
+        margin-bottom: 0.8rem;
+    }
+
+    .lb-field__label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 12px;
+        font-weight: 700;
+        color: #607186;
+    }
+
+    .lb-control {
+        width: 100%;
+        min-height: 42px;
+        padding: 0.7rem 0.85rem;
+        border: 1px solid #d4dee7;
+        border-radius: 14px;
+        background: #ffffff;
+        color: #173042;
+        font-size: 14px;
+        line-height: 1.4;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+
+    textarea.lb-control {
+        min-height: 96px;
+        resize: vertical;
+    }
+
+    .lb-control:focus {
+        outline: 0;
+        border-color: #7aa7c4;
+        box-shadow: 0 0 0 0.2rem rgba(47, 122, 161, 0.14);
+    }
+
+    .lb-widget-placeholder,
+    .lb-shell-summary,
+    .lb-version-card,
+    .lb-semantic-card {
+        border: 1px solid #dfe7ee;
+        border-radius: 18px;
+        background: #f8fbff;
+    }
+
+    .lb-widget-placeholder,
+    .lb-semantic-card,
+    .lb-shell-summary {
+        padding: 0.9rem 1rem;
+    }
+
+    .lb-widget-placeholder {
+        color: #5f7284;
+    }
+
+    .lb-shell-summary__title {
+        margin-bottom: 0.35rem;
+        font-size: 14px;
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-shell-map {
+        margin-bottom: 1rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid #d6dfe8;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+    }
+
+    .lb-shell-map__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .lb-shell-map__eyebrow {
+        margin-bottom: 0.25rem;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #64748b;
+    }
+
+    .lb-shell-map__title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-shell-map__copy,
+    .lb-shell-map__meta {
+        margin-top: 0.35rem;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #617286;
+    }
+
+    .lb-shell-map__legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .lb-shell-map__legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 12px;
+        color: #516376;
+    }
+
+    .lb-shell-map__legend-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #cdd9e3;
+    }
+
+    .lb-shell-map__legend-swatch--active {
+        background: #2f7aa1;
+    }
+
+    .lb-shell-map__legend-swatch--page {
+        background: #ea580c;
+    }
+
+    .lb-shell-map__grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .lb-shell-slot {
+        position: relative;
+        min-height: 88px;
+        padding: 0.85rem 0.9rem;
+        border: 1px solid #dbe5ed;
+        border-radius: 18px;
+        background: #f8fbfe;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+    }
+
+    .lb-shell-slot--wide {
+        grid-column: span 12;
+    }
+
+    .lb-shell-slot--half {
+        grid-column: span 6;
+    }
+
+    .lb-shell-slot--third {
+        grid-column: span 4;
+    }
+
+    .lb-shell-slot--active {
+        border-color: #b9d0df;
+        background: #ffffff;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    .lb-shell-slot--page {
+        border-color: rgba(234, 88, 12, 0.42);
+        box-shadow: 0 0 0 2px rgba(234, 88, 12, 0.14);
+    }
+
+    .lb-shell-slot--muted {
+        opacity: 0.62;
+        background: #f3f6f9;
+    }
+
+    .lb-shell-slot__top {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .lb-shell-slot__title {
+        margin: 0 0 0.2rem;
+        font-size: 14px;
+        font-weight: 700;
+        color: #173042;
+    }
+
+    .lb-shell-slot__key {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #7a8da0;
+    }
+
+    .lb-shell-slot__state {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.3rem 0.55rem;
+        border-radius: 999px;
+        background: #e8f1f7;
+        color: #2c5a78;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .lb-shell-slot--page .lb-shell-slot__state {
+        background: #fff0e8;
+        color: #b45309;
+    }
+
+    .lb-shell-slot__copy {
+        margin-top: 0.55rem;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #617286;
+    }
+
+    .lb-token-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.55rem;
+    }
+
+    .lb-version-card {
+        margin-bottom: 0.65rem;
+        padding: 0.9rem 1rem;
+    }
+
+    .lb-version-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .lb-version-card__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .lb-version-card__id {
+        font-size: 14px;
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-version-card__meta,
+    .lb-version-card__note {
+        font-size: 13px;
+        color: #617286;
+    }
+
+    .lb-semantic-card__title {
+        margin-bottom: 0.25rem;
+        font-size: 13px;
+        font-weight: 700;
+        color: #132236;
+    }
+
+    .lb-semantic-card__desc {
+        font-size: 13px;
+        color: #617286;
+        line-height: 1.45;
+    }
+
     .lb-drawer-handle {
         position: absolute;
         top: 6.75rem;
@@ -734,30 +1285,27 @@ $canvas_state = [
         line-height: 1.25;
     }
 
-    .lb-library-tab {
-        border-radius: 14px;
-        background: transparent;
-        color: #425466;
-        font-weight: 600;
-    }
-
-    .lb-library-tab.active {
-        background: #132236 !important;
-        color: #ffffff !important;
-    }
-
-    .lb-workspace .list-group-item {
-        border-radius: 16px !important;
-        border: 1px solid #e3eaf1;
-        margin-bottom: 0.5rem;
-    }
-
-    .lb-workspace .list-group-item:last-child {
-        margin-bottom: 0;
-    }
-
     #lb-widget-form form {
         margin-bottom: 0;
+    }
+
+    #lb-widget-form .form-control,
+    #lb-widget-form .custom-select,
+    #lb-widget-form .custom-file-label {
+        min-height: 42px;
+        border-radius: 14px;
+        border-color: #d4dee7;
+        box-shadow: none;
+    }
+
+    #lb-widget-form .form-control:focus,
+    #lb-widget-form .custom-select:focus {
+        border-color: #7aa7c4;
+        box-shadow: 0 0 0 0.2rem rgba(47, 122, 161, 0.14);
+    }
+
+    #lb-widget-form .btn {
+        border-radius: 999px;
     }
 
     @media (max-width: 1399.98px) {
@@ -829,6 +1377,20 @@ $canvas_state = [
     }
 
     @media (max-width: 767.98px) {
+        .lb-shell-map__header {
+            display: block;
+        }
+
+        .lb-shell-map__grid {
+            grid-template-columns: 1fr;
+        }
+
+        .lb-shell-slot--wide,
+        .lb-shell-slot--half,
+        .lb-shell-slot--third {
+            grid-column: auto;
+        }
+
         .lb-workspace__canvas {
             padding: 0 0.25rem;
         }
@@ -855,30 +1417,30 @@ $canvas_state = [
 <div class="lb-workspace lb-workspace--library-open lb-workspace--inspector-open" id="lb-workspace">
     <div class="lb-workspace__topbar">
         <div class="lb-topbar__start">
-            <a class="btn btn-outline-light btn-sm" href="<?php html(href_to('admin', 'controllers', ['edit', 'landingbuilder', 'pages'])); ?>">К страницам</a>
+            <a class="lb-btn lb-btn--topbar" href="<?php html($screen['api']['pages_url'] ?? $this->href_to('pages')); ?>">К макетам</a>
             <div class="lb-topbar__page">
-                <div class="lb-topbar__eyebrow">Редактор страницы</div>
+                <div class="lb-topbar__eyebrow">Редактор макета</div>
                 <h1 class="lb-topbar__title"><?php html($page['title']); ?></h1>
-                <div class="lb-topbar__meta"><span id="lb-page-meta">Ключ страницы: <code><?php html($page['key']); ?></code> | Режим: <?php html($page_mode_title); ?> | Статус: <?php html($page_status_title); ?></span></div>
+                <div class="lb-topbar__meta"><span id="lb-page-meta">Макет <code><?php html($page['key']); ?></code> | Шаблон и каркас выбираются справа в инспекторе</span></div>
             </div>
         </div>
         <div class="lb-topbar__center">
             <div class="btn-group lb-device-switcher" role="group" aria-label="Устройства">
             <?php foreach ($screen['devices'] as $index => $device) { ?>
-                <button type="button" class="btn btn-outline-light btn-sm lb-device-toggle<?php if ($index === 0) { ?> active<?php } ?>" data-device="<?php html($device['key']); ?>"><?php html($device['title']); ?></button>
+                <button type="button" class="lb-btn lb-btn--topbar lb-device-toggle<?php if ($index === 0) { ?> is-active<?php } ?>" data-device="<?php html($device['key']); ?>"><?php html($device['title']); ?></button>
             <?php } ?>
             </div>
             <span class="lb-device-width">Viewport: <span class="ml-1" id="lb-device-width-label"><?php echo !empty($screen['devices'][0]['viewport_width']) ? (int) $screen['devices'][0]['viewport_width'] . 'px' : 'Авто'; ?></span></span>
         </div>
         <div class="lb-topbar__end">
             <div class="lb-topbar__save">Последнее обновление: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
-            <button type="button" class="btn btn-outline-light btn-sm" data-drawer-toggle="library">Библиотека</button>
-            <button type="button" class="btn btn-outline-light btn-sm" data-drawer-toggle="inspector">Инспектор</button>
-            <button type="button" class="btn btn-outline-light btn-sm" id="lb-add-section">Добавить секцию</button>
-                <a class="btn btn-outline-light btn-sm" href="<?php html($screen['design_url']); ?>">Глобальные стили</a>
-                <button type="button" class="btn btn-outline-light btn-sm" id="lb-edit-page-theme">Стиль на холсте</button>
-            <a class="btn btn-outline-light btn-sm" href="<?php html($screen['preview_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
-            <button type="button" class="btn btn-primary btn-sm" id="lb-save-canvas">Сохранить</button>
+            <button type="button" class="lb-btn lb-btn--topbar" data-drawer-toggle="library">Библиотека</button>
+            <button type="button" class="lb-btn lb-btn--topbar" data-drawer-toggle="inspector">Инспектор</button>
+            <button type="button" class="lb-btn lb-btn--topbar" id="lb-add-section">Добавить секцию</button>
+                <a class="lb-btn lb-btn--topbar" href="<?php html($screen['design_url']); ?>">Глобальные стили</a>
+                <button type="button" class="lb-btn lb-btn--topbar" id="lb-edit-page-theme">Стиль на холсте</button>
+            <a class="lb-btn lb-btn--topbar" href="<?php html($screen['preview_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
+            <button type="button" class="lb-btn lb-btn--accent" id="lb-save-canvas">Сохранить</button>
         </div>
     </div>
 
@@ -890,7 +1452,7 @@ $canvas_state = [
                     <h2 class="lb-drawer__title">Библиотека и навигация</h2>
                     <p class="lb-drawer__desc">Добавляй секции, блоки и виджеты без потери ширины canvas. Панель можно прятать за край окна.</p>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-drawer-toggle="library">Скрыть</button>
+                <button type="button" class="lb-btn lb-btn--panel" data-drawer-toggle="library">Скрыть</button>
             </div>
             <div class="lb-drawer__body">
                 <div class="lb-panel-block">
@@ -898,13 +1460,11 @@ $canvas_state = [
                     <div class="small text-muted">Сначала выбери секцию, колонку или страницу. Затем добавляй готовые секции, блоки и системные виджеты.</div>
                 </div>
                 <div class="lb-panel-block">
-                    <ul class="nav nav-pills flex-column mb-3">
+                    <div class="lb-library-tabs">
                         <?php foreach ($screen['left_tabs'] as $index => $tab) { ?>
-                            <li class="nav-item mb-2">
-                                <button type="button" class="nav-link text-left w-100 border-0 lb-library-tab<?php if ($index === 0) { ?> active<?php } ?>" data-tab="<?php html($tab['key']); ?>"><?php html($tab['title']); ?></button>
-                            </li>
+                            <button type="button" class="lb-library-tab<?php if ($index === 0) { ?> active<?php } ?>" data-tab="<?php html($tab['key']); ?>"><?php html($tab['title']); ?></button>
                         <?php } ?>
-                    </ul>
+                    </div>
                     <div id="lb-sections-library" class="lb-library-panel">
                         <div class="small text-muted mb-2">Готовые секции для быстрого старта страницы и адаптации под устройства</div>
                         <div class="list-group list-group-flush" id="lb-section-list"></div>
@@ -916,7 +1476,7 @@ $canvas_state = [
                     <div id="lb-widgets-library" class="lb-library-panel d-none">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="small text-muted">Системные виджеты InstantCMS</div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-reload-widgets">Обновить</button>
+                            <button type="button" class="lb-btn lb-btn--panel" id="lb-reload-widgets">Обновить</button>
                         </div>
                         <div id="lb-widget-list" class="small"></div>
                     </div>
@@ -928,12 +1488,13 @@ $canvas_state = [
             <div class="lb-canvas-stage">
                 <div class="lb-canvas-stage__header">
                     <div>
-                        <div class="lb-canvas-stage__eyebrow">Canvas workspace</div>
+                        <div class="lb-canvas-stage__eyebrow">Главный визуальный экран</div>
                         <h2 class="lb-canvas-stage__title">Живой холст страницы</h2>
-                        <p class="lb-canvas-stage__desc">Главная работа со стилем должна происходить здесь: кликните по странице, секции или элементу, меняйте настройки справа и сразу видьте результат на самом холсте.</p>
+                        <p class="lb-canvas-stage__desc">Собирайте страницу прямо здесь: выбирайте шаблон, секции и блоки, меняйте настройки справа и сразу видьте результат на холсте.</p>
                     </div>
-                    <div class="lb-canvas-stage__status" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Работа с базой данных<?php } else { ?>Временный режим без базы<?php } ?></div>
+                    <div class="lb-canvas-stage__status" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Страница сохранится в базе<?php } else { ?>Временный черновик без базы<?php } ?></div>
                 </div>
+                <div id="lb-shell-map" style="display:none"></div>
                 <div class="lb-canvas-viewport">
                     <div class="lb-canvas-frame" id="lb-canvas-frame">
                         <div class="lb-canvas-surface" id="lb-canvas-root"></div>
@@ -947,16 +1508,19 @@ $canvas_state = [
             <div class="lb-drawer__head">
                 <div>
                     <h2 class="lb-drawer__title">Инспектор</h2>
-                    <p class="lb-drawer__desc">Настройки страницы, секции, колонки или элемента. Основная visual-first работа со стилем должна происходить здесь, а не на отдельном экране настроек.</p>
+                    <p class="lb-drawer__desc">Настройки страницы, секции, колонки или элемента. Основная работа со страницей должна происходить здесь, прямо рядом с холстом.</p>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" data-drawer-toggle="inspector">Скрыть</button>
+                <button type="button" class="lb-btn lb-btn--panel" data-drawer-toggle="inspector">Скрыть</button>
             </div>
             <div class="lb-drawer__body">
                 <div class="lb-panel-block">
                     <div class="lb-panel-block__title">Статус страницы</div>
                     <p class="mb-2"><strong>Виджетов на странице:</strong> <span id="lb-widget-count"><?php echo count($screen['widget_nodes']); ?></span></p>
                     <label class="small text-muted d-block mb-1">Комментарий версии</label>
-                    <input type="text" class="form-control form-control-sm" id="lb-version-note" placeholder="Например: перестроил первый экран и боковую колонку">
+                    <input type="text" class="lb-control" id="lb-version-note" placeholder="Например: перестроил первый экран и боковую колонку">
+                    <div class="mt-3">
+                        <button type="button" class="lb-btn lb-btn--accent lb-btn--block" id="lb-save-canvas-inspector">Сохранить</button>
+                    </div>
                 </div>
                 <div class="lb-panel-block">
                     <div class="lb-panel-block__title">Выделение</div>
@@ -965,12 +1529,12 @@ $canvas_state = [
                 </div>
                 <div class="lb-panel-block">
                     <div class="lb-panel-block__title">Настройки виджета</div>
-                    <div id="lb-widget-form" class="border rounded p-2 bg-light small">Выберите системный виджет на макете, чтобы открыть его штатные настройки.</div>
+                    <div id="lb-widget-form" class="lb-widget-placeholder small">Выберите системный виджет на макете, чтобы открыть его штатные настройки.</div>
                 </div>
                 <div class="lb-panel-block">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="lb-panel-block__title mb-0">История версий</div>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="lb-refresh-versions">Обновить</button>
+                        <button type="button" class="lb-btn lb-btn--panel" id="lb-refresh-versions">Обновить</button>
                     </div>
                     <div id="lb-versions-list" class="small"></div>
                 </div>
@@ -986,7 +1550,7 @@ $canvas_state = [
         const deviceTitles = <?php echo json_encode($device_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         const pageModeTitles = <?php echo json_encode($page_mode_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
         const pageStatusTitles = <?php echo json_encode($page_status_titles, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
-        const blockPresets = [
+        const blockPresets = (Array.isArray(state.screen.block_catalog) && state.screen.block_catalog.length ? state.screen.block_catalog : [
             {
                 key: 'core.hero-heading',
                 title: 'Главный экран с заголовком',
@@ -1027,7 +1591,9 @@ $canvas_state = [
                 title: 'Короткая статистика профиля',
                 description: 'Компактный блок с числами, показателями и важными фактами профиля.'
             }
-        ];
+        ]).map(function (block) {
+            return Object.assign({default_label: '', summary: '', fields: [], defaults: {}}, block || {});
+        });
         const blockPresetMap = blockPresets.reduce(function (map, block) {
             map[block.key] = block;
             return map;
@@ -1054,6 +1620,14 @@ $canvas_state = [
             {value: 'end', title: 'По нижнему краю'}
         ];
         const pageThemeOptions = state.screen.theme_option_catalog || {
+            template_preset: [
+                {value: 'nordic_classic', title: 'Классический Nordic'},
+                {value: 'nordic_editorial', title: 'Nordic Editorial'},
+                {value: 'nordic_catalog', title: 'Nordic Catalog'},
+                {value: 'nordic_warm_market', title: 'Nordic Warm Market'},
+                {value: 'nordic_compact', title: 'Nordic Compact'},
+                {value: 'nm_landing', title: 'NM Landing'}
+            ],
             global_style_preset: [
                 {value: 'nordic_balanced', title: 'Сбалансированный Нордик'},
                 {value: 'nordic_contrast', title: 'Контрастный Нордик'},
@@ -1094,6 +1668,18 @@ $canvas_state = [
         };
         const themeRuntimeCatalog = <?php echo json_encode($theme_runtime_catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> || {};
         const pageShellScreen = state.screen.page_shell || {};
+        const templatePresetCatalog = state.screen.template_preset_catalog || [];
+        const templatePresetList = Array.isArray(templatePresetCatalog)
+            ? templatePresetCatalog
+            : Object.keys(templatePresetCatalog).map(function (key) {
+                return Object.assign({key: key}, templatePresetCatalog[key] || {});
+            });
+        const templatePresetMap = templatePresetList.reduce(function (map, preset) {
+            if (preset && preset.key) {
+                map[preset.key] = preset;
+            }
+            return map;
+        }, {});
         const sectionTypeOptions = [
             {value: 'hero', title: 'Первый экран'},
             {value: 'content', title: 'Контент'},
@@ -1168,9 +1754,42 @@ $canvas_state = [
         const versionNote = document.getElementById('lb-version-note');
         const pageMeta = document.getElementById('lb-page-meta');
         const canvasStatus = document.getElementById('lb-canvas-status');
+        const shellMap = document.getElementById('lb-shell-map');
         const deviceWidthLabel = document.getElementById('lb-device-width-label');
         const pageThemeButton = document.getElementById('lb-edit-page-theme');
         const drawerToggleButtons = document.querySelectorAll('[data-drawer-toggle]');
+
+        const baseCanvasStatusText = canvasStatus ? String(canvasStatus.textContent || '') : '';
+        let isCanvasDirty = false;
+        let lastSavedAt = (state.page && state.page.updated_at) ? String(state.page.updated_at) : '';
+
+        function setCanvasDirty(value) {
+            isCanvasDirty = !!value;
+            if (!canvasStatus) {
+                return;
+            }
+
+            if (isCanvasDirty) {
+                canvasStatus.textContent = 'Есть несохранённые изменения — нажмите «Сохранить»';
+                return;
+            }
+
+            if (lastSavedAt) {
+                canvasStatus.textContent = 'Изменения сохранены (' + lastSavedAt + ')';
+                return;
+            }
+
+            canvasStatus.textContent = baseCanvasStatusText;
+        }
+
+        window.addEventListener('beforeunload', function (event) {
+            if (!isCanvasDirty) {
+                return;
+            }
+
+            event.preventDefault();
+            event.returnValue = '';
+        });
 
         function sanitizeThemeToken(value) {
             return String(value || '')
@@ -1214,6 +1833,64 @@ $canvas_state = [
 
         function getCurrentPageTheme() {
             return getNormalizedPageTheme(state.schema.theme || {});
+        }
+
+        function getTemplatePresetDefinition(key) {
+            if (!key) {
+                return null;
+            }
+
+            return templatePresetMap[key] || null;
+        }
+
+        function getCurrentTemplatePresetKey() {
+            const theme = getCurrentPageTheme();
+            return String(theme.template_preset || state.screen.theme_defaults.template_preset || '');
+        }
+
+        function getCurrentTemplatePresetTitle() {
+            const key = getCurrentTemplatePresetKey();
+            const preset = getTemplatePresetDefinition(key);
+
+            if (preset && preset.title) {
+                return preset.title;
+            }
+
+            return getOptionTitle(pageThemeOptions.template_preset || [], key) || 'Без шаблона';
+        }
+
+        function resolveTemplatePresetRouteVariantKey() {
+            const preset = getTemplatePresetDefinition(getCurrentTemplatePresetKey());
+            const routeVariants = preset && preset.route_variants && typeof preset.route_variants === 'object'
+                ? preset.route_variants
+                : {};
+
+            if (state.page.key === 'homepage' && routeVariants.homepage) {
+                return String(routeVariants.homepage);
+            }
+
+            if (state.page.adapter_key === 'content_category_generic' && routeVariants.category) {
+                return String(routeVariants.category);
+            }
+
+            if (state.page.adapter_key === 'user_profile' && routeVariants.profile) {
+                return String(routeVariants.profile);
+            }
+
+            if (state.page.mode === 'full_takeover' && routeVariants.landing) {
+                return String(routeVariants.landing);
+            }
+
+            return String(routeVariants.site || '');
+        }
+
+        function syncTemplatePresetLayoutTemplate() {
+            state.schema.layout = state.schema.layout || {shell_variant: '', content_slot: 'content_body'};
+
+            const preset = getTemplatePresetDefinition(getCurrentTemplatePresetKey());
+            if (preset && preset.preview_template) {
+                state.schema.layout.template = String(preset.preview_template);
+            }
         }
 
         function getSectionPresentation(section) {
@@ -1309,6 +1986,11 @@ $canvas_state = [
             next.widget_id = Number(next.widget_id || 0);
             next.widget_name = next.widget_name || '';
             next.widget_controller = next.widget_controller || '';
+
+            if (next.type === 'block') {
+                applyBlockPresetToNode(next, true);
+            }
+
             return next;
         }
 
@@ -1374,6 +2056,137 @@ $canvas_state = [
             return blockPresetMap[value] || null;
         }
 
+        function getBlockPresetOptions(currentValue) {
+            const options = blockPresets.map(function (block) {
+                return {value: block.key, title: block.title};
+            });
+
+            if (currentValue && !options.some(function (option) {
+                return String(option.value) === String(currentValue);
+            })) {
+                options.unshift({value: currentValue, title: currentValue + ' (вне каталога)'});
+            }
+
+            return options;
+        }
+
+        function getBlockPresetDefaults(preset) {
+            return (preset && preset.defaults && typeof preset.defaults === 'object') ? Object.assign({}, preset.defaults) : {};
+        }
+
+        function applyBlockPresetToNode(node, preserveExistingValues) {
+            if (!node || node.type !== 'block') {
+                return node;
+            }
+
+            const preset = getBlockPreset(node.source_key || node.label);
+            node.options = (node.options && typeof node.options === 'object') ? node.options : {};
+
+            if (!preset) {
+                return node;
+            }
+
+            const defaults = getBlockPresetDefaults(preset);
+            node.options = preserveExistingValues ? Object.assign({}, defaults, node.options) : Object.assign({}, defaults);
+
+            if (!node.label || node.label === node.source_key || node.label === preset.title || node.label === preset.default_label) {
+                node.label = preset.default_label || preset.title;
+            }
+
+            return node;
+        }
+
+        function getNodeSemanticSummary(node) {
+            if (!node || node.type !== 'block') {
+                return '';
+            }
+
+            const preset = getBlockPreset(node.source_key || node.label);
+            return preset ? (preset.summary || preset.description || '') : '';
+        }
+
+        function renderBlockField(field, value) {
+            const inputField = 'options.' + field.key;
+            const hint = field.hint || '';
+
+            if (field.type === 'textarea') {
+                return '' +
+                    '<div class="lb-field">' +
+                        fieldLabel(field.title, hint) +
+                        '<textarea class="lb-control" rows="3" data-field="' + inputField + '" placeholder="' + escapeHtml(field.placeholder || '') + '">' + escapeHtml(value || '') + '</textarea>' +
+                    '</div>';
+            }
+
+            if (field.type === 'select') {
+                let options = [];
+                if (Array.isArray(field.options)) {
+                    options = field.options.map(function (item) {
+                        if (item && typeof item === 'object') {
+                            return {value: String(item.value ?? ''), title: String(item.title ?? item.value ?? '')};
+                        }
+                        return {value: String(item ?? ''), title: String(item ?? '')};
+                    });
+                } else if (field.items && typeof field.items === 'object') {
+                    options = Object.keys(field.items).map(function (key) {
+                        return {value: String(key), title: String(field.items[key])};
+                    });
+                }
+
+                return renderSelectField(field.title, hint, inputField, options, value);
+            }
+
+            if (field.type === 'checkbox') {
+                const inputId = 'lb-field-' + String(field.key || '').replace(/[^a-z0-9_-]+/gi, '-') + '-' + Math.random().toString(16).slice(2);
+                const checked = value === true || value === 1 || value === '1' || value === 'true' || value === 'on';
+
+                return '' +
+                    '<div class="lb-field">' +
+                        '<div class="form-check">' +
+                            '<input class="form-check-input" type="checkbox" id="' + inputId + '" data-field="' + inputField + '"' + (checked ? ' checked' : '') + '>' +
+                            '<label class="form-check-label" for="' + inputId + '">' + escapeHtml(field.title || '') + (hint ? helpIcon(hint) : '') + '</label>' +
+                        '</div>' +
+                    '</div>';
+            }
+
+            if (field.type === 'number') {
+                return '' +
+                    '<div class="lb-field">' +
+                        fieldLabel(field.title, hint) +
+                        '<input type="number" class="lb-control" data-field="' + inputField + '" value="' + escapeHtml(value ?? '') + '" placeholder="' + escapeHtml(field.placeholder || '') + '">' +
+                    '</div>';
+            }
+
+            return '' +
+                '<div class="lb-field">' +
+                    fieldLabel(field.title, hint) +
+                    '<input type="text" class="lb-control" data-field="' + inputField + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(field.placeholder || '') + '">' +
+                '</div>';
+        }
+
+        function renderBlockSemanticInspector(node) {
+            const preset = getBlockPreset(node.source_key || node.label);
+            if (!preset) {
+                return '' +
+                    '<div class="lb-semantic-card">' +
+                        '<div class="lb-semantic-card__title">Пользовательский блок</div>' +
+                        '<div class="lb-semantic-card__desc">Для этого блока пока нет зарегистрированного semantic-пресета. Можно оставить технический source key и продолжить работу.</div>' +
+                    '</div>';
+            }
+
+            const fields = Array.isArray(preset.fields) ? preset.fields : [];
+            const options = (node.options && typeof node.options === 'object') ? node.options : {};
+
+            return '' +
+                '<div class="lb-semantic-card">' +
+                    '<div class="lb-semantic-card__title">' + escapeHtml(preset.title) + '</div>' +
+                    '<div class="lb-semantic-card__desc">' + escapeHtml(preset.summary || preset.description || '') + '</div>' +
+                '</div>' +
+                fields.map(function (field) {
+					const value = Object.prototype.hasOwnProperty.call(options, field.key) ? options[field.key] : '';
+					return renderBlockField(field, value);
+                }).join('');
+        }
+
         function getNodeDisplayLabel(node) {
             if (!node) {
                 return '';
@@ -1386,7 +2199,7 @@ $canvas_state = [
             if (node.type === 'block') {
                 const preset = getBlockPreset(node.source_key || node.label);
                 if (preset) {
-                    return preset.title;
+                    return node.label || preset.default_label || preset.title;
                 }
             }
 
@@ -1405,7 +2218,7 @@ $canvas_state = [
         }
 
         function fieldLabel(title, hint) {
-            return '<label class="small text-muted d-block mb-1">' + escapeHtml(title) + (hint ? helpIcon(hint) : '') + '</label>';
+            return '<label class="lb-field__label">' + escapeHtml(title) + (hint ? helpIcon(hint) : '') + '</label>';
         }
 
         function renderSelectOptions(options, currentValue) {
@@ -1416,9 +2229,9 @@ $canvas_state = [
 
         function renderSelectField(title, hint, field, options, value) {
             return '' +
-                '<div class="form-group mb-2">' +
+                '<div class="lb-field">' +
                     fieldLabel(title, hint) +
-                    '<select class="form-control form-control-sm" data-field="' + field + '">' +
+                    '<select class="lb-control" data-field="' + field + '">' +
                         renderSelectOptions(options, value) +
                     '</select>' +
                 '</div>';
@@ -1435,9 +2248,10 @@ $canvas_state = [
 
         function renderPageMeta() {
             const effectiveShell = getEffectiveShellVariantState();
-            const shellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Shell не определен';
+            const shellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Каркас не определён';
+            const templateTitle = getCurrentTemplatePresetTitle();
 
-            return 'Ключ страницы: <code>' + escapeHtml(state.page.key) + '</code> | Режим: ' + escapeHtml(getPageModeTitle(state.page.mode)) + ' | Статус: ' + escapeHtml(getPageStatusTitle(state.page.status)) + ' | Shell: ' + escapeHtml(shellTitle);
+            return 'Макет: ' + escapeHtml(state.page.title || state.page.key) + ' (<code>' + escapeHtml(state.page.key) + '</code>) | Шаблон: ' + escapeHtml(templateTitle) + ' | Каркас: ' + escapeHtml(shellTitle) + ' | Применение: ' + escapeHtml(getPageModeTitle(state.page.mode));
         }
 
         function getShellVariantCatalog() {
@@ -1468,6 +2282,29 @@ $canvas_state = [
             return (pageShellScreen.assignment_source_titles && pageShellScreen.assignment_source_titles[source]) || source;
         }
 
+        function resolveAutoShellVariantKey() {
+            const presetRouteVariant = resolveTemplatePresetRouteVariantKey();
+            if (presetRouteVariant) {
+                return presetRouteVariant;
+            }
+
+            const pageTemplate = String((state.schema.layout && state.schema.layout.template) || state.page.template || '');
+
+            if (pageTemplate === 'nm') {
+                if (state.page.key === 'homepage') {
+                    return 'nm-homepage';
+                }
+
+                if (state.page.mode === 'full_takeover') {
+                    return 'nm-landing';
+                }
+
+                return 'nm-site';
+            }
+
+            return String(pageShellScreen.auto_variant_key || '');
+        }
+
         function getEffectiveShellVariantState() {
             const layout = state.schema.layout || {};
             const catalog = getShellVariantCatalog();
@@ -1480,8 +2317,11 @@ $canvas_state = [
                 };
             }
 
-            const autoKey = pageShellScreen.auto_variant_key || '';
+            const autoKey = resolveAutoShellVariantKey();
             const fallbackVariant = pageShellScreen.effective_variant || {};
+            const assignmentSource = resolveTemplatePresetRouteVariantKey()
+                ? 'template-preset'
+                : (pageShellScreen.auto_assignment_source || fallbackVariant.assignment_source || 'default');
 
             return {
                 variant: catalog[autoKey] || {
@@ -1490,7 +2330,7 @@ $canvas_state = [
                     active_slots: normalizeShellSlotKeys(fallbackVariant.active_slots || []),
                     body_layout: fallbackVariant.body_layout || 'no_sidebars'
                 },
-                assignment_source: pageShellScreen.auto_assignment_source || fallbackVariant.assignment_source || 'default'
+                assignment_source: assignmentSource
             };
         }
 
@@ -1551,19 +2391,133 @@ $canvas_state = [
             const effectiveShell = getEffectiveShellVariantState();
             const variant = effectiveShell.variant || {title: 'Базовый shell', active_slots: [], body_layout: 'no_sidebars'};
             const slotBadges = normalizeShellSlotKeys(variant.active_slots).map(function (slotKey) {
-                return '<span class="badge badge-light border mr-1 mb-1">' + escapeHtml(getShellSlotTitle(slotKey)) + '</span>';
+                return '<span class="lb-chip">' + escapeHtml(getShellSlotTitle(slotKey)) + '</span>';
             }).join('');
 
             return '' +
-                '<div class="border rounded p-2 mb-3 bg-light">' +
-                    '<div class="font-weight-bold mb-1">Эффективный shell: ' + escapeHtml(variant.title || variant.key || 'Базовый shell') + '</div>' +
-                    '<div class="small text-muted mb-1">Источник: ' + escapeHtml(getShellAssignmentSourceTitle(effectiveShell.assignment_source)) + '</div>' +
-                    '<div class="small text-muted mb-2">Сценарий корпуса: ' + escapeHtml(variant.body_layout || 'no_sidebars') + '</div>' +
-                    (state.page.mode === 'full_takeover'
-                        ? '<div class="small text-muted mb-2">Основной slot страницы: ' + escapeHtml(getShellSlotTitle((state.schema.layout && state.schema.layout.content_slot) || 'content_body')) + '</div>'
-                        : '<div class="small text-muted mb-2">Для overlay-страниц основной системный content slot задается adapter-ом.</div>') +
-                    '<div>' + (slotBadges || '<span class="small text-muted">Активные shell slots не определены.</span>') + '</div>' +
+                '<div class="lb-shell-summary">' +
+                    '<div class="lb-shell-summary__title">Каркас страницы: ' + escapeHtml(variant.title || variant.key || 'Базовый') + '</div>' +
+                    '<div class="lb-token-list">' + (slotBadges || '<span class="small text-muted">Зоны каркаса не определены.</span>') + '</div>' +
                 '</div>';
+        }
+
+        function getPagePrimaryShellSlotKey() {
+            if (state.page.mode === 'full_takeover') {
+                return String((state.schema.layout && state.schema.layout.content_slot) || 'content_body');
+            }
+
+            return 'content_body';
+        }
+
+        function renderShellSlotCard(slotKey, sizeClass, options) {
+            const settings = options || {};
+            const classes = ['lb-shell-slot', sizeClass || 'lb-shell-slot--wide'];
+
+            if (settings.isActive) {
+                classes.push('lb-shell-slot--active');
+            } else {
+                classes.push('lb-shell-slot--muted');
+            }
+
+            if (settings.isPageSlot) {
+                classes.push('lb-shell-slot--page');
+            }
+
+            return '' +
+                '<div class="' + escapeHtml(classes.join(' ')) + '">' +
+                    '<div class="lb-shell-slot__top">' +
+                        '<div>' +
+                            '<div class="lb-shell-slot__title">' + escapeHtml(getShellSlotTitle(slotKey)) + '</div>' +
+                            '<div class="lb-shell-slot__key">' + escapeHtml(slotKey) + '</div>' +
+                        '</div>' +
+                        '<span class="lb-shell-slot__state">' + escapeHtml(settings.stateLabel || (settings.isActive ? 'Активен' : 'Выключен')) + '</span>' +
+                    '</div>' +
+                    '<div class="lb-shell-slot__copy">' + escapeHtml(settings.copy || '') + '</div>' +
+                '</div>';
+        }
+
+        function renderShellParticipationMap() {
+            const effectiveShell = getEffectiveShellVariantState();
+            const variant = effectiveShell.variant || {title: 'Базовый shell', active_slots: [], body_layout: 'no_sidebars'};
+            const activeSlots = normalizeShellSlotKeys(variant.active_slots);
+            const activeLookup = activeSlots.reduce(function (map, slotKey) {
+                map[slotKey] = true;
+                return map;
+            }, {});
+            const primarySlot = getPagePrimaryShellSlotKey();
+            const isFullTakeover = state.page.mode === 'full_takeover';
+            const contentCopy = isFullTakeover
+                ? 'Здесь находится основное содержимое страницы, которое вы собираете на холсте.'
+                : 'В overlay-режиме здесь остаётся системное содержимое, а редактор добавляет блоки поверх разрешённых зон.';
+
+            return '' +
+                '<section class="lb-shell-map">' +
+                    '<div class="lb-shell-map__header">' +
+                        '<div>' +
+                            '<div class="lb-shell-map__eyebrow">Карта каркаса</div>' +
+                            '<h3 class="lb-shell-map__title">Как страница встраивается в каркас сайта</h3>' +
+                            '<div class="lb-shell-map__copy">Эта карта показывает каркас страницы: какие зоны активны, где находится основное содержимое и что управляется самим каркасом.</div>' +
+                        '</div>' +
+                        '<div class="lb-shell-map__meta">Каркас: ' + escapeHtml(variant.title || variant.key || 'Базовый каркас') + '<br>Источник: ' + escapeHtml(getShellAssignmentSourceTitle(effectiveShell.assignment_source)) + '<br>Сайдбары: ' + escapeHtml(variant.body_layout || 'no_sidebars') + '</div>' +
+                    '</div>' +
+                    '<div class="lb-shell-map__legend">' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--active"></span>Активная зона каркаса</span>' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--page"></span>Главная зона этой страницы</span>' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch"></span>Не участвует в текущем варианте</span>' +
+                    '</div>' +
+                    '<div class="lb-shell-map__grid">' +
+                        renderShellSlotCard('site_top', 'lb-shell-slot--wide', {
+                            isActive: !!activeLookup.site_top,
+                            copy: 'Верхняя сервисная полоса сайта: объявления, служебные ссылки, уведомления.'
+                        }) +
+                        renderShellSlotCard('header_primary', 'lb-shell-slot--half', {
+                            isActive: !!activeLookup.header_primary,
+                            copy: 'Основной header сайта: бренд, ключевая навигация, основной слой интерфейса.'
+                        }) +
+                        renderShellSlotCard('header_secondary', 'lb-shell-slot--half', {
+                            isActive: !!activeLookup.header_secondary,
+                            copy: 'Дополнительный header-слой: вторичное меню, служебные действия, уточняющий контент.'
+                        }) +
+                        renderShellSlotCard('hero', 'lb-shell-slot--wide', {
+                            isActive: !!activeLookup.hero,
+                            copy: 'Отдельная hero-зона каркаса. Подходит для первого экрана сайта или hero над содержимым.'
+                        }) +
+                        renderShellSlotCard('before_content', 'lb-shell-slot--wide', {
+                            isActive: !!activeLookup.before_content,
+                            copy: 'Зона перед основным контентом: баннеры, вводный блок, контекстный блок.'
+                        }) +
+                        renderShellSlotCard('content_sidebar_left', 'lb-shell-slot--third', {
+                            isActive: !!activeLookup.content_sidebar_left,
+                            isPageSlot: primarySlot === 'content_sidebar_left',
+                            stateLabel: primarySlot === 'content_sidebar_left' ? 'Сюда идет страница' : (!!activeLookup.content_sidebar_left ? 'Активен' : 'Выключен'),
+                            copy: primarySlot === 'content_sidebar_left' ? 'Редкий режим: основное содержимое страницы встраивается в левую колонку каркаса.' : 'Левая sidebar-зона каркаса для вспомогательных виджетов и навигации.'
+                        }) +
+                        renderShellSlotCard('content_body', 'lb-shell-slot--third', {
+                            isActive: !!activeLookup.content_body,
+                            isPageSlot: primarySlot === 'content_body',
+                            stateLabel: primarySlot === 'content_body' ? (isFullTakeover ? 'Сюда идет страница' : 'Системный content') : (!!activeLookup.content_body ? 'Активен' : 'Выключен'),
+                            copy: contentCopy
+                        }) +
+                        renderShellSlotCard('content_sidebar_right', 'lb-shell-slot--third', {
+                            isActive: !!activeLookup.content_sidebar_right,
+                            isPageSlot: primarySlot === 'content_sidebar_right',
+                            stateLabel: primarySlot === 'content_sidebar_right' ? 'Сюда идет страница' : (!!activeLookup.content_sidebar_right ? 'Активен' : 'Выключен'),
+                            copy: primarySlot === 'content_sidebar_right' ? 'Редкий режим: основное содержимое страницы встраивается в правую колонку каркаса.' : 'Правая sidebar-зона каркаса для дополнительных виджетов, фильтров и вспомогательного контента.'
+                        }) +
+                        renderShellSlotCard('after_content', 'lb-shell-slot--wide', {
+                            isActive: !!activeLookup.after_content,
+                            copy: 'Зона после основного контента: CTA-блок, доверие/гарантии, следующий шаг.'
+                        }) +
+                        renderShellSlotCard('footer_primary', 'lb-shell-slot--half', {
+                            isActive: !!activeLookup.footer_primary,
+                            copy: 'Основной footer сайта: колонки, контакты, подвал.'
+                        }) +
+                        renderShellSlotCard('footer_secondary', 'lb-shell-slot--half', {
+                            isActive: !!activeLookup.footer_secondary,
+                            copy: 'Нижний footer-слой: копирайт, служебные ссылки, юридическая информация.'
+                        }) +
+                    '</div>' +
+                '</section>';
         }
 
         function getWorkspaceStorageKey() {
@@ -1791,9 +2745,9 @@ $canvas_state = [
             return state.deviceKeys.map(function (device) {
                 const widthOption = getWidthOption(String(width[device] || 'auto'));
                 return '' +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Ширина для устройства «' + getDeviceTitle(device) + '»', 'Задает, сколько места колонка занимает на выбранном типе устройства.') +
-                        '<select class="form-control form-control-sm" data-field="width.' + device + '">' +
+                        '<select class="lb-control" data-field="width.' + device + '">' +
                             columnWidthOptions.map(function (option) {
                                 return '<option value="' + option.value + '"' + (String(width[device] || 'auto') === option.value ? ' selected' : '') + '>' + option.title + '</option>';
                             }).join('') +
@@ -1855,8 +2809,37 @@ $canvas_state = [
             }
             const options = {};
 
+            function normalizeWidgetOptionName(name) {
+                const raw = String(name || '').trim();
+                if (!raw) {
+                    return '';
+                }
+
+                const matchColon = raw.match(/^options:(.+)$/);
+                if (matchColon) {
+                    return matchColon[1];
+                }
+
+                const matchSingle = raw.match(/^options\[([^\]]+)\]$/);
+                if (matchSingle) {
+                    return matchSingle[1];
+                }
+
+                const matchArray = raw.match(/^options\[([^\]]+)\]\[\]$/);
+                if (matchArray) {
+                    return matchArray[1];
+                }
+
+                return raw;
+            }
+
             widgetForm.querySelectorAll('input, select, textarea').forEach(function (element) {
                 if (!element.name) {
+                    return;
+                }
+
+                const optionName = normalizeWidgetOptionName(element.name);
+                if (!optionName) {
                     return;
                 }
 
@@ -1865,46 +2848,69 @@ $canvas_state = [
                 }
 
                 if (element.tagName === 'SELECT' && element.multiple) {
-                    options[element.name] = Array.from(element.selectedOptions).map(function (option) {
+                    options[optionName] = Array.from(element.selectedOptions).map(function (option) {
                         return option.value;
                     });
                     return;
                 }
 
                 if (element.type === 'checkbox') {
-                    if (!Array.isArray(options[element.name])) {
-                        options[element.name] = [];
+                    const value = element.value || '1';
+
+                    if (!Object.prototype.hasOwnProperty.call(options, optionName)) {
+                        options[optionName] = value;
+                        return;
                     }
-                    options[element.name].push(element.value || '1');
+
+                    if (Array.isArray(options[optionName])) {
+                        options[optionName].push(value);
+                        return;
+                    }
+
+                    options[optionName] = [options[optionName], value];
                     return;
                 }
 
-                options[element.name] = element.value;
+                options[optionName] = element.value;
             });
 
             node.options = options;
+        }
+
+        if (widgetForm) {
+            widgetForm.addEventListener('change', function () {
+                const node = getSelectedNode();
+                if (!node || node.type !== 'system_widget') {
+                    return;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                setCanvasDirty(true);
+                renderCanvas();
+            });
         }
 
         function renderSectionLibrary() {
             const presets = Array.isArray(state.screen.section_presets) ? state.screen.section_presets : [];
 
             sectionList.innerHTML = '' +
-                '<button type="button" class="list-group-item list-group-item-action mb-2" data-role="insert-empty-section">' +
-                    '<div class="d-flex justify-content-between align-items-center">' +
-                        '<span class="font-weight-bold">Пустая секция</span>' +
-                        '<span class="badge badge-light">Создать</span>' +
+                '<button type="button" class="lb-library-card" data-role="insert-empty-section">' +
+                    '<div class="lb-library-card__row">' +
+                        '<span class="lb-library-card__title">Пустая секция</span>' +
+                        '<span class="lb-chip">Создать</span>' +
                     '</div>' +
-                    '<div class="small text-muted lb-library-caption mt-1">Чистая секция без контента. Удобно, если нужен свой состав колонок и блоков.</div>' +
+                    '<div class="lb-library-card__meta lb-library-caption">Чистая секция без контента. Удобно, если нужен свой состав колонок и блоков.</div>' +
                 '</button>' +
                 presets.map(function (preset, index) {
                     const columnsCount = Array.isArray(preset.columns) ? preset.columns.length : getLayoutColumnCount(preset.layout || '1col');
+                    const presetKeyAttr = preset && preset.key ? ' data-preset-key="' + escapeHtml(String(preset.key)) + '"' : '';
                     return '' +
-                        '<button type="button" class="list-group-item list-group-item-action mb-2" data-role="insert-section-preset" data-preset-index="' + index + '">' +
-                            '<div class="d-flex justify-content-between align-items-center">' +
-                                '<span class="font-weight-bold">' + escapeHtml(preset.title) + '</span>' +
-                                '<span class="badge badge-light">' + escapeHtml(String(columnsCount)) + ' кол.</span>' +
+                        '<button type="button" class="lb-library-card" data-role="insert-section-preset" data-preset-index="' + index + '"' + presetKeyAttr + '>' +
+                            '<div class="lb-library-card__row">' +
+                                '<span class="lb-library-card__title">' + escapeHtml(preset.title) + '</span>' +
+                                '<span class="lb-chip">' + escapeHtml(String(columnsCount)) + ' кол.</span>' +
                             '</div>' +
-                            '<div class="small text-muted lb-library-caption mt-1">' + escapeHtml(preset.description || 'Готовый стартовый состав секции.') + '</div>' +
+                            '<div class="lb-library-card__meta lb-library-caption">' + escapeHtml(preset.description || 'Готовый стартовый состав секции.') + '</div>' +
                         '</button>';
                 }).join('');
 
@@ -1914,12 +2920,12 @@ $canvas_state = [
         function renderBlockLibrary() {
             blockList.innerHTML = blockPresets.map(function (block, index) {
                 return '' +
-                    '<button type="button" class="list-group-item list-group-item-action" data-role="insert-block" data-block-index="' + index + '">' +
-                        '<div class="d-flex justify-content-between align-items-center">' +
-                            '<span class="font-weight-bold">' + escapeHtml(block.title) + '</span>' +
-                            '<span class="badge badge-light">Добавить</span>' +
+                    '<button type="button" class="lb-library-card" data-role="insert-block" data-block-index="' + index + '">' +
+                        '<div class="lb-library-card__row">' +
+                            '<span class="lb-library-card__title">' + escapeHtml(block.title) + '</span>' +
+                            '<span class="lb-chip">Добавить</span>' +
                         '</div>' +
-                        '<div class="small text-muted lb-library-caption mt-1">' + escapeHtml(block.description) + '</div>' +
+                        '<div class="lb-library-card__meta lb-library-caption">' + escapeHtml(block.description) + '</div>' +
                     '</button>';
             }).join('');
 
@@ -1940,9 +2946,9 @@ $canvas_state = [
                         '<div class="font-weight-bold text-uppercase small mb-2">' + escapeHtml(group === 'core' ? 'Система' : group) + '</div>' +
                         items.map(function (widget) {
                             return '' +
-                                '<button type="button" class="list-group-item list-group-item-action mb-1 border rounded" data-role="insert-widget" data-widget-id="' + widget.id + '">' +
-                                    '<div class="font-weight-bold">' + escapeHtml(widget.title) + '</div>' +
-                                    '<div class="text-muted small">Код: ' + escapeHtml((widget.controller || 'core') + '.' + widget.name) + '</div>' +
+                                '<button type="button" class="lb-library-card" data-role="insert-widget" data-widget-id="' + widget.id + '">' +
+                                    '<div class="lb-library-card__title">' + escapeHtml(widget.title) + '</div>' +
+                                    '<div class="lb-library-card__meta">Код: ' + escapeHtml((widget.controller || 'core') + '.' + widget.name) + '</div>' +
                                 '</button>';
                         }).join('') +
                     '</div>';
@@ -1958,6 +2964,13 @@ $canvas_state = [
             const pageThemeStyle = renderThemeVars(getThemeVars(pageTheme));
             const effectiveShell = getEffectiveShellVariantState();
             const effectiveShellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Базовый shell';
+            const templatePresetTitle = getCurrentTemplatePresetTitle();
+
+            if (shellMap) {
+                shellMap.innerHTML = renderShellParticipationMap();
+                initTooltips(shellMap);
+            }
+
             const sectionsMarkup = state.schema.sections.length
                 ? state.schema.sections.map(function (section, sectionIndex) {
                     const sectionVisible = isVisibleOnDevice(section.visibility);
@@ -1979,8 +2992,8 @@ $canvas_state = [
                                     '<div class="lb-live-section__meta">Схема: ' + escapeHtml(layoutTitle) + ' | стиль: ' + escapeHtml(getOptionTitle(sectionStyleOptions, section.style_preset || 'content')) + ' | тон: ' + escapeHtml(getOptionTitle(backgroundToneOptions, section.background_tone || 'base')) + '</div>' +
                                     (!sectionVisible ? '<div class="lb-live-section__meta">Секция скрыта на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '».</div>' : '') +
                                 '</div>' +
-                                '<div class="btn-group btn-group-sm">' +
-                                    '<button type="button" class="btn btn-outline-danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
+                                '<div>' +
+                                    '<button type="button" class="lb-btn lb-btn--danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
                                 '</div>' +
                             '</div>' +
                             '<div class="lb-live-section__inner">' +
@@ -2021,9 +3034,11 @@ $canvas_state = [
                                                                         '<div class="lb-live-node__eyebrow">' + escapeHtml(getNodeTypeTitle(node.type)) + '</div>' +
                                                                         '<div class="lb-live-node__label">' + escapeHtml(nodeLabel) + '</div>' +
                                                                     '</div>' +
-                                                                    '<button type="button" class="btn btn-link btn-sm text-danger p-0" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
+                                                                    '<button type="button" class="lb-btn lb-btn--link" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
                                                                 '</div>' +
-                                                                '<div class="lb-live-node__meta">' + (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано') + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
+	                                                                '<div class="lb-live-node__meta">' + (node.type === 'block' && getNodeSemanticSummary(node)
+	                                                                    ? escapeHtml(getNodeSemanticSummary(node))
+	                                                                    : (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано')) + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
                                                             '</div>';
                                                     }).join('')
                                                     : '<div class="lb-live-column__empty">Колонка пока пустая. Добавьте блок или системный виджет из библиотеки слева.</div>') +
@@ -2033,20 +3048,45 @@ $canvas_state = [
                             '</div>' +
                         '</section>';
                 }).join('')
-                : '<div class="lb-live-page__empty" data-role="page">Секция ещё не добавлена. Нажмите «Добавить секцию» и начните собирать страницу прямо на живом холсте.</div>';
+                : '' +
+                    '<div class="lb-starter" data-role="page">' +
+                        '<div class="lb-starter__icon">✦</div>' +
+                        '<p class="lb-starter__title">Начните создавать страницу</p>' +
+                        '<p class="lb-starter__desc">Выберите готовый стартовый блок или добавьте чистую секцию и настройте всё сам.</p>' +
+                        '<div class="lb-starter__grid">' +
+                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="0" data-preset-key="hero_simple">' +
+                                '<span class="lb-starter__btn-icon">🏠</span>' +
+                                '<span>Первый экран</span>' +
+                            '</button>' +
+                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="3" data-preset-key="benefits_3_cards">' +
+                                '<span class="lb-starter__btn-icon">⭐</span>' +
+                                '<span>Преимущества</span>' +
+                            '</button>' +
+                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="7" data-preset-key="testimonials">' +
+                                '<span class="lb-starter__btn-icon">💬</span>' +
+                                '<span>Отзывы</span>' +
+                            '</button>' +
+                            '<button type="button" class="lb-starter__btn" data-role="insert-empty-section">' +
+                                '<span class="lb-starter__btn-icon">＋</span>' +
+                                '<span>Чистая секция</span>' +
+                            '</button>' +
+                        '</div>' +
+                        '<p class="lb-starter__hint">Или выберите любую готовую секцию в <strong>Библиотеке</strong> слева.</p>' +
+                    '</div>';
 
             canvasRoot.innerHTML = '' +
                 '<div class="lb-live-page" style="' + escapeHtml(pageThemeStyle) + '" data-role="page">' +
                     '<section class="lb-live-page__hero" data-role="page">' +
-                        '<div class="lb-live-page__kicker">Visual-first canvas</div>' +
+                        '<div class="lb-live-page__kicker">Визуальная сборка страницы</div>' +
                         '<div class="lb-live-page__header">' +
                             '<div>' +
                                 '<h2 class="lb-live-page__title">' + escapeHtml(state.page.title) + '</h2>' +
-                                '<p class="lb-live-page__lead">Это рабочее превью страницы. Главная идея нового потока: вы меняете стиль прямо здесь, а отдельный экран глобальных стилей нужен только для редких site-wide defaults.</p>' +
+                                '<p class="lb-live-page__lead">Это рабочий экран страницы. Выбирайте шаблон, меняйте стиль и собирайте секции прямо здесь, а глобальные настройки сайта трогайте только когда это действительно нужно.</p>' +
                             '</div>' +
                         '</div>' +
                         '<div class="lb-live-page__chips">' +
-                            '<span class="lb-live-pill"><strong>Shell</strong><span>' + escapeHtml(effectiveShellTitle) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Шаблон</strong><span>' + escapeHtml(templatePresetTitle) + '</span></span>' +
+                            '<span class="lb-live-pill"><strong>Каркас</strong><span>' + escapeHtml(effectiveShellTitle) + '</span></span>' +
                             '<span class="lb-live-pill"><strong>Стиль</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.global_style_preset, pageTheme.global_style_preset)) + '</span></span>' +
                             '<span class="lb-live-pill"><strong>Цвет</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.color_preset, pageTheme.color_preset)) + '</span></span>' +
                             '<span class="lb-live-pill"><strong>Типографика</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.typography_preset, pageTheme.typography_preset)) + '</span></span>' +
@@ -2075,24 +3115,25 @@ $canvas_state = [
                 const theme = state.schema.theme || {};
                 const layout = state.schema.layout || {};
                 const contentSlotOptions = getPageContentSlotOptions();
-                selectionSummary.innerHTML = '<strong>Страница</strong><br><span class="text-muted">' + escapeHtml(state.page.title) + ' · live styling на canvas</span>';
+                selectionSummary.innerHTML = '<strong>Страница</strong><br><span class="text-muted">' + escapeHtml(state.page.title) + ' · шаблон, shell и стиль</span>';
                 selectionControls.innerHTML = '' +
-                        '<div class="small text-muted mb-3">Это основной слой визуальной работы со страницей. Меняйте стиль прямо здесь и сразу проверяйте результат на холсте. Экран глобальных стилей нужен только для редких site-wide defaults.</div>' +
+                        '<div class="small text-muted mb-3">Это основной слой визуальной работы со страницей. Сначала выберите шаблон страницы, затем при необходимости уточните каркас и локальные пресеты. Глобальный экран дизайна нужен только для редких общих настроек сайта.</div>' +
                     '<div class="small font-weight-bold text-uppercase text-muted mb-2">Каркас страницы</div>' +
-                    renderSelectField('Shell variant страницы', 'Можно явно назначить shell variant для этой страницы. Если оставить авто-режим, resolver выберет вариант сам.', 'layout.shell_variant', getShellVariantOptions(), layout.shell_variant || '') +
+                    renderSelectField('Шаблон страницы', 'Определяет общий тип страницы и подсказывает, какой shell использовать автоматически.', 'theme.template_preset', pageThemeOptions.template_preset || [], theme.template_preset || '') +
+                    renderSelectField('Вариант каркаса', 'Обычно оставьте авто. Меняйте только если нужна нестандартная раскладка.', 'layout.shell_variant', getShellVariantOptions(), layout.shell_variant || '') +
                     (state.page.mode === 'full_takeover'
-                        ? renderSelectField('Основной slot builder-содержимого', 'Куда должен вставляться основной runtime-контент страницы внутри shell.', 'layout.content_slot', contentSlotOptions, layout.content_slot || 'content_body')
+                        ? renderSelectField('Основной слот содержимого', 'Куда должен вставляться основной runtime-контент страницы внутри shell.', 'layout.content_slot', contentSlotOptions, layout.content_slot || 'content_body')
                         : '') +
                     renderPageShellSummary() +
-                    '<div class="small font-weight-bold text-uppercase text-muted mt-3 mb-2">Визуальный язык страницы</div>' +
-                        renderSelectField('Общий стиль страницы', 'Локальный page-level preset. Для глобального стиля всего сайта используйте экран «Дизайн сайта».', 'theme.global_style_preset', pageThemeOptions.global_style_preset, theme.global_style_preset) +
+                    '<div class="small font-weight-bold text-uppercase text-muted mb-2">Внешний вид страницы</div>' +
+                        renderSelectField('Общий стиль страницы', 'Локальный пресет страницы. Для общего стиля всего сайта используйте экран «Дизайн сайта».', 'theme.global_style_preset', pageThemeOptions.global_style_preset, theme.global_style_preset) +
                     renderSelectField('Цветовая схема', 'Базовый набор цветов интерфейса и контента.', 'theme.color_preset', pageThemeOptions.color_preset, theme.color_preset) +
                     renderSelectField('Типографика', 'Пресет для заголовков, текста и ритма набора.', 'theme.typography_preset', pageThemeOptions.typography_preset, theme.typography_preset) +
                     renderSelectField('Контейнеры', 'Базовая ширина контейнеров по странице.', 'theme.container_preset', pageThemeOptions.container_preset, theme.container_preset) +
                     renderSelectField('Кнопки', 'Главный стиль кнопок и призывов к действию.', 'theme.button_preset', pageThemeOptions.button_preset, theme.button_preset) +
                     renderSelectField('Карточки', 'Пресет карточек для списков и блоков.', 'theme.card_preset', pageThemeOptions.card_preset, theme.card_preset) +
                     renderSelectField('Ритм между секциями', 'Общий вертикальный ритм страницы.', 'theme.section_spacing', pageThemeOptions.section_spacing, theme.section_spacing) +
-                        '<div class="small text-muted mt-3"><a href="' + escapeHtml(state.screen.design_url || '#') + '">Открыть глобальные стили</a> для редких site-wide defaults. Повседневная работа со страницей должна происходить здесь, на canvas.</div>' +
+                        '<div class="small text-muted mt-3"><a href="' + escapeHtml(state.screen.design_url || '#') + '">Открыть глобальные стили</a> для редких общих настроек сайта. Повседневная работа со страницей должна происходить здесь, на главном визуальном экране.</div>' +
                     '<div class="small text-muted mt-3">Устройства предпросмотра: ' + escapeHtml(state.deviceKeys.map(getDeviceTitle).join(', ')) + '</div>';
                 widgetForm.innerHTML = 'Выберите секцию, колонку или системный виджет, чтобы открыть локальные настройки.';
                 initTooltips(selectionControls);
@@ -2105,11 +3146,11 @@ $canvas_state = [
                 selectionControls.innerHTML = '' +
                     '<div class="form-group mb-2">' +
                         fieldLabel('Название секции', 'Это имя видят редакторы внутри конструктора. На сайте его можно не показывать.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(section.title) + '">' +
+                        '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(section.title) + '">' +
                     '</div>' +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Схема колонок', 'Определяет, сколько колонок будет в секции и как они распределяются по ширине.') +
-                        '<select class="form-control form-control-sm" data-field="layout">' +
+                        '<select class="lb-control" data-field="layout">' +
                             renderSelectOptions(layoutOptions, section.layout) +
                         '</select>' +
                     '</div>' +
@@ -2118,19 +3159,19 @@ $canvas_state = [
                     renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
                     renderSelectField('Пресет контейнера', 'Управляет рабочей шириной секции.', 'container_preset', pageThemeOptions.container_preset, section.container_preset) +
                     renderSelectField('Вертикальный ритм', 'Отступы сверху и снизу для секции.', 'spacing_preset', spacingPresetOptions, section.spacing_preset) +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
+                        '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
                     '</div>' +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
+                        '<input type="text" class="lb-control" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
                     '</div>' +
-                    '<div class="form-group mb-3">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
                         renderVisibilityControls('visibility', section.visibility) +
                     '</div>' +
-                    '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-section" data-section-index="' + selection.sectionIndex + '">Удалить секцию</button>';
+                    '<button type="button" class="lb-btn lb-btn--danger" data-action="delete-section" data-section-index="' + selection.sectionIndex + '">Удалить секцию</button>';
                 widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
                 initTooltips(selectionControls);
                 return;
@@ -2142,22 +3183,22 @@ $canvas_state = [
                 selectionControls.innerHTML = '' +
                     '<div class="form-group mb-2">' +
                         fieldLabel('Название колонки', 'Служебное имя для редактора. Помогает не путаться в сложных секциях.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="title" value="' + escapeHtml(column.title) + '">' +
+                        '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(column.title) + '">' +
                     '</div>' +
                     renderWidthControls(column.width) +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Выравнивание содержимого', 'Помогает прижать содержимое колонки к верху, центру или низу.') +
-                        '<select class="form-control form-control-sm" data-field="settings.align">' +
+                        '<select class="lb-control" data-field="settings.align">' +
                             alignOptions.map(function (option) {
                                 return '<option value="' + option.value + '"' + (column.settings.align === option.value ? ' selected' : '') + '>' + option.title + '</option>';
                             }).join('') +
                         '</select>' +
                     '</div>' +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления колонки. Если оно не нужно, оставьте поле пустым.') +
-                        '<input type="text" class="form-control form-control-sm" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
+                        '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
                     '</div>' +
-                    '<div class="form-group mb-2">' +
+                    '<div class="lb-field">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть колонку на нужных типах устройств.') +
                         renderVisibilityControls('visibility', column.visibility) +
                     '</div>' +
@@ -2179,32 +3220,35 @@ $canvas_state = [
             selectionControls.innerHTML = '' +
                 '<div class="form-group mb-2">' +
                     fieldLabel('Название элемента', 'Короткое понятное имя, по которому редактор узнает блок внутри конструктора.') +
-                    '<input type="text" class="form-control form-control-sm" data-field="label" value="' + escapeHtml(node.label || '') + '">' +
+                    '<input type="text" class="lb-control" data-field="label" value="' + escapeHtml(node.label || '') + '">' +
                 '</div>' +
-                '<div class="form-group mb-2">' +
+                '<div class="lb-field">' +
                     fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления конкретного элемента.') +
-                    '<input type="text" class="form-control form-control-sm" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
+                    '<input type="text" class="lb-control" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
                 '</div>' +
-                '<div class="form-group mb-2">' +
-                    fieldLabel('Источник данных блока', 'Нужен только если блок должен брать данные из заранее заданного сценария или источника.') +
-                    '<input type="text" class="form-control form-control-sm" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
-                '</div>' +
-                '<div class="form-group mb-2">' +
+                (node.type === 'block'
+                    ? renderSelectField('Semantic-пресет блока', 'Определяет смысловой сценарий блока и набор его базовых полей.', 'source_key', getBlockPresetOptions(node.source_key || ''), node.source_key || '')
+                        + renderBlockSemanticInspector(node)
+                    : '<div class="lb-field">' +
+                        fieldLabel('Источник данных блока', 'Нужен только если блок должен брать данные из заранее заданного сценария или источника.') +
+                        '<input type="text" class="lb-control" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
+                      '</div>') +
+                '<div class="lb-field">' +
                     fieldLabel('Заметки для редактора', 'Сюда можно записать, зачем нужен блок или что в нем важно не забыть.') +
-                    '<textarea class="form-control form-control-sm" rows="3" data-field="notes">' + escapeHtml(node.notes || '') + '</textarea>' +
+                    '<textarea class="lb-control" rows="3" data-field="notes">' + escapeHtml(node.notes || '') + '</textarea>' +
                 '</div>' +
-                '<div class="form-group mb-2">' +
+                '<div class="lb-field">' +
                     fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть этот элемент на нужных типах устройств.') +
                     renderVisibilityControls('device_visibility', node.device_visibility) +
                 '</div>' +
-                '<button type="button" class="btn btn-sm btn-outline-danger" data-action="delete-node" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '" data-node-index="' + selection.nodeIndex + '">Удалить элемент</button>';
+                '<button type="button" class="lb-btn lb-btn--danger" data-action="delete-node" data-section-index="' + selection.sectionIndex + '" data-column-index="' + selection.columnIndex + '" data-node-index="' + selection.nodeIndex + '">Удалить элемент</button>';
 
             if (node.type === 'system_widget' && node.widget_id) {
                 loadWidgetOptions(node);
             } else if (node.type === 'system_widget') {
                 widgetForm.innerHTML = 'У этого виджета пока нет связи с системным каталогом. Добавьте его заново из списка слева.';
             } else {
-                widgetForm.innerHTML = 'Для этого блока сейчас доступны базовые настройки: название, видимость, заметки и связь с источником данных.';
+	                widgetForm.innerHTML = 'Для этого semantic-блока доступны preset-поля, видимость, заметки и локальное оформление.';
             }
 
             initTooltips(selectionControls);
@@ -2227,20 +3271,25 @@ $canvas_state = [
         async function loadWidgetCatalog() {
             widgetList.innerHTML = '<div class="text-muted">Загрузка списка виджетов...</div>';
 
-            const response = await fetch(state.screen.api.widgets_catalog_url, {
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
-                credentials: 'same-origin'
-            });
+            try {
+                const response = await fetch(state.screen.api.widgets_catalog_url, {
+                    headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    credentials: 'same-origin'
+                });
 
-            const result = await response.json();
-            if (result.error) {
-                widgetList.innerHTML = '<div class="text-danger">Не удалось загрузить список виджетов.</div>';
-                return;
+                const result = await response.json();
+                if (result.error) {
+                    const message = result.message ? String(result.message) : 'Не удалось загрузить список виджетов.';
+                    widgetList.innerHTML = '<div class="text-danger">' + escapeHtml(message) + '</div>';
+                    return;
+                }
+
+                state.widgetsCatalog = result.widgets || {};
+                renderWidgetLibrary();
+                renderCanvas();
+            } catch (error) {
+                widgetList.innerHTML = '<div class="text-danger">Не удалось загрузить список виджетов. Проверьте ответ сервера.</div>';
             }
-
-            state.widgetsCatalog = result.widgets || {};
-            renderWidgetLibrary();
-            renderCanvas();
         }
 
         async function loadVersions() {
@@ -2266,43 +3315,82 @@ $canvas_state = [
 
             versionsList.innerHTML = versions.map(function (version) {
                 return '' +
-                    '<div class="border rounded p-2 mb-2">' +
-                        '<div class="d-flex justify-content-between align-items-center">' +
-                            '<strong>#' + version.id + '</strong>' +
-                            '<button type="button" class="btn btn-sm btn-outline-secondary" data-action="restore-version" data-version-id="' + version.id + '">Восстановить</button>' +
+                    '<div class="lb-version-card">' +
+                        '<div class="lb-version-card__top">' +
+                            '<span class="lb-version-card__id">#' + version.id + '</span>' +
+                            '<button type="button" class="lb-btn lb-btn--panel" data-action="restore-version" data-version-id="' + version.id + '">Восстановить</button>' +
                         '</div>' +
-                        '<div class="small text-muted mt-1">' + escapeHtml(version.created_at) + '</div>' +
-                        '<div class="small mt-1">' + escapeHtml(version.version_note || 'Без комментария') + '</div>' +
+                        '<div class="lb-version-card__meta">' + escapeHtml(version.created_at) + '</div>' +
+                        '<div class="lb-version-card__note">' + escapeHtml(version.version_note || 'Без комментария') + '</div>' +
                     '</div>';
             }).join('');
         }
 
         async function loadWidgetOptions(node) {
+            const templateName = state.page.template || 'nordic';
+            const nodeUid = node && node.uid ? String(node.uid) : '';
+            const formKey = String(node.widget_id || '') + '::' + String(templateName) + '::' + nodeUid;
+
+            if (widgetForm && widgetForm.dataset && widgetForm.dataset.formKey === formKey && widgetForm.querySelector('form')) {
+                return;
+            }
+
+            if (widgetForm && widgetForm.dataset) {
+                widgetForm.dataset.formKey = formKey;
+            }
+
             widgetForm.innerHTML = 'Загрузка формы настроек виджета...';
 
             const body = new URLSearchParams();
             body.set('widget_id', node.widget_id);
-            body.set('template', state.page.template || 'nordic');
+            body.set('template', templateName);
             body.set('options', JSON.stringify(node.options || {}));
 
-            const response = await fetch(state.screen.api.widget_options_url, {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                },
-                body: body.toString(),
-                credentials: 'same-origin'
-            });
+            try {
+                const response = await fetch(state.screen.api.widget_options_url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: body.toString(),
+                    credentials: 'same-origin'
+                });
 
-            const result = await response.json();
-            if (result.error) {
-                widgetForm.innerHTML = '<div class="text-danger">Не удалось загрузить форму настроек виджета.</div>';
-                return;
+                const result = await response.json();
+                if (widgetForm && widgetForm.dataset && widgetForm.dataset.formKey !== formKey) {
+                    return;
+                }
+                if (result.error) {
+                    const message = result.message ? String(result.message) : 'Не удалось загрузить форму настроек виджета.';
+                    widgetForm.innerHTML = '<div class="text-danger">' + escapeHtml(message) + '</div>';
+                    return;
+                }
+
+                const html = (result.html || '').trim();
+                if (!html) {
+                    widgetForm.innerHTML = '<div class="lb-widget-placeholder small">У этого системного виджета нет отдельной формы настроек. Его поведение задается самим компонентом и общими параметрами шаблона.</div>';
+                    return;
+                }
+
+                widgetForm.innerHTML = html;
+                initTooltips(widgetForm);
+
+                const shouldAutoFocus = state.ui && String(state.ui.widgetOptionsAutofocusFor || '') === String(node.widget_id || '');
+                if (shouldAutoFocus && widgetForm && widgetForm.dataset && widgetForm.dataset.formKey === formKey) {
+                    if (typeof widgetForm.scrollIntoView === 'function') {
+                        widgetForm.scrollIntoView({block: 'nearest'});
+                    }
+                    const firstControl = widgetForm.querySelector('select, input, textarea');
+                    if (firstControl && typeof firstControl.focus === 'function') {
+                        firstControl.focus();
+                    }
+
+                    state.ui.widgetOptionsAutofocusFor = '';
+                }
+            } catch (error) {
+                widgetForm.innerHTML = '<div class="text-danger">Не удалось загрузить форму настроек виджета. Проверьте маршрут и ответ сервера.</div>';
             }
-
-            widgetForm.innerHTML = result.html;
-            initTooltips(widgetForm);
         }
 
         function moveSection(fromIndex, targetIndex) {
@@ -2313,6 +3401,7 @@ $canvas_state = [
             const toIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
             state.schema.sections = moveArrayItem(state.schema.sections, fromIndex, toIndex);
             state.selection = {type: 'section', sectionIndex: toIndex};
+            setCanvasDirty(true);
         }
 
         function moveNode(fromSectionIndex, fromColumnIndex, fromNodeIndex, toSectionIndex, toColumnIndex, toNodeIndex) {
@@ -2349,6 +3438,8 @@ $canvas_state = [
                 columnIndex: toColumnIndex,
                 nodeIndex: insertIndex
             };
+
+            setCanvasDirty(true);
         }
 
         function setSelection(selection) {
@@ -2381,6 +3472,7 @@ $canvas_state = [
 
             state.schema.sections.push(section);
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setCanvasDirty(true);
         }
 
         function insertSectionPreset(presetIndex) {
@@ -2418,7 +3510,52 @@ $canvas_state = [
                 columns: columns
             }, state.schema.sections.length));
 
+
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setCanvasDirty(true);
+        }
+
+        function insertSectionPresetByKey(presetKey) {
+            const presets = Array.isArray(state.screen.section_presets) ? state.screen.section_presets : [];
+            const preset = presets.find(function (item) {
+                return item && String(item.key || '') === String(presetKey || '');
+            });
+            if (!preset) {
+                return;
+            }
+
+            const sectionUid = uid('section');
+            const columns = Array.isArray(preset.columns) ? preset.columns.map(function (column, columnIndex) {
+                const columnUid = sectionUid + '-column-' + (columnIndex + 1);
+                return {
+                    uid: columnUid,
+                    title: column.title || ('Колонка ' + (columnIndex + 1)),
+                    visibility: defaultVisibility(),
+                    width: defaultColumnWidth(),
+                    settings: {align: 'stretch', css_class: ''},
+                    nodes: Array.isArray(column.nodes) ? column.nodes.map(function (node, nodeIndex) {
+                        return normalizeNode(Object.assign({}, node || {}), columnUid, nodeIndex);
+                    }) : []
+                };
+            }) : [];
+
+            state.schema.sections.push(normalizeSection({
+                uid: sectionUid,
+                title: preset.title || ('Секция ' + (state.schema.sections.length + 1)),
+                layout: preset.layout || '1col',
+                section_type: preset.section_type || 'content',
+                style_preset: preset.style_preset || 'content',
+                background_tone: preset.background_tone || 'base',
+                container_preset: preset.container_preset || state.schema.theme.container_preset || 'standard',
+                spacing_preset: preset.spacing_preset || 'md',
+                visibility: defaultVisibility(),
+                settings: {background_class: '', padding: 'md', css_class: ''},
+                columns: columns
+            }, state.schema.sections.length));
+
+
+            setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setCanvasDirty(true);
         }
 
         function insertBlock(blockIndex) {
@@ -2436,12 +3573,12 @@ $canvas_state = [
             column.nodes.push({
                 uid: uid('node'),
                 type: 'block',
-                label: block.title,
+                label: block.default_label || block.title,
                 class_name: '',
                 notes: '',
                 source_key: block.key,
                 device_visibility: defaultVisibility(),
-                options: {}
+                options: Object.assign({}, getBlockPresetDefaults(block))
             });
 
             setSelection({
@@ -2450,6 +3587,8 @@ $canvas_state = [
                 columnIndex: state.selection.columnIndex,
                 nodeIndex: column.nodes.length - 1
             });
+
+            setCanvasDirty(true);
         }
 
         function findWidgetById(widgetId) {
@@ -2492,12 +3631,20 @@ $canvas_state = [
                 source_key: ''
             });
 
+            setDrawerOpen('inspector', true);
+
+            if (state.ui) {
+                state.ui.widgetOptionsAutofocusFor = String(widget.id);
+            }
+
             setSelection({
                 type: 'node',
                 sectionIndex: state.selection.sectionIndex,
                 columnIndex: state.selection.columnIndex,
                 nodeIndex: column.nodes.length - 1
             });
+
+            setCanvasDirty(true);
         }
 
         async function saveCanvas() {
@@ -2527,7 +3674,8 @@ $canvas_state = [
             state.page = Object.assign({}, state.page, result.page || {});
             updatedAt.textContent = state.page.updated_at || '';
             pageMeta.innerHTML = renderPageMeta();
-            canvasStatus.textContent = 'Изменения сохранены';
+            lastSavedAt = state.page.updated_at ? String(state.page.updated_at) : lastSavedAt;
+            setCanvasDirty(false);
             versionNote.value = '';
             await loadVersions();
             renderCanvas();
@@ -2632,6 +3780,15 @@ $canvas_state = [
                 window.alert('Ошибка сохранения страницы');
             });
         });
+        const inspectorSaveButton = document.getElementById('lb-save-canvas-inspector');
+        if (inspectorSaveButton) {
+            inspectorSaveButton.addEventListener('click', function () {
+                saveCanvas().catch(function (error) {
+                    console.error(error);
+                    window.alert('Ошибка сохранения страницы');
+                });
+            });
+        }
         document.getElementById('lb-reload-widgets').addEventListener('click', function () {
             loadWidgetCatalog().catch(function (error) {
                 console.error(error);
@@ -2660,14 +3817,24 @@ $canvas_state = [
             const value = field.type === 'checkbox' ? field.checked : field.value;
             setDeepValue(target, field.dataset.field, value);
 
+	        if (state.selection && state.selection.type === 'node' && target.type === 'block' && field.dataset.field === 'source_key') {
+	            applyBlockPresetToNode(target, false);
+	        }
+
             if (state.selection && state.selection.type === 'section' && field.dataset.field === 'layout') {
                 syncSectionColumnsWithLayout(target);
+            }
+
+            if (state.selection && state.selection.type === 'page' && field.dataset.field === 'theme.template_preset') {
+                syncTemplatePresetLayoutTemplate();
+                syncPageLayoutWithEffectiveShell();
             }
 
             if (state.selection && state.selection.type === 'page' && field.dataset.field === 'layout.shell_variant') {
                 syncPageLayoutWithEffectiveShell();
             }
 
+            setCanvasDirty(true);
             renderCanvas();
         });
 
@@ -2686,6 +3853,7 @@ $canvas_state = [
                     syncSelectedWidgetFormIntoState();
                     state.schema.sections.splice(sectionIndex, 1);
                     state.selection = null;
+                    setCanvasDirty(true);
                     renderCanvas();
                 }
                 return true;
@@ -2696,6 +3864,7 @@ $canvas_state = [
                     syncSelectedWidgetFormIntoState();
                     state.schema.sections[sectionIndex].columns[columnIndex].nodes.splice(nodeIndex, 1);
                     state.selection = null;
+                    setCanvasDirty(true);
                     renderCanvas();
                 }
                 return true;
@@ -2895,6 +4064,11 @@ $canvas_state = [
 
             const presetButton = event.target.closest('[data-role="insert-section-preset"]');
             if (!presetButton) {
+                return;
+            }
+
+            if (presetButton.dataset.presetKey) {
+                insertSectionPresetByKey(String(presetButton.dataset.presetKey));
                 return;
             }
 

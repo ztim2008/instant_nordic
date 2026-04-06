@@ -8,6 +8,7 @@ $zones = $runtime['zones'];
 $slot_map = $runtime['slot_map'] ?? [];
 $device_type = $runtime['device_type'] ?? 'desktop';
 $is_preview = !empty($runtime['is_preview']);
+$is_compact = !empty($runtime['compact']);
 $theme_context = landingbuilder_get_runtime_theme_context($page);
 $page_theme = $theme_context['theme'];
 $page_theme_style = landingbuilder_render_css_vars($theme_context['vars']);
@@ -208,6 +209,64 @@ ob_start();
 	.lb-node-content li {
 		color: var(--lb-text-muted, #566f80);
 	}
+	.lb-block-eyebrow {
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--lb-text-muted, #5e7c92);
+		margin-bottom: 8px;
+	}
+	.lb-block-actions,
+	.lb-block-chip-list {
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin-top: 14px;
+	}
+	.lb-block-action,
+	.lb-block-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 10px 14px;
+		border-radius: 999px;
+		font-size: 13px;
+		border: 1px solid var(--lb-border-color, #dbe3ea);
+	}
+	.lb-block-action--primary {
+		background: var(--lb-accent-color, #2f7aa1);
+		border-color: var(--lb-accent-color, #2f7aa1);
+		color: var(--lb-accent-contrast, #ffffff);
+	}
+	.lb-block-action--secondary,
+	.lb-block-chip {
+		background: var(--lb-surface-soft, #f4f7fa);
+		color: var(--lb-heading-color, #173042);
+	}
+	.lb-block-grid,
+	.lb-block-stat-grid {
+		display: grid;
+		gap: 12px;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		margin-top: 14px;
+	}
+	.lb-block-grid__item,
+	.lb-block-stat {
+		padding: 14px;
+		border-radius: 14px;
+		background: var(--lb-surface-soft, #f7fafc);
+		border: 1px solid var(--lb-border-color, #dbe3ea);
+	}
+	.lb-block-stat__value {
+		font-size: 24px;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--lb-heading-color, #173042);
+		margin-bottom: 6px;
+	}
+	.lb-block-stat__caption {
+		font-size: 13px;
+		color: var(--lb-text-muted, #566f80);
+	}
 	.lb-node-meta,
 	.lb-node-note {
 		margin-top: 10px;
@@ -332,37 +391,160 @@ ob_start();
 			flex-direction: column;
 		}
 	}
+
+	/* User-facing preview should show the page itself, not runtime diagnostics. */
+	.lb-runtime-page {
+		max-width: none;
+		margin: 0;
+		padding: 0;
+		background: transparent;
+	}
+
+	.lb-runtime-hero,
+	.lb-preview-note,
+	.lb-runtime-zone-head,
+	.lb-zone-kind,
+	.lb-section-kicker,
+	.lb-node-label,
+	.lb-column-title,
+	.lb-zone-pill,
+	.lb-native-placeholder,
+	.lb-empty-zone,
+	.lb-node-meta,
+	.lb-node-note {
+		display: none;
+	}
+
+	.lb-runtime-layout {
+		display: block;
+		gap: 0;
+	}
+
+	.lb-runtime-zone {
+		padding: 0;
+		margin: 0 0 var(--lb-section-gap, 32px);
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.lb-runtime-zone:last-child {
+		margin-bottom: 0;
+	}
+
+	.lb-section {
+		padding: 0;
+		margin-bottom: var(--lb-section-gap, 32px);
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.lb-section:last-child {
+		margin-bottom: 0;
+	}
+
+	.lb-column {
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+
+	.lb-node-card,
+		.lb-node-card--block,
+		.lb-node-card--widget {
+		margin-top: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.lb-columns,
+	.lb-block-grid,
+	.lb-block-stat-grid {
+		gap: var(--lb-section-gap, 24px);
+	}
+
+	/* Menu widget (Bootstrap navbar) inside builder sections: keep links readable on light backgrounds. */
+	.lb-runtime-page .navbar-nav .nav-link,
+	.lb-runtime-page .navbar-brand,
+	.lb-runtime-page .navbar-text,
+	.lb-runtime-page .nav .nav-link {
+		color: var(--lb-heading-color, #173042);
+	}
+
+	.lb-runtime-page .navbar-nav .nav-link:hover,
+	.lb-runtime-page .navbar-nav .nav-link:focus,
+	.lb-runtime-page .nav .nav-link:hover,
+	.lb-runtime-page .nav .nav-link:focus {
+		color: var(--lb-accent-color, #2f7aa1);
+	}
+
+	.lb-section--tone-brand-strong .navbar-nav .nav-link,
+	.lb-section--tone-brand-strong .navbar-brand,
+	.lb-section--tone-brand-strong .navbar-text,
+	.lb-section--tone-brand-strong .nav .nav-link,
+	.lb-section--tone-contrast .navbar-nav .nav-link,
+	.lb-section--tone-contrast .navbar-brand,
+	.lb-section--tone-contrast .navbar-text,
+	.lb-section--tone-contrast .nav .nav-link,
+	.lb-section--tone-inverse .navbar-nav .nav-link,
+	.lb-section--tone-inverse .navbar-brand,
+	.lb-section--tone-inverse .navbar-text,
+	.lb-section--tone-inverse .nav .nav-link {
+		color: inherit;
+	}
 </style>
 
-<div class="lb-runtime-page" style="<?php html($page_theme_style); ?>" data-global-style-preset="<?php html($page_theme['global_style_preset']); ?>" data-color-preset="<?php html($page_theme['color_preset']); ?>" data-typography-preset="<?php html($page_theme['typography_preset']); ?>" data-container-preset="<?php html($page_theme['container_preset']); ?>">
-	<header class="lb-runtime-hero">
-		<div class="lb-runtime-kicker">Живой runtime Нордик</div>
-		<h1><?php html($page['title']); ?></h1>
-		<p><?php html($adapter['description']); ?></p>
-		<div class="lb-runtime-meta">
-			<div class="lb-runtime-pill">Режим: <?php html($page_mode_titles[$page['mode']] ?? $page['mode']); ?></div>
-			<div class="lb-runtime-pill">Адаптер: <?php html($adapter['title']); ?></div>
-			<div class="lb-runtime-pill">Ключ страницы: <?php html($page['key']); ?></div>
-			<div class="lb-runtime-pill">Устройство: <?php html($device_type); ?></div>
-		</div>
-		<?php if ($is_preview) { ?>
-			<div class="lb-preview-note">Открыт preview-режим. Страница еще не опубликована, поэтому runtime доступен только администратору.</div>
-		<?php } ?>
-	</header>
-
-	<div class="lb-runtime-layout">
+<?php if ($is_compact) { ?>
+	<div class="lb-runtime-embed" style="<?php html($page_theme_style); ?>" data-global-style-preset="<?php html($page_theme['global_style_preset']); ?>" data-color-preset="<?php html($page_theme['color_preset']); ?>" data-typography-preset="<?php html($page_theme['typography_preset']); ?>" data-container-preset="<?php html($page_theme['container_preset']); ?>">
 		<?php foreach ($zones as $zone) { ?>
-			<?php if (($zone['kind'] ?? 'builder') === 'native') {
-				$zone['native_label'] = $adapter['native_content_label'];
-			} ?>
-			<?php echo landingbuilder_render_runtime_zone($zone, [
+			<?php if (($zone['kind'] ?? 'builder') !== 'builder') { continue; } ?>
+			<?php if (empty($zone['sections'])) { continue; } ?>
+			<?php echo landingbuilder_render_runtime_zone_sections($zone, [
 				'device_type'   => $device_type,
 				'theme_context' => $theme_context,
 				'slot_map'      => $slot_map,
-				'surface'       => 'runtime'
+				'surface'       => 'site'
 			]); ?>
 		<?php } ?>
 	</div>
-</div>
+<?php } else { ?>
+	<div class="lb-runtime-page" style="<?php html($page_theme_style); ?>" data-global-style-preset="<?php html($page_theme['global_style_preset']); ?>" data-color-preset="<?php html($page_theme['color_preset']); ?>" data-typography-preset="<?php html($page_theme['typography_preset']); ?>" data-container-preset="<?php html($page_theme['container_preset']); ?>">
+		<header class="lb-runtime-hero">
+			<div class="lb-runtime-kicker">Живой runtime Нордик</div>
+			<h1><?php html($page['title']); ?></h1>
+			<p><?php html($adapter['description']); ?></p>
+			<div class="lb-runtime-meta">
+				<div class="lb-runtime-pill">Режим: <?php html($page_mode_titles[$page['mode']] ?? $page['mode']); ?></div>
+				<div class="lb-runtime-pill">Адаптер: <?php html($adapter['title']); ?></div>
+				<div class="lb-runtime-pill">Ключ страницы: <?php html($page['key']); ?></div>
+				<div class="lb-runtime-pill">Устройство: <?php html($device_type); ?></div>
+			</div>
+			<?php if ($is_preview) { ?>
+				<div class="lb-preview-note">Открыт preview-режим. Страница еще не опубликована, поэтому runtime доступен только администратору.</div>
+			<?php } ?>
+		</header>
+
+		<div class="lb-runtime-layout">
+			<?php foreach ($zones as $zone) { ?>
+				<?php if (($zone['kind'] ?? 'builder') === 'native') {
+					$zone['native_label'] = $adapter['native_content_label'];
+				} ?>
+				<?php echo landingbuilder_render_runtime_zone($zone, [
+					'device_type'   => $device_type,
+					'theme_context' => $theme_context,
+					'slot_map'      => $slot_map,
+					'surface'       => 'runtime'
+				]); ?>
+			<?php } ?>
+		</div>
+	</div>
+<?php } ?>
 
 <?php echo ob_get_clean(); ?>

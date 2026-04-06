@@ -39,6 +39,24 @@ Foundation layer это набор договоренностей, которы�
 5. `nordicbuilder` boundary и package discipline;
 6. bridge strategy для текущего кода.
 
+## Визуальная политика foundation layer
+
+Foundation layer не обязан быть визуально современным сам по себе, но он обязан позволять строить современный продуктовый UI поверх себя.
+
+Для текущего этапа фиксируем правило:
+
+1. Bootstrap 4 допустим только как внутренний legacy-foundation слой;
+2. он может давать сетку, базовый reset, предсказуемую механику форм и переходную runtime-совместимость;
+3. он не считается источником продуктового visual language для `nordic` и `nordicbuilder`;
+4. весь видимый современный слой должен задаваться через Nordic tokens, component defaults и собственные UI primitives;
+5. если bootstrap-pattern конфликтует с design tokens или мешает product UX, приоритет всегда у Nordic design system.
+
+Из этого следует практическое направление разработки:
+
+1. foundation можно оставлять bootstrap-backed на переходном этапе;
+2. user-facing builder UI нельзя проектировать как набор стандартных bootstrap-компонентов;
+3. зависимость от bootstrap-semantic markup в ключевых экранах builder-а нужно постепенно уменьшать по мере появления собственных primitives.
+
 ## 1. Канонический набор contracts
 
 Foundation layer должен держать как минимум пять независимых, но связанных contracts.

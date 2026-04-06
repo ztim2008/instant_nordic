@@ -18,33 +18,33 @@ if ($storage_status === 'planned') {
     <div class="row">
         <div class="col-lg-7 mb-4">
             <div class="card h-100">
-                <div class="card-header">Metadata</div>
+                <div class="card-header">Метаданные</div>
                 <div class="card-body">
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">Key</dt>
+                        <dt class="col-sm-4">Ключ</dt>
                         <dd class="col-sm-8"><?php echo html($contract['key']); ?></dd>
 
-                        <dt class="col-sm-4">Kind</dt>
+                        <dt class="col-sm-4">Тип</dt>
                         <dd class="col-sm-8"><?php echo html($contract['kind'] ?: '—'); ?></dd>
 
-                        <dt class="col-sm-4">Contract kind</dt>
+                        <dt class="col-sm-4">Тип контракта</dt>
                         <dd class="col-sm-8"><?php echo html($contract['contract_kind'] ?: '—'); ?></dd>
 
-                        <dt class="col-sm-4">Bridge kind</dt>
+                        <dt class="col-sm-4">Тип bridge</dt>
                         <dd class="col-sm-8"><?php echo html($contract['bridge_kind'] ?: '—'); ?></dd>
 
-                        <dt class="col-sm-4">Schema</dt>
+                        <dt class="col-sm-4">Версия схемы</dt>
                         <dd class="col-sm-8"><?php echo html($contract['schema_version'] ?: '—'); ?></dd>
 
-                        <dt class="col-sm-4">Source</dt>
+                        <dt class="col-sm-4">Источник</dt>
                         <dd class="col-sm-8"><?php echo html($contract['source_path']); ?></dd>
 
-                        <dt class="col-sm-4">Status</dt>
+                        <dt class="col-sm-4">Статус</dt>
                         <dd class="col-sm-8">
                             <?php if ($contract['is_valid']) { ?>
-                                <span class="badge badge-success">valid</span>
+                                <span class="badge badge-success">корректен</span>
                             <?php } else { ?>
-                                <span class="badge badge-danger">invalid</span>
+                                <span class="badge badge-danger">ошибка</span>
                             <?php } ?>
                         </dd>
                     </dl>
@@ -64,33 +64,33 @@ if ($storage_status === 'planned') {
         <div class="col-lg-5 mb-4">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Storage Stub</span>
+                    <span>Схема хранения</span>
                     <span class="badge <?php echo html($storage_badge_class); ?>"><?php echo html($storage_status); ?></span>
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
-                        <dt class="col-sm-5">Target</dt>
+                        <dt class="col-sm-5">Цель</dt>
                         <dd class="col-sm-7"><?php echo html($storage_stub['storage_target'] ?: '—'); ?></dd>
 
-                        <dt class="col-sm-5">Driver</dt>
+                        <dt class="col-sm-5">Драйвер</dt>
                         <dd class="col-sm-7"><?php echo html($storage_stub['driver']); ?></dd>
 
-                        <dt class="col-sm-5">Repository</dt>
+                        <dt class="col-sm-5">Репозиторий</dt>
                         <dd class="col-sm-7"><?php echo html($storage_stub['repository']); ?></dd>
 
-                        <dt class="col-sm-5">Bridge source</dt>
+                        <dt class="col-sm-5">Источник bridge</dt>
                         <dd class="col-sm-7"><?php echo html($storage_stub['bridge_source']); ?></dd>
                     </dl>
 
                     <hr>
-                    <div class="small text-muted mb-2">Read model</div>
+                    <div class="small text-muted mb-2">Модель чтения</div>
                     <div><?php echo html($storage_stub['read_model']); ?></div>
 
-                    <div class="small text-muted mt-3 mb-2">Write model</div>
+                    <div class="small text-muted mt-3 mb-2">Модель записи</div>
                     <div><?php echo html($storage_stub['write_model']); ?></div>
 
                     <?php if ($storage_stub['notes']) { ?>
-                        <div class="small text-muted mt-3 mb-2">Notes</div>
+                        <div class="small text-muted mt-3 mb-2">Примечания</div>
                         <ul class="mb-0 pl-3">
                             <?php foreach ($storage_stub['notes'] as $note) { ?>
                                 <li><?php echo html($note); ?></li>
@@ -105,7 +105,7 @@ if ($storage_status === 'planned') {
     <div class="row">
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
-                <div class="card-header">Required Fields</div>
+                <div class="card-header">Обязательные поля</div>
                 <div class="card-body">
                     <?php if ($contract['required_fields']) { ?>
                         <ul class="mb-0 pl-3">
@@ -114,7 +114,7 @@ if ($storage_status === 'planned') {
                             <?php } ?>
                         </ul>
                     <?php } else { ?>
-                        <div class="text-muted">Required fields не описаны.</div>
+                        <div class="text-muted">Обязательные поля не описаны.</div>
                     <?php } ?>
                 </div>
             </div>
@@ -122,7 +122,7 @@ if ($storage_status === 'planned') {
 
         <div class="col-lg-6 mb-4">
             <div class="card h-100">
-                <div class="card-header">Contract Notes</div>
+                <div class="card-header">Примечания к контракту</div>
                 <div class="card-body">
                     <?php if ($contract['notes']) { ?>
                         <ul class="mb-0 pl-3">
@@ -139,7 +139,7 @@ if ($storage_status === 'planned') {
     </div>
 
     <div class="card">
-        <div class="card-header">Raw JSON</div>
+        <div class="card-header">Исходный JSON</div>
         <div class="card-body p-0">
             <pre class="mb-0 p-3 bg-light" style="white-space: pre-wrap;"><?php echo html($raw_definition); ?></pre>
         </div>

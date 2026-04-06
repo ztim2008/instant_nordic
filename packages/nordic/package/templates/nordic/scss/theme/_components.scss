@@ -1,0 +1,297 @@
+.nordic-shell .card,
+.nordic-shell .icms-widget.card,
+.nordic-shell .dropdown-menu,
+.nordic-shell .info_bar,
+.nordic-shell .icms-comment-html,
+.nordic-shell .list-group-item,
+.nordic-shell .table {
+    background-color: rgba(255, 250, 244, 0.94);
+}
+
+.nordic-shell .card,
+.nordic-shell .icms-widget.card {
+    border: 1px solid rgba(23, 27, 31, 0.08);
+    border-radius: 22px;
+    box-shadow: 0 14px 36px rgba(17, 21, 26, 0.07);
+}
+
+.nordic-shell .card-header,
+.nordic-shell .modal-header,
+.nordic-shell .list-group-item,
+.nordic-shell .table thead th {
+    font-family: var(--nordic-font-ui);
+}
+
+.nordic-shell a,
+.nordic-shell .text-primary,
+.nordic-shell .navbar-light .navbar-brand,
+.nordic-shell .navbar-light .navbar-nav .show > .nav-link,
+.nordic-shell .navbar-light .navbar-nav .active > .nav-link,
+.nordic-shell .navbar-light .navbar-nav .nav-link.active {
+    color: var(--nordic-accent);
+}
+
+.nordic-shell a:hover,
+.nordic-shell a:focus {
+    color: var(--nordic-accent-strong);
+}
+
+.nordic-shell .btn-primary,
+.nordic-shell .badge-primary,
+.nordic-shell .nav-pills .nav-link.active,
+.nordic-shell .page-item.active .page-link {
+    background-color: var(--nordic-accent);
+    border-color: var(--nordic-accent);
+    color: #fff;
+}
+
+.nordic-shell .btn-primary:hover,
+.nordic-shell .btn-primary:focus,
+.nordic-shell .badge-primary:hover,
+.nordic-shell .nav-pills .nav-link.active:hover,
+.nordic-shell .page-item.active .page-link:hover {
+    background-color: var(--nordic-accent-strong);
+    border-color: var(--nordic-accent-strong);
+}
+
+.nordic-shell .btn-outline-primary,
+.nordic-shell .page-link,
+.nordic-shell .nav-pills .nav-link,
+.nordic-shell .nav-tabs .nav-link,
+.nordic-shell .badge-light {
+    color: var(--nordic-ink-soft);
+    border-color: rgba(23, 27, 31, 0.14);
+    background: rgba(255, 255, 255, 0.7);
+}
+
+.nordic-shell .btn-outline-primary:hover,
+.nordic-shell .btn-outline-primary:focus,
+.nordic-shell .page-link:hover,
+.nordic-shell .nav-pills .nav-link:hover,
+.nordic-shell .nav-tabs .nav-link:hover {
+    color: var(--nordic-accent-strong);
+    border-color: rgba(242, 92, 29, 0.3);
+    background: rgba(242, 92, 29, 0.08);
+}
+
+.nordic-shell .navbar,
+.nordic-shell .dropdown-menu,
+.nordic-shell .modal-content,
+.nordic-shell .form-control,
+.nordic-shell .custom-select,
+.nordic-shell .custom-file-label {
+    border-radius: var(--nordic-radius-md);
+}
+
+.nordic-shell .navbar-light,
+.nordic-shell .icms-navbar {
+    border: 1px solid rgba(23, 27, 31, 0.08);
+    background: rgba(255, 250, 244, 0.88);
+}
+
+.nordic-shell .navbar-light .navbar-brand,
+.nordic-shell .icms-navbar .navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.nordic-shell .navbar-light .navbar-nav .nav-link,
+.nordic-shell .icms-navbar .nav-link {
+    color: var(--nordic-ink-soft);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.nordic-shell .navbar .form-control:focus,
+.nordic-shell .form-control:focus,
+.nordic-shell .custom-select:focus {
+    border-color: rgba(242, 92, 29, 0.35);
+    box-shadow: 0 0 0 0.2rem rgba(242, 92, 29, 0.14);
+}
+
+.nordic-shell .nav-tabs .nav-link.active::before,
+.nordic-shell .icms-navbar .nav-link.active::before {
+    box-shadow: inset 0 -2px 0 var(--nordic-accent);
+    background-color: var(--nordic-accent);
+}
+
+.nordic-shell .dropdown-menu,
+.nordic-shell .modal-content,
+.nordic-shell .table,
+.nordic-shell .list-group-item,
+.nordic-shell .info_bar,
+.nordic-shell .icms-comment-html {
+    border: 1px solid rgba(23, 27, 31, 0.08);
+    box-shadow: 0 14px 34px rgba(17, 21, 26, 0.08);
+}
+
+.nordic-shell .table thead th {
+    border-bottom-color: var(--nordic-line-strong);
+    color: var(--nordic-ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.78rem;
+}
+
+.nordic-shell .list-group-item.active,
+.nordic-shell .alert-primary,
+.nordic-shell .badge-primary {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+// ─── Типографика контента ──────────────────────────────────────────────────
+
+// Заголовки на страницах контента — serif, крупнее Bootstrap default
+.nordic-shell .page-content-item h1,
+.nordic-shell .page-content-item h2,
+.nordic-shell .page-content-item h3,
+.nordic-shell .page-content-list h1,
+.nordic-shell .page-content-category h1 {
+    font-family: var(--nordic-font-body);
+    color: var(--nordic-ink);
+    line-height: 1.2;
+}
+
+// H1 заголовок записи: крупный
+.nordic-shell .page-content-item h1 {
+    font-size: clamp(1.75rem, 4vw, 2.6rem);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+// H1 на листингах (название рубрики)
+.nordic-shell .page-content-list h1,
+.nordic-shell .page-content-category h1 {
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 700;
+}
+
+// Тело статьи: читабельный кегль и межстрочие
+.nordic-shell .page-content-item .icms-field-html,
+.nordic-shell .page-content-item .content-item-text {
+    font-size: 1.06rem;
+    line-height: 1.78;
+    color: var(--nordic-ink-soft);
+    max-width: 72ch;
+
+    > p { margin-bottom: 1.2em; }
+    > h2 { font-size: 1.4rem; margin-top: 2em; }
+    > h3 { font-size: 1.2rem; margin-top: 1.6em; }
+    > blockquote {
+        border-left: 3px solid var(--nordic-accent);
+        padding-left: 1.25rem;
+        color: var(--nordic-muted);
+        font-style: italic;
+    }
+}
+
+// ─── Листинг записей ──────────────────────────────────────────────────────
+
+// Карточка внутри листинга
+.nordic-shell .page-content-list .content-items .item,
+.nordic-shell .page-content-category .content-items .item {
+    border-radius: var(--nordic-radius-md);
+    overflow: hidden;
+    background: var(--nordic-surface);
+    box-shadow: var(--nordic-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 32px 72px rgba(17, 21, 26, 0.16);
+    }
+}
+
+// Заголовок карточки в листинге
+.nordic-shell .content-items .item-title a,
+.nordic-shell .content-items .item h2 a,
+.nordic-shell .content-items .item h3 a {
+    color: var(--nordic-ink);
+    text-decoration: none;
+    font-family: var(--nordic-font-body);
+    font-weight: 700;
+
+    &:hover { color: var(--nordic-accent); }
+}
+
+// ─── Мета / даты / авторы ─────────────────────────────────────────────────
+
+.nordic-shell .item-meta,
+.nordic-shell .icms-meta,
+.nordic-shell .content-item-meta {
+    font-family: var(--nordic-font-ui);
+    font-size: 0.82rem;
+    color: var(--nordic-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+// ─── Пагинация ────────────────────────────────────────────────────────────
+
+.nordic-shell .pagination {
+    gap: 4px;
+}
+
+.nordic-shell .page-link {
+    border-radius: var(--nordic-radius-md) !important;
+    color: var(--nordic-ink-soft);
+    border-color: var(--nordic-line);
+    font-family: var(--nordic-font-ui);
+    font-weight: 600;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+        background: var(--nordic-accent-soft);
+        color: var(--nordic-accent-strong);
+        border-color: transparent;
+    }
+}
+
+.nordic-shell .page-item.active .page-link {
+    background: var(--nordic-accent);
+    border-color: var(--nordic-accent);
+    color: #fff;
+}
+
+// ─── Теги / категории ─────────────────────────────────────────────────────
+
+.nordic-shell .content-item-tags a,
+.nordic-shell .item-tags a {
+    display: inline-block;
+    padding: 0.2em 0.65em;
+    border-radius: var(--nordic-radius-md);
+    background: var(--nordic-accent-soft);
+    color: var(--nordic-accent-strong);
+    font-family: var(--nordic-font-ui);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    transition: background 0.15s;
+
+    &:hover { background: var(--nordic-accent); color: #fff; }
+}
+
+// ─── Боковая колонка ──────────────────────────────────────────────────────
+
+.nordic-shell__content-sidebar--right,
+.nordic-shell__content-sidebar--left {
+    font-size: 0.91rem;
+}
+
+// Заголовок виджета в сайдбаре
+.nordic-shell__content-sidebar .widget-header,
+.nordic-shell__content-sidebar .widget h3,
+.nordic-shell__content-sidebar .sidebox-header {
+    font-family: var(--nordic-font-ui);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--nordic-muted);
+    border-bottom: 1px solid var(--nordic-line);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}

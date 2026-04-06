@@ -57,16 +57,16 @@ $this->addToolButton([
 <div class="card mb-4">
 	<div class="card-body">
 		<h3 class="h5 mb-3">Глобальный стиль</h3>
-		<p class="text-muted mb-0">Этот экран больше не является главным маршрутом конструктора. Он нужен для редких site-wide defaults: стартовая палитра, типографика, контейнеры, кнопки и карточки по умолчанию. Основная визуальная работа со страницей и локальным стилем должна происходить прямо в canvas.</p>
+		<p class="text-muted mb-0">Этот экран больше не является главным маршрутом конструктора. Здесь выбирается шаблон сайта и редкие общие настройки: стартовая палитра, типографика, контейнеры, кнопки и карточки по умолчанию. Основная визуальная работа со страницей и локальным стилем должна происходить прямо на холсте.</p>
 	</div>
 </div>
 
 <div class="row lb-design-layout">
 	<div class="col-xl-5 mb-4">
 		<div class="lb-design-preview" style="<?php html($preview_style); ?>">
-			<div class="lb-design-kicker">Global Defaults</div>
-			<h2 class="lb-design-title">Редкие глобальные настройки стиля</h2>
-			<p class="lb-design-lead">Превью ниже показывает стартовый визуальный язык сайта. После сохранения эти значения становятся базой для shell, runtime и начального состояния canvas, но не заменяют живой визуальный inspector внутри редактора страницы.</p>
+			<div class="lb-design-kicker">Шаблон и база стиля</div>
+			<h2 class="lb-design-title">Шаблон сайта и его базовый визуальный язык</h2>
+			<p class="lb-design-lead">Превью ниже показывает, какой характер получит сайт целиком. После сохранения шаблон и эти значения становятся базой для shell, runtime и начального состояния холста, но не заменяют живой инспектор внутри редактора страницы.</p>
 
 			<div class="lb-design-summary">
 				<?php foreach ($screen['summary'] as $item) { ?>
@@ -79,9 +79,9 @@ $this->addToolButton([
 
 			<div class="lb-design-stage">
 				<section class="lb-design-hero">
-					<div class="lb-design-kicker">Header и Hero</div>
-					<h3>Сайт сразу получает единый тон shell и первого экрана</h3>
-					<p class="mb-0">Этот экран нужен для того, чтобы менять визуальный язык сайта один раз, а не повторять те же выборы на каждой странице по отдельности.</p>
+					<div class="lb-design-kicker">Header, Shell и Hero</div>
+					<h3>Сайт сразу получает выбранный шаблон и общий тон первого экрана</h3>
+					<p class="mb-0">Этот экран нужен для того, чтобы один раз выбрать шаблон сайта и стартовый визуальный язык, а не повторять те же решения на каждой странице по отдельности.</p>
 					<div class="lb-design-actions">
 						<span class="lb-design-button lb-design-button--primary">Основная кнопка</span>
 						<span class="lb-design-button lb-design-button--secondary">Вторичное действие</span>
@@ -101,13 +101,13 @@ $this->addToolButton([
 					</article>
 				</div>
 
-				<div class="lb-design-note">После сохранения эти значения становятся глобальными defaults для shell, preview и стартового состояния canvas. Повседневный page и section styling должен происходить в live inspector внутри Page Builder.</div>
+				<div class="lb-design-note">После сохранения шаблон сайта и эти значения становятся общими значениями по умолчанию для shell, preview и стартового состояния холста. Повседневная работа со страницей и секциями должна происходить в инспекторе рядом с холстом.</div>
 			</div>
 		</div>
 	</div>
 	<div class="col-xl-7 mb-4">
 		<div class="card h-100">
-			<div class="card-header">Редкие глобальные defaults</div>
+			<div class="card-header">Шаблон сайта и редкие общие настройки</div>
 			<div class="card-body">
 				<?php $this->renderForm($form, $theme, [
 					'action' => '',

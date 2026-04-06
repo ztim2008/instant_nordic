@@ -8,6 +8,14 @@ class actionLandingbuilderCreatePage extends cmsAction {
             return cmsCore::error404();
         }
 
+        $csrf_token = (string) $this->request->get('csrf_token', '');
+        if (!cmsForm::validateCSRFToken($csrf_token)) {
+            return $this->cms_template->renderJSON([
+                'error'   => true,
+                'message' => 'Некорректный CSRF token.'
+            ]);
+        }
+
         $page = $this->model->createPage([
             'key'      => $this->request->get('key', ''),
             'title'    => $this->request->get('title', ''),
@@ -32,7 +40,7 @@ class actionLandingbuilderCreatePage extends cmsAction {
                 'status'     => $page['status'],
                 'mode'       => $page['mode'],
                 'updated_at' => $page['updated_at'],
-                'canvas_url' => href_to($this->controller->root_url, 'canvas', [$page['key']])
+                'canvas_url' => href_to($this->controller->root_url, 'canvas', $page['key'])
             ]
         ]);
     }

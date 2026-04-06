@@ -7,51 +7,44 @@ class backendNordicbuilder extends cmsBackend {
     public $useDefaultOptionsAction = true;
 
     public function actionIndex() {
-        $this->redirectToAction('workspace');
+        $this->redirectToAction('pages');
     }
 
     public function getBackendMenu() {
         return [
             [
-                'title' => 'Workspace',
-                'url'   => href_to($this->root_url, 'workspace'),
+                'title' => 'Мой сайт',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'canvas']),
                 'options' => [
-                    'icon' => 'window-maximize'
+                    'icon' => 'home'
                 ]
             ],
             [
-                'title' => 'Контракты',
-                'url'   => href_to($this->root_url, 'contracts'),
+                'title' => 'Все страницы',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'pages']),
                 'options' => [
-                    'icon' => 'code'
+                    'icon' => 'file-alt'
                 ]
             ],
             [
-                'title' => 'Глобальные стили',
-                'url'   => href_to($this->root_url, 'defaults'),
+                'title' => 'Внешний вид',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'defaults']),
                 'options' => [
                     'icon' => 'paint-brush'
                 ]
             ],
             [
-                'title' => 'Компоненты',
-                'url'   => href_to($this->root_url, 'components'),
+                'title' => 'Каркас сайта',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'shell']),
                 'options' => [
-                    'icon' => 'th-large'
+                    'icon' => 'columns'
                 ]
             ],
             [
-                'title' => 'Адаптеры',
-                'url'   => href_to($this->root_url, 'adapters'),
+                'title' => 'Правила применения',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'bindings']),
                 'options' => [
-                    'icon' => 'plug'
-                ]
-            ],
-            [
-                'title' => 'Опции',
-                'url'   => href_to($this->root_url, 'options'),
-                'options' => [
-                    'icon' => 'cog'
+                    'icon'  => 'random'
                 ]
             ]
         ];

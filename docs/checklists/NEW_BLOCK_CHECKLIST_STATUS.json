@@ -1,15 +1,15 @@
 {
-  "updated_at": null,
-  "current_block": null,
+  "updated_at": "2026-04-06",
+  "current_block": "core.hero",
   "status": {
     "spec_reviewed": false,
     "data_model_checked": false,
-    "json_contract_checked": false,
+    "json_contract_checked": true,
     "adapter_checked": false,
     "docs_updated": false,
     "tests_or_manual_checks_done": false,
     "git_snapshot_created": false,
     "deployed_to_prod": false
   },
-  "notes": ""
+  "notes": "Сделан первый реальный блок для проверки end-to-end: core.hero (градиентный фон + кнопка + опциональная картинка). Блок добавлен в UI-каталог, в manifest registry, в runtime renderer и в Nordic theme.css; пресет hero_simple вставляет core.hero. Осталось: ручная проверка на канвасе/в превью, решение по docs/spec и адаптерам."
 }

@@ -7,7 +7,7 @@
     </div>
 
     <?php if (!$contracts) { ?>
-        <div class="alert alert-warning mb-0">Registry пуст. Контракты еще не добавлены.</div>
+        <div class="alert alert-warning mb-0">Реестр пуст. Контракты еще не добавлены.</div>
     <?php return; } ?>
 
     <div class="table-responsive">
@@ -15,10 +15,10 @@
             <thead>
                 <tr>
                     <th>Контракт</th>
-                    <th>Kind</th>
-                    <th>Bridge</th>
+                            <th>Тип</th>
+                            <th>Источник bridge</th>
                     <th>Хранилище</th>
-                    <th>Required</th>
+                            <th>Обязательные поля</th>
                     <th>Статус</th>
                 </tr>
             </thead>
@@ -45,7 +45,7 @@
                         </td>
                         <td>
                             <div><?php echo html($contract['contract_kind']); ?></div>
-                            <div class="small text-muted">schema <?php echo html($contract['schema_version']); ?></div>
+                            <div class="small text-muted">схема <?php echo html($contract['schema_version']); ?></div>
                         </td>
                         <td><?php echo html($contract['bridge_kind'] ?: '—'); ?></td>
                         <td><?php echo html($contract['storage_target'] ?: '—'); ?></td>
@@ -58,9 +58,9 @@
                         </td>
                         <td>
                             <?php if ($contract['is_valid']) { ?>
-                                <span class="badge badge-success">valid</span>
+                                <span class="badge badge-success">корректен</span>
                             <?php } else { ?>
-                                <span class="badge badge-danger">invalid</span>
+                                <span class="badge badge-danger">ошибка</span>
                             <?php } ?>
                         </td>
                     </tr>

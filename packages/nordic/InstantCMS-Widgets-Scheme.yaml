@@ -1,0 +1,656 @@
+---
+# Nordic Template — InstantCMS Widget Layout Scheme
+# Версия: 1.0 (2026-04-05)
+# Импортировать через: Админ → Настройки → Макет → Импорт схемы
+# Цвета: panel=#11151a (тёмный), accent=#f25c1d (оранжевый), sky=#f5efe6 (бежевый)
+
+layout:
+  rows:
+    1:
+      id: 1
+      parent_id: null
+      title: nordic-main-top
+      tag: div
+      template: nordic
+      ordering: 1
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"align-items-center","horizontal_align":"justify-content-around","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-main-top pt-2 pt-md-0 pb-2 pb-md-0","parrent_tag_bgcolor":"rgba(17, 21, 26, 1)","parrent_tag_bgcolor_mobile":"rgba(17, 21, 26, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"","parrent_tag_textscolor":"rgba(255,247,239,0.88)","parrent_tag_linkscolor":"rgba(255,247,239,0.7)","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    2:
+      id: 2
+      parent_id: null
+      title: nordic-header
+      tag: header
+      template: nordic
+      ordering: 2
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"align-items-center","horizontal_align":"justify-content-around","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"d-none d-md-flex nordic-header nordic-bg-panel","parrent_tag_bgcolor":"rgba(17, 21, 26, 1)","parrent_tag_bgcolor_mobile":"rgba(17, 21, 26, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"","parrent_tag_textscolor":"rgba(255,247,239,0.88)","parrent_tag_linkscolor":"rgba(255,247,239,0.7)","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    3:
+      id: 3
+      parent_id: null
+      title: nordic-main-nav
+      tag: div
+      template: nordic
+      ordering: 3
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"align-items-center","horizontal_align":"justify-content-around","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-main-nav sticky-top","parrent_tag_bgcolor":"rgba(242, 92, 29, 1)","parrent_tag_bgcolor_mobile":"rgba(242, 92, 29, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"","parrent_tag_textscolor":"#ffffff","parrent_tag_linkscolor":"#ffffff","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    4:
+      id: 4
+      parent_id: null
+      title: nordic-hero
+      tag: div
+      template: nordic
+      ordering: 4
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-hero pt-4 pb-3 pb-md-5 nordic-bg-panel","parrent_tag_bgcolor":"rgba(17, 21, 26, 1)","parrent_tag_bgcolor_mobile":"rgba(17, 21, 26, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"rgba(17,21,26,0.55)","parrent_tag_textscolor":"#fff8f1","parrent_tag_linkscolor":"rgba(242,92,29,1)","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    5:
+      id: 5
+      parent_id: null
+      title: Перед контентом
+      tag: div
+      template: nordic
+      ordering: 5
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"","parrent_tag_class":""}'
+    6:
+      id: 6
+      parent_id: null
+      title: Контент
+      tag: article
+      template: nordic
+      ordering: 6
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-main-content pb-5 pt-3"}'
+    7:
+      id: 7
+      parent_id: null
+      title: 4 колонки
+      tag: div
+      template: nordic
+      ordering: 7
+      nested_position: null
+      class: pt-3 pb-3 pt-md-5 pb-md-5
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"pb-3","parrent_tag":"","parrent_tag_class":""}'
+    8:
+      id: 8
+      parent_id: null
+      title: 2 колонки
+      tag: div
+      template: nordic
+      ordering: 8
+      nested_position: null
+      class: pt-0 pt-md-3
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-bg-sky pt-3 pt-md-5 pb-3 pb-md-5"}'
+    9:
+      id: 9
+      parent_id: null
+      title: 1 Колонка
+      tag: div
+      template: nordic
+      ordering: 9
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"pt-3 pb-3 pt-md-5 pb-md-5"}'
+    10:
+      id: 10
+      parent_id: null
+      title: 1 колонка тёмная
+      tag: div
+      template: nordic
+      ordering: 10
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-bg-panel pt-3 pt-md-5"}'
+    11:
+      id: 11
+      parent_id: null
+      title: Последние работы
+      tag: div
+      template: nordic
+      ordering: 11
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"pt-3 pb-3 pt-md-5 pb-md-5 nordic-bg-soft section-works","parrent_tag_bgcolor":"rgba(245, 239, 230, 1)","parrent_tag_bgcolor_mobile":"rgba(245, 239, 230, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"","parrent_tag_textscolor":"","parrent_tag_linkscolor":"","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    12:
+      id: 12
+      parent_id: null
+      title: Секция с фоном
+      tag: div
+      template: nordic
+      ordering: 12
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-bg-panel pt-3 pb-3 pt-md-5 pb-md-5 section-videos"}'
+    13:
+      id: 13
+      parent_id: null
+      title: 3 колонки
+      tag: div
+      template: nordic
+      ordering: 13
+      nested_position: null
+      class: pt-6
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"pt-5 pb-6 nordic-bg-sky"}'
+    14:
+      id: 14
+      parent_id: null
+      title: 1 колонка навигации
+      tag: div
+      template: nordic
+      ordering: 14
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"nav","parrent_tag_class":"pt-3 pb-3 pt-md-5 pb-md-5"}'
+    15:
+      id: 15
+      parent_id: null
+      title: Преимущества
+      tag: div
+      template: nordic
+      ordering: 15
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-bg-sky pb-6 pt-5"}'
+    16:
+      id: 16
+      parent_id: null
+      title: Цены и услуги
+      tag: div
+      template: nordic
+      ordering: 16
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-bg-soft section-prices"}'
+    17:
+      id: 17
+      parent_id: null
+      title: Наши партнёры
+      tag: div
+      template: nordic
+      ordering: 17
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"align-items-center","horizontal_align":"justify-content-center","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"pb-5 pt-4"}'
+    18:
+      id: 18
+      parent_id: null
+      title: nordic-footer
+      tag: div
+      template: nordic
+      ordering: 18
+      nested_position: null
+      class: null
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"footer","parrent_tag_class":"nordic-footer nordic-bg-panel text-on-dark links-on-dark pt-5 pt-md-7 pb-4 pb-md-6","parrent_tag_bgcolor":"rgba(17, 21, 26, 1)","parrent_tag_bgcolor_mobile":"rgba(17, 21, 26, 1)","parrent_tag_bg":null,"parrent_tag_bg_fixed":null,"parrent_tag_bgoverlay":"","parrent_tag_textscolor":"rgba(255,247,239,0.84)","parrent_tag_linkscolor":"rgba(255,247,239,0.7)","parrent_tag_borders_color":"","parrent_tag_border_top":0,"parrent_tag_border_bottom":0,"parrent_title":"","parrent_teaser":"","parrent_title_class":"","parrent_teaser_class":"","parrent_title_valign":"flex-start","parrent_title_align":"left"}'
+    19:
+      id: 19
+      parent_id: null
+      title: nordic-footer-links
+      tag: div
+      template: nordic
+      ordering: 19
+      nested_position: null
+      class: pt-3 pt-md-6 pb-5 pb-md-6
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-footer-top nordic-bg-panel links-on-dark text-on-dark nordic-border-top-on-dark"}'
+    20:
+      id: 20
+      parent_id: null
+      title: nordic-footer-bottom
+      tag: div
+      template: nordic
+      ordering: 20
+      nested_position: null
+      class: mt-3 mt-md-0
+      options: '{"no_gutters":null,"vertical_align":"","horizontal_align":"justify-content-around","container":"container","container_tag":"div","container_tag_class":"","parrent_tag":"div","parrent_tag_class":"nordic-footer-bottom links-on-dark text-on-dark nordic-border-top-on-dark pt-4 pb-4 bg-dark"}'
+
+  cols:
+    # Row 1: nordic-main-top — 2 колонки (лого-текст слева, контакты справа)
+    1:
+      id: 1
+      row_id: 1
+      title: 1
+      name: nordic_top_left
+      type: typical
+      ordering: 1
+      tag: div
+      class: >
+        d-flex justify-content-center
+        justify-content-md-start
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    2:
+      id: 2
+      row_id: 1
+      title: 2
+      name: nordic_top_right
+      type: typical
+      ordering: 2
+      tag: div
+      class: >
+        d-flex justify-content-center
+        justify-content-md-end
+        nordic-header-contacts append-to-main-nav
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 2: nordic-header — логотип + поиск/контакты
+    3:
+      id: 3
+      row_id: 2
+      title: 1
+      name: nordic_header_logo
+      type: custom
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: '<div class="col d-flex align-items-center">{position}</div>'
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    4:
+      id: 4
+      row_id: 2
+      title: 2
+      name: nordic_header_right
+      type: custom
+      ordering: 2
+      tag: div
+      class: null
+      wrapper: '<div class="col col-md-4 d-flex align-items-center justify-content-end">{position}</div>'
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 3: nordic-main-nav — навигационная панель
+    5:
+      id: 5
+      row_id: 3
+      title: 1
+      name: nordic_nav
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 4: nordic-hero — hero секция с фоном
+    6:
+      id: 6
+      row_id: 4
+      title: 1
+      name: nordic_hero
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 5: перед контентом
+    7:
+      id: 7
+      row_id: 5
+      title: 1
+      name: nordic_before_content
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 6: Контент — основная область + сайдбар
+    8:
+      id: 8
+      row_id: 6
+      title: 1
+      name: nordic_sidebar
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-3","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    9:
+      id: 9
+      row_id: 6
+      title: 2
+      name: nordic_content
+      type: typical
+      ordering: 2
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    10:
+      id: 10
+      row_id: 6
+      title: aside
+      name: nordic_aside
+      type: typical
+      ordering: 3
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-3","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 7: 4 колонки — карточки услуг / статистика
+    11:
+      id: 11
+      row_id: 7
+      title: 1
+      name: nordic_4col_1
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-6","lg_col_class":"col-lg-6","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    12:
+      id: 12
+      row_id: 7
+      title: 2
+      name: nordic_4col_2
+      type: typical
+      ordering: 2
+      tag: div
+      class: mt-3 mt-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-6","lg_col_class":"col-lg-6","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    13:
+      id: 13
+      row_id: 7
+      title: 3
+      name: nordic_4col_3
+      type: typical
+      ordering: 3
+      tag: div
+      class: mt-3 mt-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"col-md","lg_col_class":"col-lg","xl_col_class":"col-xl","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    14:
+      id: 14
+      row_id: 7
+      title: 4
+      name: nordic_4col_4
+      type: typical
+      ordering: 4
+      tag: div
+      class: mt-4 mt-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-6","lg_col_class":"col-lg-6","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 8: 2 колонки
+    15:
+      id: 15
+      row_id: 8
+      title: 1
+      name: nordic_2col_1
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"col-md","lg_col_class":"col-lg","xl_col_class":"col-xl","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    16:
+      id: 16
+      row_id: 8
+      title: 2
+      name: nordic_2col_2
+      type: typical
+      ordering: 2
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-12","lg_col_class":"col-lg-3","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 9: 1 колонка
+    17:
+      id: 17
+      row_id: 9
+      title: 1
+      name: nordic_1col
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 10: тёмная 1 колонка
+    18:
+      id: 18
+      row_id: 10
+      title: 1
+      name: nordic_dark_1col
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 11: Последние работы
+    19:
+      id: 19
+      row_id: 11
+      title: 1
+      name: nordic_works
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 12: Секция с фоном
+    20:
+      id: 20
+      row_id: 12
+      title: 1
+      name: nordic_dark_section
+      type: typical
+      ordering: 1
+      tag: div
+      class: bg-white pt-3 pb-3 pt-md-5 pb-md-5
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 13: 3 колонки
+    21:
+      id: 21
+      row_id: 13
+      title: Заголовок
+      name: nordic_3col_title
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"col-12","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    22:
+      id: 22
+      row_id: 13
+      title: 1
+      name: nordic_3col_1
+      type: typical
+      ordering: 2
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-5","lg_col_class":"col-lg-4","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    23:
+      id: 23
+      row_id: 13
+      title: 2
+      name: nordic_3col_2
+      type: typical
+      ordering: 3
+      tag: div
+      class: pt-3 pb-3 pt-md-0 pb-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"col-md","lg_col_class":"col-lg","xl_col_class":"col-xl","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    24:
+      id: 24
+      row_id: 13
+      title: 3
+      name: nordic_3col_3
+      type: typical
+      ordering: 4
+      tag: div
+      class: pt-5 pt-xl-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-12","lg_col_class":"col-lg-12","xl_col_class":"col-xl-3","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 14: 1 колонка навигации
+    25:
+      id: 25
+      row_id: 14
+      title: 1
+      name: nordic_nav_section
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 15: Преимущества
+    26:
+      id: 26
+      row_id: 15
+      title: 1
+      name: nordic_benefits
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 16: Цены — 2 колонки
+    27:
+      id: 27
+      row_id: 16
+      title: 1
+      name: nordic_prices_1
+      type: typical
+      ordering: 1
+      tag: div
+      class: bg-white pt-3 pb-3 pt-md-5 pb-md-5
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    28:
+      id: 28
+      row_id: 16
+      title: 2
+      name: nordic_prices_2
+      type: typical
+      ordering: 2
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 17: Партнёры
+    29:
+      id: 29
+      row_id: 17
+      title: 1
+      name: nordic_partners
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 18: Footer — 3 колонки
+    30:
+      id: 30
+      row_id: 18
+      title: 1
+      name: nordic_footer_1
+      type: typical
+      ordering: 1
+      tag: div
+      class: pb-3 pb-xl-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-12","lg_col_class":"col-lg","xl_col_class":"col-xl","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    31:
+      id: 31
+      row_id: 18
+      title: 2
+      name: nordic_footer_2
+      type: typical
+      ordering: 2
+      tag: div
+      class: pb-3 pb-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":"","lg_col_class":"","xl_col_class":"","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    32:
+      id: 32
+      row_id: 18
+      title: 3
+      name: nordic_footer_3
+      type: typical
+      ordering: 3
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 19: Footer links — 2 колонки
+    33:
+      id: 33
+      row_id: 19
+      title: 1
+      name: nordic_footer_links
+      type: typical
+      ordering: 1
+      tag: div
+      class: >
+        row row-cols-2 row-cols-xl-4 mt-3
+        mt-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-12","lg_col_class":"col-lg-8","xl_col_class":"col-xl-8","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    34:
+      id: 34
+      row_id: 19
+      title: 2
+      name: nordic_footer_social
+      type: typical
+      ordering: 2
+      tag: div
+      class: mt-4 mt-md-0
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-12","lg_col_class":"col-lg-4","xl_col_class":"col-xl-4","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+    # Row 20: Footer bottom — копирайт + ссылки
+    35:
+      id: 35
+      row_id: 20
+      title: 1
+      name: nordic_footer_copy
+      type: typical
+      ordering: 1
+      tag: div
+      class: null
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm","md_col_class":null,"lg_col_class":null,"xl_col_class":null,"col_class":null,"default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+    36:
+      id: 36
+      row_id: 20
+      title: 2
+      name: nordic_footer_bottom_nav
+      type: typical
+      ordering: 2
+      tag: div
+      class: d-flex justify-content-start pt-4
+      wrapper: null
+      options: '{"cut_before":null,"default_col_class":"col-sm-12","md_col_class":"col-md-5","lg_col_class":"col-lg-5","xl_col_class":"col-xl-5","col_class":"","default_order":0,"sm_order":0,"md_order":0,"lg_order":0,"xl_order":0}'
+
+widgets:
+  widgets_bind_pages: []
+  widgets_bind: []

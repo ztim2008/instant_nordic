@@ -83,30 +83,25 @@ class actionAdminWidgets extends cmsAction {
 
         $template->setContext($this);
 
-        $scheme_html = $template->getSchemeHTML();
-        $append_dynamic_scheme = $this->shouldAppendDynamicScheme($template, $scheme_html);
-
-        if ($append_dynamic_scheme) {
-            $dynamic_scheme_html = $this->getDynamicSchemeHTML($template);
-
-            if ($dynamic_scheme_html) {
-                $scheme_html .= '<div class="alert alert-light border mt-4 mb-3">'
-                    . '<strong>Редактируемый layout Nordic</strong><div class="small text-muted mt-1">'
-                    . 'Схема выше служит визуальной картой shell slots. Живые drag-and-drop позиции и управление строками остаются в редакторе ниже.'
-                    . '</div></div>'
-                    . $dynamic_scheme_html;
-
-                $this->is_dynamic_scheme = true;
-            }
-        }
-
-        if (!$scheme_html) {
+        // Если шаблон использует динамический layout (is_dynamic_layout в манифесте),
+        // показываем ТОЛЬКО редактируемую схему из БД — без статической карты.
+        $manifest = $template->getManifest();
+        if (!empty($manifest['properties']['is_dynamic_layout'])) {
             $scheme_html = $this->getDynamicSchemeHTML($template);
             if (!$scheme_html) {
                 return false;
             }
-
             $this->is_dynamic_scheme = true;
+        } else {
+            $scheme_html = $template->getSchemeHTML();
+
+            if (!$scheme_html) {
+                $scheme_html = $this->getDynamicSchemeHTML($template);
+                if (!$scheme_html) {
+                    return false;
+                }
+                $this->is_dynamic_scheme = true;
+            }
         }
 
         preg_match_all('/{(.+)}/ui', $scheme_html, $matches);
@@ -139,17 +134,6 @@ class actionAdminWidgets extends cmsAction {
         }
 
         return $scheme_html;
-    }
-
-    private function shouldAppendDynamicScheme(cmsTemplate $template, $scheme_html): bool {
-
-        if (!$scheme_html || $template->getName() !== 'nordic') {
-            return false;
-        }
-
-        $manifest = $template->getManifest();
-
-        return !empty($manifest['properties']['is_dynamic_layout']);
     }
 
     private function getDynamicSchemeHTML($template) {

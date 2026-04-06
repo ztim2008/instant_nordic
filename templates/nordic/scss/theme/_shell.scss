@@ -1,0 +1,193 @@
+.nordic-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+.nordic-shell__notice,
+.nordic-shell__slot-panel,
+.nordic-shell__content-frame {
+    width: min(var(--nordic-content-max), 100%);
+    margin: 0 auto;
+    border: 1px solid var(--nordic-line);
+    border-radius: var(--nordic-radius-xl);
+    box-shadow: var(--nordic-shadow);
+    backdrop-filter: blur(18px);
+}
+
+.nordic-shell__notice {
+    padding: 1rem 1.25rem;
+    background: rgba(242, 92, 29, 0.1);
+    color: var(--nordic-accent-strong);
+}
+
+.nordic-shell__slot-panel {
+    padding: 0.9rem 1.1rem;
+    background: var(--nordic-surface);
+}
+
+.nordic-shell__header .nordic-shell__slot-panel,
+.nordic-shell__footer .nordic-shell__slot-panel {
+    padding: 0;
+    overflow: hidden;
+}
+
+.nordic-shell__header-primary .nordic-shell__slot,
+.nordic-shell__footer-primary .nordic-shell__slot,
+.nordic-shell__header-secondary .nordic-shell__slot,
+.nordic-shell__footer-secondary .nordic-shell__slot,
+.nordic-shell__site-top .nordic-shell__slot,
+.nordic-shell__hero .nordic-shell__slot,
+.nordic-shell__before-content .nordic-shell__slot,
+.nordic-shell__after-content .nordic-shell__slot {
+    padding: 1rem 1.25rem;
+}
+
+.nordic-shell__header-primary .nordic-shell__slot:not(:last-child),
+.nordic-shell__header-secondary .nordic-shell__slot:not(:last-child),
+.nordic-shell__footer-primary .nordic-shell__slot:not(:last-child),
+.nordic-shell__footer-secondary .nordic-shell__slot:not(:last-child),
+.nordic-shell__site-top .nordic-shell__slot:not(:last-child) {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nordic-shell__site-top .nordic-shell__slot-panel {
+    background: linear-gradient(180deg, rgba(17, 21, 26, 0.98), rgba(26, 32, 39, 0.96));
+    color: rgba(255, 247, 239, 0.88);
+    border-top: 4px solid var(--nordic-accent);
+}
+
+.nordic-shell__header-primary .nordic-shell__slot-panel {
+    background: linear-gradient(135deg, rgba(17, 21, 26, 0.98), rgba(33, 39, 48, 0.94));
+    color: #fff7ef;
+}
+
+.nordic-shell__header-secondary .nordic-shell__slot-panel {
+    background: linear-gradient(180deg, rgba(255, 250, 244, 0.92), rgba(251, 247, 242, 0.88));
+}
+
+.nordic-shell__hero .nordic-shell__slot-panel {
+    background:
+        linear-gradient(145deg, rgba(17, 21, 26, 0.98), rgba(36, 48, 59, 0.94)),
+        linear-gradient(180deg, rgba(242, 92, 29, 0.24), rgba(242, 92, 29, 0));
+    color: #fff8f1;
+    border-top: 5px solid var(--nordic-accent);
+}
+
+.nordic-shell__hero .nordic-shell__slot-panel h1,
+.nordic-shell__hero .nordic-shell__slot-panel h2,
+.nordic-shell__hero .nordic-shell__slot-panel h3,
+.nordic-shell__header-primary .nordic-shell__slot-panel h1,
+.nordic-shell__header-primary .nordic-shell__slot-panel h2,
+.nordic-shell__header-primary .nordic-shell__slot-panel h3 {
+    color: inherit;
+}
+
+.nordic-shell__main {
+    flex: 1 1 auto;
+}
+
+.nordic-shell__content-frame {
+    position: relative;
+    padding: 1.4rem;
+    background:
+        linear-gradient(180deg, var(--nordic-surface-strong), rgba(255, 250, 244, 0.88));
+}
+
+.nordic-shell__content-frame::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(120deg, rgba(242, 92, 29, 0.08), transparent 18%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 24%);
+}
+
+.nordic-shell__content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+}
+
+.nordic-shell__content-grid--with-left {
+    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+}
+
+.nordic-shell__content-grid--with-right {
+    grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
+    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(220px, 270px);
+}
+
+.nordic-shell__content-sidebar,
+.nordic-shell__content-body-slot,
+.nordic-shell__content-body-runtime {
+    min-width: 0;
+}
+
+.nordic-shell__content-sidebar,
+.nordic-shell__content-body-slot,
+.nordic-shell__content-body-widgets {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.nordic-shell__content-frame .container,
+.nordic-shell__content-frame .container-fluid,
+.nordic-shell__slot-panel .container,
+.nordic-shell__slot-panel .container-fluid {
+    max-width: 1260px;
+}
+
+.nordic-shell__footer-primary .nordic-shell__slot-panel,
+.nordic-shell__footer-secondary .nordic-shell__slot-panel {
+    background: linear-gradient(180deg, rgba(17, 21, 26, 0.98), rgba(12, 15, 18, 0.98));
+    color: rgba(255, 247, 239, 0.84);
+}
+
+.nordic-shell__footer-primary a,
+.nordic-shell__footer-secondary a,
+.nordic-shell__header-primary a,
+.nordic-shell__hero a,
+.nordic-shell__site-top a {
+    color: inherit;
+}
+
+@media (max-width: 991.98px) {
+    .nordic-shell {
+        padding: 0.75rem;
+    }
+
+    .nordic-shell__notice,
+    .nordic-shell__slot-panel,
+    .nordic-shell__content-frame {
+        border-radius: 22px;
+    }
+
+    .nordic-shell__header-primary .nordic-shell__slot,
+    .nordic-shell__footer-primary .nordic-shell__slot,
+    .nordic-shell__header-secondary .nordic-shell__slot,
+    .nordic-shell__footer-secondary .nordic-shell__slot,
+    .nordic-shell__site-top .nordic-shell__slot,
+    .nordic-shell__hero .nordic-shell__slot,
+    .nordic-shell__before-content .nordic-shell__slot,
+    .nordic-shell__after-content .nordic-shell__slot,
+    .nordic-shell__content-frame {
+        padding: 1rem;
+    }
+
+    .nordic-shell__content-grid,
+    .nordic-shell__content-grid--with-left,
+    .nordic-shell__content-grid--with-right,
+    .nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

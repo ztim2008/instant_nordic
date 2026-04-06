@@ -32,7 +32,8 @@ class formLandingbuilderOptions extends cmsForm {
                         ]
                     ]),
                     new fieldList('preview_template', [
-                        'title' => 'Базовый шаблон предпросмотра',
+                        'title' => 'Технический шаблон для системных виджетов',
+                        'hint' => 'Нужен только для штатных форм системных виджетов внутри конструктора. Пользовательский шаблон сайта выбирается отдельно на экране глобального стиля.',
                         'default' => 'nordic',
                         'items' => [
                             'nordic' => 'nordic',

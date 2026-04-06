@@ -13,7 +13,7 @@ class actionNordicbuilderContracts extends cmsAction {
 
         return $this->cms_template->render([
             'page_title'      => 'Контракты',
-            'page_note'       => 'File-based registry и storage stub для foundation layer `nordicbuilder`.',
+            'page_note'       => 'Реестр контрактов и карта хранилища для базового слоя `nordicbuilder`.',
             'contracts'       => $contracts,
             'contracts_count' => count($contracts)
         ]);

@@ -20,6 +20,7 @@
   "notes": [
     "page tree source of truth",
     "used by workspace and runtime",
-    "keeps page-level tokens and zones"
+    "keeps page-level tokens and zones",
+    "block nodes normalize and validate props against block manifests"
   ]
 }

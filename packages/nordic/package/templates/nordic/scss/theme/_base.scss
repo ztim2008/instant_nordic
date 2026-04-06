@@ -1,0 +1,53 @@
+html.nordic-html,
+body.nordic-template {
+    min-height: 100%;
+    background:
+        radial-gradient(circle at top left, rgba(242, 92, 29, 0.14), transparent 24%),
+        radial-gradient(circle at top right, rgba(17, 21, 26, 0.08), transparent 22%),
+        linear-gradient(180deg, #fcf7f1 0%, var(--nordic-bg) 54%, #ece3d7 100%);
+    color: var(--nordic-ink);
+}
+
+body.nordic-template {
+    font-family: var(--nordic-font-body);
+    font-feature-settings: "kern" 1;
+    line-height: 1.7;
+}
+
+.nordic-template h1,
+.nordic-template h2,
+.nordic-template h3,
+.nordic-template h4,
+.nordic-template h5,
+.nordic-template h6,
+.nordic-template .btn,
+.nordic-template .badge,
+.nordic-template .navbar,
+.nordic-template .nav,
+.nordic-template .dropdown-menu,
+.nordic-template .page-link {
+    font-family: var(--nordic-font-ui);
+    letter-spacing: 0.01em;
+}
+
+.nordic-template ::selection {
+    background: rgba(242, 92, 29, 0.2);
+    color: var(--nordic-ink);
+}
+
+.nordic-skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 2000;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    background: var(--nordic-panel);
+    color: #fff;
+    transition: top 0.2s ease;
+}
+
+.nordic-skip-link:focus {
+    top: 1rem;
+    color: #fff;
+}

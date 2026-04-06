@@ -40,26 +40,190 @@
 	- bridge-слой `landingbuilder` теперь умеет читать `page-document` из `nordicbuilder` и сохранять canvas-изменения обратно в новый contract storage, если страница уже переведена на новый документ;
 	- section/block semantics для `page-document` усилены: валидируются zone sections, section uid/title/columns, column uid/nodes и базовые требования к block/system widget nodes.
 	- добавлен массовый migration route `landingbuilder -> nordicbuilder`: import теперь читает legacy source напрямую, не через bridge-resolved page, а workspace показывает pending/imported статус, bulk import all и подробный migration report;
+	- backend `nordicbuilder` переведен на русский интерфейс: заголовок компонента, меню, workspace и contract screens больше не показывают англоязычные подписи пользователю;
+	- после live install удалена лишняя дубль-запись `nordicbuilder` из таблицы `controllers`, чтобы компонент показывался в админке один раз;
+	- текущий bridge-canvas `landingbuilder` получил первый semantic-aware слой для блоков: backend теперь отдает единый block catalog, inspector умеет переключать semantic-пресет и редактировать preset-поля, а runtime-preview рендерит типизированные hero/cards/features/filter/stats состояния вместо одной общей заглушки;
+	- `nordicbuilder` подключен к file-based `block_manifests.php`: `page-document` теперь нормализует и валидирует block nodes по manifest-registry, а legacy import из `landingbuilder` прогоняет policy-слой для alias resolution, fallback custom blocks, promotion заметок в block props и section inference;
+	- live smoke test подтвержден на реальном bootstrap для `homepage`, `ads-category` и `profile-cover`: importLandingbuilderPage проходит с новой manifest-aware migration policy и сохраняет page-document без contract errors;
+	- product course дополнительно зафиксирован: contracts/storage/json/adapters признаны внутренним dev/system tooling, а не главным user-facing builder UI;
+	- в active plan добавлен обязательный этап `Vertical Slice (MVP loop)` между foundation и взрослым editor core, чтобы проверять contracts через реальный пользовательский сценарий, а не только через backend tooling;
+	- `nordicbuilder` переведен на visual-first entry: default route и основное меню теперь ведут в живой canvas, а прежний workspace сохранен как служебная панель dev/system слоя;
+	- добавлен safe starter `vertical-slice-home`: если документа еще нет, backend автоматически создает 1 страницу с 2 секциями и 5 базовыми semantic-блоками, после чего открывает ее в bridge-canvas `landingbuilder`, который уже сохраняет изменения в `nordicbuilder page-document`;
 	- добавлен build-script `scripts/build-nordicbuilder-package.sh`, чтобы `packages/nordicbuilder/` собирался в versioned installable zip для коммерческой поставки пользователям.
+	- в `landingbuilder` добавлен product-level слой `template preset`, чтобы выбор шаблона сайта и страницы работал как управляемый сценарий поверх существующего shell/runtime, а не как технический preview-template toggle;
+	- экран `Дизайн сайта` теперь показывает выбор шаблона сайта, а canvas page inspector получил page-level выбор шаблона страницы с мгновенным пересчетом effective shell прямо в браузере без сохранения;
+	- bridge-save между `landingbuilder` и `nordicbuilder` теперь сохраняет `layout.template`, чтобы выбранный шаблон не терялся при переходе между legacy page и contract-first page-document.
+	- после smoke-проверки доработан сам canvas: клиентский resolver template preset теперь повторяет server-side route-логику по page key / adapter / page mode, а смена шаблона страницы сразу синхронизирует `layout.template` и effective shell без скрытого рассинхрона;
+	- параллельно дочищены наиболее заметные UX-шероховатости в admin UI: из canvas/design screen убраны оставшиеся полуаңглоязычные формулировки про `defaults`, `visual inspector` и `site-wide`.
+	- расширен каталог управляемых template preset-ов: к базовым сценариям добавлены `nordic_editorial`, `nordic_catalog`, `nordic_warm_market` и `nordic_compact` на уровне live-модели, canvas fallback catalog и package mirror;
+	- устранен источник 404 в admin UX: переходы в canvas, глобальные стили и redirect из `nordicbuilder` переведены с frontend component route на явный admin edit route `/admin/controllers/edit/...`, чтобы builder не уводил пользователя в несуществующий публичный URL;
+	- smoke checklist для canvas обновлен под актуальный admin path, чтобы ручная проверка больше не опиралась на устаревший маршрут `/admin/landingbuilder/...`.
+	- user-facing admin flow дополнительно переведен на один компонент `nordicbuilder`: появились собственные actions `pages`, `create_page`, `canvas`, `defaults` и proxy-endpoints `widgets_catalog`, `widget_options`, `canvas_save`, `versions`, `version_restore`, поэтому пользователь больше не должен ходить по backend-URL старого `landingbuilder` компонента;
+	- `packages/nordicbuilder/` сделан self-contained для single-component доставки: в package payload добавлен внутренний bridge-слой `landingbuilder` и связанные admin/runtime templates, чтобы коммерческий zip не требовал второй отдельной установки builder-компонента.
+	- стартовый пользовательский вход переведен с пустого полотна на готовый starter product: `vertical-slice-home` и обычное создание новой страницы теперь используют один и тот же базовый лендинг-каркас с оффером, преимуществами и финальным CTA, который нужно редактировать под свой продукт, а не собирать с нуля.
+	- visual layer `templates/nordic` отвязан от прямого импорта `modern/css/theme.css`: вынесен собственный `foundation.css`, `theme.css` переведен на Nordic-only слой, а SCSS разбит на partials `tokens`, `base`, `shell`, `components`; те же изменения зеркально заведены в `packages/nordic/package/templates/nordic`.
+	- в канонических спеках закреплено продуктовое правило: Bootstrap 4 остается только внутренним legacy-foundation для совместимости, а современный видимый UI конструктора обязан идти из собственного Nordic design system.
+	- active plan дополнен цветным статусом по modern UI foundation: отдельно отмечено, что уже сделано, что находится в переходном состоянии и что еще не завершено.
+	- shared admin UI builder-а переведен на Nordic-styled visual слой: в `canvas` снят основной bootstrap-look у topbar, inspector controls, library cards и version cards, а экраны `pages`, `shell` и `shell variant` перестроены из bootstrap-таблиц в собственные product-style panels и cards.
+	- подготовлен отдельный manual smoke checklist для нового admin UI маршрута `nordicbuilder/pages -> canvas -> defaults` и bridge-screen `landingbuilder/shell`, чтобы финальный ручной проход проверял уже современный продуктовый слой, а не только старый canvas.
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
 	- [LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md](../LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md)
 	- [LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md](../LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md)
 	- [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](../LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
 	- [LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md](../LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md)
+	- [LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md](../LANDING-BUILDER-FOUNDATION-LAYER-SPEC-2026-04-05.md)
 	- [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](../LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
 	- [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
 	- [docs/WORKLOG.md](WORKLOG.md)
+	- [system/controllers/nordicbuilder/backend.php](../system/controllers/nordicbuilder/backend.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [system/controllers/nordicbuilder/backend/actions/pages.php](../system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [system/controllers/nordicbuilder/backend/actions/create_page.php](../system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [system/controllers/nordicbuilder/backend/actions/widgets_catalog.php](../system/controllers/nordicbuilder/backend/actions/widgets_catalog.php)
+	- [system/controllers/nordicbuilder/backend/actions/widget_options.php](../system/controllers/nordicbuilder/backend/actions/widget_options.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas_save.php](../system/controllers/nordicbuilder/backend/actions/canvas_save.php)
+	- [system/controllers/nordicbuilder/backend/actions/versions.php](../system/controllers/nordicbuilder/backend/actions/versions.php)
+	- [system/controllers/nordicbuilder/backend/actions/version_restore.php](../system/controllers/nordicbuilder/backend/actions/version_restore.php)
+	- [system/controllers/nordicbuilder/backend/actions/workspace.php](../system/controllers/nordicbuilder/backend/actions/workspace.php)
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/canvas.tpl.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/defaults.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/defaults.tpl.php)
+	- [templates/modern/controllers/nordicbuilder/backend/workspace.tpl.php](../templates/modern/controllers/nordicbuilder/backend/workspace.tpl.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/design.php](../system/controllers/landingbuilder/backend/actions/design.php)
+	- [system/controllers/landingbuilder/backend/forms/form_design.php](../system/controllers/landingbuilder/backend/forms/form_design.php)
+	- [system/controllers/landingbuilder/backend/forms/form_options.php](../system/controllers/landingbuilder/backend/forms/form_options.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php)
+	- [system/controllers/landingbuilder/backend/actions/canvas.php](../system/controllers/landingbuilder/backend/actions/canvas.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [docs/checklists/LANDINGBUILDER-CANVAS-ADMIN-SMOKE-TEST-2026-04-04.md](checklists/LANDINGBUILDER-CANVAS-ADMIN-SMOKE-TEST-2026-04-04.md)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/canvas.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/canvas.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/pages.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/pages.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/design.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/design.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/widgets_catalog.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/widgets_catalog.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/widget_options.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/widget_options.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas_save.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas_save.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/versions.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/versions.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/version_restore.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/version_restore.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/defaults.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/defaults.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_design.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_design.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_options.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/forms/form_options.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/shell_variant.tpl.php)
+	- [docs/checklists/NORDICBUILDER-ADMIN-UI-SMOKE-2026-04-05.md](checklists/NORDICBUILDER-ADMIN-UI-SMOKE-2026-04-05.md)
+	- [templates/nordic/css/foundation.css](../templates/nordic/css/foundation.css)
+	- [templates/nordic/css/theme.css](../templates/nordic/css/theme.css)
+	- [templates/nordic/scss/theme/theme.scss](../templates/nordic/scss/theme/theme.scss)
+	- [templates/nordic/scss/theme/_tokens.scss](../templates/nordic/scss/theme/_tokens.scss)
+	- [templates/nordic/scss/theme/_base.scss](../templates/nordic/scss/theme/_base.scss)
+	- [templates/nordic/scss/theme/_shell.scss](../templates/nordic/scss/theme/_shell.scss)
+	- [templates/nordic/scss/theme/_components.scss](../templates/nordic/scss/theme/_components.scss)
+	- [packages/nordic/package/templates/nordic/css/foundation.css](../packages/nordic/package/templates/nordic/css/foundation.css)
+	- [packages/nordic/package/templates/nordic/css/theme.css](../packages/nordic/package/templates/nordic/css/theme.css)
+	- [packages/nordic/package/templates/nordic/scss/theme/theme.scss](../packages/nordic/package/templates/nordic/scss/theme/theme.scss)
+	- [packages/nordic/package/templates/nordic/scss/theme/_tokens.scss](../packages/nordic/package/templates/nordic/scss/theme/_tokens.scss)
+	- [packages/nordic/package/templates/nordic/scss/theme/_base.scss](../packages/nordic/package/templates/nordic/scss/theme/_base.scss)
+	- [packages/nordic/package/templates/nordic/scss/theme/_shell.scss](../packages/nordic/package/templates/nordic/scss/theme/_shell.scss)
+	- [packages/nordic/package/templates/nordic/scss/theme/_components.scss](../packages/nordic/package/templates/nordic/scss/theme/_components.scss)
 - Что проверено:
 	- ключевые документы читаются в одном направлении и больше не спорят между собой о primary flow;
 	- отдельный экран глобальных стилей больше не описан как главный экран ежедневной работы;
 	- зафиксировано, что новый builder boundary должен проектироваться отдельно от текущего bridge-слоя;
-	- active plan больше не отрывается от взрослой архитектуры и не живет в старой промежуточной visual-first формуле.
+	- active plan больше не отрывается от взрослой архитектуры и не живет в старой промежуточной visual-first формуле;
+	- первый semantic-aware слой для блоков проходит через одну и ту же логику: block catalog в модели, semantic inspector на canvas и типизированный runtime preview.
+	- в документах явно отделен user product от dev/system layer, чтобы backend tooling не подменял собой builder для обычного пользователя.
+	- новый visual-first entry в `nordicbuilder` не дал новых syntax/diagnostics ошибок в backend/model/template файлах.
+	- `php -l` проходит на измененных файлах `landingbuilder`/`nordicbuilder`, а editor diagnostics не показывают новых ошибок в model/forms/canvas template.
+	- прямой HTTP smoke по admin-маршрутам (`/admin`, `landingbuilder/design`, `landingbuilder/canvas`, `nordicbuilder/canvas`) подтверждает, что live UI закрыт `403 Forbidden` без авторизованной admin-сессии, поэтому в этой сессии smoke был ограничен route-check + code-level UX review + syntax/diagnostics verification.
+	- после route-fix не осталось совпадений по старым builder path-pattern: поиск больше не находит генерацию `href_to('landingbuilder', 'canvas', ...)`, старый `design_url` через component root и примеры `/admin/landingbuilder/canvas` в затронутых документах;
+	- `php -l` дополнительно проходит на package mirror, поэтому live и installable package остаются синхронны и без syntax regression.
+	- `nordicbuilder` user-facing actions и proxy-endpoints проходят syntax/diagnostics checks, а canvas больше не зависит от backend AJAX URL старого компонента `landingbuilder`;
+	- single-component package policy подтверждена технически: build target остается один (`packages/nordicbuilder/`), а bridge-файлы `landingbuilder` включены в его payload для self-contained поставки.
+	- editor diagnostics не показывают новых ошибок в live/package `templates/nordic/css/theme.css`, `foundation.css`, `templates/nordic/scss/theme/theme.scss` и связанных файлах, а поиск по Nordic шаблону больше не находит прямого визуального импорта `modern/css/theme.css`.
+	- active plan, foundation spec и design system spec теперь одинаково фиксируют правило: Bootstrap не является продуктовой идентичностью конструктора и остается только внутренним техническим слоем.
+	- shared admin templates для `canvas`, `pages`, `shell` и `shell variant`, а также их package mirrors, проходят editor diagnostics без новых ошибок после перевода на Nordic-styled UI слой.
 - Какие риски остались:
 	- кодовая реализация foundation уже перевела bridge read/save на page-document для импортированных страниц и получила массовый migration route, но еще не покрывает полноценную schema-aware validation конкретных block props и не делает более умные policy-миграции для сложных legacy edge-cases;
-	- runtime и editor пока переведены только частично: bridge для уже импортированных страниц читает и пишет `nordicbuilder page-document`, но полноценный contract-aware runtime для всех block semantics еще не завершен.
+	- runtime и editor пока переведены только частично: теперь есть visual-first entry и starter vertical slice, но сам холст все еще физически работает через bridge-canvas `landingbuilder`, а не через собственный canvas route `nordicbuilder`.
+	- template preset уже расширен до первой пользовательской линейки (`nordic_classic`, `nordic_editorial`, `nordic_catalog`, `nordic_warm_market`, `nordic_compact`, `nm_landing`), но еще не проверен вручную через полный admin UX-проход в авторизованной сессии;
+	- у `templates/nordic/manifest.php` все еще сохраняется `inherit => ['modern']` как техническая база runtime-совместимости, поэтому визуальная независимость уже достигнута на уровне CSS-слоя, но полная инфраструктурная независимость шаблона от `modern` еще не завершена;
+	- builder UI по-прежнему местами опирается на старую bootstrap-semantic markup, поэтому современный Nordic visual language зафиксирован в доках, но еще не полностью вынесен в собственные first-class primitives на всех экранах;
+	- ручной smoke checklist уже подготовлен, но сам авторизованный admin-проход по новому UI еще не выполнен в этой сессии;
+	- builder admin URLs сейчас исправлены точечно в action-слое; без общей helper-обвязки остается риск, что новые ссылки позже снова кто-то соберет через frontend route helper;
+	- preview/runtime пока еще используют bridge-route `landingbuilder/view/...`, поэтому single-component delivery уже решен на уровне install/admin flow, но frontend runtime naming cleanup еще не завершен.
 - Следующий шаг:
-	- продолжить phase 1 реализацию: перевести runtime/editor глубже на contract-aware block semantics и добавить policy-слой для управляемой миграции сложных legacy layouts.
+	- пройти авторизованный admin smoke по `nordicbuilder/pages -> canvas -> defaults`, затем убрать оставшийся runtime naming tail `landingbuilder/view/...` и только после этого продолжить UX-полировку canvas под повседневный сценарий обычного пользователя.
+
+## 2026-04-06
+
+- Что планировалось:
+	- упростить создание «нулевого» макета страницы и сразу задавать область применения (главная/маски), как в inthemer.
+- Что сделано:
+	- добавлен AJAX endpoint `nordicbuilder/create_binding` для сохранения binding rule из мастера создания страницы;
+	- в `nordicbuilder/pages` прокинут `create_binding_url` в шаблон;
+	- в admincoreui-реестре страниц внедрён мастер создания страницы (модалка вместо `prompt()`) с подсказками `?` и полями масок (положительные/отрицательные);
+	- добавлена явная кнопка **Новая страница** внутри шапки экрана (на случай, если тулбар админки скрывает toolbutton).
+	- добавлены базовые источники контента для section-first canvas: блоки `core.text` (заголовок+текст) и `core.raw-html` (HTML), плюс пресеты секций для быстрого добавления.
+- Какие файлы затронуты:
+	- `system/controllers/nordicbuilder/backend/actions/create_binding.php`
+	- `system/controllers/nordicbuilder/backend/actions/pages.php`
+	- `templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php`
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`
+	- `system/controllers/landingbuilder/model.php`
+	- `system/controllers/nordicbuilder/data/block_manifests.php`
+	- `templates/default/controllers/landingbuilder/runtime_renderer.php`
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`
+	- `docs/worklogs/2026-04-06-nordicbuilder-pages-wizard.md`
+- Что проверено:
+	- `php -l` на новых/изменённых action’ах и шаблонах.
+	- базовая связность: новые source_key присутствуют в landingbuilder catalog и в nordicbuilder manifests; runtime renderer умеет отрисовать оба блока.
+- Какие риски остались:
+	- возможна задержка отображения изменений из-за OPCache/кэша браузера (лечится hard refresh / ожиданием).
+- Следующий шаг:
+	- пройти ручной smoke по `/admin/controllers/edit/nordicbuilder/pages`: видимость кнопки, открытие модалки, создание страницы + опционального binding.
+
+## 2026-04-06 (Full takeover: runtime в shell-слоты)
+
+- Что планировалось:
+	- сделать поведение «по‑взрослому»: если для страницы активен takeover от builder-а, то на фронтенде не должны просачиваться legacy-виджеты/контент, а секции builder-а должны попадать в реальные shell‑слоты (`hero/before/content/after`), без дублей и debug‑обвеса.
+- Что сделано:
+	- Nordic runtime takeover переведен с режима «include landingbuilder/view.tpl.php внутри content_body» на slot-aware рендер: builder‑зоны рендерятся прямо в соответствующих shell‑слотах `hero`, `before_content`, `content_body` (через `content_slot`), `after_content`.
+	- при активном takeover подавлены legacy-виджеты в `hero/before/after/content_body` и отключены контентные сайдбары, чтобы на takeover‑странице не оставалось «старого сайта».
+	- CSS variables темы builder-а прокинуты на корневой контейнер `.nordic-shell` через inline `style`, чтобы визуальные пресеты страницы корректно работали в live-рендере.
+	- добавлен admin-only dev-режим "modern skin" для отладки «движка» без влияния Nordic-дизайна: по умолчанию для админа подключается `templates/modern/css/theme.css` и рендерится стандартная layout-схема (без `nordic-shell` разметки); форсировать Nordic можно через `?nordic_skin=nordic`.
+	- изменения синхронизированы в package mirror шаблона Nordic.
+- Какие файлы затронуты:
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+- Что проверено:
+	- `php -l` проходит на обоих `main.tpl.php` (live + package mirror).
+- Какие риски остались:
+	- если takeover активен, но в соответствующей зоне нет секций, слот будет пустым (это ожидаемо для full takeover, но визуально может выглядеть как «пропало»).
+	- inline CSS vars применяются на `.nordic-shell` только в takeover‑режиме; если где-то есть жёсткие переопределения, возможны точечные визуальные расхождения.
+- Следующий шаг:
+	- ручной smoke в браузере: открыть главную `/` (гость и админ) и убедиться, что legacy-виджеты не рендерятся, секции builder-а распределены по слотам без дублей, а меню/шапка/футер остаются shell-уровнем.
 
 ## 2026-04-04
 

@@ -14,7 +14,7 @@ return [
 		]
 	],
 	'block-manifest' => [
-		'status'        => 'registry-stub',
+		'status'        => 'registry-live',
 		'driver'        => 'file-registry',
 		'repository'    => 'component library registry',
 		'read_model'    => 'Editor library and runtime validation read manifests from the registry.',
@@ -22,6 +22,7 @@ return [
 		'bridge_source' => 'landingbuilder block definitions',
 		'notes'         => [
 			'current source is file-based registry',
+			'page-document validation already uses this registry for block props',
 			'future persistence may add admin-managed registry records without changing the contract'
 		]
 	],
