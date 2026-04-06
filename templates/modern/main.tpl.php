@@ -5,12 +5,16 @@
  */
 /** @var cmsTemplate $this */
 
+// SAFETY STOP: по умолчанию отключаем takeover главной через landingbuilder,
+// чтобы фронт был предсказуемым и совпадал для admin/guest.
+$lb_front_integration_enabled = false;
+
 $lb_takeover_active = false;
 $lb_takeover_html = '';
 
 try {
     $is_homepage = empty($core->uri);
-    if ($is_homepage) {
+    if ($lb_front_integration_enabled && $is_homepage) {
         $lb_model = cmsCore::getModel('landingbuilder');
         if ($lb_model && method_exists($lb_model, 'getPageByKey') && method_exists($lb_model, 'getRuntimePage')) {
             $takeover_page = $lb_model->getPageByKey('homepage');

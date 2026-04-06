@@ -18,11 +18,16 @@ if (empty($nordic_context) || !is_array($nordic_context)) {
     $nordic_context = ['page_type' => 'generic', 'shell_preset' => 'no_sidebars', 'hero_mode' => 'none', 'body_class' => '', 'is_homepage' => false, 'is_content_list' => false, 'is_content_item' => false, 'can_use_builder' => false, 'ctrl' => '', 'action' => ''];
 }
 
+// SAFETY STOP: по умолчанию отключаем интеграцию landingbuilder в фронтовом шаблоне.
+// Это возвращает предсказуемый рендер (старый каркас/главная) для гостей.
+// Включать можно только явным образом (например, временным флагом на сервере).
+$lb_front_integration_enabled = false;
+
 // Full takeover через bindings (page.*): заменяем контент страницы на Landing Builder page
 $landingbuilder_takeover = null;
 try {
     $ctrl = (string) ($nordic_context['ctrl'] ?? '');
-    if ($ctrl !== 'landingbuilder') {
+    if ($lb_front_integration_enabled && $ctrl !== 'landingbuilder') {
         $lb_model = cmsCore::getModel('landingbuilder');
         if ($lb_model && method_exists($lb_model, 'resolveFullTakeoverPageKeyFromBindings')) {
             $route_params = [
@@ -100,7 +105,7 @@ try {
 
 // Shell variant из конструктора должен работать глобально,
 // даже когда страница не перехвачена landingbuilder (нет takeover).
-if (empty($landingbuilder_shell_runtime)) {
+if ($lb_front_integration_enabled && empty($landingbuilder_shell_runtime)) {
     try {
         $lb_model = cmsCore::getModel('landingbuilder');
         if ($lb_model && method_exists($lb_model, 'getShellVariantByKey')) {
