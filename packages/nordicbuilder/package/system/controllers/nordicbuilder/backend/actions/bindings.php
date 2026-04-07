@@ -22,7 +22,7 @@ class actionNordicbuilderBindings extends cmsAction {
 				return $this->redirectBack();
 			}
 
-			$user_id = cmsUser::getId();
+			$user_id = (int) ($this->cms_user->id ?? 0);
 			$examples = $this->buildExampleBindingOptions();
 			$created = 0;
 
@@ -131,7 +131,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'rules'         => $rules
 				];
 
-				$result = $model->saveBindingOptions($binding_key, $document, cmsUser::getId());
+				$result = $model->saveBindingOptions($binding_key, $document, (int) ($this->cms_user->id ?? 0));
 
 				if (!empty($result['is_valid'])) {
 					cmsUser::addSessionMessage(LANG_CP_SAVE_SUCCESS, 'success');

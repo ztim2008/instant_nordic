@@ -339,7 +339,7 @@ class modelNordicbuilder extends cmsModel {
 			'editor_mode'    => 'canvas',
 			'meta'           => [
 				'bridge_source' => 'nordicbuilder',
-				'page_mode'     => 'full_takeover',
+				'page_mode'     => 'instant_content_body',
 				'template'      => 'nordic',
 				'adapter_key'   => '',
 				'migration_policy' => [
@@ -370,15 +370,19 @@ class modelNordicbuilder extends cmsModel {
 
 		$document = isset($stored_document['document']) && is_array($stored_document['document']) ? $stored_document['document'] : [];
 		$schema = $this->buildLandingbuilderSchemaFromPageDocument($document, $fallback_page['schema'] ?? []);
+		$page_status = (string) ($fallback_page['status'] ?? '');
+		if ($page_status === '') {
+			$page_status = (string) ($stored_document['status'] ?? 'draft');
+		}
 
 		$page = array_merge($fallback_page, [
 			'id'              => (int) ($fallback_page['id'] ?? 0),
 			'key'             => (string) ($document['key'] ?? $page_key),
 			'name'            => (string) ($document['key'] ?? $page_key),
 			'title'           => (string) ($document['title'] ?? ($fallback_page['title'] ?? $page_key)),
-			'status'          => (string) ($stored_document['status'] ?? ($fallback_page['status'] ?? 'draft')),
-			'mode'            => $this->resolveLandingbuilderModeFromDocument($document, $fallback_page['mode'] ?? 'full_takeover'),
-			'page_mode'       => $this->resolveLandingbuilderModeFromDocument($document, $fallback_page['page_mode'] ?? 'full_takeover'),
+			'status'          => $page_status,
+			'mode'            => $this->resolveLandingbuilderModeFromDocument($document, $fallback_page['mode'] ?? 'instant_content_body'),
+			'page_mode'       => $this->resolveLandingbuilderModeFromDocument($document, $fallback_page['page_mode'] ?? 'instant_content_body'),
 			'template'        => (string) (($document['layout']['template'] ?? '') ?: ($document['meta']['template'] ?? ($fallback_page['template'] ?? 'nordic'))),
 			'page_type'       => (string) ($document['page_type'] ?? ($fallback_page['page_type'] ?? 'standalone')),
 			'adapter_key'     => (string) (($document['meta']['adapter_key'] ?? '') ?: ($fallback_page['adapter_key'] ?? '')),
@@ -400,7 +404,7 @@ class modelNordicbuilder extends cmsModel {
 			'name'        => $page_key,
 			'title'       => (string) ($fallback_page['title'] ?? $page_key),
 			'status'      => (string) ($fallback_page['status'] ?? $status),
-			'mode'        => (string) ($fallback_page['mode'] ?? 'full_takeover'),
+			'mode'        => (string) ($fallback_page['mode'] ?? 'instant_content_body'),
 			'page_type'   => (string) ($fallback_page['page_type'] ?? 'standalone'),
 			'template'    => (string) (($layout['template'] ?? '') ?: ($fallback_page['template'] ?? 'nordic')),
 			'adapter_key' => (string) ($fallback_page['adapter_key'] ?? ''),
@@ -1183,7 +1187,7 @@ class modelNordicbuilder extends cmsModel {
 			'editor_mode'    => 'canvas',
 			'meta'           => [
 				'bridge_source' => 'nordicbuilder',
-				'page_mode'     => 'full_takeover',
+				'page_mode'     => 'instant_content_body',
 				'template'      => 'nordic',
 				'adapter_key'   => '',
 				'migration_policy' => [
@@ -1845,7 +1849,7 @@ class modelNordicbuilder extends cmsModel {
 		return $schema;
 	}
 
-	protected function resolveLandingbuilderModeFromDocument(array $document, $default_mode = 'full_takeover') {
+	protected function resolveLandingbuilderModeFromDocument(array $document, $default_mode = 'instant_content_body') {
 		if (!empty($document['meta']['page_mode'])) {
 			return (string) $document['meta']['page_mode'];
 		}

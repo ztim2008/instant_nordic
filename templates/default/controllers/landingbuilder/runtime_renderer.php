@@ -41,6 +41,223 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		return $layout_class_map[$layout] ?? 'lb-grid-1';
 	}
 
+	function landingbuilder_runtime_normalize_device_key($device_type) {
+		$key = mb_strtolower(trim((string) $device_type));
+		if ($key === 'phone') {
+			return 'mobile';
+		}
+		if ($key === 'pad') {
+			return 'tablet';
+		}
+		return in_array($key, ['desktop', 'tablet', 'mobile'], true) ? $key : 'desktop';
+	}
+
+	function landingbuilder_runtime_parse_column_units($value) {
+		if (!is_scalar($value)) {
+			return null;
+		}
+
+		$units = (int) round((float) $value);
+		if ($units < 1 || $units > 12) {
+			return null;
+		}
+
+		return $units;
+	}
+
+	function landingbuilder_runtime_get_layout_default_units($layout, $columns_count) {
+		$count = max(1, (int) $columns_count);
+		if ($count <= 1) {
+			return [12];
+		}
+
+		if ((string) $layout === '3col_equal') {
+			return array_slice([4, 4, 4], 0, $count);
+		}
+
+		if ((string) $layout === '2col_sidebar_left') {
+			return [4, 8];
+		}
+
+		if ((string) $layout === '2col_sidebar_right') {
+			return [8, 4];
+		}
+
+		return array_slice([6, 6], 0, $count);
+	}
+
+	function landingbuilder_runtime_normalize_units(array $units, $total_units = 12) {
+		$safe_total = max(1, (int) $total_units);
+		$prepared = [];
+		foreach ($units as $value) {
+			$number = (float) $value;
+			$prepared[] = $number > 0 ? $number : 1.0;
+		}
+
+		if (!$prepared) {
+			return [$safe_total];
+		}
+
+		$sum = array_sum($prepared);
+		if ($sum <= 0) {
+			$sum = 1;
+		}
+
+		$scaled = [];
+		foreach ($prepared as $value) {
+			$scaled[] = ($value / $sum) * $safe_total;
+		}
+
+		$integers = [];
+		foreach ($scaled as $value) {
+			$integers[] = max(1, (int) floor($value));
+		}
+
+		$remainder = $safe_total - array_sum($integers);
+		if ($remainder > 0) {
+			$fractions = [];
+			foreach ($scaled as $index => $value) {
+				$fractions[] = ['index' => $index, 'fraction' => $value - floor($value)];
+			}
+			usort($fractions, function ($left, $right) {
+				if ($left['fraction'] === $right['fraction']) {
+					return 0;
+				}
+				return ($left['fraction'] < $right['fraction']) ? 1 : -1;
+			});
+
+			$slots_count = count($fractions);
+			$guard = 0;
+			while ($remainder > 0 && $slots_count > 0 && $guard < 256) {
+				$slot = $fractions[$guard % $slots_count];
+				$integers[$slot['index']] += 1;
+				$remainder -= 1;
+				$guard += 1;
+			}
+		}
+
+		return $integers;
+	}
+
+	function landingbuilder_runtime_width_inherit_enabled(array $section) {
+		$settings = !empty($section['settings']) && is_array($section['settings']) ? $section['settings'] : [];
+		return ($settings['width_inherit'] ?? true) !== false;
+	}
+
+	function landingbuilder_runtime_is_stacked_for_device(array $section, $device_key) {
+		$settings = !empty($section['settings']) && is_array($section['settings']) ? $section['settings'] : [];
+		$device = landingbuilder_runtime_normalize_device_key($device_key);
+
+		if ($device === 'mobile') {
+			return ($settings['stack_phone'] ?? true) !== false;
+		}
+
+		if ($device === 'tablet') {
+			return ($settings['stack_tablet'] ?? false) === true;
+		}
+
+		return false;
+	}
+
+	function landingbuilder_runtime_get_width_preference_keys($device_key, $inherit_enabled) {
+		$device = landingbuilder_runtime_normalize_device_key($device_key);
+		$keys = [];
+
+		if ($device === 'mobile') {
+			$keys = ['mobile', 'phone'];
+			if ($inherit_enabled) {
+				$keys = array_merge($keys, ['tablet', 'pad', 'desktop']);
+			}
+		} elseif ($device === 'tablet') {
+			$keys = ['tablet', 'pad'];
+			if ($inherit_enabled) {
+				$keys[] = 'desktop';
+			}
+		} else {
+			$keys = ['desktop'];
+		}
+
+		$normalized = [];
+		foreach ($keys as $key) {
+			$candidate = mb_strtolower(trim((string) $key));
+			if ($candidate === '' || in_array($candidate, $normalized, true)) {
+				continue;
+			}
+			$normalized[] = $candidate;
+		}
+
+		return $normalized;
+	}
+
+	function landingbuilder_runtime_resolve_section_units(array $section, $device_key) {
+		$columns = !empty($section['columns']) && is_array($section['columns']) ? array_values($section['columns']) : [];
+		if (!$columns) {
+			return [12];
+		}
+
+		if (landingbuilder_runtime_is_stacked_for_device($section, $device_key)) {
+			return [12];
+		}
+
+		$defaults = landingbuilder_runtime_normalize_units(
+			landingbuilder_runtime_get_layout_default_units($section['layout'] ?? '1col', count($columns)),
+			12
+		);
+		$preference_keys = landingbuilder_runtime_get_width_preference_keys(
+			$device_key,
+			landingbuilder_runtime_width_inherit_enabled($section)
+		);
+
+		$raw_units = [];
+		foreach ($columns as $column_index => $column) {
+			$width_map = !empty($column['width']) && is_array($column['width']) ? $column['width'] : [];
+			$resolved = null;
+
+			foreach ($preference_keys as $preference_key) {
+				$resolved = landingbuilder_runtime_parse_column_units($width_map[$preference_key] ?? null);
+				if ($resolved !== null) {
+					break;
+				}
+			}
+
+			if ($resolved === null) {
+				$resolved = $defaults[$column_index] ?? 1;
+			}
+
+			$raw_units[] = $resolved;
+		}
+
+		return landingbuilder_runtime_normalize_units($raw_units, 12);
+	}
+
+	function landingbuilder_runtime_units_to_grid_template(array $units) {
+		$prepared = [];
+		foreach ($units as $unit) {
+			$size = max(1, (int) $unit);
+			$prepared[] = 'minmax(0,' . $size . 'fr)';
+		}
+
+		if (!$prepared) {
+			return 'minmax(0,1fr)';
+		}
+
+		return implode(' ', $prepared);
+	}
+
+	function landingbuilder_runtime_get_section_grid_templates(array $section) {
+		return [
+			'desktop' => landingbuilder_runtime_units_to_grid_template(landingbuilder_runtime_resolve_section_units($section, 'desktop')),
+			'tablet'  => landingbuilder_runtime_units_to_grid_template(landingbuilder_runtime_resolve_section_units($section, 'tablet')),
+			'mobile'  => landingbuilder_runtime_units_to_grid_template(landingbuilder_runtime_resolve_section_units($section, 'mobile'))
+		];
+	}
+
+	function landingbuilder_runtime_base_autoscale_enabled(array $context = []) {
+		$section_enabled = !empty($context['section_autoscale_base_blocks']);
+		$column_units = isset($context['column_units']) ? (int) $context['column_units'] : 0;
+		return $section_enabled && $column_units === 12;
+	}
+
 	function landingbuilder_get_runtime_overlay_column_class($layout, $column_index, $columns_count) {
 		if ($layout === '2col_sidebar_right') {
 			return $column_index === 0 ? 'col-lg-8 col-md-7' : 'col-lg-4 col-md-5';
@@ -263,7 +480,12 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		}
 
 		if ($surface === 'site') {
-			return $body;
+			$classes = ['lb-runtime-block', 'lb-runtime-block--base'];
+			if (landingbuilder_runtime_base_autoscale_enabled($context)) {
+				$classes[] = 'lb-runtime-block--autoscale';
+			}
+
+			return '<div class="' . html(implode(' ', $classes), false) . '" data-source-key="' . html($source_key !== '' ? $source_key : $key, false) . '">' . $body . '</div>';
 		}
 
 		if ($surface === 'overlay') {
@@ -369,7 +591,17 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		}
 
 		$section_theme = landingbuilder_get_section_presentation($section, $theme_context);
+		$grid_templates = landingbuilder_runtime_get_section_grid_templates($section);
+		$columns_inline_style = '--lb-grid-desktop:' . ($grid_templates['desktop'] ?? 'minmax(0,1fr)')
+			. ';--lb-grid-tablet:' . ($grid_templates['tablet'] ?? ($grid_templates['desktop'] ?? 'minmax(0,1fr)'))
+			. ';--lb-grid-mobile:' . ($grid_templates['mobile'] ?? ($grid_templates['tablet'] ?? 'minmax(0,1fr)'))
+			. ';';
 		$zone_key = $section['zone_key'] ?? ($context['zone_key'] ?? '');
+		$section_autoscale_base_blocks = !empty($section['settings']) && is_array($section['settings'])
+			? (($section['settings']['autoscale_base_blocks'] ?? false) === true)
+			: false;
+		$active_units = landingbuilder_runtime_resolve_section_units($section, $device_type);
+		$is_stacked_active = landingbuilder_runtime_is_stacked_for_device($section, $device_type);
 
 		ob_start();
 		if ($surface === 'overlay') {
@@ -409,15 +641,22 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			<?php
 		} elseif ($surface === 'site') {
 			$grid_class = landingbuilder_get_runtime_layout_class($section['layout'] ?? '1col');
+			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class'] . ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '');
 			?>
-			<section class="lb-section <?php html($grid_class); ?> <?php html($section_theme['class']); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
+			<section class="<?php html(trim($section_class)); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
 				<div class="lb-section-inner">
-					<div class="lb-columns <?php html($grid_class); ?>">
-						<?php foreach (($section['columns'] ?? []) as $column) { ?>
+					<div class="lb-columns <?php html($grid_class); ?>" style="<?php html($columns_inline_style); ?>">
+						<?php foreach (($section['columns'] ?? []) as $column_index => $column) { ?>
 							<?php if (!landingbuilder_runtime_is_visible($column['visibility'] ?? [], $device_type)) { continue; } ?>
 							<div class="lb-column<?php if (!empty($column['settings']['css_class'])) { ?> <?php html($column['settings']['css_class']); ?><?php } ?>">
 								<?php foreach (($column['nodes'] ?? []) as $node) { ?>
-									<?php echo landingbuilder_render_runtime_node($node, $context); ?>
+									<?php
+									$column_units = $is_stacked_active ? 12 : (int) ($active_units[$column_index] ?? 0);
+									echo landingbuilder_render_runtime_node($node, array_merge($context, [
+										'column_units' => $column_units,
+										'section_autoscale_base_blocks' => $section_autoscale_base_blocks
+									]));
+									?>
 								<?php } ?>
 							</div>
 						<?php } ?>
@@ -427,8 +666,9 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			<?php
 		} else {
 			$grid_class = landingbuilder_get_runtime_layout_class($section['layout'] ?? '1col');
+			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class'] . ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '');
 			?>
-			<section class="lb-section <?php html($grid_class); ?> <?php html($section_theme['class']); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
+			<section class="<?php html(trim($section_class)); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
 				<div class="lb-section-inner">
 					<div class="lb-section-head">
 						<div>
@@ -439,13 +679,19 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 							<div class="lb-zone-pill">Зона: <?php html($zone_key); ?></div>
 						<?php } ?>
 					</div>
-					<div class="lb-columns <?php html($grid_class); ?>">
-						<?php foreach (($section['columns'] ?? []) as $column) { ?>
+					<div class="lb-columns <?php html($grid_class); ?>" style="<?php html($columns_inline_style); ?>">
+						<?php foreach (($section['columns'] ?? []) as $column_index => $column) { ?>
 							<?php if (!landingbuilder_runtime_is_visible($column['visibility'] ?? [], $device_type)) { continue; } ?>
 							<div class="lb-column<?php if (!empty($column['settings']['css_class'])) { ?> <?php html($column['settings']['css_class']); ?><?php } ?>">
 								<div class="lb-column-title"><?php html($column['title']); ?></div>
 								<?php foreach (($column['nodes'] ?? []) as $node) { ?>
-									<?php echo landingbuilder_render_runtime_node($node, $context); ?>
+									<?php
+									$column_units = $is_stacked_active ? 12 : (int) ($active_units[$column_index] ?? 0);
+									echo landingbuilder_render_runtime_node($node, array_merge($context, [
+										'column_units' => $column_units,
+										'section_autoscale_base_blocks' => $section_autoscale_base_blocks
+									]));
+									?>
 								<?php } ?>
 							</div>
 						<?php } ?>

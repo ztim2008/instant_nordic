@@ -3,6 +3,7 @@
 class actionLandingbuilderPages extends cmsAction {
 
     public function run() {
+        $this->model->migrateLegacyPageModesToInstantContentBody($this->cms_user->id);
         $pages = $this->model->getPagesForAdmin();
 
         foreach ($pages as &$page) {

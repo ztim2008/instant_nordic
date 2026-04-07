@@ -18,7 +18,8 @@
 3. После каждого завершенного стабильного шага изменения зеркалятся в `packages/landingbuilder/package/`.
 4. Для нового contract-first core-компонента `nordicbuilder` изменения зеркалятся в `packages/nordicbuilder/package/`, а installable zip собирается из `packages/nordicbuilder/` как пользовательский коммерческий дистрибутив.
 5. Если меняется SQL-слой, одновременно обновляется соответствующий `install.sql` и отдельно оценивается upgrade-path для уже установленных копий.
-6. Нельзя откладывать packaging «на потом», если runtime-слой уже изменился заметно.
+6. Для `nordicbuilder` SQL-изменения оформляются через `packages/nordicbuilder/migrations/*.sql` с сохранением backward compatibility.
+7. Нельзя откладывать packaging «на потом», если runtime-слой уже изменился заметно.
 
 Основные рабочие зоны этого режима:
 
@@ -94,6 +95,11 @@
 Базовый поток такой:
 
 1. синхронизировать `packages/nordicbuilder/` с live source;
-2. проверить `manifest.ru.ini`, `install.sql` и `package/`;
-3. собрать архив командой `bash scripts/build-nordicbuilder-package.sh`;
-4. получить versioned дистрибутив в `dist/`.
+2. обновить `VERSION` и `CHANGELOG.md` по SemVer;
+3. проверить `manifest.ru.ini`, `manifest.json`, `install.sql`, `migrations/`, `install.php` и `package/`;
+4. собрать архив командой `bash scripts/build-nordicbuilder-package.sh`;
+5. получить `dist/nordicbuilder.zip` и versioned-копию в `dist/`.
+
+Подробный регламент релиза и миграций:
+
+- `docs/NORDICBUILDER-RELEASES-AND-MIGRATIONS.md`

@@ -60,6 +60,21 @@ class formLandingbuilderDesign extends cmsForm {
 						'title' => 'Карточки сайта',
 						'default' => 'quiet',
 						'items' => $catalog['card_preset']
+					]),
+					new fieldList('radius_preset', [
+						'title' => 'Радиусы интерфейса',
+						'default' => 'none',
+						'items' => $catalog['radius_preset']
+					]),
+					new fieldList('density_preset', [
+						'title' => 'Плотность интерфейса',
+						'default' => 'balanced',
+						'items' => $catalog['density_preset']
+					]),
+					new fieldList('contrast_preset', [
+						'title' => 'Контраст интерфейса',
+						'default' => 'balanced',
+						'items' => $catalog['contrast_preset']
 					])
 				]
 			]

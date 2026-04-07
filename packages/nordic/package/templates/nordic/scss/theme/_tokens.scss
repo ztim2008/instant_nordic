@@ -11,14 +11,21 @@
     --nordic-accent-soft: var(--lb-accent-soft, rgba(180, 35, 24, 0.08));
     --nordic-panel: var(--lb-contrast-surface, #121826);
     --nordic-panel-soft: var(--lb-contrast-surface, #1d2638);
-    --nordic-line: var(--lb-border-color, rgba(16, 20, 27, 0.12));
-    --nordic-line-strong: var(--lb-border-color, rgba(16, 20, 27, 0.22));
+    --nordic-line: var(--lb-border-contrast, var(--lb-border-color, rgba(16, 20, 27, 0.12)));
+    --nordic-line-strong: var(--lb-border-contrast, var(--lb-border-color, rgba(16, 20, 27, 0.22)));
     --nordic-shadow: var(--lb-shadow-md, 0 8px 24px rgba(16, 20, 27, 0.08));
     --nordic-shadow-card: var(--lb-card-shadow, 0 4px 14px rgba(16, 20, 27, 0.07));
-    --nordic-radius-xl: 0;
-    --nordic-radius-lg: 0;
-    --nordic-radius-md: 0;
+    --nordic-radius-xl: var(--lb-radius-lg, 24px);
+    --nordic-radius-lg: var(--lb-radius-md, 18px);
+    --nordic-radius-md: var(--lb-radius-sm, 12px);
     --nordic-content-max: var(--lb-page-max-width, 100%);
+    --nordic-shell-gap: var(--lb-content-gap, 18px);
+    --nordic-shell-pad-y: var(--lb-topbar-padding-y, 12px);
+    --nordic-shell-pad-x: var(--lb-topbar-padding-x, 18px);
+    --nordic-control-height: var(--lb-control-height, 42px);
+    --nordic-card-padding: var(--lb-card-padding, 20px);
+    --nordic-button-padding-y: var(--lb-button-padding-y, 12px);
+    --nordic-button-padding-x: var(--lb-button-padding-x, 22px);
     --nordic-font-body: var(--lb-font-body, "PT Serif", Georgia, serif);
     --nordic-font-ui: var(--lb-font-heading, "Roboto Condensed", "Arial Narrow", "Trebuchet MS", sans-serif);
 }

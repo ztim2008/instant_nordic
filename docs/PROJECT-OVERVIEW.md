@@ -36,6 +36,7 @@
 3. Для поведения AI-агента: [AGENTS.md](../AGENTS.md) и [.github/copilot-instructions.md](../.github/copilot-instructions.md).
 4. Для фактического маршрута работ: [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](../LANDING-BUILDER-MASTER-PLAN-2026-04-03.md).
 5. Для новой целевой модели template + design system: [LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md](../LANDING-BUILDER-THEME-SYSTEM-ARCHITECTURE-SPEC-2026-04-04.md).
+6. Для фундаментального выбора Modern vs Nordic: [ADR-0001-FOUNDATION-MODERN-VS-NORDIC.md](adr/ADR-0001-FOUNDATION-MODERN-VS-NORDIC.md).
 
 ## Ближайший этап
 

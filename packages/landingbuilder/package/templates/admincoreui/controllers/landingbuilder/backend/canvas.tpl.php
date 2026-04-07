@@ -10,7 +10,8 @@ $page_mode_titles = [
     'full_takeover'  => 'Полностью своя страница',
     'hybrid_overlay' => 'Поверх существующей страницы',
     'zone_injection' => 'Встраивание в зону страницы',
-    'data_only'      => 'Только данные для блоков'
+    'data_only'      => 'Только данные для блоков',
+    'instant_content_body' => 'InstantCMS: content_body'
 ];
 
 $page_status_titles = [
@@ -84,11 +85,11 @@ $canvas_state = [
         top: 0;
         z-index: 40;
         display: grid;
-        grid-template-columns: minmax(300px, 1fr) auto minmax(320px, 1fr);
-        gap: 1rem;
+        grid-template-columns: minmax(180px, 1fr) auto auto;
+        gap: 0.42rem;
         align-items: center;
-        padding: 1rem 1.25rem;
-        background: rgba(17, 24, 39, 0.94);
+        padding: 0.4rem 0.62rem;
+        background: rgba(17, 24, 39, 0.92);
         color: #f8fafc;
         backdrop-filter: blur(18px);
     }
@@ -98,7 +99,7 @@ $canvas_state = [
     .lb-topbar__end {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.35rem;
         min-width: 0;
     }
 
@@ -108,14 +109,19 @@ $canvas_state = [
 
     .lb-topbar__end {
         justify-content: flex-end;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
     }
 
     .lb-topbar__page {
         min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
     }
 
     .lb-topbar__eyebrow {
+        display: none;
         margin-bottom: 0.15rem;
         font-size: 11px;
         font-weight: 700;
@@ -126,8 +132,8 @@ $canvas_state = [
 
     .lb-topbar__title {
         margin: 0;
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 12px;
+        font-weight: 600;
         line-height: 1.2;
         color: #f8fafc;
         white-space: nowrap;
@@ -137,8 +143,16 @@ $canvas_state = [
 
     .lb-topbar__meta,
     .lb-topbar__save {
-        font-size: 12px;
+        font-size: 10px;
         color: rgba(248, 250, 252, 0.72);
+    }
+
+    .lb-topbar__meta {
+        margin-top: 0;
+        max-width: 28rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .lb-topbar__meta code {
@@ -153,8 +167,8 @@ $canvas_state = [
         align-items: center;
         justify-content: center;
         gap: 0.4rem;
-        min-height: 38px;
-        padding: 0.6rem 0.9rem;
+        min-height: 34px;
+        padding: 0.5rem 0.75rem;
         border: 1px solid transparent;
         border-radius: 999px;
         background: #ffffff;
@@ -180,6 +194,18 @@ $canvas_state = [
         border-color: rgba(255, 255, 255, 0.14);
         background: rgba(255, 255, 255, 0.08);
         color: #f8fafc;
+    }
+
+    .lb-workspace__topbar .lb-btn {
+        min-height: 24px;
+        padding: 0.22rem 0.52rem;
+        font-size: 10px;
+        letter-spacing: 0.05em;
+    }
+
+    .lb-workspace__topbar .lb-btn:hover,
+    .lb-workspace__topbar .lb-btn:focus {
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
     }
 
     .lb-btn--topbar:hover,
@@ -256,38 +282,119 @@ $canvas_state = [
     .lb-device-switcher {
         display: inline-flex;
         align-items: center;
-        gap: 0.35rem;
-        padding: 0.25rem;
+        gap: 0.18rem;
+        padding: 0.13rem;
         border: 1px solid rgba(255, 255, 255, 0.14);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.08);
     }
 
     .lb-device-toggle {
-        min-width: 98px;
+        min-width: 31px;
+        padding: 0.18rem 0.36rem;
+    }
+
+    .lb-device-toggle__icon {
+        position: relative;
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        color: currentColor;
+    }
+
+    .lb-device-toggle__icon::before,
+    .lb-device-toggle__icon::after {
+        content: "";
+        position: absolute;
+        box-sizing: border-box;
+    }
+
+    .lb-device-toggle__icon--desktop::before {
+        top: 0;
+        left: 0;
+        width: 12px;
+        height: 8px;
+        border: 1.4px solid currentColor;
+        border-radius: 2px;
+    }
+
+    .lb-device-toggle__icon--desktop::after {
+        left: 3px;
+        bottom: 0;
+        width: 6px;
+        height: 1.6px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .lb-device-toggle__icon--tablet::before {
+        top: 0;
+        left: 1.5px;
+        width: 9px;
+        height: 12px;
+        border: 1.4px solid currentColor;
+        border-radius: 2px;
+    }
+
+    .lb-device-toggle__icon--tablet::after {
+        left: 5px;
+        bottom: 1px;
+        width: 2px;
+        height: 2px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .lb-device-toggle__icon--phone::before {
+        top: 0;
+        left: 2px;
+        width: 8px;
+        height: 12px;
+        border: 1.4px solid currentColor;
+        border-radius: 2.5px;
+    }
+
+    .lb-device-toggle__icon--phone::after {
+        left: 4px;
+        top: 2px;
+        width: 4px;
+        height: 1.2px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+
+    .lb-a11y {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
     }
 
     .lb-device-width {
         display: inline-flex;
         align-items: center;
-        padding: 0.4rem 0.7rem;
+        padding: 0.22rem 0.52rem;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.1);
-        font-size: 12px;
+        font-size: 11px;
         color: rgba(248, 250, 252, 0.84);
     }
 
     .lb-workspace__body {
         position: relative;
         min-height: 720px;
-        padding: 1.5rem;
+        padding: 1.15rem;
     }
 
     .lb-workspace__canvas {
         position: relative;
         z-index: 1;
         min-height: 640px;
-        padding: 0 4.5rem;
+        padding: 0 22.6rem 0 0.35rem;
     }
 
     .lb-canvas-stage {
@@ -342,12 +449,10 @@ $canvas_state = [
     .lb-canvas-viewport {
         position: relative;
         min-height: 620px;
-        padding: 2rem;
-        border: 1px solid #d6dfe8;
-        border-radius: 30px;
-        background:
-            radial-gradient(circle at top left, rgba(148, 163, 184, 0.18), transparent 32%),
-            linear-gradient(180deg, #f8fafc 0%, #eef3f8 100%);
+        padding: 0.45rem;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 8px;
+        background: rgba(248, 251, 255, 0.56);
     }
 
     .lb-canvas-frame {
@@ -359,22 +464,22 @@ $canvas_state = [
 
     .lb-canvas-surface {
         min-height: 520px;
-        padding: 1rem;
-        border: 1px solid #dce4ec;
-        border-radius: 26px;
-        background: #ffffff;
-        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        padding: 0.3rem;
+        border: 1px solid rgba(15, 23, 42, 0.06);
+        border-radius: 6px;
+        background: var(--lb-canvas-surface-bg, var(--lb-page-background, #ffffff));
+        box-shadow: none;
     }
 
     .lb-live-page {
         max-width: var(--lb-page-max-width, 1120px);
         margin: 0 auto;
-        padding: 1.5rem;
-        border-radius: 28px;
-        background: var(--lb-page-background, #f4f7fa);
+        padding: 0;
+        border-radius: 0;
+        background: var(--lb-page-background, #ffffff);
         color: var(--lb-text-color, #173042);
         font-family: var(--lb-font-body, "Segoe UI", Tahoma, sans-serif);
-        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.08);
+        box-shadow: none;
     }
 
     .lb-live-page h1,
@@ -534,46 +639,202 @@ $canvas_state = [
     }
 
     .lb-live-section {
-        padding: 1.4rem;
-        border: 1px solid var(--lb-border-color, #dce4ea);
-        border-radius: var(--lb-radius-lg, 22px);
-        background: var(--lb-surface-color, #ffffff);
-        box-shadow: var(--lb-shadow-md, 0 12px 32px rgba(18, 36, 52, 0.08));
-        transition: box-shadow 0.2s ease, transform 0.2s ease;
+        padding: 0.45rem;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        border-radius: 4px;
+        background: transparent;
+        box-shadow: none;
+        transition: none;
+    }
+
+    .lb-live-section__inner {
+        position: relative;
+    }
+
+    .lb-column-resize-indicator {
+        position: absolute;
+        top: -0.2rem;
+        right: 0;
+        z-index: 5;
+        padding: 0.12rem 0.45rem;
+        border: 1px solid rgba(47, 122, 161, 0.35);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.95);
+        color: #1f3a4d;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        pointer-events: none;
+    }
+
+    .lb-section-breakpoints {
+        position: absolute;
+        top: 0.1rem;
+        right: 0.1rem;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.16rem;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    .lb-section-breakpoints__label {
+        padding: 0 0.25rem;
+        font-size: 10px;
+        line-height: 1;
+        color: #55697c;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .lb-section-breakpoint {
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(15, 23, 42, 0.16);
+        border-radius: 999px;
+        background: #ffffff;
+        color: #44596b;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .lb-section-breakpoint--inherit {
+        position: relative;
+        overflow: visible;
+    }
+
+    .lb-section-breakpoint--autoscale {
+        font-size: 9px;
+        letter-spacing: 0.02em;
+    }
+
+    .lb-section-breakpoint__tooltip {
+        position: absolute;
+        left: 50%;
+        bottom: calc(100% + 6px);
+        transform: translate(-50%, 4px);
+        min-width: 148px;
+        max-width: 260px;
+        padding: 0.28rem 0.42rem;
+        border: 1px solid rgba(15, 23, 42, 0.18);
+        border-radius: 8px;
+        background: rgba(17, 24, 39, 0.96);
+        color: #f8fafc;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.35;
+        letter-spacing: 0;
+        text-transform: none;
+        text-align: left;
+        white-space: normal;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.14s ease, transform 0.14s ease;
+        z-index: 8;
+    }
+
+    .lb-section-breakpoint__tooltip::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 100%;
+        margin-left: -4px;
+        width: 8px;
+        height: 8px;
+        transform: rotate(45deg);
+        background: rgba(17, 24, 39, 0.96);
+        border-right: 1px solid rgba(15, 23, 42, 0.18);
+        border-bottom: 1px solid rgba(15, 23, 42, 0.18);
+    }
+
+    .lb-section-breakpoint--inherit:hover .lb-section-breakpoint__tooltip,
+    .lb-section-breakpoint--inherit:focus .lb-section-breakpoint__tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, 0);
+    }
+
+    .lb-section-breakpoint.is-active {
+        border-color: rgba(47, 122, 161, 0.55);
+        background: rgba(232, 243, 248, 0.9);
+        color: #1f4f6a;
+    }
+
+    .lb-section-breakpoint.is-current {
+        box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.45) inset;
+    }
+
+    .lb-section-remove {
+        position: absolute;
+        top: 0.1rem;
+        left: 0.1rem;
+        width: 18px;
+        height: 18px;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #b42318;
+        font-size: 12px;
+        line-height: 1;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 4;
+    }
+
+    .lb-section-remove:hover,
+    .lb-section-remove:focus {
+        background: #fee2e2;
+        border-color: #f87171;
+        color: #991b1b;
     }
 
     .lb-live-section--selected,
     .lb-live-column--selected,
     .lb-live-node--selected {
-        box-shadow: 0 0 0 2px rgba(47, 122, 161, 0.34), var(--lb-shadow-md, 0 12px 32px rgba(18, 36, 52, 0.08));
+        border-color: rgba(15, 23, 42, 0.32);
+        box-shadow: none;
     }
 
     .lb-live-section__topbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        gap: 0.4rem;
+        margin-bottom: 0.35rem;
     }
 
     .lb-live-section__title {
         margin: 0;
-        font-size: 24px;
+        font-size: 18px;
         line-height: 1.15;
     }
 
     .lb-live-section__meta,
     .lb-live-node__meta,
     .lb-live-column__meta {
-        margin-top: 0.35rem;
+        margin-top: 0.15rem;
         color: var(--lb-text-muted, #5b7282);
-        font-size: 13px;
+        font-size: 11px;
         line-height: 1.45;
     }
 
     .lb-live-columns {
         display: grid;
-        gap: 1rem;
+        gap: 0.35rem;
     }
 
     .lb-live-columns--1col {
@@ -599,19 +860,108 @@ $canvas_state = [
     }
 
     .lb-live-column {
+        position: relative;
         min-height: 100%;
-        padding: 1rem;
-        border: 1px solid var(--lb-border-color, #dbe6ee);
-        border-radius: var(--lb-radius-md, 18px);
-        background: var(--lb-surface-soft, #f8fbfd);
+        padding: 0.28rem;
+        border: 1px solid rgba(15, 23, 42, 0.14);
+        border-radius: 3px;
+        background: transparent;
+        transition: none;
+    }
+
+    .lb-live-column__width-tooltip {
+        position: absolute;
+        left: 0.22rem;
+        top: 0.22rem;
+        z-index: 3;
+        max-width: calc(100% - 2.8rem);
+        padding: 0.12rem 0.34rem;
+        border: 1px solid rgba(15, 23, 42, 0.16);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.92);
+        color: #4a6072;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-2px);
+        transition: opacity 0.12s ease, transform 0.12s ease;
+    }
+
+    .lb-live-column:hover .lb-live-column__width-tooltip,
+    .lb-live-column--selected .lb-live-column__width-tooltip {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .lb-column-resizer {
+        position: absolute;
+        top: 0;
+        right: -8px;
+        width: 14px;
+        height: 100%;
+        border: 0;
+        background: transparent;
+        padding: 0;
+        cursor: col-resize;
+        z-index: 4;
+    }
+
+    .lb-column-resizer::before {
+        content: '';
+        position: absolute;
+        top: 18%;
+        bottom: 18%;
+        left: 50%;
+        width: 2px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: rgba(47, 122, 161, 0.42);
+    }
+
+    .lb-column-resizer:hover::before,
+    .lb-column-resizer:focus::before {
+        background: rgba(47, 122, 161, 0.72);
     }
 
     .lb-live-column__head {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
+        gap: 0.35rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .lb-column-head__actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+    }
+
+    .lb-btn--ghost {
+        min-height: 20px;
+        min-width: 20px;
+        padding: 0;
+        border-radius: 2px;
+        border-color: rgba(15, 23, 42, 0.16);
+        background: rgba(255, 255, 255, 0.9);
+        color: #243443;
+        font-size: 13px;
+        line-height: 1;
+        letter-spacing: 0;
+        text-transform: none;
+        box-shadow: none;
+    }
+
+    .lb-btn--ghost:hover,
+    .lb-btn--ghost:focus {
+        box-shadow: none;
+        border-color: rgba(15, 23, 42, 0.26);
+        color: #1d2b37;
     }
 
     .lb-live-column__title {
@@ -620,21 +970,32 @@ $canvas_state = [
     }
 
     .lb-live-column__empty {
-        padding: 0.95rem;
-        border: 1px dashed var(--lb-border-color, #cfd9e2);
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.62);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.2rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 2px;
+        background: transparent;
         color: var(--lb-text-muted, #667b8d);
-        font-size: 13px;
+        font-size: 12px;
+    }
+
+    .lb-column-quick-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.2rem;
     }
 
     .lb-live-node {
-        margin-top: 0.85rem;
-        padding: 0.95rem 1rem;
-        border: 1px solid var(--lb-card-border, var(--lb-border-color, #dce5ec));
-        border-radius: 16px;
-        background: var(--lb-card-background, #ffffff);
-        box-shadow: var(--lb-card-shadow, 0 8px 20px rgba(22, 38, 52, 0.05));
+        position: relative;
+        margin-top: 0.28rem;
+        padding: 0.22rem;
+        border: 1px solid rgba(15, 23, 42, 0.12);
+        border-radius: 2px;
+        background: transparent;
+        box-shadow: none;
+        transition: none;
     }
 
     .lb-live-node:first-child {
@@ -642,11 +1003,11 @@ $canvas_state = [
     }
 
     .lb-live-node--block {
-        border-left: 4px solid var(--lb-accent-color, #2f7aa1);
+        border-left-width: 1px;
     }
 
     .lb-live-node--widget {
-        border-left: 4px solid #2a6752;
+        border-left-width: 1px;
     }
 
     .lb-live-node__head {
@@ -659,6 +1020,265 @@ $canvas_state = [
     .lb-live-node__label {
         font-weight: 700;
         color: var(--lb-heading-color, #173042);
+    }
+
+    .lb-live-node__preview {
+        margin-top: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        overflow: hidden;
+    }
+
+    .lb-node-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #b42318;
+        font-size: 11px;
+        line-height: 1;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 3;
+    }
+
+    .lb-node-remove:hover,
+    .lb-node-remove:focus {
+        background: #fee2e2;
+        border-color: #f87171;
+        color: #991b1b;
+    }
+
+    .lb-column-resizing,
+    .lb-column-resizing * {
+        cursor: col-resize !important;
+        user-select: none;
+    }
+
+    .lb-live-node__preview .lb-node-label,
+    .lb-live-node__preview .lb-block-eyebrow,
+    .lb-live-node__preview .lb-node-meta,
+    .lb-live-node__preview .lb-node-note {
+        display: none;
+    }
+
+    .lb-live-section__topbar,
+    .lb-live-column__head,
+    .lb-live-node__head {
+        display: flex;
+    }
+
+    .lb-live-column > .lb-live-column__meta,
+    .lb-live-node > .lb-live-node__meta {
+        display: block;
+    }
+
+    .lb-live-node__preview .lb-preview-title {
+        margin: 0;
+        font-weight: 800;
+        color: var(--lb-heading-color, #142c3d);
+        line-height: 1.2;
+    }
+
+    .lb-live-node__preview .lb-preview-lead {
+        margin: 0.45rem 0 0;
+        color: var(--lb-text-muted, #5b7282);
+        line-height: 1.55;
+    }
+
+    .lb-live-node__preview .lb-preview-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.85rem;
+    }
+
+    .lb-live-node__preview .lb-preview-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.55rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--lb-button-border, var(--lb-border-color, #dce4ea));
+        background: var(--lb-button-background, #ffffff);
+        color: var(--lb-button-color, var(--lb-text-color, #173042));
+        font-weight: 800;
+        font-size: 12px;
+        letter-spacing: 0.02em;
+    }
+
+    .lb-live-node__preview .lb-preview-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        margin-top: 0.85rem;
+    }
+
+    .lb-live-node__preview .lb-preview-card {
+        padding: 0.85rem;
+        border-radius: 14px;
+        background: var(--lb-card-background, #ffffff);
+        border: 1px solid var(--lb-card-border, var(--lb-border-color, #dce4ea));
+        box-shadow: var(--lb-card-shadow, 0 8px 20px rgba(22, 38, 52, 0.05));
+    }
+
+    .lb-live-node__preview .lb-preview-card-title {
+        font-weight: 800;
+        color: var(--lb-heading-color, #142c3d);
+        margin: 0;
+    }
+
+    .lb-live-node__preview .lb-preview-card-text {
+        margin: 0.35rem 0 0;
+        color: var(--lb-text-muted, #5b7282);
+        line-height: 1.55;
+        font-size: 13px;
+    }
+
+    .lb-live-node__preview .lb-node-card {
+        margin: 0;
+        padding: 14px;
+        border-radius: 14px;
+        background: var(--lb-card-background, #ffffff);
+        border: 1px solid var(--lb-card-border, var(--lb-border-color, #dce5ec));
+        box-shadow: var(--lb-card-shadow, 0 8px 20px rgba(22, 38, 52, 0.05));
+    }
+
+    .lb-live-node__preview .lb-node-card--block {
+        border-left: 4px solid var(--lb-accent-color, #2f7aa1);
+    }
+
+    .lb-live-node__preview .lb-node-card--widget {
+        border-left: 4px solid #2a6752;
+    }
+
+    .lb-live-node__preview .lb-node-label {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--lb-text-muted, #5e7c92);
+        margin-bottom: 8px;
+    }
+
+    .lb-live-node__preview .lb-node-content h2,
+    .lb-live-node__preview .lb-node-content h3 {
+        margin: 8px 0 10px;
+        color: var(--lb-heading-color, #173042);
+    }
+
+    .lb-live-node__preview .lb-node-content p,
+    .lb-live-node__preview .lb-node-content li {
+        color: var(--lb-text-muted, #566f80);
+    }
+
+    .lb-live-node__preview .lb-block-eyebrow {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--lb-text-muted, #5e7c92);
+        margin-bottom: 8px;
+    }
+
+    .lb-live-node__preview .lb-block-actions,
+    .lb-live-node__preview .lb-block-chip-list {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .lb-live-node__preview .lb-block-action,
+    .lb-live-node__preview .lb-block-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        border: 1px solid var(--lb-border-color, #dbe3ea);
+    }
+
+    .lb-live-node__preview .lb-block-action--primary {
+        background: var(--lb-accent-color, #2f7aa1);
+        border-color: var(--lb-accent-color, #2f7aa1);
+        color: var(--lb-accent-contrast, #ffffff);
+    }
+
+    .lb-live-node__preview .lb-block-action--secondary,
+    .lb-live-node__preview .lb-block-chip {
+        background: var(--lb-surface-soft, #f4f7fa);
+        color: var(--lb-heading-color, #173042);
+    }
+
+    .lb-live-node__preview .lb-block-grid,
+    .lb-live-node__preview .lb-block-stat-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-top: 14px;
+    }
+
+    .lb-live-node__preview .lb-block-grid__item,
+    .lb-live-node__preview .lb-block-stat {
+        padding: 14px;
+        border-radius: 14px;
+        background: var(--lb-surface-soft, #f7fafc);
+        border: 1px solid var(--lb-border-color, #dbe3ea);
+    }
+
+    .lb-live-node__preview .lb-block-stat__value {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--lb-heading-color, #173042);
+        margin-bottom: 6px;
+    }
+
+    .lb-live-node__preview .lb-block-stat__caption {
+        font-size: 13px;
+        color: var(--lb-text-muted, #566f80);
+    }
+
+    .lb-live-node__preview .lb-node-meta,
+    .lb-live-node__preview .lb-node-note {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--lb-text-muted, #6b7f8d);
+    }
+
+    .lb-layout-range {
+        width: 100%;
+    }
+
+    .lb-layout-variants {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.65rem;
+    }
+
+    .lb-layout-variant {
+        border: 1px solid var(--lb-border-color, #dce4ea);
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 0.45rem 0.75rem;
+        font-weight: 800;
+        font-size: 12px;
+        color: var(--lb-text-color, #173042);
+    }
+
+    .lb-layout-variant.is-active {
+        border-color: var(--lb-accent-color, #2f7aa1);
+        background: var(--lb-accent-soft, #e8f3f8);
+        color: var(--lb-accent-color, #2f7aa1);
     }
 
     .lb-live-section.lb-section--container-text .lb-live-section__inner {
@@ -768,21 +1388,46 @@ $canvas_state = [
         overflow: hidden;
     }
 
+    .lb-library-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 33;
+        background: rgba(15, 23, 42, 0.42);
+        backdrop-filter: blur(2px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .lb-workspace--library-open .lb-library-backdrop {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
     .lb-drawer--left {
-        left: 1.5rem;
-        width: 340px;
-        transform: translateX(calc(-100% - 52px));
-        opacity: 0.98;
+        left: 50%;
+        top: 1.8rem;
+        bottom: 1.8rem;
+        width: min(980px, calc(100% - 4rem));
+        transform: translate(-50%, 14px) scale(0.99);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 34;
     }
 
     .lb-drawer--right {
         right: 1.5rem;
-        width: 390px;
-        transform: translateX(calc(100% + 52px));
-        opacity: 0.98;
+        width: 340px;
+        transform: translateX(0);
+        opacity: 1;
     }
 
-    .lb-workspace--library-open .lb-drawer--left,
+    .lb-workspace--library-open .lb-drawer--left {
+        transform: translate(-50%, 0) scale(1);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
     .lb-workspace--inspector-open .lb-drawer--right {
         transform: translateX(0);
     }
@@ -838,19 +1483,20 @@ $canvas_state = [
     }
 
     .lb-library-tabs {
-        display: grid;
+        display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
         margin-bottom: 1rem;
     }
 
     .lb-library-tab {
         display: flex;
-        width: 100%;
+        width: auto;
         align-items: center;
         justify-content: flex-start;
-        padding: 0.8rem 0.95rem;
+        padding: 0.65rem 0.9rem;
         border: 1px solid #dce5ed;
-        border-radius: 16px;
+        border-radius: 999px;
         background: #ffffff;
         color: #425466;
         font-weight: 700;
@@ -1207,51 +1853,6 @@ $canvas_state = [
         line-height: 1.45;
     }
 
-    .lb-drawer-handle {
-        position: absolute;
-        top: 6.75rem;
-        z-index: 30;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        min-height: 128px;
-        padding: 0.65rem 0.35rem;
-        border: 1px solid #d6dfe8;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.98);
-        color: #132236;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        writing-mode: vertical-rl;
-        text-orientation: mixed;
-        transition: left 0.25s ease, right 0.25s ease, background-color 0.25s ease;
-    }
-
-    .lb-drawer-handle:hover,
-    .lb-drawer-handle:focus {
-        background: #ffffff;
-        text-decoration: none;
-    }
-
-    .lb-drawer-handle--left {
-        left: 0.7rem;
-    }
-
-    .lb-workspace--library-open .lb-drawer-handle--left {
-        left: 21.3rem;
-    }
-
-    .lb-drawer-handle--right {
-        right: 0.7rem;
-    }
-
-    .lb-workspace--inspector-open .lb-drawer-handle--right {
-        right: 24.4rem;
-    }
-
     .lb-section[draggable="true"],
     .lb-node[draggable="true"] {
         cursor: move;
@@ -1320,6 +1921,26 @@ $canvas_state = [
             grid-template-columns: 1fr;
         }
 
+        .lb-workspace__topbar .lb-btn {
+            min-height: 30px;
+            padding: 0.34rem 0.66rem;
+        }
+
+        .lb-device-toggle {
+            min-width: 38px;
+            padding: 0.28rem 0.52rem;
+        }
+
+        .lb-topbar__page {
+            display: block;
+        }
+
+        .lb-topbar__meta {
+            margin-top: 0.2rem;
+            max-width: none;
+            white-space: normal;
+        }
+
         .lb-topbar__center,
         .lb-topbar__end {
             justify-content: flex-start;
@@ -1341,42 +1962,29 @@ $canvas_state = [
         }
 
         .lb-drawer--left {
-            left: 1rem;
-            transform: translateX(calc(-100% - 24px));
+            left: 50%;
+            transform: translate(-50%, 8px) scale(0.99);
         }
 
         .lb-drawer--right {
             right: 1rem;
             transform: translateX(calc(100% + 24px));
         }
-
-        .lb-drawer-handle {
-            top: auto;
-            bottom: 1rem;
-            min-height: 44px;
-            width: auto;
-            padding: 0.7rem 0.9rem;
-            writing-mode: horizontal-tb;
-        }
-
-        .lb-drawer-handle--left {
-            left: 1rem;
-        }
-
-        .lb-workspace--library-open .lb-drawer-handle--left {
-            left: 1rem;
-        }
-
-        .lb-drawer-handle--right {
-            right: 1rem;
-        }
-
-        .lb-workspace--inspector-open .lb-drawer-handle--right {
-            right: 1rem;
-        }
     }
 
     @media (max-width: 767.98px) {
+        .lb-workspace__topbar {
+            padding: 0.55rem;
+        }
+
+        .lb-topbar__center {
+            flex-wrap: wrap;
+        }
+
+        .lb-device-width {
+            font-size: 10px;
+        }
+
         .lb-shell-map__header {
             display: block;
         }
@@ -1414,28 +2022,42 @@ $canvas_state = [
         }
     }
 </style>
-<div class="lb-workspace lb-workspace--library-open lb-workspace--inspector-open" id="lb-workspace">
+<div class="lb-workspace lb-workspace--inspector-open" id="lb-workspace">
+    <input type="hidden" id="lb-csrf" value="<?php echo cmsForm::getCSRFToken(); ?>">
     <div class="lb-workspace__topbar">
         <div class="lb-topbar__start">
-            <a class="lb-btn lb-btn--topbar" href="<?php html($screen['api']['pages_url'] ?? $this->href_to('pages')); ?>">К макетам</a>
+            <a class="lb-btn lb-btn--topbar" href="<?php html($screen['api']['pages_url'] ?? $this->href_to('pages')); ?>">К страницам</a>
             <div class="lb-topbar__page">
-                <div class="lb-topbar__eyebrow">Редактор макета</div>
-                <h1 class="lb-topbar__title"><?php html($page['title']); ?></h1>
-                <div class="lb-topbar__meta"><span id="lb-page-meta">Макет <code><?php html($page['key']); ?></code> | Шаблон и каркас выбираются справа в инспекторе</span></div>
+                <div class="lb-topbar__eyebrow">Редактор страницы</div>
+                <div class="lb-topbar__title"><?php html($page['title']); ?></div>
+                <div class="lb-topbar__meta"><span id="lb-page-meta">Страница <code><?php html($page['key']); ?></code> | Шаблон и каркас страницы выбираются справа в инспекторе</span></div>
             </div>
         </div>
         <div class="lb-topbar__center">
             <div class="btn-group lb-device-switcher" role="group" aria-label="Устройства">
             <?php foreach ($screen['devices'] as $index => $device) { ?>
-                <button type="button" class="lb-btn lb-btn--topbar lb-device-toggle<?php if ($index === 0) { ?> is-active<?php } ?>" data-device="<?php html($device['key']); ?>"><?php html($device['title']); ?></button>
+                <?php
+                    $device_key = (string) ($device['key'] ?? '');
+                    $device_label = (string) ($device['title'] ?? $device_key);
+                    $device_icon = 'desktop';
+                    if (in_array($device_key, array('tablet', 'pad'), true)) {
+                        $device_icon = 'tablet';
+                    } elseif (in_array($device_key, array('phone', 'mobile'), true)) {
+                        $device_icon = 'phone';
+                    } elseif ($index === 1) {
+                        $device_icon = 'tablet';
+                    } elseif ($index >= 2) {
+                        $device_icon = 'phone';
+                    }
+                ?>
+                <button type="button" class="lb-btn lb-btn--topbar lb-device-toggle<?php if ($index === 0) { ?> is-active<?php } ?>" data-device="<?php html($device_key); ?>" title="<?php html($device_label); ?>" aria-label="<?php html($device_label); ?>"><span class="lb-device-toggle__icon lb-device-toggle__icon--<?php html($device_icon); ?>" aria-hidden="true"></span><span class="lb-a11y"><?php html($device_label); ?></span></button>
             <?php } ?>
             </div>
             <span class="lb-device-width">Viewport: <span class="ml-1" id="lb-device-width-label"><?php echo !empty($screen['devices'][0]['viewport_width']) ? (int) $screen['devices'][0]['viewport_width'] . 'px' : 'Авто'; ?></span></span>
         </div>
         <div class="lb-topbar__end">
-            <div class="lb-topbar__save">Последнее обновление: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
+            <div class="lb-topbar__save">Обновлено: <span id="lb-updated-at"><?php html($page['updated_at']); ?></span></div>
             <button type="button" class="lb-btn lb-btn--topbar" data-drawer-toggle="library">Библиотека</button>
-            <button type="button" class="lb-btn lb-btn--topbar" data-drawer-toggle="inspector">Инспектор</button>
             <button type="button" class="lb-btn lb-btn--topbar" id="lb-add-section">Добавить секцию</button>
                 <a class="lb-btn lb-btn--topbar" href="<?php html($screen['design_url']); ?>">Глобальные стили</a>
                 <button type="button" class="lb-btn lb-btn--topbar" id="lb-edit-page-theme">Стиль на холсте</button>
@@ -1445,14 +2067,14 @@ $canvas_state = [
     </div>
 
     <div class="lb-workspace__body">
-        <button type="button" class="lb-drawer-handle lb-drawer-handle--left" data-drawer-toggle="library">Библиотека</button>
+        <button type="button" class="lb-library-backdrop" id="lb-library-backdrop" aria-label="Закрыть библиотеку"></button>
         <aside class="lb-drawer lb-drawer--left" id="lb-library-drawer">
             <div class="lb-drawer__head">
                 <div>
-                    <h2 class="lb-drawer__title">Библиотека и навигация</h2>
-                    <p class="lb-drawer__desc">Добавляй секции, блоки и виджеты без потери ширины canvas. Панель можно прятать за край окна.</p>
+                    <h2 class="lb-drawer__title">Библиотека блоков и секций</h2>
+                    <p class="lb-drawer__desc">Выбирайте готовые секции, semantic-блоки и системные виджеты в полноэкранном режиме, затем сразу возвращайтесь к холсту.</p>
                 </div>
-                <button type="button" class="lb-btn lb-btn--panel" data-drawer-toggle="library">Скрыть</button>
+                <button type="button" class="lb-btn lb-btn--panel" data-drawer-toggle="library">Закрыть</button>
             </div>
             <div class="lb-drawer__body">
                 <div class="lb-panel-block">
@@ -1486,14 +2108,7 @@ $canvas_state = [
 
         <div class="lb-workspace__canvas">
             <div class="lb-canvas-stage">
-                <div class="lb-canvas-stage__header">
-                    <div>
-                        <div class="lb-canvas-stage__eyebrow">Главный визуальный экран</div>
-                        <h2 class="lb-canvas-stage__title">Живой холст страницы</h2>
-                        <p class="lb-canvas-stage__desc">Собирайте страницу прямо здесь: выбирайте шаблон, секции и блоки, меняйте настройки справа и сразу видьте результат на холсте.</p>
-                    </div>
-                    <div class="lb-canvas-stage__status" id="lb-canvas-status"><?php if ($screen['schema_installed']) { ?>Страница сохранится в базе<?php } else { ?>Временный черновик без базы<?php } ?></div>
-                </div>
+                <div class="lb-canvas-stage__status" id="lb-canvas-status" style="display:none"><?php if ($screen['schema_installed']) { ?>Страница сохранится в базе<?php } else { ?>Временный черновик без базы<?php } ?></div>
                 <div id="lb-shell-map" style="display:none"></div>
                 <div class="lb-canvas-viewport">
                     <div class="lb-canvas-frame" id="lb-canvas-frame">
@@ -1503,14 +2118,12 @@ $canvas_state = [
             </div>
         </div>
 
-        <button type="button" class="lb-drawer-handle lb-drawer-handle--right" data-drawer-toggle="inspector">Инспектор</button>
         <aside class="lb-drawer lb-drawer--right" id="lb-inspector-drawer">
             <div class="lb-drawer__head">
                 <div>
                     <h2 class="lb-drawer__title">Инспектор</h2>
                     <p class="lb-drawer__desc">Настройки страницы, секции, колонки или элемента. Основная работа со страницей должна происходить здесь, прямо рядом с холстом.</p>
                 </div>
-                <button type="button" class="lb-btn lb-btn--panel" data-drawer-toggle="inspector">Скрыть</button>
             </div>
             <div class="lb-drawer__body">
                 <div class="lb-panel-block">
@@ -1606,13 +2219,21 @@ $canvas_state = [
             {value: '3col_equal', title: 'Три равные колонки', hint: 'Подходит для карточек, этапов или трёх преимуществ.'}
         ];
         const columnWidthOptions = [
-            {value: 'auto', title: 'Авто'},
-            {value: '12', title: 'Во всю ширину'},
-            {value: '8', title: 'Широкая'},
-            {value: '6', title: 'Половина'},
-            {value: '4', title: 'Узкая'},
-            {value: '3', title: 'Очень узкая'}
-        ];
+            {value: 'auto', title: 'Авто'}
+        ].concat(Array.from({length: 12}, function (_, index) {
+            const units = index + 1;
+            const labels = {
+                12: 'Во всю ширину',
+                8: 'Широкая',
+                6: 'Половина',
+                4: 'Узкая',
+                3: 'Очень узкая'
+            };
+            return {
+                value: String(units),
+                title: labels[units] ? (labels[units] + ' (' + units + '/12)') : (units + '/12')
+            };
+        }));
         const alignOptions = [
             {value: 'stretch', title: 'Растянуть'},
             {value: 'start', title: 'По верхнему краю'},
@@ -1736,6 +2357,7 @@ $canvas_state = [
         state.activeDevice = state.deviceKeys[0] || 'desktop';
         state.selection = null;
         state.drag = null;
+        state.columnResize = null;
         state.schema = normalizeSchema(state.schema || {sections: []});
         state.ui = loadWorkspaceUIState();
 
@@ -1757,6 +2379,7 @@ $canvas_state = [
         const shellMap = document.getElementById('lb-shell-map');
         const deviceWidthLabel = document.getElementById('lb-device-width-label');
         const pageThemeButton = document.getElementById('lb-edit-page-theme');
+        const libraryBackdrop = document.getElementById('lb-library-backdrop');
         const drawerToggleButtons = document.querySelectorAll('[data-drawer-toggle]');
 
         const baseCanvasStatusText = canvasStatus ? String(canvasStatus.textContent || '') : '';
@@ -1877,7 +2500,7 @@ $canvas_state = [
                 return String(routeVariants.profile);
             }
 
-            if (state.page.mode === 'full_takeover' && routeVariants.landing) {
+            if (state.page.adapter_key === 'standalone_landing' && routeVariants.landing) {
                 return String(routeVariants.landing);
             }
 
@@ -1952,7 +2575,7 @@ $canvas_state = [
             next.container_preset = next.container_preset || 'standard';
             next.spacing_preset = next.spacing_preset || 'md';
             next.visibility = Object.assign(defaultVisibility(), next.visibility || {});
-            next.settings = Object.assign({background_class: '', padding: 'md', css_class: ''}, next.settings || {});
+            next.settings = Object.assign({background_class: '', padding: 'md', css_class: '', stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, next.settings || {});
             next.columns = Array.isArray(next.columns) ? next.columns.map(function (column, columnIndex) {
                 return normalizeColumn(column, next.uid, columnIndex);
             }) : [];
@@ -2182,8 +2805,8 @@ $canvas_state = [
                     '<div class="lb-semantic-card__desc">' + escapeHtml(preset.summary || preset.description || '') + '</div>' +
                 '</div>' +
                 fields.map(function (field) {
-					const value = Object.prototype.hasOwnProperty.call(options, field.key) ? options[field.key] : '';
-					return renderBlockField(field, value);
+                    const value = Object.prototype.hasOwnProperty.call(options, field.key) ? options[field.key] : '';
+                    return renderBlockField(field, value);
                 }).join('');
         }
 
@@ -2211,6 +2834,205 @@ $canvas_state = [
             }
 
             return node.label || 'Элемент';
+        }
+
+        function stableStringify(value) {
+            if (!value || typeof value !== 'object') {
+                return JSON.stringify(value);
+            }
+
+            if (Array.isArray(value)) {
+                return '[' + value.map(stableStringify).join(',') + ']';
+            }
+
+            const keys = Object.keys(value).sort();
+            return '{' + keys.map(function (key) {
+                return JSON.stringify(key) + ':' + stableStringify(value[key]);
+            }).join(',') + '}';
+        }
+
+        const widgetPreviewCache = {};
+        const widgetPreviewInFlight = {};
+        const widgetPreviewLastHtml = {};
+
+        const blockPreviewCache = {};
+        const blockPreviewInFlight = {};
+        const blockPreviewLastHtml = {};
+
+        function normalizePreviewPayload(data) {
+            const payload = (data && typeof data === 'object') ? data : {};
+            return {
+                html: (payload.html !== undefined && payload.html !== null) ? String(payload.html) : '',
+                error: !!payload.error,
+                message: (payload.message !== undefined && payload.message !== null) ? String(payload.message) : ''
+            };
+        }
+
+        function getWidgetPreviewCacheKey(widgetId, options, template) {
+            return String(widgetId) + '::' + String(template || '') + '::' + stableStringify(options || {});
+        }
+
+        function getWidgetPreviewFallbackKey(widgetId, template) {
+            return String(widgetId) + '::' + String(template || '');
+        }
+
+        function requestWidgetPreview(widgetId, options, template) {
+            const cacheKey = getWidgetPreviewCacheKey(widgetId, options, template);
+            if (widgetPreviewCache[cacheKey] !== undefined || widgetPreviewInFlight[cacheKey]) {
+                return;
+            }
+
+            const url = (state.screen.api && state.screen.api.widget_preview_url) ? state.screen.api.widget_preview_url : '';
+            if (!url) {
+                widgetPreviewCache[cacheKey] = {html: '', error: true, message: 'Не настроен маршрут предпросмотра виджета.'};
+                return;
+            }
+
+            widgetPreviewInFlight[cacheKey] = true;
+
+            const body = new URLSearchParams();
+            body.set('widget_id', String(widgetId));
+            body.set('template', String(template || (state.page && state.page.template ? state.page.template : '')));
+            body.set('options', JSON.stringify(options || {}));
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                const payload = normalizePreviewPayload(data);
+                widgetPreviewCache[cacheKey] = payload;
+                if (payload.html) {
+                    widgetPreviewLastHtml[getWidgetPreviewFallbackKey(widgetId, template)] = String(payload.html);
+                }
+            }).catch(function () {
+                widgetPreviewCache[cacheKey] = {html: '', error: true, message: 'Не удалось загрузить предпросмотр виджета.'};
+            }).finally(function () {
+                widgetPreviewInFlight[cacheKey] = false;
+                renderCanvas();
+            });
+        }
+
+        function getBlockPreviewCacheKey(sourceKey, options, template) {
+            return String(sourceKey || '') + '::' + String(template || '') + '::' + stableStringify(options || {});
+        }
+
+        function getBlockPreviewFallbackKey(sourceKey, template) {
+            return String(sourceKey || '') + '::' + String(template || '');
+        }
+
+        function requestBlockPreview(sourceKey, options, template) {
+            const cacheKey = getBlockPreviewCacheKey(sourceKey, options, template);
+            if (blockPreviewCache[cacheKey] !== undefined || blockPreviewInFlight[cacheKey]) {
+                return;
+            }
+
+            const url = (state.screen.api && state.screen.api.block_preview_url) ? state.screen.api.block_preview_url : '';
+            if (!url) {
+                blockPreviewCache[cacheKey] = {html: '', error: true, message: 'Не настроен маршрут предпросмотра блока.'};
+                return;
+            }
+
+            blockPreviewInFlight[cacheKey] = true;
+
+            const body = new URLSearchParams();
+            body.set('source_key', String(sourceKey || ''));
+            body.set('template', String(template || (state.page && state.page.template ? state.page.template : '')));
+            body.set('options', JSON.stringify(options || {}));
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: body.toString(),
+                credentials: 'same-origin'
+            }).then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                const payload = normalizePreviewPayload(data);
+                blockPreviewCache[cacheKey] = payload;
+                if (payload.html) {
+                    blockPreviewLastHtml[getBlockPreviewFallbackKey(sourceKey, template)] = String(payload.html);
+                }
+            }).catch(function () {
+                blockPreviewCache[cacheKey] = {html: '', error: true, message: 'Не удалось загрузить предпросмотр блока.'};
+            }).finally(function () {
+                blockPreviewInFlight[cacheKey] = false;
+                renderCanvas();
+            });
+        }
+
+        function renderBlockLivePreview(node) {
+            const presetKey = String(node.source_key || node.label || '');
+            if (!presetKey) {
+                return '';
+            }
+
+            const options = (node.options && typeof node.options === 'object') ? node.options : {};
+
+            const template = (state.page && state.page.template) ? state.page.template : '';
+            const cacheKey = getBlockPreviewCacheKey(presetKey, options, template);
+            const fallbackKey = getBlockPreviewFallbackKey(presetKey, template);
+
+            if (blockPreviewCache[cacheKey] === undefined) {
+                requestBlockPreview(presetKey, options, template);
+            }
+
+            const payload = blockPreviewCache[cacheKey] !== undefined ? blockPreviewCache[cacheKey] : null;
+            const payloadHtml = payload && payload.html ? String(payload.html) : '';
+            const previewHtml = payloadHtml || String(blockPreviewLastHtml[fallbackKey] || '');
+
+            return previewHtml
+                ? '<div class="lb-live-node__preview">' + previewHtml + '</div>'
+                : '';
+        }
+
+        function renderWidgetLivePreview(node) {
+            const widgetId = Number(node.widget_id || 0);
+            if (!widgetId) {
+                return '';
+            }
+
+            const template = (state.page && state.page.template) ? state.page.template : '';
+            const options = (node.options && typeof node.options === 'object') ? node.options : {};
+            const cacheKey = getWidgetPreviewCacheKey(widgetId, options, template);
+            const fallbackKey = getWidgetPreviewFallbackKey(widgetId, template);
+
+            if (widgetPreviewCache[cacheKey] === undefined) {
+                requestWidgetPreview(widgetId, options, template);
+            }
+
+            const payload = widgetPreviewCache[cacheKey] !== undefined ? widgetPreviewCache[cacheKey] : null;
+            const payloadHtml = payload && payload.html ? String(payload.html) : '';
+            const previewHtml = payloadHtml || String(widgetPreviewLastHtml[fallbackKey] || '');
+
+            return previewHtml
+                ? '<div class="lb-live-node__preview">' + previewHtml + '</div>'
+                : '';
+        }
+
+        function renderNodeLivePreview(node) {
+            if (!node) {
+                return '';
+            }
+
+            if (node.type === 'system_widget') {
+                return renderWidgetLivePreview(node);
+            }
+
+            if (node.type === 'block') {
+                return renderBlockLivePreview(node);
+            }
+
+            return '';
         }
 
         function helpIcon(text) {
@@ -2248,10 +3070,10 @@ $canvas_state = [
 
         function renderPageMeta() {
             const effectiveShell = getEffectiveShellVariantState();
-            const shellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Каркас не определён';
+            const shellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Shell не определен';
             const templateTitle = getCurrentTemplatePresetTitle();
 
-            return 'Макет: ' + escapeHtml(state.page.title || state.page.key) + ' (<code>' + escapeHtml(state.page.key) + '</code>) | Шаблон: ' + escapeHtml(templateTitle) + ' | Каркас: ' + escapeHtml(shellTitle) + ' | Применение: ' + escapeHtml(getPageModeTitle(state.page.mode));
+            return 'Страница <code>' + escapeHtml(state.page.key) + '</code> | Шаблон: ' + escapeHtml(templateTitle) + ' | Shell: ' + escapeHtml(shellTitle) + ' | Режим: ' + escapeHtml(getPageModeTitle(state.page.mode));
         }
 
         function getShellVariantCatalog() {
@@ -2282,6 +3104,10 @@ $canvas_state = [
             return (pageShellScreen.assignment_source_titles && pageShellScreen.assignment_source_titles[source]) || source;
         }
 
+        function isStandaloneLandingPage() {
+            return String(state.page.adapter_key || '') === 'standalone_landing';
+        }
+
         function resolveAutoShellVariantKey() {
             const presetRouteVariant = resolveTemplatePresetRouteVariantKey();
             if (presetRouteVariant) {
@@ -2295,7 +3121,7 @@ $canvas_state = [
                     return 'nm-homepage';
                 }
 
-                if (state.page.mode === 'full_takeover') {
+                if (isStandaloneLandingPage()) {
                     return 'nm-landing';
                 }
 
@@ -2402,7 +3228,7 @@ $canvas_state = [
         }
 
         function getPagePrimaryShellSlotKey() {
-            if (state.page.mode === 'full_takeover') {
+            if (isStandaloneLandingPage()) {
                 return String((state.schema.layout && state.schema.layout.content_slot) || 'content_body');
             }
 
@@ -2445,34 +3271,34 @@ $canvas_state = [
                 return map;
             }, {});
             const primarySlot = getPagePrimaryShellSlotKey();
-            const isFullTakeover = state.page.mode === 'full_takeover';
-            const contentCopy = isFullTakeover
-                ? 'Здесь находится основное содержимое страницы, которое вы собираете на холсте.'
-                : 'В overlay-режиме здесь остаётся системное содержимое, а редактор добавляет блоки поверх разрешённых зон.';
+            const isStandaloneLanding = isStandaloneLandingPage();
+            const contentCopy = isStandaloneLanding
+                ? 'Сюда встраивается основной runtime страницы, которую вы собираете на холсте.'
+                : 'Для overlay-режима здесь живет системное содержимое страницы, а builder подключается поверх разрешенных зон.';
 
             return '' +
                 '<section class="lb-shell-map">' +
                     '<div class="lb-shell-map__header">' +
                         '<div>' +
-                            '<div class="lb-shell-map__eyebrow">Карта каркаса</div>' +
+                            '<div class="lb-shell-map__eyebrow">Shell participation</div>' +
                             '<h3 class="lb-shell-map__title">Как страница встраивается в каркас сайта</h3>' +
-                            '<div class="lb-shell-map__copy">Эта карта показывает каркас страницы: какие зоны активны, где находится основное содержимое и что управляется самим каркасом.</div>' +
+                            '<div class="lb-shell-map__copy">Эта карта показывает реальный shell страницы: какие зоны активны, где живет основное содержимое и что управляется самим каркасом.</div>' +
                         '</div>' +
-                        '<div class="lb-shell-map__meta">Каркас: ' + escapeHtml(variant.title || variant.key || 'Базовый каркас') + '<br>Источник: ' + escapeHtml(getShellAssignmentSourceTitle(effectiveShell.assignment_source)) + '<br>Сайдбары: ' + escapeHtml(variant.body_layout || 'no_sidebars') + '</div>' +
+                        '<div class="lb-shell-map__meta">Shell: ' + escapeHtml(variant.title || variant.key || 'Базовый shell') + '<br>Источник: ' + escapeHtml(getShellAssignmentSourceTitle(effectiveShell.assignment_source)) + '<br>Body layout: ' + escapeHtml(variant.body_layout || 'no_sidebars') + '</div>' +
                     '</div>' +
                     '<div class="lb-shell-map__legend">' +
-                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--active"></span>Активная зона каркаса</span>' +
-                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--page"></span>Главная зона этой страницы</span>' +
-                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch"></span>Не участвует в текущем варианте</span>' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--active"></span>Активная shell zone</span>' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch lb-shell-map__legend-swatch--page"></span>Главный slot этой страницы</span>' +
+                        '<span class="lb-shell-map__legend-item"><span class="lb-shell-map__legend-swatch"></span>Не участвует в текущем variant</span>' +
                     '</div>' +
                     '<div class="lb-shell-map__grid">' +
                         renderShellSlotCard('site_top', 'lb-shell-slot--wide', {
                             isActive: !!activeLookup.site_top,
-                            copy: 'Верхняя сервисная полоса сайта: объявления, служебные ссылки, уведомления.'
+                            copy: 'Верхняя сервисная полоса сайта: объявления, service links, global notice.'
                         }) +
                         renderShellSlotCard('header_primary', 'lb-shell-slot--half', {
                             isActive: !!activeLookup.header_primary,
-                            copy: 'Основной header сайта: бренд, ключевая навигация, основной слой интерфейса.'
+                            copy: 'Основной header сайта: бренд, ключевая навигация, главный chrome слой.'
                         }) +
                         renderShellSlotCard('header_secondary', 'lb-shell-slot--half', {
                             isActive: !!activeLookup.header_secondary,
@@ -2480,41 +3306,41 @@ $canvas_state = [
                         }) +
                         renderShellSlotCard('hero', 'lb-shell-slot--wide', {
                             isActive: !!activeLookup.hero,
-                            copy: 'Отдельная hero-зона каркаса. Подходит для первого экрана сайта или hero над содержимым.'
+                            copy: 'Отдельная hero-zone каркаса. Подходит для общесайтового первого экрана или layout hero над содержимым.'
                         }) +
                         renderShellSlotCard('before_content', 'lb-shell-slot--wide', {
                             isActive: !!activeLookup.before_content,
-                            copy: 'Зона перед основным контентом: баннеры, вводный блок, контекстный блок.'
+                            copy: 'Зона перед основным content body: баннеры, intro strip, context block.'
                         }) +
                         renderShellSlotCard('content_sidebar_left', 'lb-shell-slot--third', {
                             isActive: !!activeLookup.content_sidebar_left,
                             isPageSlot: primarySlot === 'content_sidebar_left',
                             stateLabel: primarySlot === 'content_sidebar_left' ? 'Сюда идет страница' : (!!activeLookup.content_sidebar_left ? 'Активен' : 'Выключен'),
-                            copy: primarySlot === 'content_sidebar_left' ? 'Редкий режим: основное содержимое страницы встраивается в левую колонку каркаса.' : 'Левая sidebar-зона каркаса для вспомогательных виджетов и навигации.'
+                            copy: primarySlot === 'content_sidebar_left' ? 'Редкий режим: основная builder-страница встраивается в левую колонку shell.' : 'Левая sidebar-зона shell для вспомогательных виджетов и навигации.'
                         }) +
                         renderShellSlotCard('content_body', 'lb-shell-slot--third', {
                             isActive: !!activeLookup.content_body,
                             isPageSlot: primarySlot === 'content_body',
-                            stateLabel: primarySlot === 'content_body' ? (isFullTakeover ? 'Сюда идет страница' : 'Системный content') : (!!activeLookup.content_body ? 'Активен' : 'Выключен'),
+                            stateLabel: primarySlot === 'content_body' ? (isStandaloneLanding ? 'Сюда идет страница' : 'Системный content') : (!!activeLookup.content_body ? 'Активен' : 'Выключен'),
                             copy: contentCopy
                         }) +
                         renderShellSlotCard('content_sidebar_right', 'lb-shell-slot--third', {
                             isActive: !!activeLookup.content_sidebar_right,
                             isPageSlot: primarySlot === 'content_sidebar_right',
                             stateLabel: primarySlot === 'content_sidebar_right' ? 'Сюда идет страница' : (!!activeLookup.content_sidebar_right ? 'Активен' : 'Выключен'),
-                            copy: primarySlot === 'content_sidebar_right' ? 'Редкий режим: основное содержимое страницы встраивается в правую колонку каркаса.' : 'Правая sidebar-зона каркаса для дополнительных виджетов, фильтров и вспомогательного контента.'
+                            copy: primarySlot === 'content_sidebar_right' ? 'Редкий режим: основная builder-страница встраивается в правую колонку shell.' : 'Правая sidebar-зона shell для дополнительных виджетов, фильтров и supporting content.'
                         }) +
                         renderShellSlotCard('after_content', 'lb-shell-slot--wide', {
                             isActive: !!activeLookup.after_content,
-                            copy: 'Зона после основного контента: CTA-блок, доверие/гарантии, следующий шаг.'
+                            copy: 'Зона после главного content body: CTA strip, trust section, next-step block.'
                         }) +
                         renderShellSlotCard('footer_primary', 'lb-shell-slot--half', {
                             isActive: !!activeLookup.footer_primary,
-                            copy: 'Основной footer сайта: колонки, контакты, подвал.'
+                            copy: 'Основной footer слоя сайта: главные колонки, контакты, брендовый подвал.'
                         }) +
                         renderShellSlotCard('footer_secondary', 'lb-shell-slot--half', {
                             isActive: !!activeLookup.footer_secondary,
-                            copy: 'Нижний footer-слой: копирайт, служебные ссылки, юридическая информация.'
+                            copy: 'Нижний footer-слой: copyright, service links, legal block.'
                         }) +
                     '</div>' +
                 '</section>';
@@ -2530,7 +3356,7 @@ $canvas_state = [
 
         function getDefaultDrawers(mode) {
             return mode === 'desktop'
-                ? {library: true, inspector: true}
+                ? {library: false, inspector: true}
                 : {library: false, inspector: false};
         }
 
@@ -2584,7 +3410,11 @@ $canvas_state = [
 
             const mode = getWorkspaceMode();
             const libraryOpen = isDrawerOpen('library');
-            const inspectorOpen = isDrawerOpen('inspector');
+            const inspectorOpen = mode === 'desktop' ? true : isDrawerOpen('inspector');
+
+            if (mode === 'desktop' && state.ui && state.ui.drawers && state.ui.drawers.desktop) {
+                state.ui.drawers.desktop.inspector = true;
+            }
 
             workspace.classList.toggle('lb-workspace--mobile', mode === 'mobile');
             workspace.classList.toggle('lb-workspace--library-open', libraryOpen);
@@ -2614,13 +3444,52 @@ $canvas_state = [
                 state.ui.drawers[mode].inspector = false;
             }
 
+            if (mode === 'desktop' && name === 'inspector') {
+                state.ui.drawers[mode].inspector = true;
+                saveWorkspaceUIState();
+                syncWorkspaceShell();
+                return;
+            }
+
             state.ui.drawers[mode][name] = isOpen;
             saveWorkspaceUIState();
             syncWorkspaceShell();
         }
 
         function toggleDrawer(name) {
+            if (name === 'inspector' && getWorkspaceMode() === 'desktop') {
+                setDrawerOpen('inspector', true);
+                return;
+            }
+
             setDrawerOpen(name, !isDrawerOpen(name));
+        }
+
+        function activateLibraryTab(tabKey) {
+            const key = String(tabKey || 'sections');
+            const tabButton = document.querySelector('.lb-library-tab[data-tab="' + key + '"]');
+            if (!tabButton) {
+                return;
+            }
+
+            document.querySelectorAll('.lb-library-tab').forEach(function (item) {
+                item.classList.remove('active');
+            });
+            tabButton.classList.add('active');
+
+            document.querySelectorAll('.lb-library-panel').forEach(function (panel) {
+                panel.classList.add('d-none');
+            });
+
+            const activePanel = document.getElementById('lb-' + key + '-library');
+            if (activePanel) {
+                activePanel.classList.remove('d-none');
+            }
+        }
+
+        function openLibraryOverlay(tabKey) {
+            activateLibraryTab(tabKey || 'sections');
+            setDrawerOpen('library', true);
         }
 
         function applyDeviceViewport() {
@@ -2662,6 +3531,456 @@ $canvas_state = [
                 return 3;
             }
             return 2;
+        }
+
+        function isStackedDevice(deviceKey, section) {
+            const key = String(deviceKey || '').toLowerCase();
+            const settings = section && section.settings && typeof section.settings === 'object'
+                ? section.settings
+                : {};
+
+            if (key === 'phone' || key === 'mobile') {
+                return settings.stack_phone !== false;
+            }
+
+            if (key === 'tablet' || key === 'pad') {
+                return settings.stack_tablet === true;
+            }
+
+            return false;
+        }
+
+        function getDeviceWidthPreferenceKeys(deviceKey) {
+            const key = String(deviceKey || '').toLowerCase();
+            const order = [key];
+
+            if (key === 'phone' || key === 'mobile') {
+                order.push('phone', 'mobile', 'tablet', 'pad', 'desktop');
+            } else if (key === 'tablet' || key === 'pad') {
+                order.push('tablet', 'pad', 'desktop');
+            } else {
+                order.push('desktop');
+            }
+
+            const unique = [];
+            const seen = {};
+            order.forEach(function (candidate) {
+                const normalized = String(candidate || '').toLowerCase();
+                if (!normalized || seen[normalized]) {
+                    return;
+                }
+
+                seen[normalized] = true;
+                unique.push(normalized);
+            });
+
+            return unique;
+        }
+
+        function isWidthInheritanceEnabled(section) {
+            const settings = section && section.settings && typeof section.settings === 'object'
+                ? section.settings
+                : {};
+            return settings.width_inherit !== false;
+        }
+
+        function parseColumnWidthValue(value) {
+            const units = Number(value);
+            if (!Number.isFinite(units)) {
+                return null;
+            }
+
+            const rounded = Math.round(units);
+            if (rounded < 1 || rounded > 12) {
+                return null;
+            }
+
+            return rounded;
+        }
+
+        function getLayoutDefaultColumnUnits(layout, count) {
+            if (count <= 1) {
+                return [12];
+            }
+
+            if (String(layout || '').indexOf('3col') === 0) {
+                return [4, 4, 4].slice(0, count);
+            }
+
+            if (layout === '2col_sidebar_left') {
+                return [4, 8];
+            }
+
+            if (layout === '2col_sidebar_right') {
+                return [8, 4];
+            }
+
+            return [6, 6].slice(0, count);
+        }
+
+        function normalizeColumnUnits(units, totalUnits) {
+            const safeTotal = Number(totalUnits) > 0 ? Number(totalUnits) : 12;
+            const normalized = (Array.isArray(units) ? units : []).map(function (value) {
+                const number = Number(value);
+                return Number.isFinite(number) && number > 0 ? number : 1;
+            });
+
+            if (!normalized.length) {
+                return [safeTotal];
+            }
+
+            const sum = normalized.reduce(function (acc, value) {
+                return acc + value;
+            }, 0) || 1;
+
+            const scaled = normalized.map(function (value) {
+                return (value / sum) * safeTotal;
+            });
+
+            const integers = scaled.map(function (value) {
+                return Math.max(1, Math.floor(value));
+            });
+
+            let remainder = safeTotal - integers.reduce(function (acc, value) {
+                return acc + value;
+            }, 0);
+
+            const fractions = scaled.map(function (value, index) {
+                return {index: index, fraction: value - Math.floor(value)};
+            }).sort(function (a, b) {
+                return b.fraction - a.fraction;
+            });
+
+            let guard = 0;
+            while (remainder > 0 && fractions.length && guard < 128) {
+                const slot = fractions[guard % fractions.length];
+                integers[slot.index] += 1;
+                remainder -= 1;
+                guard += 1;
+            }
+
+            return integers;
+        }
+
+        function getSectionColumnUnits(section, deviceKey) {
+            const columns = Array.isArray(section && section.columns) ? section.columns : [];
+            if (!columns.length) {
+                return [];
+            }
+
+            const defaults = getLayoutDefaultColumnUnits(section.layout, columns.length);
+            const preferenceKeys = isWidthInheritanceEnabled(section)
+                ? getDeviceWidthPreferenceKeys(deviceKey)
+                : [String(deviceKey || '').toLowerCase()];
+            const raw = columns.map(function (column, columnIndex) {
+                const widthMap = column && column.width && typeof column.width === 'object' ? column.width : {};
+                let explicitUnits = null;
+
+                for (let index = 0; index < preferenceKeys.length; index += 1) {
+                    explicitUnits = parseColumnWidthValue(widthMap[preferenceKeys[index]]);
+                    if (explicitUnits !== null) {
+                        break;
+                    }
+                }
+
+                if (explicitUnits !== null) {
+                    return explicitUnits;
+                }
+
+                return defaults[columnIndex] || 1;
+            });
+
+            return normalizeColumnUnits(raw, 12);
+        }
+
+        function getSectionColumnsStyle(section) {
+            if (!section || !Array.isArray(section.columns) || !section.columns.length) {
+                return '';
+            }
+
+            if (isStackedDevice(state.activeDevice, section)) {
+                return 'grid-template-columns:minmax(0,1fr);';
+            }
+
+            const units = getSectionColumnUnits(section, state.activeDevice);
+            if (!units.length) {
+                return '';
+            }
+
+            return 'grid-template-columns:' + units.map(function (unit) {
+                return 'minmax(0,' + unit + 'fr)';
+            }).join(' ') + ';';
+        }
+
+        function isColumnResizeEnabled(section) {
+            return !!(section && Array.isArray(section.columns) && section.columns.length > 1 && !isStackedDevice(state.activeDevice, section));
+        }
+
+        function getResizeIndicatorMarkup(section, sectionIndex) {
+            if (!state.columnResize || state.columnResize.sectionIndex !== sectionIndex) {
+                return '';
+            }
+
+            const leftIndex = Number(state.columnResize.leftColumnIndex || 0);
+            const units = getSectionColumnUnits(section, state.activeDevice);
+            const left = Number(units[leftIndex] || 0);
+            const right = Number(units[leftIndex + 1] || 0);
+            if (!left || !right) {
+                return '';
+            }
+
+            return '' +
+                '<div class="lb-column-resize-indicator">' +
+                    escapeHtml(getDeviceTitle(state.activeDevice)) + ': ' + escapeHtml(String(left)) + '/12 | ' + escapeHtml(String(right)) + '/12' +
+                '</div>';
+        }
+
+        function getSectionWidthSourceTooltip(section, deviceKey) {
+            const resolution = getResolvedSectionWidthSources(section, deviceKey);
+            const resolved = resolution.resolved;
+            if (!resolved.length) {
+                return '';
+            }
+
+            const activeKey = resolution.activeKey;
+            const activeTitle = resolution.activeTitle;
+
+            const firstSource = resolved[0].source;
+            const sameSource = resolved.every(function (item) {
+                return item.source === firstSource;
+            });
+
+            const unitsText = resolved.map(function (item) {
+                return String(item.units) + '/12';
+            }).join('|');
+
+            if (sameSource) {
+                if (firstSource === activeKey) {
+                    return activeTitle + ' (' + unitsText + ')';
+                }
+                return activeTitle + ' <- ' + resolved[0].sourceLabel + '(' + unitsText + ')';
+            }
+
+            const mixed = resolved.map(function (item, index) {
+                return 'c' + String(index + 1) + ':' + item.sourceLabel + '(' + String(item.units) + '/12)';
+            }).join(', ');
+
+            return activeTitle + ' <- смешано {' + mixed + '}';
+        }
+
+        function getResolvedSectionWidthSources(section, deviceKey) {
+            const columns = Array.isArray(section && section.columns) ? section.columns : [];
+            if (!columns.length) {
+                return {activeKey: String(deviceKey || '').toLowerCase(), activeTitle: String(getDeviceTitle(deviceKey)), resolved: []};
+            }
+
+            const activeKey = String(deviceKey || '').toLowerCase();
+            const activeTitle = String(getDeviceTitle(activeKey));
+            const defaults = normalizeColumnUnits(getLayoutDefaultColumnUnits(section.layout, columns.length), 12);
+            const stacked = isStackedDevice(activeKey, section);
+            const preferenceKeys = isWidthInheritanceEnabled(section)
+                ? getDeviceWidthPreferenceKeys(activeKey)
+                : [activeKey];
+
+            const resolved = columns.map(function (column, columnIndex) {
+                if (stacked) {
+                    return {source: 'stack', sourceLabel: 'в столбик', units: 12};
+                }
+
+                const widthMap = column && column.width && typeof column.width === 'object' ? column.width : {};
+                let units = defaults[columnIndex] || 1;
+                let source = 'layout';
+
+                for (let index = 0; index < preferenceKeys.length; index += 1) {
+                    const candidateKey = preferenceKeys[index];
+                    const explicit = parseColumnWidthValue(widthMap[candidateKey]);
+                    if (explicit !== null) {
+                        units = explicit;
+                        source = candidateKey;
+                        break;
+                    }
+                }
+
+                return {
+                    source: source,
+                    sourceLabel: source === 'layout' ? 'сетка' : String(getDeviceTitle(source)),
+                    units: units
+                };
+            });
+
+            return {
+                activeKey: activeKey,
+                activeTitle: activeTitle,
+                resolved: resolved
+            };
+        }
+
+        function getColumnWidthHoverHint(section, columnIndex, deviceKey) {
+            const resolution = getResolvedSectionWidthSources(section, deviceKey);
+            const info = resolution.resolved[columnIndex];
+            if (!info) {
+                return '';
+            }
+
+            const columnTitle = 'c' + String(Number(columnIndex) + 1);
+            const activeTitle = resolution.activeTitle;
+
+            if (info.source === 'stack') {
+                return activeTitle + ': ' + columnTitle + ' = в столбик (1 колонка)';
+            }
+
+            if (info.source === resolution.activeKey) {
+                return activeTitle + ': ' + columnTitle + ' = ' + String(info.units) + '/12';
+            }
+
+            return activeTitle + ': ' + columnTitle + ' = ' + String(info.units) + '/12 <- ' + info.sourceLabel;
+        }
+
+        function renderSectionBreakpointPanel(section, sectionIndex) {
+            if (!section || !Array.isArray(section.columns)) {
+                return '';
+            }
+
+            const columnCount = section.columns.length;
+            const hasResponsiveControls = columnCount >= 2;
+            const settings = section.settings && typeof section.settings === 'object' ? section.settings : {};
+            const stackTablet = settings.stack_tablet === true;
+            const stackPhone = settings.stack_phone !== false;
+            const widthInherit = settings.width_inherit !== false;
+            const autoscaleBaseBlocks = settings.autoscale_base_blocks === true;
+            const activeKey = String(state.activeDevice || '').toLowerCase();
+            const tabletCurrent = activeKey === 'tablet' || activeKey === 'pad';
+            const phoneCurrent = activeKey === 'phone' || activeKey === 'mobile';
+            const widthSourceTooltip = hasResponsiveControls ? getSectionWidthSourceTooltip(section, state.activeDevice) : '';
+            const label = hasResponsiveControls ? 'стек' : 'блок';
+
+            return '' +
+                '<div class="lb-section-breakpoints" data-role="section-breakpoints">' +
+                    '<span class="lb-section-breakpoints__label">' + escapeHtml(label) + '</span>' +
+                    (hasResponsiveControls
+                        ? '<button type="button" class="lb-section-breakpoint' + (stackTablet ? ' is-active' : '') + (tabletCurrent ? ' is-current' : '') + '" data-action="toggle-section-stack-tablet" data-section-index="' + sectionIndex + '" title="Планшет: складывать колонки" aria-label="Планшет: складывать колонки">T</button>' +
+                          '<button type="button" class="lb-section-breakpoint' + (stackPhone ? ' is-active' : '') + (phoneCurrent ? ' is-current' : '') + '" data-action="toggle-section-stack-phone" data-section-index="' + sectionIndex + '" title="Телефон: складывать колонки" aria-label="Телефон: складывать колонки">M</button>' +
+                          '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--inherit' + (widthInherit ? ' is-active' : '') + '" data-action="toggle-section-width-inherit" data-section-index="' + sectionIndex + '" title="Наследование ширин между устройствами" aria-label="Наследование ширин между устройствами">I<span class="lb-section-breakpoint__tooltip">' + escapeHtml(widthSourceTooltip) + '</span></button>'
+                        : '') +
+                    '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--autoscale' + (autoscaleBaseBlocks ? ' is-active' : '') + '" data-action="toggle-section-autoscale-base-blocks" data-section-index="' + sectionIndex + '" title="Автоскейл базовых блоков: 12/12 -> 100% экрана" aria-label="Автоскейл базовых блоков">A</button>' +
+                '</div>';
+        }
+
+        function resetSectionColumnWidths(section, deviceKey) {
+            if (!section || !Array.isArray(section.columns) || !section.columns.length) {
+                return;
+            }
+
+            const defaults = normalizeColumnUnits(getLayoutDefaultColumnUnits(section.layout, section.columns.length), 12);
+            section.columns.forEach(function (column, columnIndex) {
+                if (!column.width || typeof column.width !== 'object') {
+                    column.width = defaultColumnWidth();
+                }
+
+                column.width[deviceKey] = String(defaults[columnIndex] || 1);
+            });
+        }
+
+        function applyColumnUnitsForActiveDevice(section, units) {
+            if (!section || !Array.isArray(section.columns) || !Array.isArray(units)) {
+                return;
+            }
+
+            section.columns.forEach(function (column, index) {
+                if (!column.width || typeof column.width !== 'object') {
+                    column.width = defaultColumnWidth();
+                }
+
+                const nextUnits = Number(units[index]);
+                if (Number.isFinite(nextUnits) && nextUnits > 0) {
+                    column.width[state.activeDevice] = String(nextUnits);
+                }
+            });
+        }
+
+        function startColumnResize(sectionIndex, leftColumnIndex, clientX) {
+            const section = state.schema.sections[sectionIndex];
+            if (!isColumnResizeEnabled(section)) {
+                return;
+            }
+
+            const units = getSectionColumnUnits(section, state.activeDevice);
+            if (leftColumnIndex < 0 || leftColumnIndex >= units.length - 1) {
+                return;
+            }
+
+            state.columnResize = {
+                sectionIndex: sectionIndex,
+                leftColumnIndex: leftColumnIndex,
+                startClientX: Number(clientX) || 0,
+                startUnits: units.slice(),
+                lastUnitsKey: units.join(',')
+            };
+
+            if (workspace) {
+                workspace.classList.add('lb-column-resizing');
+            }
+        }
+
+        function updateColumnResize(clientX) {
+            if (!state.columnResize) {
+                return;
+            }
+
+            const resizeState = state.columnResize;
+            const section = state.schema.sections[resizeState.sectionIndex];
+            if (!section) {
+                return;
+            }
+
+            const sectionElement = canvasRoot.querySelector('[data-role="section"][data-section-index="' + resizeState.sectionIndex + '"] .lb-live-columns');
+            if (!sectionElement) {
+                return;
+            }
+
+            const rect = sectionElement.getBoundingClientRect();
+            if (!rect || rect.width <= 0) {
+                return;
+            }
+
+            const leftIndex = resizeState.leftColumnIndex;
+            const rightIndex = leftIndex + 1;
+            const baseLeft = Number(resizeState.startUnits[leftIndex] || 1);
+            const baseRight = Number(resizeState.startUnits[rightIndex] || 1);
+            const pairTotal = baseLeft + baseRight;
+
+            const deltaX = (Number(clientX) || 0) - resizeState.startClientX;
+            const deltaUnits = Math.round((deltaX / rect.width) * 12);
+
+            const minUnits = 1;
+            const nextLeft = Math.max(minUnits, Math.min(pairTotal - minUnits, baseLeft + deltaUnits));
+            const nextRight = pairTotal - nextLeft;
+
+            const nextUnits = resizeState.startUnits.slice();
+            nextUnits[leftIndex] = nextLeft;
+            nextUnits[rightIndex] = nextRight;
+
+            const nextKey = nextUnits.join(',');
+            if (nextKey === resizeState.lastUnitsKey) {
+                return;
+            }
+
+            applyColumnUnitsForActiveDevice(section, nextUnits);
+            resizeState.lastUnitsKey = nextKey;
+            setCanvasDirty(true);
+            renderCanvas();
+        }
+
+        function stopColumnResize() {
+            if (!state.columnResize) {
+                return;
+            }
+
+            state.columnResize = null;
+
+            if (workspace) {
+                workspace.classList.remove('lb-column-resizing');
+            }
         }
 
         function syncSectionColumnsWithLayout(section) {
@@ -2755,6 +4074,54 @@ $canvas_state = [
                         '<div class="small text-muted mt-1">Сейчас: ' + escapeHtml(widthOption.title) + '</div>' +
                     '</div>';
             }).join('');
+        }
+
+        function renderSectionResponsiveControls(section) {
+            const stackTablet = !!(section && section.settings && section.settings.stack_tablet === true);
+            const stackPhone = !(section && section.settings && section.settings.stack_phone === false);
+            const widthInherit = !(section && section.settings && section.settings.width_inherit === false);
+            const autoscaleBaseBlocks = !!(section && section.settings && section.settings.autoscale_base_blocks === true);
+
+            return '' +
+                '<div class="lb-field">' +
+                    fieldLabel('Адаптивное складывание колонок', 'Поведение как на реальном сайте: управляйте, когда колонки складываются в столбик.') +
+                    '<label class="d-flex align-items-center mb-2"><input type="checkbox" class="mr-2" data-field="settings.stack_tablet"' + (stackTablet ? ' checked' : '') + '>Планшет: складывать в один столбик</label>' +
+                    '<label class="d-flex align-items-center mb-0"><input type="checkbox" class="mr-2" data-field="settings.stack_phone"' + (stackPhone ? ' checked' : '') + '>Телефон: складывать в один столбик</label>' +
+                    '<label class="d-flex align-items-center mt-2 mb-0"><input type="checkbox" class="mr-2" data-field="settings.width_inherit"' + (widthInherit ? ' checked' : '') + '>Наследовать ширины между устройствами</label>' +
+                    '<label class="d-flex align-items-center mt-2 mb-0"><input type="checkbox" class="mr-2" data-field="settings.autoscale_base_blocks"' + (autoscaleBaseBlocks ? ' checked' : '') + '>Автоскейл базовых блоков (12/12 -> 100% экрана)</label>' +
+                    '<div class="small text-muted mt-2">Активный предпросмотр: ' + escapeHtml(getDeviceTitle(state.activeDevice)) + '</div>' +
+                '</div>';
+        }
+
+        function getLayoutRangeValue(layout) {
+            const key = String(layout || '1col');
+            if (key.indexOf('3col') === 0) {
+                return 3;
+            }
+            if (key.indexOf('2col') === 0) {
+                return 2;
+            }
+            return 1;
+        }
+
+        function renderLayoutRangeControls(layout) {
+            const value = getLayoutRangeValue(layout);
+            const isTwo = value === 2;
+            const active = String(layout || (isTwo ? '2col_equal' : (value === 3 ? '3col_equal' : '1col')));
+
+            return '' +
+                '<div class="lb-field">' +
+                    fieldLabel('Строка: колонки', 'Как на конструкторе: выберите 1–3 колонки и при необходимости уточните схему для двух колонок.') +
+                    '<input type="range" min="1" max="3" step="1" class="lb-layout-range" data-role="layout-range" value="' + String(value) + '">' +
+                    '<div class="small text-muted mt-1">Сейчас: ' + escapeHtml(getLayoutOption(active).title) + '</div>' +
+                    (isTwo
+                        ? '<div class="lb-layout-variants">' +
+                            '<button type="button" class="lb-layout-variant' + (active === '2col_equal' ? ' is-active' : '') + '" data-action="set-layout" data-layout="2col_equal">Равные</button>' +
+                            '<button type="button" class="lb-layout-variant' + (active === '2col_sidebar_left' ? ' is-active' : '') + '" data-action="set-layout" data-layout="2col_sidebar_left">Узкая слева</button>' +
+                            '<button type="button" class="lb-layout-variant' + (active === '2col_sidebar_right' ? ' is-active' : '') + '" data-action="set-layout" data-layout="2col_sidebar_right">Узкая справа</button>' +
+                          '</div>'
+                        : '') +
+                '</div>';
         }
 
         function ensureSelection() {
@@ -2961,10 +4328,20 @@ $canvas_state = [
             applyDeviceViewport();
 
             const pageTheme = getCurrentPageTheme();
-            const pageThemeStyle = renderThemeVars(getThemeVars(pageTheme));
+            const pageThemeVars = getThemeVars(pageTheme);
+            const pageThemeStyle = renderThemeVars(pageThemeVars);
+            const pageBackground = String(pageThemeVars['--lb-page-background'] || '#ffffff');
             const effectiveShell = getEffectiveShellVariantState();
             const effectiveShellTitle = effectiveShell.variant ? effectiveShell.variant.title : 'Базовый shell';
             const templatePresetTitle = getCurrentTemplatePresetTitle();
+
+            if (canvasRoot) {
+                canvasRoot.style.setProperty('--lb-canvas-surface-bg', pageBackground);
+            }
+
+            if (canvasFrame) {
+                canvasFrame.style.background = pageBackground;
+            }
 
             if (shellMap) {
                 shellMap.innerHTML = renderShellParticipationMap();
@@ -2976,6 +4353,11 @@ $canvas_state = [
                     const sectionVisible = isVisibleOnDevice(section.visibility);
                     const layoutTitle = getLayoutOption(section.layout).title;
                     const sectionPresentation = getSectionPresentation(section);
+                    const columnsStyle = getSectionColumnsStyle(section);
+                    const columnsStyleAttr = columnsStyle ? ' style="' + escapeHtml(columnsStyle) + '"' : '';
+                    const canResizeColumns = isColumnResizeEnabled(section);
+                    const resizeIndicatorMarkup = getResizeIndicatorMarkup(section, sectionIndex);
+                    const sectionBreakpointPanel = renderSectionBreakpointPanel(section, sectionIndex);
                     const sectionClasses = [
                         'lb-live-section',
                         sectionPresentation.className,
@@ -2985,21 +4367,14 @@ $canvas_state = [
 
                     return '' +
                         '<section class="' + escapeHtml(sectionClasses) + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
-                            '<div class="lb-live-section__topbar">' +
-                                '<div>' +
-                                    '<div class="lb-live-section__kicker">' + escapeHtml(getOptionTitle(sectionTypeOptions, section.section_type || 'content')) + '</div>' +
-                                    '<h3 class="lb-live-section__title">' + escapeHtml(section.title) + '</h3>' +
-                                    '<div class="lb-live-section__meta">Схема: ' + escapeHtml(layoutTitle) + ' | стиль: ' + escapeHtml(getOptionTitle(sectionStyleOptions, section.style_preset || 'content')) + ' | тон: ' + escapeHtml(getOptionTitle(backgroundToneOptions, section.background_tone || 'base')) + '</div>' +
-                                    (!sectionVisible ? '<div class="lb-live-section__meta">Секция скрыта на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '».</div>' : '') +
-                                '</div>' +
-                                '<div>' +
-                                    '<button type="button" class="lb-btn lb-btn--danger" data-action="delete-section" data-section-index="' + sectionIndex + '">Удалить</button>' +
-                                '</div>' +
-                            '</div>' +
                             '<div class="lb-live-section__inner">' +
-                                '<div class="lb-live-columns ' + escapeHtml(getSectionLayoutClass(section.layout)) + '">' +
+                                '<button type="button" class="lb-section-remove" data-action="delete-section" data-section-index="' + sectionIndex + '" title="Удалить секцию" aria-label="Удалить секцию">×</button>' +
+                                resizeIndicatorMarkup +
+                                sectionBreakpointPanel +
+                                '<div class="lb-live-columns ' + escapeHtml(getSectionLayoutClass(section.layout)) + '"' + columnsStyleAttr + '>' +
                                     section.columns.map(function (column, columnIndex) {
                                         const columnVisible = isVisibleOnDevice(column.visibility);
+                                        const columnWidthHint = getColumnWidthHoverHint(section, columnIndex, state.activeDevice);
                                         const columnClasses = [
                                             'lb-live-column',
                                             state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? 'lb-live-column--selected' : '',
@@ -3007,19 +4382,12 @@ $canvas_state = [
                                         ].filter(Boolean).join(' ');
 
                                         return '' +
-                                            '<div class="' + escapeHtml(columnClasses) + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '">' +
-                                                '<div class="lb-live-column__head">' +
-                                                    '<div>' +
-                                                        '<div class="lb-live-column__eyebrow">Колонка</div>' +
-                                                        '<div class="lb-live-column__title">' + escapeHtml(column.title) + '</div>' +
-                                                    '</div>' +
-                                                    '<div class="lb-live-column__meta">' + escapeHtml(getWidthOption(String(column.width[state.activeDevice] || 'auto')).title) + '</div>' +
-                                                '</div>' +
-                                                '<div class="lb-live-column__meta">Нажмите, чтобы выбрать колонку. Перетаскивание в эту область отправляет элемент в конец колонки.</div>' +
+                                            '<div class="' + escapeHtml(columnClasses) + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="' + escapeHtml(columnWidthHint) + '">' +
+                                                '<span class="lb-live-column__width-tooltip">' + escapeHtml(columnWidthHint) + '</span>' +
+                                                '<div class="lb-column-quick-actions"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Добавить блок или виджет">+</button></div>' +
                                                 (column.nodes.length
                                                     ? column.nodes.map(function (node, nodeIndex) {
                                                         const nodeVisible = isVisibleOnDevice(node.device_visibility);
-                                                        const nodeLabel = getNodeDisplayLabel(node);
                                                         const nodeClasses = [
                                                             'lb-live-node',
                                                             node.type === 'system_widget' ? 'lb-live-node--widget' : 'lb-live-node--block',
@@ -3029,19 +4397,14 @@ $canvas_state = [
 
                                                         return '' +
                                                             '<div class="' + escapeHtml(nodeClasses) + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
-                                                                '<div class="lb-live-node__head">' +
-                                                                    '<div>' +
-                                                                        '<div class="lb-live-node__eyebrow">' + escapeHtml(getNodeTypeTitle(node.type)) + '</div>' +
-                                                                        '<div class="lb-live-node__label">' + escapeHtml(nodeLabel) + '</div>' +
-                                                                    '</div>' +
-                                                                    '<button type="button" class="lb-btn lb-btn--link" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '">удалить</button>' +
-                                                                '</div>' +
-	                                                                '<div class="lb-live-node__meta">' + (node.type === 'block' && getNodeSemanticSummary(node)
-	                                                                    ? escapeHtml(getNodeSemanticSummary(node))
-	                                                                    : (node.class_name ? 'Оформление: ' + escapeHtml(node.class_name) : 'Дополнительное оформление не задано')) + (!nodeVisible ? ' | скрыто на устройстве «' + escapeHtml(getDeviceTitle(state.activeDevice)) + '»' : '') + '</div>' +
+	                                                                '<button type="button" class="lb-node-remove" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" title="Удалить элемент" aria-label="Удалить элемент">×</button>' +
+	                                                                renderNodeLivePreview(node) +
                                                             '</div>';
                                                     }).join('')
-                                                    : '<div class="lb-live-column__empty">Колонка пока пустая. Добавьте блок или системный виджет из библиотеки слева.</div>') +
+                                                    : '<div class="lb-live-column__empty"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Открыть библиотеку">+</button></div>') +
+                                                (canResizeColumns && columnIndex < section.columns.length - 1
+                                                    ? '<button type="button" class="lb-column-resizer" data-role="column-resizer" data-section-index="' + sectionIndex + '" data-left-column-index="' + columnIndex + '" title="Потяните, чтобы изменить ширину колонок" aria-label="Изменить ширину колонок"></button>'
+                                                    : '') +
                                             '</div>';
                                     }).join('') +
                                 '</div>' +
@@ -3050,49 +4413,20 @@ $canvas_state = [
                 }).join('')
                 : '' +
                     '<div class="lb-starter" data-role="page">' +
-                        '<div class="lb-starter__icon">✦</div>' +
-                        '<p class="lb-starter__title">Начните создавать страницу</p>' +
-                        '<p class="lb-starter__desc">Выберите готовый стартовый блок или добавьте чистую секцию и настройте всё сам.</p>' +
+                        '<div class="lb-starter__icon">＋</div>' +
+                        '<p class="lb-starter__title">Страница пока пустая</p>' +
+                        '<p class="lb-starter__desc">Добавьте первую секцию — дальше вы сможете вставлять блоки и виджеты.</p>' +
                         '<div class="lb-starter__grid">' +
-                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="0" data-preset-key="hero_simple">' +
-                                '<span class="lb-starter__btn-icon">🏠</span>' +
-                                '<span>Первый экран</span>' +
-                            '</button>' +
-                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="3" data-preset-key="benefits_3_cards">' +
-                                '<span class="lb-starter__btn-icon">⭐</span>' +
-                                '<span>Преимущества</span>' +
-                            '</button>' +
-                            '<button type="button" class="lb-starter__btn" data-role="insert-section-preset" data-preset-index="7" data-preset-key="testimonials">' +
-                                '<span class="lb-starter__btn-icon">💬</span>' +
-                                '<span>Отзывы</span>' +
-                            '</button>' +
                             '<button type="button" class="lb-starter__btn" data-role="insert-empty-section">' +
                                 '<span class="lb-starter__btn-icon">＋</span>' +
-                                '<span>Чистая секция</span>' +
+                                '<span>Добавить секцию</span>' +
                             '</button>' +
                         '</div>' +
-                        '<p class="lb-starter__hint">Или выберите любую готовую секцию в <strong>Библиотеке</strong> слева.</p>' +
+                        '<p class="lb-starter__hint">Готовые секции доступны в полноэкранной <strong>Библиотеке</strong>.</p>' +
                     '</div>';
 
             canvasRoot.innerHTML = '' +
                 '<div class="lb-live-page" style="' + escapeHtml(pageThemeStyle) + '" data-role="page">' +
-                    '<section class="lb-live-page__hero" data-role="page">' +
-                        '<div class="lb-live-page__kicker">Визуальная сборка страницы</div>' +
-                        '<div class="lb-live-page__header">' +
-                            '<div>' +
-                                '<h2 class="lb-live-page__title">' + escapeHtml(state.page.title) + '</h2>' +
-                                '<p class="lb-live-page__lead">Это рабочий экран страницы. Выбирайте шаблон, меняйте стиль и собирайте секции прямо здесь, а глобальные настройки сайта трогайте только когда это действительно нужно.</p>' +
-                            '</div>' +
-                        '</div>' +
-                        '<div class="lb-live-page__chips">' +
-                            '<span class="lb-live-pill"><strong>Шаблон</strong><span>' + escapeHtml(templatePresetTitle) + '</span></span>' +
-                            '<span class="lb-live-pill"><strong>Каркас</strong><span>' + escapeHtml(effectiveShellTitle) + '</span></span>' +
-                            '<span class="lb-live-pill"><strong>Стиль</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.global_style_preset, pageTheme.global_style_preset)) + '</span></span>' +
-                            '<span class="lb-live-pill"><strong>Цвет</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.color_preset, pageTheme.color_preset)) + '</span></span>' +
-                            '<span class="lb-live-pill"><strong>Типографика</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.typography_preset, pageTheme.typography_preset)) + '</span></span>' +
-                            '<span class="lb-live-pill"><strong>Кнопки</strong><span>' + escapeHtml(getOptionTitle(pageThemeOptions.button_preset, pageTheme.button_preset)) + '</span></span>' +
-                        '</div>' +
-                    '</section>' +
                     '<div class="lb-live-sections">' + sectionsMarkup + '</div>' +
                 '</div>';
 
@@ -3121,7 +4455,7 @@ $canvas_state = [
                     '<div class="small font-weight-bold text-uppercase text-muted mb-2">Каркас страницы</div>' +
                     renderSelectField('Шаблон страницы', 'Определяет общий тип страницы и подсказывает, какой shell использовать автоматически.', 'theme.template_preset', pageThemeOptions.template_preset || [], theme.template_preset || '') +
                     renderSelectField('Вариант каркаса', 'Обычно оставьте авто. Меняйте только если нужна нестандартная раскладка.', 'layout.shell_variant', getShellVariantOptions(), layout.shell_variant || '') +
-                    (state.page.mode === 'full_takeover'
+                    (isStandaloneLandingPage()
                         ? renderSelectField('Основной слот содержимого', 'Куда должен вставляться основной runtime-контент страницы внутри shell.', 'layout.content_slot', contentSlotOptions, layout.content_slot || 'content_body')
                         : '') +
                     renderPageShellSummary() +
@@ -3148,16 +4482,11 @@ $canvas_state = [
                         fieldLabel('Название секции', 'Это имя видят редакторы внутри конструктора. На сайте его можно не показывать.') +
                         '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(section.title) + '">' +
                     '</div>' +
-                    '<div class="lb-field">' +
-                        fieldLabel('Схема колонок', 'Определяет, сколько колонок будет в секции и как они распределяются по ширине.') +
-                        '<select class="lb-control" data-field="layout">' +
-                            renderSelectOptions(layoutOptions, section.layout) +
-                        '</select>' +
-                    '</div>' +
+	                renderLayoutRangeControls(section.layout) +
                     renderSelectField('Тип секции', 'Смысл секции на странице: первый экран, контент, действие, каталог и так далее.', 'section_type', sectionTypeOptions, section.section_type) +
                     renderSelectField('Стилевой пресет', 'Готовый пресет оформления секции.', 'style_preset', sectionStyleOptions, section.style_preset) +
                     renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
-                    renderSelectField('Пресет контейнера', 'Управляет рабочей шириной секции.', 'container_preset', pageThemeOptions.container_preset, section.container_preset) +
+                    renderSelectField('Пресет контейнера', 'Управляет рабочей шириной секции. Для 100% выберите «Во всю ширину».', 'container_preset', pageThemeOptions.container_preset, section.container_preset) +
                     renderSelectField('Вертикальный ритм', 'Отступы сверху и снизу для секции.', 'spacing_preset', spacingPresetOptions, section.spacing_preset) +
                     '<div class="lb-field">' +
                         fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
@@ -3171,6 +4500,8 @@ $canvas_state = [
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
                         renderVisibilityControls('visibility', section.visibility) +
                     '</div>' +
+                    renderSectionResponsiveControls(section) +
+                    '<button type="button" class="lb-btn lb-btn--ghost mr-2 mb-2" data-action="reset-column-widths-device" data-section-index="' + selection.sectionIndex + '">Сбросить ширины колонок (' + escapeHtml(getDeviceTitle(state.activeDevice)) + ')</button>' +
                     '<button type="button" class="lb-btn lb-btn--danger" data-action="delete-section" data-section-index="' + selection.sectionIndex + '">Удалить секцию</button>';
                 widgetForm.innerHTML = 'Выберите системный виджет на макете, чтобы открыть его штатные настройки.';
                 initTooltips(selectionControls);
@@ -3246,7 +4577,7 @@ $canvas_state = [
             if (node.type === 'system_widget' && node.widget_id) {
                 loadWidgetOptions(node);
             } else if (node.type === 'system_widget') {
-                widgetForm.innerHTML = 'У этого виджета пока нет связи с системным каталогом. Добавьте его заново из списка слева.';
+                widgetForm.innerHTML = 'У этого виджета пока нет связи с системным каталогом. Добавьте его заново из библиотеки.';
             } else {
 	                widgetForm.innerHTML = 'Для этого semantic-блока доступны preset-поля, видимость, заметки и локальное оформление.';
             }
@@ -3472,6 +4803,7 @@ $canvas_state = [
 
             state.schema.sections.push(section);
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setDrawerOpen('library', false);
             setCanvasDirty(true);
         }
 
@@ -3512,6 +4844,7 @@ $canvas_state = [
 
 
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setDrawerOpen('library', false);
             setCanvasDirty(true);
         }
 
@@ -3555,6 +4888,7 @@ $canvas_state = [
 
 
             setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setDrawerOpen('library', false);
             setCanvasDirty(true);
         }
 
@@ -3588,6 +4922,7 @@ $canvas_state = [
                 nodeIndex: column.nodes.length - 1
             });
 
+            setDrawerOpen('library', false);
             setCanvasDirty(true);
         }
 
@@ -3644,16 +4979,20 @@ $canvas_state = [
                 nodeIndex: column.nodes.length - 1
             });
 
+            setDrawerOpen('library', false);
             setCanvasDirty(true);
         }
 
         async function saveCanvas() {
             syncSelectedWidgetFormIntoState();
 
+            const csrfInput = document.getElementById('lb-csrf');
+
             const body = new URLSearchParams();
             body.set('page_key', state.page.key);
             body.set('schema', JSON.stringify(state.schema));
             body.set('version_note', versionNote.value || 'Сохранение страницы');
+            body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
 
             const response = await fetch(state.screen.api.canvas_save_url, {
                 method: 'POST',
@@ -3704,8 +5043,11 @@ $canvas_state = [
                 return;
             }
 
+            const csrfInput = document.getElementById('lb-csrf');
+
             const body = new URLSearchParams();
             body.set('version_id', versionId);
+            body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
 
             const response = await fetch(state.screen.api.version_restore_url, {
                 method: 'POST',
@@ -3734,22 +5076,14 @@ $canvas_state = [
 
         document.querySelectorAll('.lb-library-tab').forEach(function (button) {
             button.addEventListener('click', function () {
-                document.querySelectorAll('.lb-library-tab').forEach(function (item) {
-                    item.classList.remove('active');
-                });
-                button.classList.add('active');
-                document.querySelectorAll('.lb-library-panel').forEach(function (panel) {
-                    panel.classList.add('d-none');
-                });
-                const activePanel = document.getElementById('lb-' + button.dataset.tab + '-library');
-                if (activePanel) {
-                    activePanel.classList.remove('d-none');
-                }
+                activateLibraryTab(button.dataset.tab || 'sections');
             });
         });
 
         document.querySelectorAll('.lb-device-toggle').forEach(function (button) {
             button.addEventListener('click', function () {
+                syncSelectedWidgetFormIntoState();
+                stopColumnResize();
                 document.querySelectorAll('.lb-device-toggle').forEach(function (item) {
                     item.classList.remove('active');
                 });
@@ -3769,10 +5103,24 @@ $canvas_state = [
             });
         });
 
-        document.getElementById('lb-add-section').addEventListener('click', addSection);
+        document.getElementById('lb-add-section').addEventListener('click', function () {
+            openLibraryOverlay('sections');
+        });
         pageThemeButton.addEventListener('click', function () {
             setDrawerOpen('inspector', true);
             setSelection({type: 'page'});
+        });
+
+        if (libraryBackdrop) {
+            libraryBackdrop.addEventListener('click', function () {
+                setDrawerOpen('library', false);
+            });
+        }
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && isDrawerOpen('library')) {
+                setDrawerOpen('library', false);
+            }
         });
         document.getElementById('lb-save-canvas').addEventListener('click', function () {
             saveCanvas().catch(function (error) {
@@ -3870,6 +5218,106 @@ $canvas_state = [
                 return true;
             }
 
+            if (action === 'set-layout') {
+                const layout = String(actionTarget.dataset.layout || '');
+                if (!layout) {
+                    return true;
+                }
+
+                const target = getSelectionTarget();
+                if (!target) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                target.layout = layout;
+                syncSectionColumnsWithLayout(target);
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'reset-column-widths-device') {
+                const section = state.schema.sections[sectionIndex];
+                if (!section) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                resetSectionColumnWidths(section, state.activeDevice);
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'toggle-section-stack-tablet' || action === 'toggle-section-stack-phone') {
+                const section = state.schema.sections[sectionIndex];
+                if (!section) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                section.settings = Object.assign({stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, section.settings || {});
+
+                if (action === 'toggle-section-stack-tablet') {
+                    section.settings.stack_tablet = section.settings.stack_tablet !== true;
+                } else {
+                    section.settings.stack_phone = section.settings.stack_phone === false;
+                }
+
+                stopColumnResize();
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'toggle-section-width-inherit') {
+                const section = state.schema.sections[sectionIndex];
+                if (!section) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                section.settings = Object.assign({stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, section.settings || {});
+                section.settings.width_inherit = section.settings.width_inherit === false;
+
+                stopColumnResize();
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'toggle-section-autoscale-base-blocks') {
+                const section = state.schema.sections[sectionIndex];
+                if (!section) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+                section.settings = Object.assign({stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, section.settings || {});
+                section.settings.autoscale_base_blocks = section.settings.autoscale_base_blocks !== true;
+
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'open-library') {
+                const tab = String(actionTarget.dataset.tab || 'sections');
+
+                if (Number.isFinite(sectionIndex) && Number.isFinite(columnIndex)) {
+                    state.selection = {
+                        type: 'column',
+                        sectionIndex: sectionIndex,
+                        columnIndex: columnIndex
+                    };
+                    renderCanvas();
+                }
+
+                openLibraryOverlay(tab);
+                return true;
+            }
+
             return false;
         }
 
@@ -3878,6 +5326,35 @@ $canvas_state = [
             if (handleActionTarget(actionTarget)) {
                 event.preventDefault();
             }
+        });
+
+        selectionControls.addEventListener('input', function (event) {
+            const range = event.target.closest('[data-role="layout-range"]');
+            if (!range) {
+                return;
+            }
+
+            const target = getSelectionTarget();
+            if (!target || !state.selection || state.selection.type !== 'section') {
+                return;
+            }
+
+            syncSelectedWidgetFormIntoState();
+
+            const value = Number(range.value || 1);
+            if (value === 1) {
+                target.layout = '1col';
+            } else if (value === 2) {
+                if (String(target.layout || '').indexOf('2col') !== 0) {
+                    target.layout = '2col_equal';
+                }
+            } else {
+                target.layout = '3col_equal';
+            }
+
+            syncSectionColumnsWithLayout(target);
+            setCanvasDirty(true);
+            renderCanvas();
         });
 
         canvasRoot.addEventListener('dragstart', function (event) {
@@ -4037,6 +5514,40 @@ $canvas_state = [
             }
         });
 
+        canvasRoot.addEventListener('pointerdown', function (event) {
+            const resizeHandle = event.target.closest('[data-role="column-resizer"]');
+            if (!resizeHandle) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            syncSelectedWidgetFormIntoState();
+            startColumnResize(
+                Number(resizeHandle.dataset.sectionIndex),
+                Number(resizeHandle.dataset.leftColumnIndex),
+                event.clientX
+            );
+        });
+
+        document.addEventListener('pointermove', function (event) {
+            if (!state.columnResize) {
+                return;
+            }
+
+            event.preventDefault();
+            updateColumnResize(event.clientX);
+        });
+
+        document.addEventListener('pointerup', function () {
+            stopColumnResize();
+        });
+
+        document.addEventListener('pointercancel', function () {
+            stopColumnResize();
+        });
+
         widgetList.addEventListener('click', function (event) {
             const button = event.target.closest('[data-role="insert-widget"]');
             if (!button) {
@@ -4087,21 +5598,28 @@ $canvas_state = [
             });
         });
 
-        renderSectionLibrary();
-        renderBlockLibrary();
-        ensureSelection();
-        syncWorkspaceShell();
-        renderCanvas();
-        renderVersions();
-        loadWidgetCatalog().catch(function (error) {
-            console.error(error);
-            widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки списка виджетов.</div>';
-        });
-        window.addEventListener('resize', function () {
+        try {
+            renderSectionLibrary();
+            renderBlockLibrary();
+            ensureSelection();
             syncWorkspaceShell();
-            applyDeviceViewport();
-        });
-        initTooltips(document);
+            renderCanvas();
+            renderVersions();
+            loadWidgetCatalog().catch(function (error) {
+                console.error(error);
+                widgetList.innerHTML = '<div class="text-danger">Ошибка загрузки списка виджетов.</div>';
+            });
+            window.addEventListener('resize', function () {
+                syncWorkspaceShell();
+                applyDeviceViewport();
+            });
+            initTooltips(document);
+        } catch (error) {
+            console.error(error);
+            if (canvasStatus) {
+                canvasStatus.textContent = 'Ошибка инициализации редактора. Откройте страницу заново и сообщите время ошибки.';
+            }
+        }
     })();
 </script>
 <?php $this->addBottom(ob_get_clean()); ?>

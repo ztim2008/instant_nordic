@@ -3,6 +3,7 @@
 class actionLandingbuilderCanvas extends cmsAction {
 
     public function run($page_key = 'homepage') {
+        $this->model->migrateLegacyPageModesToInstantContentBody($this->cms_user->id);
         $page = $this->model->getPageByKey($page_key);
         if (!$page) {
             return cmsCore::error404();

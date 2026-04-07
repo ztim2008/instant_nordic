@@ -1,6 +1,7 @@
 <?php
 
 $page_mode_titles = [
+    'instant_content_body' => 'Нативная страница Instant (content_body)',
     'full_takeover'  => 'Полностью своя страница',
     'hybrid_overlay' => 'Поверх существующей страницы',
     'zone_injection' => 'Встраивание в зону страницы',
@@ -547,7 +548,7 @@ $this->addToolButton([
                 const body = new URLSearchParams();
                 body.set('title', title);
                 body.set('key', key);
-                body.set('mode', 'full_takeover');
+                body.set('mode', 'instant_content_body');
                 body.set('status', 'draft');
                 body.set('template', 'nordic');
                 body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');

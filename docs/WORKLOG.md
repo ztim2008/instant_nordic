@@ -844,3 +844,195 @@
 	- часть более глубоких технических спецификаций еще сохраняет старую терминологию и будет постепенно выравниваться под новую модель по мере реализации template layer и theme tokens.
 - Следующий шаг:
 	- физически перенести промежуточные документы в архив и затем расширить contracts под global theme settings и shell slots.
+
+### 2026-04-07 / второй уровень глобальной DS (radius, density, contrast)
+
+- Что планировалось:
+	- добавить второй уровень глобальной дизайн-системы как отдельные пресеты радиуса, плотности и контраста, чтобы настройки влияли на весь Nordic runtime, а не только на локальные элементы формы.
+- Что сделано:
+	- в каталогах опций `landingbuilder` добавлены `radius_preset`, `density_preset`, `contrast_preset` с дефолтами и названиями для админ-интерфейса;
+	- форма глобального дизайна расширена отдельным fieldset `Второй уровень DS` с тремя новыми полями;
+	- сохранение настроек и fallback-merge при ошибках валидации обновлены в обоих backend actions (`landingbuilder/design` и `nordicbuilder/defaults`);
+	- runtime theme catalog расширен тремя новыми preset maps, добавлены соответствующие `default_*` mapping keys и merge-порядок CSS vars;
+	- Nordic theme tokens/shell слой переведен на новые runtime vars (радиусы, плотность, контраст), включая `theme.css` и SCSS partials;
+	- live и package mirrors синхронизированы по всем затронутым файлам.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/forms/form_design.php](../system/controllers/landingbuilder/backend/forms/form_design.php)
+	- [system/controllers/landingbuilder/backend/actions/design.php](../system/controllers/landingbuilder/backend/actions/design.php)
+	- [system/controllers/nordicbuilder/backend/actions/defaults.php](../system/controllers/nordicbuilder/backend/actions/defaults.php)
+	- [templates/default/controllers/landingbuilder/runtime_theme.php](../templates/default/controllers/landingbuilder/runtime_theme.php)
+	- [templates/nordic/scss/theme/_tokens.scss](../templates/nordic/scss/theme/_tokens.scss)
+	- [templates/nordic/scss/theme/_shell.scss](../templates/nordic/scss/theme/_shell.scss)
+	- [templates/nordic/css/theme.css](../templates/nordic/css/theme.css)
+	- package mirrors в `packages/landingbuilder/package/`, `packages/nordicbuilder/package/`, `packages/nordic/package/`.
+- Что проверено:
+	- editor diagnostics: новых ошибок в измененных PHP/SCSS/CSS файлах нет;
+	- побайтная сверка `cmp` подтверждает синхронность live и package mirror-копий для всех измененных файлов.
+- Какие риски остались:
+	- часть визуальных элементов по-прежнему может использовать legacy hardcoded spacing/colors из старого CSS слоя и потребовать дополнительной токенизации;
+	- для финальной UX-оценки нужен ручной проход в админке и на frontend-страницах с переключением новых пресетов.
+- Следующий шаг:
+	- пройти ручной smoke: смена `radius/density/contrast` в `nordicbuilder/defaults` и проверка эффекта на homepage/category/content page в live runtime.
+
+### 2026-04-07 / стабилизация canvas и 1:1 parity preview/live
+
+- Что планировалось:
+	- восстановить работоспособность canvas после JS-падения;
+	- добиться совпадения header/footer между preview и публичной главной;
+	- убрать временную диагностику JS после стабилизации.
+- Что сделано:
+	- выявлена и исправлена причина падения canvas: `ReferenceError: isFullTakeover is not defined` в shell-map рендере;
+	- для публичной главной в ветке `modern + takeover` внедрен row-based рендер chrome-рядов (header/footer) вокруг builder-content, чтобы структура совпадала с preview;
+	- подключение runtime CSS сохранено для takeover-режима, чтобы стиль builder-блоков не расходился между preview/live;
+	- временная JS-телеметрия отключена полностью: удалены browser hooks в canvas templates, удален `js_error_url` из API, удалены action-файлы `js_error.php` в live и package mirror;
+	- все изменения синхронизированы в package mirrors.
+- Какие файлы затронуты:
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- удалены временные файлы:
+		- `system/controllers/nordicbuilder/backend/actions/js_error.php`
+		- `packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/js_error.php`
+- Что проверено:
+	- `php -l` проходит на всех измененных PHP/template файлах;
+	- route smoke (guest): `/` и `/nordicbuilder/view/glav` отвечают `200`, admin routes без сессии корректно `403`;
+	- parity-маркеры `icms-header__top/middle/bottom` и `icms-footer__middle/bottom` присутствуют и на `/`, и на `/nordicbuilder/view/glav`;
+	- access-log admin-сессии подтверждает рабочий цикл `pages -> canvas -> widgets_catalog -> preview` c `200`.
+- Какие риски остались:
+	- финальная визуальная оценка 1:1 still требует ручной проверки глазами в браузере (guest/admin, с hard refresh), т.к. CLI smoke проверяет структуру и статусы, но не pixel-perfect рендер.
+- Следующий шаг:
+	- выполнить короткий ручной regression проход (guest/admin): homepage, preview `glav`, canvas save/publish/preview, после чего зафиксировать release checkpoint.
+
+### 2026-04-07 / UX-полировка canvas, этап 3 (первый patch)
+
+- Что планировалось:
+	- начать реализацию нового UX по референсам: компактная шапка, модальная библиотека, постоянно видимый инспектор, менее навязчивые рамки и быстрый вызов библиотеки из колонки.
+- Что сделано:
+	- topbar переведен в более компактный режим (плотнее сетка, меньше отступы и высота action-кнопок);
+	- правая панель инспектора закреплена открытой на desktop (состояние принудительно держится в JS-shell sync);
+	- левая библиотека переведена из drawer в modal-overlay c backdrop, закрытием по `Esc` и клику по фону;
+	- в колонках добавлен контекстный вызов библиотеки через кнопку `+` (action `open-library`, сразу в tab `blocks` и с выбором текущей колонки);
+	- после вставки секции/блока/виджета библиотека автоматически закрывается, чтобы пользователь сразу видел live-результат на холсте;
+	- визуальные рамки секций/колонок/нод сделаны более спокойными (меньше контраста и плотности), чтобы не перекрывать восприятие дизайна;
+	- изменения синхронизированы в package mirrors.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- editor diagnostics: `No errors found` для live + обеих package mirror копий `canvas.tpl.php`.
+- Какие риски остались:
+	- UX-валидность нужно подтвердить ручным проходом в браузере (desktop/mobile), т.к. это визуально-поведенческие изменения;
+	- следующий patch все еще нужен для дополнительной полировки micro-copy и spacing на мобильном холсте.
+- Следующий шаг:
+	- провести ручной smoke UX: открытие библиотеки из topbar/из `+` в колонке, вставка блока/виджета, автозакрытие modal, постоянная доступность инспектора справа на desktop.
+
+### 2026-04-07 / Автоскейл базовых блоков (12/12 -> 100%)
+
+- Что планировалось:
+	- добавить отдельную настройку секции для автоскейла базовых блоков на всю ширину экрана;
+	- сохранить совместимость с текущей 12-колоночной моделью и режимом full-container;
+	- синхронизировать изменения в live и package mirrors.
+- Что сделано:
+	- в инспектор секции добавлен новый флаг `Автоскейл базовых блоков (12/12 -> 100% экрана)`;
+	- в schema normalizer (backend PHP + canvas JS) добавлен default `settings.autoscale_base_blocks = false`;
+	- в runtime renderer добавлен контекстный autoscale для базовых блоков:
+		- если флаг секции включен и колонка на активном устройстве имеет `12/12`, блок получает класс `lb-runtime-block--autoscale`;
+		- автоскейл применяется без изменения поведения системных виджетов;
+	- в runtime/preview CSS добавлены стили full-bleed для `lb-runtime-block--autoscale`;
+	- изменения синхронизированы в `packages/nordicbuilder` и `packages/landingbuilder`.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [system/controllers/landingbuilder/helpers/runtime_styles.php](../system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- editor diagnostics: `No errors found` по всем измененным live + mirror файлам;
+	- grep-smoke подтвердил наличие новой настройки в canvas/model и autoscale-ветки в runtime/css;
+	- `cmp` подтвердил parity между live и обоими package mirrors для canvas/runtime renderer.
+- Какие риски остались:
+	- это кодовый regression (контракты/шаблоны), но не полный ручной визуальный e2e проход в браузере;
+	- для UX-подтверждения нужен короткий click-smoke на реальной странице с комбинацией `container_preset=standard` + `autoscale_base_blocks=true`.
+
+### 2026-04-07 / Автоскейл: inline toggle A + проверка preview/live
+
+- Что сделано:
+	- в canvas breakpoint-панель секции добавлена inline-кнопка `A` (`toggle-section-autoscale-base-blocks`) рядом с T/M/I;
+	- панель теперь может показывать кнопку `A` и для 1-колоночной секции (даже когда stack-кнопки не актуальны);
+	- усилен full-bleed CSS для autoscale:
+		- переход на более устойчивый шаблон `position:relative + left/right 50% + margin -50vw`;
+		- добавлен `overflow: visible` для autoscale-секции и внутренних оберток, чтобы убрать clipping от базового контейнера;
+	- синхронизация live -> package mirrors подтверждена `cmp`.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [system/controllers/landingbuilder/helpers/runtime_styles.php](../system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- diagnostics: `No errors found` для всех измененных live + mirror файлов;
+	- smoke HTTP (guest):
+		- `/` отвечает `200`, но не содержит runtime grid/autoscale маркеров (на этой странице builder runtime сейчас не активен);
+		- `/nordicbuilder/view/*` для guest отвечает `404` (preview route недоступен без admin-сессии или при текущем статусе страницы), поэтому публичным curl нельзя проверить autoscale-визуал на preview напрямую.
+- Какие риски остались:
+	- для финального подтверждения "расширяется/не расширяется" нужен короткий ручной проход в админ-сессии на реальной preview-странице с включенной `A` и 12/12 колонкой.
+
+### 2026-04-07 / Автоскейл: override внутренних Bootstrap container
+
+- Что сделано:
+	- добавлен scoped override только для autoscale-режима, чтобы внутренние Bootstrap-контейнеры не удерживали max-width:
+		- `.lb-runtime-block--autoscale .container{max-width:none;width:100%}` (+ размеры `-sm/-md/-lg/-xl/-xxl`);
+	- правило добавлено в runtime helper CSS и preview CSS для parity live/preview;
+	- изменения синхронизированы в package mirrors.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/helpers/runtime_styles.php](../system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- diagnostics: `No errors found` для live + mirror файлов;
+	- `cmp` подтвердил parity live и mirrors для обоих файлов.
+- Какие риски остались:
+	- внешний preview-route (`/nordicbuilder/view/*`) для guest по-прежнему `404`, поэтому финальный визуальный smoke нужно делать в admin-сессии.
+
+### 2026-04-07 / canvas: русификация stack + целевой regression (3 сценария)
+
+- Что планировалось:
+	- снизить англоязычность в адаптивных подсказках canvas;
+	- подтвердить, что full-width секция работает и доступна в UI;
+	- выполнить короткий целевой regression-прогон по 3 сценариям и зафиксировать результат.
+- Что сделано:
+	- в canvas заменены англоязычные формулировки в адаптивной панели и hover-подсказках:
+		- `stack` -> `стек`;
+		- `mixed` -> `смешано`;
+		- `stack (1col)` -> `в столбик (1 колонка)`;
+		- источник `layout` в user-facing подсказке -> `сетка`;
+	- уточнена подсказка в инспекторе секции: для 100% ширины явно указано выбрать «Во всю ширину» в `Пресет контейнера`;
+	- правки синхронизированы в package mirrors.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено (целевой regression, 3 сценария):
+	- Сценарий 1: full-width секция
+		- в catalog есть `container_preset = full` c title «Во всю ширину»;
+		- runtime стили содержат `.lb-section--container-full .lb-section-inner`.
+	- Сценарий 2: русификация canvas
+		- в breakpoint-панели секции отображается `стек`;
+		- hover-подсказки колонок и источник ширины показывают русские формулировки (`в столбик`, `смешано`, `сетка`).
+	- Сценарий 3: parity runtime для stack/inherit
+		- в runtime renderer присутствуют функции device/inheritance резолва ширин;
+		- runtime CSS использует responsive grid vars (`--lb-grid-desktop/tablet/mobile`).
+	- editor diagnostics: `No errors found` для трех измененных canvas-файлов.
+- Какие риски остались:
+	- regression был целевым и кодовым (контракт/шаблоны), без ручного визуального клика в браузере guest/admin;
+	- для pixel-level подтверждения UX нужен короткий ручной проход в интерфейсе.
+- Точка отката:
+	- `backups/checkpoints/20260407-143558-canvas-russian-stack-regression`.

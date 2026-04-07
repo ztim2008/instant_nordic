@@ -23,6 +23,86 @@ class modelLandingbuilder extends cmsModel {
 		return $pages ? array_values($pages) : $this->getDefaultPages();
 	}
 
+	public function migrateLegacyPageModesToInstantContentBody($user_id = 0) {
+
+		static $is_running = false;
+
+		$result = [
+			'checked' => 0,
+			'updated' => 0
+		];
+
+		if ($is_running || !$this->hasInstalledSchema()) {
+			return $result;
+		}
+
+		$is_running = true;
+		$rows = $this->get(self::PAGE_TABLE);
+
+		if (!$rows) {
+			$is_running = false;
+			return $result;
+		}
+
+		foreach ($rows as $row) {
+			$result['checked']++;
+
+			$page_id = (int) ($row['id'] ?? 0);
+			$page_key = (string) ($row['name'] ?? '');
+			if (!$page_id || $page_key === '') {
+				continue;
+			}
+
+			$current_mode = (string) ($row['page_mode'] ?? '');
+			$schema = $this->decodeSchema((string) ($row['schema_json'] ?? ''), $page_key);
+
+			if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+				$schema['layout'] = [];
+			}
+
+			$needs_schema_update = (($schema['layout']['page_mode'] ?? '') !== 'instant_content_body');
+
+			if (empty($schema['layout']['content_slot'])) {
+				$schema['layout']['content_slot'] = 'content_body';
+				$needs_schema_update = true;
+			}
+
+			if ($needs_schema_update) {
+				$schema['layout']['page_mode'] = 'instant_content_body';
+			}
+
+			$needs_mode_update = ($current_mode !== 'instant_content_body');
+
+			if (!$needs_schema_update && !$needs_mode_update) {
+				continue;
+			}
+
+			if ($needs_schema_update) {
+				$saved = $this->savePageSchema($page_key, $schema, $user_id, 'Системная миграция в instant_content_body');
+				if (!$saved) {
+					continue;
+				}
+			}
+
+			if ($needs_mode_update) {
+				$updated = $this->update(self::PAGE_TABLE, $page_id, [
+					'page_mode'  => 'instant_content_body',
+					'updated_at' => date('Y-m-d H:i:s')
+				]);
+
+				if (!$updated) {
+					continue;
+				}
+			}
+
+			$result['updated']++;
+		}
+
+		$is_running = false;
+
+		return $result;
+	}
+
 	public function getShellVariantsForAdmin() {
 
 		$defaults = $this->getDefaultShellVariants();
@@ -243,7 +323,7 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
-		$page_mode = !empty($data['mode']) ? $data['mode'] : 'full_takeover';
+		$page_mode = !empty($data['mode']) ? $data['mode'] : 'instant_content_body';
 		$status = !empty($data['status']) ? $data['status'] : 'draft';
 		$template = !empty($data['template']) ? $data['template'] : 'nordic';
 		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : [];
@@ -345,7 +425,7 @@ class modelLandingbuilder extends cmsModel {
 		});
 	}
 
-	protected function getStarterSchemaForNewPage($page_key, $title = '', $template = 'nordic', $page_mode = 'full_takeover') {
+	protected function getStarterSchemaForNewPage($page_key, $title = '', $template = 'nordic', $page_mode = 'instant_content_body') {
 
 		$schema = ['sections' => []];
 		$bridge_model = $this->getNordicbuilderBridgeModel();
@@ -370,7 +450,7 @@ class modelLandingbuilder extends cmsModel {
 
 		$schema['layout']['template'] = $template ?: 'nordic';
 		if (empty($schema['layout']['page_mode'])) {
-			$schema['layout']['page_mode'] = $page_mode ?: 'full_takeover';
+			$schema['layout']['page_mode'] = $page_mode ?: 'instant_content_body';
 		}
 
 		return $schema;
@@ -420,13 +500,26 @@ class modelLandingbuilder extends cmsModel {
 		$bridge_model = $this->getNordicbuilderBridgeModel();
 		$legacy_page = $this->getLegacyPageByKey($page_key);
 		$bridge_page = $bridge_model ? $bridge_model->getPageDocumentByKey($page_key) : false;
+		$schema = $this->normalizeSchema($schema, $page_key);
+
+		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+			$schema['layout'] = [];
+		}
+
+		$schema['layout']['page_mode'] = 'instant_content_body';
+		if (empty($schema['layout']['content_slot'])) {
+			$schema['layout']['content_slot'] = 'content_body';
+		}
 
 		if ($bridge_model && $bridge_page) {
 			$fallback_page = $legacy_page ?: $this->getDefaultPageByKey($page_key);
+			$fallback_page['mode'] = 'instant_content_body';
+			$fallback_page['page_mode'] = 'instant_content_body';
+			$fallback_page['page_type'] = 'system_overlay';
 			if (!empty($schema['layout']['template'])) {
 				$fallback_page['template'] = (string) $schema['layout']['template'];
 			}
-			$result = $bridge_model->saveBridgePageSchema($page_key, $this->normalizeSchema($schema, $page_key), $fallback_page ?: [], $user_id, (string) (($fallback_page['status'] ?? 'draft')));
+			$result = $bridge_model->saveBridgePageSchema($page_key, $schema, $fallback_page ?: [], $user_id, (string) (($fallback_page['status'] ?? 'draft')));
 
 			if (!empty($result['is_valid'])) {
 				return $this->getPageByKey($page_key);
@@ -444,7 +537,6 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
-		$schema = $this->normalizeSchema($schema, $page_key);
 		$schema_json = $this->encodeJson($schema);
 		$now = date('Y-m-d H:i:s');
 		$template_name = !empty($schema['layout']['template']) ? (string) $schema['layout']['template'] : (!empty($page['template']) ? (string) $page['template'] : 'nordic');
@@ -799,6 +891,21 @@ class modelLandingbuilder extends cmsModel {
 				['value' => 'compact', 'title' => 'Компактный', 'description' => 'Плотный вертикальный ритм для каталожных страниц.'],
 				['value' => 'comfortable', 'title' => 'Комфортный', 'description' => 'Сбалансированный ритм по умолчанию.'],
 				['value' => 'airy', 'title' => 'Воздушный', 'description' => 'Больше воздуха между секциями и блоками.']
+			],
+			'radius_preset' => [
+				['value' => 'none', 'title' => 'Без скруглений', 'description' => 'Строгая геометрия с острыми углами.'],
+				['value' => 'soft', 'title' => 'Мягкие углы', 'description' => 'Небольшое скругление для спокойного корпоративного стиля.'],
+				['value' => 'rounded', 'title' => 'Выраженное скругление', 'description' => 'Более дружелюбный визуальный характер интерфейса.']
+			],
+			'density_preset' => [
+				['value' => 'compact', 'title' => 'Плотная', 'description' => 'Меньше отступов и более собранная подача контента.'],
+				['value' => 'balanced', 'title' => 'Сбалансированная', 'description' => 'Основной ритм по умолчанию для большинства страниц.'],
+				['value' => 'relaxed', 'title' => 'Свободная', 'description' => 'Больше воздуха и увеличенные интервалы между блоками.']
+			],
+			'contrast_preset' => [
+				['value' => 'soft', 'title' => 'Мягкий контраст', 'description' => 'Более деликатные границы и спокойные переходы.'],
+				['value' => 'balanced', 'title' => 'Сбалансированный', 'description' => 'Нейтральный контраст для универсального сценария.'],
+				['value' => 'strong', 'title' => 'Высокий контраст', 'description' => 'Более четкая визуальная иерархия и усиленные границы.']
 			]
 		];
 	}
@@ -844,7 +951,10 @@ class modelLandingbuilder extends cmsModel {
 			'container_preset'    => !empty($options['default_container_preset']) ? (string) $options['default_container_preset'] : '',
 			'button_preset'       => !empty($options['default_button_preset']) ? (string) $options['default_button_preset'] : '',
 			'card_preset'         => !empty($options['default_card_preset']) ? (string) $options['default_card_preset'] : '',
-			'section_spacing'     => !empty($options['default_section_spacing']) ? (string) $options['default_section_spacing'] : ''
+			'section_spacing'     => !empty($options['default_section_spacing']) ? (string) $options['default_section_spacing'] : '',
+			'radius_preset'       => !empty($options['default_radius_preset']) ? (string) $options['default_radius_preset'] : '',
+			'density_preset'      => !empty($options['default_density_preset']) ? (string) $options['default_density_preset'] : '',
+			'contrast_preset'     => !empty($options['default_contrast_preset']) ? (string) $options['default_contrast_preset'] : ''
 		]);
 	}
 
@@ -861,6 +971,9 @@ class modelLandingbuilder extends cmsModel {
 		$options['default_button_preset'] = $theme['button_preset'];
 		$options['default_card_preset'] = $theme['card_preset'];
 		$options['default_section_spacing'] = $theme['section_spacing'];
+		$options['default_radius_preset'] = $theme['radius_preset'];
+		$options['default_density_preset'] = $theme['density_preset'];
+		$options['default_contrast_preset'] = $theme['contrast_preset'];
 
 		cmsController::saveOptions('landingbuilder', $options);
 
@@ -883,7 +996,10 @@ class modelLandingbuilder extends cmsModel {
 				['label' => 'Контейнеры', 'value' => $this->getThemeOptionTitle('container_preset', $theme['container_preset'], $catalog)],
 				['label' => 'Кнопки', 'value' => $this->getThemeOptionTitle('button_preset', $theme['button_preset'], $catalog)],
 				['label' => 'Карточки', 'value' => $this->getThemeOptionTitle('card_preset', $theme['card_preset'], $catalog)],
-				['label' => 'Ритм секций', 'value' => $this->getThemeOptionTitle('section_spacing', $theme['section_spacing'], $catalog)]
+				['label' => 'Ритм секций', 'value' => $this->getThemeOptionTitle('section_spacing', $theme['section_spacing'], $catalog)],
+				['label' => 'Скругления', 'value' => $this->getThemeOptionTitle('radius_preset', $theme['radius_preset'], $catalog)],
+				['label' => 'Плотность', 'value' => $this->getThemeOptionTitle('density_preset', $theme['density_preset'], $catalog)],
+				['label' => 'Контраст', 'value' => $this->getThemeOptionTitle('contrast_preset', $theme['contrast_preset'], $catalog)]
 			]
 		];
 	}
@@ -1058,7 +1174,7 @@ class modelLandingbuilder extends cmsModel {
 			return (string) $route_variants['profile'];
 		}
 
-		if (($page['page_mode'] ?? $page['mode'] ?? '') === 'full_takeover' && !empty($route_variants['landing'])) {
+		if ($adapter_key === 'standalone_landing' && !empty($route_variants['landing'])) {
 			return (string) $route_variants['landing'];
 		}
 
@@ -1781,13 +1897,12 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		$page_key = $page['key'] ?? ($page['name'] ?? '');
-		$page_mode = $page['mode'] ?? ($page['page_mode'] ?? 'full_takeover');
 
-		if ($page_key === 'profile-cover' || $page_mode === 'zone_injection') {
+		if ($page_key === 'profile-cover') {
 			return 'user_profile';
 		}
 
-		if ($page_key === 'ads-category' || $page_mode === 'hybrid_overlay') {
+		if ($page_key === 'ads-category') {
 			return 'content_category_generic';
 		}
 
@@ -1795,12 +1910,6 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	protected function resolvePageType(array $page) {
-
-		$page_mode = $page['mode'] ?? ($page['page_mode'] ?? 'full_takeover');
-
-		if ($page_mode === 'full_takeover') {
-			return 'standalone';
-		}
 
 		return 'system_overlay';
 	}
@@ -2036,7 +2145,7 @@ class modelLandingbuilder extends cmsModel {
 			return 'profile-pages';
 		}
 
-		if (($page['page_mode'] ?? $page['mode'] ?? '') === 'full_takeover') {
+		if ($adapter_key === 'standalone_landing') {
 			return 'landing-pages';
 		}
 
@@ -2064,12 +2173,8 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		$adapter_key = (string) ($adapter['key'] ?? '');
-		if (in_array($adapter_key, ['content_category_generic', 'user_profile'], true)) {
+		if (in_array($adapter_key, ['content_category_generic', 'user_profile', 'standalone_landing'], true)) {
 			return 'adapter';
-		}
-
-		if (($page['page_mode'] ?? $page['mode'] ?? '') === 'full_takeover') {
-			return 'page-mode';
 		}
 
 		return 'default';
@@ -2081,7 +2186,6 @@ class modelLandingbuilder extends cmsModel {
 			'template-preset' => 'Шаблон страницы или сайта',
 			'page-key'    => 'Системный ключ страницы',
 			'adapter'     => 'Adapter страницы',
-			'page-mode'   => 'Режим участия страницы',
 			'default'     => 'Базовое правило'
 		];
 	}
@@ -2209,9 +2313,9 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function getDefaultPages() {
 		return [
-			$this->buildDefaultPage('homepage', 'Главная страница', 'full_takeover', 'draft'),
-			$this->buildDefaultPage('ads-category', 'Категория Объявлений', 'hybrid_overlay', 'prototype'),
-			$this->buildDefaultPage('profile-cover', 'Профиль пользователя', 'zone_injection', 'idea')
+			$this->buildDefaultPage('homepage', 'Главная страница', 'instant_content_body', 'draft'),
+			$this->buildDefaultPage('ads-category', 'Категория Объявлений', 'instant_content_body', 'prototype'),
+			$this->buildDefaultPage('profile-cover', 'Профиль пользователя', 'instant_content_body', 'idea')
 		];
 	}
 
@@ -2407,6 +2511,10 @@ class modelLandingbuilder extends cmsModel {
 				'container_preset' => 'standard',
 				'spacing_preset'   => 'md',
 				'background_tone'  => 'base',
+				'stack_tablet'     => false,
+				'stack_phone'      => true,
+				'width_inherit'    => true,
+				'autoscale_base_blocks' => false,
 				'gap_preset'       => 'md',
 				'background_class' => '',
 				'padding'          => 'md',
@@ -2416,6 +2524,10 @@ class modelLandingbuilder extends cmsModel {
 				'container_preset' => 'standard',
 				'spacing_preset'   => 'md',
 				'background_tone'  => 'base',
+				'stack_tablet'     => false,
+				'stack_phone'      => true,
+				'width_inherit'    => true,
+				'autoscale_base_blocks' => false,
 				'gap_preset'       => 'md',
 				'background_class' => '',
 				'padding'          => 'md',
@@ -2477,7 +2589,10 @@ class modelLandingbuilder extends cmsModel {
 			'container_preset'    => 'standard',
 			'button_preset'       => 'soft_accent',
 			'card_preset'         => 'quiet',
-			'section_spacing'     => 'comfortable'
+			'section_spacing'     => 'comfortable',
+			'radius_preset'       => 'none',
+			'density_preset'      => 'balanced',
+			'contrast_preset'     => 'balanced'
 		];
 	}
 
@@ -2506,7 +2621,7 @@ class modelLandingbuilder extends cmsModel {
 			'site-default' => [
 				'title'               => 'Базовый shell сайта',
 				'description'         => 'Главный каркас сайта по умолчанию для большинства страниц.',
-				'target_label'        => 'Для всех страниц (по умолчанию)',
+				'target_label'        => 'Все страницы по умолчанию',
 				'scope'               => 'site',
 				'is_system'           => 1,
 				'header_variant'      => 'split_navigation',

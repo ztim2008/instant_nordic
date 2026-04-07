@@ -18,10 +18,9 @@ if (empty($nordic_context) || !is_array($nordic_context)) {
     $nordic_context = ['page_type' => 'generic', 'shell_preset' => 'no_sidebars', 'hero_mode' => 'none', 'body_class' => '', 'is_homepage' => false, 'is_content_list' => false, 'is_content_item' => false, 'can_use_builder' => false, 'ctrl' => '', 'action' => ''];
 }
 
-// SAFETY STOP: по умолчанию отключаем интеграцию landingbuilder в фронтовом шаблоне.
-// Это возвращает предсказуемый рендер (старый каркас/главная) для гостей.
-// Включать можно только явным образом (например, временным флагом на сервере).
-$lb_front_integration_enabled = false;
+// Интеграция landingbuilder во фронтовом шаблоне включена по умолчанию,
+// чтобы изменения из конструктора сразу применялись на сайте.
+$lb_front_integration_enabled = true;
 
 // Full takeover через bindings (page.*): заменяем контент страницы на Landing Builder page
 $landingbuilder_takeover = null;
@@ -212,7 +211,11 @@ $renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_pla
     $has_content = false;
 
     foreach ($positions as $position) {
-        if (!$this->hasWidgetsOn($position)) {
+        ob_start();
+        $this->widgets($position, false, $wrapper);
+        $position_html = trim((string) ob_get_clean());
+
+        if ($position_html === '') {
             continue;
         }
 
@@ -222,7 +225,7 @@ $renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_pla
         }
 
         echo '<div class="' . html($itemBaseClass, false) . ' ' . html($itemBaseClass . '--' . $position, false) . '">';
-        $this->widgets($position, false, $wrapper);
+        echo $position_html;
         echo '</div>';
     }
 
@@ -248,17 +251,17 @@ $renderSlot = function($positions, $slotClass, $wrapper = 'wrapper_plain') use (
 };
 
 $slot_fallbacks = [
-    'site_top' => ['site_top', 'top'],
-    'header_primary' => ['header_primary'],
-    'header_secondary' => ['header_secondary'],
-    'hero' => ['hero'],
-    'before_content' => ['before_content'],
-    'content_body' => ['content_body'],
-    'content_sidebar_left' => ['content_sidebar_left'],
-    'content_sidebar_right' => ['content_sidebar_right'],
-    'after_content' => ['after_content'],
-    'footer_primary' => ['footer_primary', 'footer'],
-    'footer_secondary' => ['footer_secondary']
+    'site_top' => ['site_top', 'top', 'pos_26'],
+    'header_primary' => ['header_primary', 'pos_27', 'pos_29'],
+    'header_secondary' => ['header_secondary', 'pos_31'],
+    'hero' => ['hero', 'con_header'],
+    'before_content' => ['before_content', 'pos_10'],
+    'content_body' => ['content_body', 'pos_8'],
+    'content_sidebar_left' => ['content_sidebar_left', 'pos_34'],
+    'content_sidebar_right' => ['content_sidebar_right', 'pos_9'],
+    'after_content' => ['after_content', 'pos_17'],
+    'footer_primary' => ['footer_primary', 'footer', 'pos_38', 'pos_39', 'pos_40'],
+    'footer_secondary' => ['footer_secondary', 'pos_11']
 ];
 
 $slot_fallbacks[$menu_placement][] = 'header';
@@ -294,13 +297,30 @@ if (is_readable($lb_styles_lib)) {
     require_once $lb_styles_lib;
 }
 
+// Стартовый UX по умолчанию: modern skin (привычная база для пользователей).
+// Для админа доступен override в рантайме:
+//   ?nordic_skin=nordic  -> принудительно Nordic skin
+//   ?nordic_skin=modern  -> принудительно Modern skin
+$nordic_skin_override = (string) cmsCore::getInstance()->request->get('nordic_skin', '');
+$nordic_use_modern_skin = true;
+
+if (cmsUser::isAdmin()) {
+    if ($nordic_skin_override === 'nordic') {
+        $nordic_use_modern_skin = false;
+    } else if ($nordic_skin_override === 'modern') {
+        $nordic_use_modern_skin = true;
+    }
+}
+
+unset($nordic_skin_override);
+
 if (function_exists('landingbuilder_get_runtime_theme_context_from_theme')) {
     $lb_site_theme_context = landingbuilder_get_runtime_theme_context_from_theme([], []);
 }
 if (function_exists('landingbuilder_render_css_vars') && !empty($lb_site_theme_context['vars']) && is_array($lb_site_theme_context['vars'])) {
     $lb_site_shell_style = landingbuilder_render_css_vars($lb_site_theme_context['vars']);
 }
-if (!$nordic_use_modern_skin && function_exists('landingbuilder_get_runtime_site_styles_css')) {
+if ((!$nordic_use_modern_skin || $lb_takeover_active) && function_exists('landingbuilder_get_runtime_site_styles_css')) {
     $lb_runtime_css = landingbuilder_get_runtime_site_styles_css();
     if ($lb_runtime_css !== '') {
         $this->addHead('<style>' . $lb_runtime_css . '</style>');
@@ -373,26 +393,9 @@ if ($has_right_content_sidebar) {
     $content_grid_class .= ' nordic-shell__content-grid--with-right';
 }
 
-// Стартовый UX по умолчанию: modern skin (привычная база для пользователей).
-// Для админа доступен override в рантайме:
-//   ?nordic_skin=nordic  -> принудительно Nordic skin
-//   ?nordic_skin=modern  -> принудительно Modern skin
-$nordic_skin_override = (string) cmsCore::getInstance()->request->get('nordic_skin', '');
-$nordic_use_modern_skin = true;
-
-if (cmsUser::isAdmin()) {
-    if ($nordic_skin_override === 'nordic') {
-        $nordic_use_modern_skin = false;
-    } else if ($nordic_skin_override === 'modern') {
-        $nordic_use_modern_skin = true;
-    }
-}
-
-unset($nordic_skin_override);
-
 $modern_skin_rows = null;
 
-if ($nordic_use_modern_skin && !$lb_takeover_active) {
+if ($nordic_use_modern_skin) {
     try {
         $widgets_model = cmsCore::getModel('widgets');
 
@@ -548,6 +551,35 @@ if ($nordic_use_modern_skin && !$lb_takeover_active) {
                         $lb_content_html = $lbGetBuilderSlotHtml('content_body');
                     }
 
+                    $rows_for_modern_skin = $modern_skin_rows ?: $rows;
+                    $modern_header_positions = ['pos_26', 'pos_27', 'pos_29', 'pos_31'];
+                    $modern_footer_positions = ['pos_38', 'pos_39', 'pos_40', 'pos_11'];
+                    $modern_header_rows = [];
+                    $modern_footer_rows = [];
+
+                    foreach ($rows_for_modern_skin as $layout_row) {
+                        $row_positions = !empty($layout_row['positions']) && is_array($layout_row['positions']) ? $layout_row['positions'] : [];
+                        if (!$row_positions) {
+                            continue;
+                        }
+
+                        if (array_intersect($row_positions, $modern_header_positions)) {
+                            $modern_header_rows[] = $layout_row;
+                            continue;
+                        }
+
+                        if (array_intersect($row_positions, $modern_footer_positions)) {
+                            $modern_footer_rows[] = $layout_row;
+                        }
+                    }
+
+                    if ($modern_header_rows) {
+                        $this->renderLayoutChild('scheme', [
+                            'rows' => $modern_header_rows,
+                            'nordic_disable_reserved_filter' => true
+                        ]);
+                    }
+
                     echo '<main id="nordic-content-frame" class="container py-4">';
                     $lb_hero_html = $lbGetBuilderSlotHtml('hero');
                     if ($lb_hero_html !== '') { echo $lb_hero_html; }
@@ -557,6 +589,13 @@ if ($nordic_use_modern_skin && !$lb_takeover_active) {
                     $lb_after_html = $lbGetBuilderSlotHtml('after_content');
                     if ($lb_after_html !== '') { echo $lb_after_html; }
                     echo '</main>';
+
+                    if ($modern_footer_rows) {
+                        $this->renderLayoutChild('scheme', [
+                            'rows' => $modern_footer_rows,
+                            'nordic_disable_reserved_filter' => true
+                        ]);
+                    }
                 } else {
                     $rows_for_modern_skin = $modern_skin_rows ?: $rows;
                     $this->renderLayoutChild('scheme', [

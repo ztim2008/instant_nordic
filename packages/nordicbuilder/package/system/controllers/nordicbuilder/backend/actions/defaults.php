@@ -27,7 +27,10 @@ class actionNordicbuilderDefaults extends cmsAction {
                 'default_container_preset' => $data['container_preset'] ?? '',
                 'default_button_preset' => $data['button_preset'] ?? '',
                 'default_card_preset' => $data['card_preset'] ?? '',
-                'default_section_spacing' => $data['section_spacing'] ?? ''
+                'default_section_spacing' => $data['section_spacing'] ?? '',
+                'default_radius_preset' => $data['radius_preset'] ?? '',
+                'default_density_preset' => $data['density_preset'] ?? '',
+                'default_contrast_preset' => $data['contrast_preset'] ?? ''
             ]));
 
             cmsUser::addSessionMessage(LANG_FORM_ERRORS, 'error');

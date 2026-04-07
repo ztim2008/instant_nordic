@@ -7,6 +7,7 @@ if (is_readable($shared_template)) {
 }
 
 $page_mode_titles = [
+    'instant_content_body' => 'Нативная страница Instant (content_body)',
     'full_takeover'  => 'Полностью своя страница',
     'hybrid_overlay' => 'Поверх существующей страницы',
     'zone_injection' => 'Встраивание в зону страницы',

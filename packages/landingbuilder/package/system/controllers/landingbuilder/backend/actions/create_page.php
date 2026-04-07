@@ -19,7 +19,7 @@ class actionLandingbuilderCreatePage extends cmsAction {
         $page = $this->model->createPage([
             'key'      => $this->request->get('key', ''),
             'title'    => $this->request->get('title', ''),
-            'mode'     => $this->request->get('mode', 'full_takeover'),
+            'mode'     => $this->request->get('mode', 'instant_content_body'),
             'status'   => $this->request->get('status', 'draft'),
             'template' => $this->request->get('template', 'nordic')
         ], $this->cms_user->id);

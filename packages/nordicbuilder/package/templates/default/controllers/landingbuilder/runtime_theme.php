@@ -16,7 +16,10 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 			'container_preset'    => 'standard',
 			'button_preset'       => 'soft_accent',
 			'card_preset'         => 'quiet',
-			'section_spacing'     => 'comfortable'
+			'section_spacing'     => 'comfortable',
+			'radius_preset'       => 'none',
+			'density_preset'      => 'balanced',
+			'contrast_preset'     => 'balanced'
 		];
 	}
 
@@ -31,7 +34,10 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 			'container_preset'    => 'default_container_preset',
 			'button_preset'       => 'default_button_preset',
 			'card_preset'         => 'default_card_preset',
-			'section_spacing'     => 'default_section_spacing'
+			'section_spacing'     => 'default_section_spacing',
+			'radius_preset'       => 'default_radius_preset',
+			'density_preset'      => 'default_density_preset',
+			'contrast_preset'     => 'default_contrast_preset'
 		];
 
 		foreach ($mapping as $theme_key => $option_key) {
@@ -184,6 +190,72 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 				'comfortable' => '32px',
 				'airy'        => '48px'
 			],
+			'radius_presets' => [
+				'none' => [
+					'--lb-radius-sm' => '0px',
+					'--lb-radius-md' => '0px',
+					'--lb-radius-lg' => '0px'
+				],
+				'soft' => [
+					'--lb-radius-sm' => '8px',
+					'--lb-radius-md' => '12px',
+					'--lb-radius-lg' => '16px'
+				],
+				'rounded' => [
+					'--lb-radius-sm' => '14px',
+					'--lb-radius-md' => '22px',
+					'--lb-radius-lg' => '30px'
+				]
+			],
+			'density_presets' => [
+				'compact' => [
+					'--lb-content-gap'         => '12px',
+					'--lb-control-height'      => '38px',
+					'--lb-card-padding'        => '16px',
+					'--lb-button-padding-y'    => '10px',
+					'--lb-button-padding-x'    => '18px',
+					'--lb-topbar-padding-y'    => '10px',
+					'--lb-topbar-padding-x'    => '16px'
+				],
+				'balanced' => [
+					'--lb-content-gap'         => '18px',
+					'--lb-control-height'      => '42px',
+					'--lb-card-padding'        => '20px',
+					'--lb-button-padding-y'    => '12px',
+					'--lb-button-padding-x'    => '22px',
+					'--lb-topbar-padding-y'    => '12px',
+					'--lb-topbar-padding-x'    => '18px'
+				],
+				'relaxed' => [
+					'--lb-content-gap'         => '24px',
+					'--lb-control-height'      => '46px',
+					'--lb-card-padding'        => '26px',
+					'--lb-button-padding-y'    => '14px',
+					'--lb-button-padding-x'    => '26px',
+					'--lb-topbar-padding-y'    => '14px',
+					'--lb-topbar-padding-x'    => '22px'
+				]
+			],
+			'contrast_presets' => [
+				'soft' => [
+					'--lb-border-contrast' => 'rgba(23, 48, 66, 0.12)',
+					'--lb-shadow-sm'       => '0 6px 16px rgba(18, 36, 52, 0.04)',
+					'--lb-shadow-md'       => '0 10px 24px rgba(18, 36, 52, 0.06)',
+					'--lb-shadow-lg'       => '0 14px 34px rgba(19, 41, 61, 0.08)'
+				],
+				'balanced' => [
+					'--lb-border-contrast' => 'rgba(23, 48, 66, 0.18)',
+					'--lb-shadow-sm'       => '0 8px 20px rgba(18, 36, 52, 0.05)',
+					'--lb-shadow-md'       => '0 12px 32px rgba(18, 36, 52, 0.08)',
+					'--lb-shadow-lg'       => '0 18px 48px rgba(19, 41, 61, 0.10)'
+				],
+				'strong' => [
+					'--lb-border-contrast' => 'rgba(23, 48, 66, 0.26)',
+					'--lb-shadow-sm'       => '0 10px 24px rgba(14, 29, 42, 0.08)',
+					'--lb-shadow-md'       => '0 16px 36px rgba(14, 29, 42, 0.12)',
+					'--lb-shadow-lg'       => '0 24px 56px rgba(10, 21, 31, 0.16)'
+				]
+			],
 			'button_presets' => [
 				'soft_accent' => [
 					'--lb-button-background' => 'var(--lb-accent-soft)',
@@ -249,7 +321,15 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 				'--lb-button-border'        => 'transparent',
 				'--lb-card-background'      => '#ffffff',
 				'--lb-card-border'          => 'var(--lb-border-color)',
-				'--lb-card-shadow'          => '0 8px 20px rgba(18, 36, 52, 0.05)'
+				'--lb-card-shadow'          => '0 8px 20px rgba(18, 36, 52, 0.05)',
+				'--lb-content-gap'          => '18px',
+				'--lb-control-height'       => '42px',
+				'--lb-card-padding'         => '20px',
+				'--lb-button-padding-y'     => '12px',
+				'--lb-button-padding-x'     => '22px',
+				'--lb-topbar-padding-y'     => '12px',
+				'--lb-topbar-padding-x'     => '18px',
+				'--lb-border-contrast'      => 'rgba(23, 48, 66, 0.18)'
 			]
 		];
 	}
@@ -261,7 +341,7 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 		$vars = array_merge($catalog['base_vars'], [
 			'--lb-page-max-width'       => $catalog['container_presets'][$theme['container_preset']] ?? '1120px',
 			'--lb-section-gap'          => $catalog['section_spacing'][$theme['section_spacing']] ?? '32px'
-		], $catalog['global_style_presets'][$theme['global_style_preset']] ?? [], $catalog['color_presets'][$theme['color_preset']] ?? [], $catalog['typography_presets'][$theme['typography_preset']] ?? [], $catalog['button_presets'][$theme['button_preset']] ?? [], $catalog['card_presets'][$theme['card_preset']] ?? []);
+		], $catalog['global_style_presets'][$theme['global_style_preset']] ?? [], $catalog['color_presets'][$theme['color_preset']] ?? [], $catalog['typography_presets'][$theme['typography_preset']] ?? [], $catalog['radius_presets'][$theme['radius_preset']] ?? [], $catalog['density_presets'][$theme['density_preset']] ?? [], $catalog['contrast_presets'][$theme['contrast_preset']] ?? [], $catalog['button_presets'][$theme['button_preset']] ?? [], $catalog['card_presets'][$theme['card_preset']] ?? []);
 
 		return [
 			'theme'            => $theme,
