@@ -24,7 +24,7 @@ $this->addToolButton([
 
 $this->addToolButton([
 	'class' => 'list',
-	'title' => 'Макеты',
+	'title' => 'Страницы',
 	'href'  => $this->href_to('pages'),
 	'icon'  => 'file-alt'
 ]);
@@ -38,20 +38,43 @@ $this->addToolButton([
 	.lb-design-title {margin:0;font-size:1.9rem;line-height:1.1}
 	.lb-design-lead {margin:.7rem 0 1.2rem;color:var(--lb-text-muted,#5b7282);max-width:42rem}
 	.lb-design-summary {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-bottom:1.25rem}
-	.lb-design-summary__item {padding:.8rem .9rem;border:1px solid var(--lb-border-color,#dce4ea);border-radius:16px;background:rgba(255,255,255,.72)}
+	.lb-design-summary__item {padding:.8rem .9rem;border:1px solid var(--lb-border-color,#dce4ea);border-radius:14px;background:rgba(255,255,255,.74)}
 	.lb-design-summary__label {font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--lb-text-muted,#64748b);margin-bottom:.25rem}
 	.lb-design-summary__value {font-size:.95rem;color:var(--lb-heading-color,#142c3d)}
-	.lb-design-stage {display:grid;gap:1rem}
-	.lb-design-hero {padding:1.4rem;border:1px solid var(--lb-border-color,#dce4ea);border-radius:24px;background:var(--lb-hero-background,linear-gradient(135deg,#f4f6f8 0%,#fff 60%,#eef3f8 100%));box-shadow:var(--lb-shadow-lg,0 18px 48px rgba(19,41,61,.10))}
-	.lb-design-actions {display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem}
-	.lb-design-button {display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:.7rem 1rem;border-radius:999px;border:1px solid var(--lb-button-border,transparent);font-weight:600}
-	.lb-design-button--primary {background:var(--lb-button-background,var(--lb-accent-soft));color:var(--lb-button-color,var(--lb-accent-color))}
-	.lb-design-button--secondary {background:transparent;color:var(--lb-text-color,#173042);border-color:var(--lb-border-color,#dce4ea)}
-	.lb-design-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
-	.lb-design-card {padding:1rem;border-radius:18px;border:1px solid var(--lb-card-border,var(--lb-border-color,#dce4ea));background:var(--lb-card-background,#fff);box-shadow:var(--lb-card-shadow,0 8px 20px rgba(18,36,52,.05))}
-	.lb-design-card p {margin:0;color:var(--lb-text-muted,#5b7282)}
-	.lb-design-note {padding:1rem 1.1rem;border:1px dashed var(--lb-border-color,#cad5df);border-radius:18px;background:var(--lb-surface-soft,#f8fbfd);color:var(--lb-text-muted,#5b7282)}
-	 @media (max-width: 991.98px) {.lb-design-summary,.lb-design-grid{grid-template-columns:1fr}}
+	.lb-ds-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+	.lb-ds-panel {padding:1rem;border:1px solid var(--lb-border-color,#dce4ea);border-radius:16px;background:var(--lb-card-background,#fff);box-shadow:var(--lb-card-shadow,0 8px 20px rgba(18,36,52,.05))}
+	.lb-ds-panel h4 {margin:0 0 .75rem;font-size:1rem}
+	.lb-ds-panel p {margin:0;color:var(--lb-text-muted,#5b7282)}
+	.lb-ds-type-row {display:grid;grid-template-columns:72px minmax(0,1fr);gap:.65rem;align-items:baseline;padding:.28rem 0;border-bottom:1px dashed rgba(0,0,0,.06)}
+	.lb-ds-type-row:last-child {border-bottom:0}
+	.lb-ds-type-label {font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--lb-text-muted,#64748b)}
+	.lb-ds-type-display {font-size:var(--lb-hero-title-size,40px);line-height:1.06}
+	.lb-ds-type-h2 {font-size:32px;line-height:1.1}
+	.lb-ds-type-h3 {font-size:24px;line-height:1.15}
+	.lb-ds-type-body {font-size:16px;line-height:1.55}
+	.lb-ds-type-small {font-size:13px;line-height:1.4;color:var(--lb-text-muted,#5b7282)}
+	.lb-ds-swatches {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem}
+	.lb-ds-swatch {padding:.55rem;border-radius:10px;border:1px solid rgba(0,0,0,.08);min-height:64px;display:flex;flex-direction:column;justify-content:space-between;font-size:11px;font-weight:600}
+	.lb-ds-swatch--text-light {color:#fff}
+	.lb-ds-states {display:grid;gap:.5rem}
+	.lb-ds-btn-row {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.55rem}
+	.lb-ds-btn {display:flex;align-items:center;justify-content:center;min-height:36px;padding:.45rem .7rem;border:1px solid var(--lb-button-border,transparent);border-radius:999px;font-size:13px;font-weight:600}
+	.lb-ds-btn--primary {background:var(--lb-button-background,var(--lb-accent-soft));color:var(--lb-button-color,var(--lb-accent-color))}
+	.lb-ds-btn--secondary {background:transparent;color:var(--lb-text-color,#173042);border-color:var(--lb-border-color,#dce4ea)}
+	.lb-ds-btn--disabled {opacity:.45;filter:grayscale(.2)}
+	.lb-ds-status {display:grid;gap:.35rem;margin-top:.35rem}
+	.lb-ds-status-line {padding:.42rem .6rem;border-radius:10px;font-size:12px;font-weight:600}
+	.lb-ds-status-info {background:#e8f3f8;color:#235e80}
+	.lb-ds-status-ok {background:#e7f5ea;color:#1f7140}
+	.lb-ds-status-warn {background:#fff4dd;color:#8a5a10}
+	.lb-ds-status-err {background:#fde9e9;color:#8f1d14}
+	.lb-ds-dark {background:var(--lb-contrast-surface,#173042);color:var(--lb-contrast-text,#f7fbff);border-color:transparent;box-shadow:0 18px 34px rgba(10,17,25,.24)}
+	.lb-ds-dark h4 {color:var(--lb-contrast-text,#f7fbff)}
+	.lb-ds-dark .lb-design-kicker {color:rgba(255,255,255,.66)}
+	.lb-ds-dark .lb-ds-btn--secondary {border-color:rgba(255,255,255,.35);color:#fff}
+	.lb-design-note {padding:1rem 1.1rem;border:1px dashed var(--lb-border-color,#cad5df);border-radius:14px;background:var(--lb-surface-soft,#f8fbfd);color:var(--lb-text-muted,#5b7282);margin-top:1rem}
+	@media (max-width: 1199.98px) {.lb-ds-grid{grid-template-columns:1fr}}
+	@media (max-width: 991.98px) {.lb-design-summary{grid-template-columns:1fr}}
 </style>
 
 <div class="card mb-4">
@@ -64,9 +87,9 @@ $this->addToolButton([
 <div class="row lb-design-layout">
 	<div class="col-xl-5 mb-4">
 		<div class="lb-design-preview" style="<?php html($preview_style); ?>">
-			<div class="lb-design-kicker">Шаблон и база стиля</div>
-			<h2 class="lb-design-title">Шаблон сайта и его базовый визуальный язык</h2>
-			<p class="lb-design-lead">Превью ниже показывает, какой характер получит сайт целиком. После сохранения шаблон и эти значения становятся базой для каркаса сайта и оформления страниц, но не заменяют настройку конкретной страницы прямо на холсте.</p>
+			<div class="lb-design-kicker">Глобальная дизайн-система</div>
+			<h2 class="lb-design-title">Стилевая матрица сайта: типографика, цвета, состояния</h2>
+			<p class="lb-design-lead">Это не просто форма, а единый стандарт внешнего вида для всего сайта. После сохранения выбранные значения становятся глобальной базой для каркаса и новых страниц.</p>
 
 			<div class="lb-design-summary">
 				<?php foreach ($screen['summary'] as $item) { ?>
@@ -77,32 +100,96 @@ $this->addToolButton([
 				<?php } ?>
 			</div>
 
-			<div class="lb-design-stage">
-				<section class="lb-design-hero">
-					<div class="lb-design-kicker">Шапка, каркас и первый экран</div>
-					<h3>Сайт сразу получает выбранный шаблон и общий тон первого экрана</h3>
-					<p class="mb-0">Этот экран нужен для того, чтобы один раз выбрать шаблон сайта и стартовый визуальный язык, а не повторять те же решения на каждой странице по отдельности.</p>
-					<div class="lb-design-actions">
-						<span class="lb-design-button lb-design-button--primary">Основная кнопка</span>
-						<span class="lb-design-button lb-design-button--secondary">Вторичное действие</span>
+			<div class="lb-ds-grid">
+				<section class="lb-ds-panel">
+					<div class="lb-design-kicker">Типографика</div>
+					<h4>Шкала заголовков и текста</h4>
+					<div class="lb-ds-type-row">
+						<div class="lb-ds-type-label">Display</div>
+						<div class="lb-ds-type-display">Aa Заголовок витрины</div>
+					</div>
+					<div class="lb-ds-type-row">
+						<div class="lb-ds-type-label">H2</div>
+						<div class="lb-ds-type-h2">Заголовок раздела</div>
+					</div>
+					<div class="lb-ds-type-row">
+						<div class="lb-ds-type-label">H3</div>
+						<div class="lb-ds-type-h3">Подзаголовок блока</div>
+					</div>
+					<div class="lb-ds-type-row">
+						<div class="lb-ds-type-label">Body</div>
+						<div class="lb-ds-type-body">Основной текст карточек, описаний и контентных секций страницы.</div>
+					</div>
+					<div class="lb-ds-type-row">
+						<div class="lb-ds-type-label">Small</div>
+						<div class="lb-ds-type-small">Служебный текст, пояснения, подписи и вторичная информация.</div>
 					</div>
 				</section>
 
-				<div class="lb-design-grid">
-					<article class="lb-design-card">
-						<div class="lb-design-kicker">Карточки</div>
-						<h4>Карточки и поверхности</h4>
-						<p>Списки, преимущества и каталожные блоки начинают выглядеть предсказуемо без ручной правки каждой секции.</p>
-					</article>
-					<article class="lb-design-card">
-						<div class="lb-design-kicker">Контейнеры</div>
-						<h4>Контейнеры и ритм</h4>
-						<p>Ширина страницы и расстояние между секциями настраиваются как часть общего стиля сайта.</p>
-					</article>
-				</div>
-
-				<div class="lb-design-note">После сохранения шаблон сайта и эти значения становятся общими значениями по умолчанию для каркаса, превью и стартового состояния холста. Повседневная работа со страницей и секциями должна происходить в инспекторе рядом с холстом.</div>
+				<section class="lb-ds-panel">
+					<div class="lb-design-kicker">Цвета</div>
+					<h4>Палитра интерфейса</h4>
+					<div class="lb-ds-swatches">
+						<div class="lb-ds-swatch lb-ds-swatch--text-light" style="background:var(--lb-heading-color,#142c3d)">
+							<span>Текст</span><span>Heading</span>
+						</div>
+						<div class="lb-ds-swatch" style="background:var(--lb-surface-color,#ffffff)">
+							<span>Фон</span><span>Surface</span>
+						</div>
+						<div class="lb-ds-swatch" style="background:var(--lb-surface-muted,#eef3f8)">
+							<span>Мягкий фон</span><span>Muted</span>
+						</div>
+						<div class="lb-ds-swatch lb-ds-swatch--text-light" style="background:var(--lb-accent-color,#2f7aa1)">
+							<span>Акцент</span><span>Primary</span>
+						</div>
+						<div class="lb-ds-swatch" style="background:var(--lb-accent-soft,#e8f3f8)">
+							<span>Акцент soft</span><span>Tint</span>
+						</div>
+						<div class="lb-ds-swatch lb-ds-swatch--text-light" style="background:var(--lb-contrast-surface,#173042)">
+							<span>Контраст</span><span>Dark surface</span>
+						</div>
+					</div>
+				</section>
 			</div>
+
+			<div class="lb-ds-grid mt-3">
+				<section class="lb-ds-panel">
+					<div class="lb-design-kicker">Состояния компонентов</div>
+					<h4>Кнопки и системные сообщения</h4>
+					<div class="lb-ds-states">
+						<div class="lb-ds-btn-row">
+							<span class="lb-ds-btn lb-ds-btn--primary">Normal</span>
+							<span class="lb-ds-btn lb-ds-btn--secondary">Secondary</span>
+						</div>
+						<div class="lb-ds-btn-row">
+							<span class="lb-ds-btn lb-ds-btn--primary" style="filter:brightness(.94)">Hover</span>
+							<span class="lb-ds-btn lb-ds-btn--secondary" style="background:rgba(0,0,0,.03)">Active</span>
+						</div>
+						<div class="lb-ds-btn-row">
+							<span class="lb-ds-btn lb-ds-btn--primary lb-ds-btn--disabled">Disabled</span>
+							<span class="lb-ds-btn lb-ds-btn--secondary lb-ds-btn--disabled">Disabled</span>
+						</div>
+					</div>
+					<div class="lb-ds-status">
+						<div class="lb-ds-status-line lb-ds-status-info">Info: нейтральная подсказка</div>
+						<div class="lb-ds-status-line lb-ds-status-ok">Success: действие выполнено</div>
+						<div class="lb-ds-status-line lb-ds-status-warn">Warning: проверьте настройки</div>
+						<div class="lb-ds-status-line lb-ds-status-err">Error: есть конфликт параметров</div>
+					</div>
+				</section>
+
+				<section class="lb-ds-panel lb-ds-dark">
+					<div class="lb-design-kicker">Контрастная плоскость</div>
+					<h4>Тёмный вариант интерфейса</h4>
+					<p>Та же система токенов работает и на контрастных секциях: читаемость, кнопки и карточки остаются предсказуемыми.</p>
+					<div class="lb-ds-btn-row mt-3">
+						<span class="lb-ds-btn lb-ds-btn--primary">Primary</span>
+						<span class="lb-ds-btn lb-ds-btn--secondary">Ghost</span>
+					</div>
+				</section>
+			</div>
+
+			<div class="lb-design-note">После сохранения этот стиль становится глобальной основой: шаблон, палитра, типографика, контейнеры и состояния компонентов применяются как стартовый стандарт для всего сайта. Детальная настройка отдельной страницы остаётся на холсте.</div>
 		</div>
 	</div>
 	<div class="col-xl-7 mb-4">

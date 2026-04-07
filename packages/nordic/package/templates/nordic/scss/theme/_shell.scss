@@ -3,29 +3,29 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding: 1rem;
-    gap: 1rem;
+    padding: 0.5rem;
+    gap: 0.75rem;
 }
 
 .nordic-shell__notice,
 .nordic-shell__slot-panel,
 .nordic-shell__content-frame {
-    width: min(var(--nordic-content-max), 100%);
-    margin: 0 auto;
+    width: 100%;
+    max-width: var(--nordic-content-max);
+    margin: 0;
     border: 1px solid var(--nordic-line);
     border-radius: var(--nordic-radius-xl);
     box-shadow: var(--nordic-shadow);
-    backdrop-filter: blur(18px);
 }
 
 .nordic-shell__notice {
-    padding: 1rem 1.25rem;
-    background: rgba(242, 92, 29, 0.1);
+    padding: 0.65rem 1rem;
+    background: var(--nordic-accent-soft);
     color: var(--nordic-accent-strong);
 }
 
 .nordic-shell__slot-panel {
-    padding: 0.9rem 1.1rem;
+    padding: 0.75rem 1rem;
     background: var(--nordic-surface);
 }
 
@@ -55,26 +55,26 @@
 }
 
 .nordic-shell__site-top .nordic-shell__slot-panel {
-    background: linear-gradient(180deg, rgba(17, 21, 26, 0.98), rgba(26, 32, 39, 0.96));
-    color: rgba(255, 247, 239, 0.88);
-    border-top: 4px solid var(--nordic-accent);
+    background: var(--nordic-panel);
+    color: rgba(255, 255, 255, 0.78);
+    border-top: 2px solid var(--nordic-accent);
 }
 
 .nordic-shell__header-primary .nordic-shell__slot-panel {
-    background: linear-gradient(135deg, rgba(17, 21, 26, 0.98), rgba(33, 39, 48, 0.94));
-    color: #fff7ef;
+    background: var(--nordic-panel);
+    color: #ffffff;
+    border-bottom: 2px solid var(--nordic-accent);
 }
 
 .nordic-shell__header-secondary .nordic-shell__slot-panel {
-    background: linear-gradient(180deg, rgba(255, 250, 244, 0.92), rgba(251, 247, 242, 0.88));
+    background: #ffffff;
+    border-bottom: 1px solid var(--nordic-line);
 }
 
 .nordic-shell__hero .nordic-shell__slot-panel {
-    background:
-        linear-gradient(145deg, rgba(17, 21, 26, 0.98), rgba(36, 48, 59, 0.94)),
-        linear-gradient(180deg, rgba(242, 92, 29, 0.24), rgba(242, 92, 29, 0));
-    color: #fff8f1;
-    border-top: 5px solid var(--nordic-accent);
+    background: #0f141c;
+    color: #ffffff;
+    border-top: 3px solid var(--nordic-accent);
 }
 
 .nordic-shell__hero .nordic-shell__slot-panel h1,
@@ -92,38 +92,60 @@
 
 .nordic-shell__content-frame {
     position: relative;
-    padding: 1.4rem;
-    background:
-        linear-gradient(180deg, var(--nordic-surface-strong), rgba(255, 250, 244, 0.88));
+    padding: 1rem;
+    background: var(--nordic-surface);
 }
 
 .nordic-shell__content-frame::before {
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: inherit;
     pointer-events: none;
-    background:
-        linear-gradient(120deg, rgba(242, 92, 29, 0.08), transparent 18%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 24%);
+    background: linear-gradient(180deg, rgba(16, 20, 27, 0.015), rgba(16, 20, 27, 0));
 }
 
 .nordic-shell__content-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1.1rem;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.75rem;
 }
 
 .nordic-shell__content-grid--with-left {
-    grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .nordic-shell__content-grid--with-right {
-    grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
-    grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(220px, 270px);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.nordic-shell__content-grid > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid > .nordic-shell__content-body-runtime {
+    grid-column: 1 / -1;
+}
+
+.nordic-shell__content-grid--with-left > .nordic-shell__content-sidebar:first-child,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-sidebar:last-child {
+    grid-column: span 3;
+}
+
+.nordic-shell__content-grid--with-left > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-left > .nordic-shell__content-body-runtime,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-body-runtime {
+    grid-column: span 9;
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-sidebar {
+    grid-column: span 3;
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-body-runtime {
+    grid-column: span 6;
 }
 
 .nordic-shell__content-sidebar,
@@ -144,13 +166,16 @@
 .nordic-shell__content-frame .container-fluid,
 .nordic-shell__slot-panel .container,
 .nordic-shell__slot-panel .container-fluid {
-    max-width: 1260px;
+    max-width: none;
+    width: 100%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
 .nordic-shell__footer-primary .nordic-shell__slot-panel,
 .nordic-shell__footer-secondary .nordic-shell__slot-panel {
-    background: linear-gradient(180deg, rgba(17, 21, 26, 0.98), rgba(12, 15, 18, 0.98));
-    color: rgba(255, 247, 239, 0.84);
+    background: #10151d;
+    color: rgba(255, 255, 255, 0.82);
 }
 
 .nordic-shell__footer-primary a,
@@ -163,13 +188,8 @@
 
 @media (max-width: 991.98px) {
     .nordic-shell {
-        padding: 0.75rem;
-    }
-
-    .nordic-shell__notice,
-    .nordic-shell__slot-panel,
-    .nordic-shell__content-frame {
-        border-radius: 22px;
+        padding: 0.35rem;
+        gap: 0.5rem;
     }
 
     .nordic-shell__header-primary .nordic-shell__slot,
@@ -181,7 +201,7 @@
     .nordic-shell__before-content .nordic-shell__slot,
     .nordic-shell__after-content .nordic-shell__slot,
     .nordic-shell__content-frame {
-        padding: 1rem;
+        padding: 0.75rem;
     }
 
     .nordic-shell__content-grid,

@@ -1,26 +1,26 @@
 @import url("./foundation.css");
 :root {
   /* === Nordic Daily — News Portal Palette === */
-  --nordic-bg: #f0f2f5;
-  --nordic-bg-soft: #f7f8fa;
+  --nordic-bg: #eceff3;
+  --nordic-bg-soft: #f6f8fb;
   --nordic-surface: #ffffff;
   --nordic-surface-strong: #ffffff;
-  --nordic-ink: #1a1d23;
-  --nordic-ink-soft: #2d3340;
-  --nordic-muted: #6b7280;
-  --nordic-accent: #c0392b;
-  --nordic-accent-strong: #96281b;
-  --nordic-accent-soft: rgba(192, 57, 43, 0.10);
-  --nordic-panel: #1a2035;
-  --nordic-panel-soft: #253050;
-  --nordic-line: rgba(0, 0, 0, 0.09);
-  --nordic-line-strong: rgba(0, 0, 0, 0.16);
-  --nordic-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
-  --nordic-shadow-card: 0 1px 4px rgba(0, 0, 0, 0.08);
-  --nordic-radius-xl: 14px;
-  --nordic-radius-lg: 10px;
-  --nordic-radius-md: 7px;
-  --nordic-content-max: 1360px;
+  --nordic-ink: #10141b;
+  --nordic-ink-soft: #2b3442;
+  --nordic-muted: #5f6b7a;
+  --nordic-accent: #b42318;
+  --nordic-accent-strong: #8f1d14;
+  --nordic-accent-soft: rgba(180, 35, 24, 0.08);
+  --nordic-panel: #121826;
+  --nordic-panel-soft: #1d2638;
+  --nordic-line: rgba(16, 20, 27, 0.12);
+  --nordic-line-strong: rgba(16, 20, 27, 0.22);
+  --nordic-shadow: 0 8px 24px rgba(16, 20, 27, 0.08);
+  --nordic-shadow-card: 0 4px 14px rgba(16, 20, 27, 0.07);
+  --nordic-radius-xl: 0;
+  --nordic-radius-lg: 0;
+  --nordic-radius-md: 0;
+  --nordic-content-max: 100%;
   --nordic-font-body: "PT Serif", Georgia, serif;
   --nordic-font-ui: "Roboto Condensed", "Arial Narrow", "Trebuchet MS", sans-serif;
 }
@@ -55,7 +55,7 @@ body.nordic-template {
 }
 
 .nordic-template ::selection {
-  background: rgba(192, 57, 43, 0.18);
+  background: rgba(180, 35, 24, 0.18);
   color: var(--nordic-ink);
 }
 
@@ -81,15 +81,16 @@ body.nordic-template {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  padding: 1rem;
-  gap: 1rem;
+  padding: 0.5rem;
+  gap: 0.75rem;
 }
 
 .nordic-shell__notice,
 .nordic-shell__slot-panel,
 .nordic-shell__content-frame {
-  width: min(var(--nordic-content-max), 100%);
-  margin: 0 auto;
+  width: 100%;
+  max-width: var(--nordic-content-max);
+  margin: 0;
   border: 1px solid var(--nordic-line);
   border-radius: var(--nordic-radius-xl);
   box-shadow: var(--nordic-shadow);
@@ -97,12 +98,13 @@ body.nordic-template {
 }
 
 .nordic-shell__notice {
-  padding: 0.75rem 1.25rem;
-  background: rgba(192, 57, 43, 0.08);
+  padding: 0.65rem 1rem;
+  background: var(--nordic-accent-soft);
   color: var(--nordic-accent-strong);
 }
 
 .nordic-shell__slot-panel {
+  padding: 0.75rem 1rem;
   background: var(--nordic-surface);
 }
 
@@ -133,16 +135,15 @@ body.nordic-template {
 
 .nordic-shell__site-top .nordic-shell__slot-panel {
   background: var(--nordic-panel);
-  color: rgba(255, 255, 255, 0.75);
-  border-bottom: 3px solid var(--nordic-accent);
+  color: rgba(255, 255, 255, 0.78);
+  border-top: 2px solid var(--nordic-accent);
   font-size: 0.82rem;
 }
 
 .nordic-shell__header-primary .nordic-shell__slot-panel {
   background: var(--nordic-panel);
   color: #ffffff;
-  border-bottom: 3px solid var(--nordic-accent);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  border-bottom: 2px solid var(--nordic-accent);
 }
 
 .nordic-shell__header-secondary .nordic-shell__slot-panel {
@@ -151,10 +152,11 @@ body.nordic-template {
 }
 
 .nordic-shell__hero .nordic-shell__slot-panel {
-  background: #000;
+  background: #0f141c;
   color: #fff;
   padding: 0;
   overflow: hidden;
+  border-top: 3px solid var(--nordic-accent);
 }
 
 .nordic-shell__hero .nordic-shell__slot-panel h1,
@@ -172,7 +174,7 @@ body.nordic-template {
 
 .nordic-shell__content-frame {
   position: relative;
-  padding: 1.25rem;
+  padding: 1rem;
   background: var(--nordic-surface);
 }
 
@@ -181,7 +183,7 @@ body.nordic-template {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(0,0,0,0.02), rgba(0,0,0,0));
+  background: linear-gradient(180deg, rgba(16,20,27,0.015), rgba(16,20,27,0));
 }
 
 .nordic-shell__content-frame > * {
@@ -190,20 +192,14 @@ body.nordic-template {
 
 .nordic-shell__content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1.1rem;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
 @media (max-width: 991.98px) {
   .nordic-shell {
-    padding: 0.75rem;
-    gap: 0.75rem;
-  }
-
-  .nordic-shell__notice,
-  .nordic-shell__slot-panel,
-  .nordic-shell__content-frame {
-    border-radius: var(--nordic-radius-lg);
+    padding: 0.35rem;
+    gap: 0.5rem;
   }
 
   .nordic-shell__header-primary .nordic-shell__slot,
@@ -213,24 +209,50 @@ body.nordic-template {
   .nordic-shell__site-top .nordic-shell__slot,
   .nordic-shell__before-content .nordic-shell__slot,
   .nordic-shell__after-content .nordic-shell__slot {
-    padding: 0.85rem 1rem;
+    padding: 0.75rem;
   }
 
   .nordic-shell__content-frame {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 }
 
 .nordic-shell__content-grid--with-left {
-  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .nordic-shell__content-grid--with-right {
-  grid-template-columns: minmax(0, 1fr) minmax(250px, 300px);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
 .nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right {
-  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(220px, 270px);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.nordic-shell__content-grid > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid > .nordic-shell__content-body-runtime {
+  grid-column: 1 / -1;
+}
+
+.nordic-shell__content-grid--with-left > .nordic-shell__content-sidebar:first-child,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-sidebar:last-child {
+  grid-column: span 3;
+}
+
+.nordic-shell__content-grid--with-left > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-left > .nordic-shell__content-body-runtime,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-right > .nordic-shell__content-body-runtime {
+  grid-column: span 9;
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-sidebar {
+  grid-column: span 3;
+}
+
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-body-slot,
+.nordic-shell__content-grid--with-left.nordic-shell__content-grid--with-right > .nordic-shell__content-body-runtime {
+  grid-column: span 6;
 }
 
 .nordic-shell__content-sidebar,
@@ -252,9 +274,10 @@ body.nordic-template {
 .nordic-shell__content-frame .container-fluid,
 .nordic-shell__slot-panel .container,
 .nordic-shell__slot-panel .container-fluid {
-  max-width: 1280px;
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
+  max-width: none;
+  width: 100%;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
 }
 
 /* Content grid — основная зона сайта */
@@ -262,15 +285,15 @@ body.nordic-template {
   /* принудительно завернуть grid в контейнер */
 }
 .nordic-shell__content-grid {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 .nordic-shell__footer-primary .nordic-shell__slot-panel,
 .nordic-shell__footer-secondary .nordic-shell__slot-panel {
-  background: var(--nordic-panel);
-  color: rgba(255, 255, 255, 0.80);
+  background: #10151d;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .nordic-shell__footer-primary a,
@@ -283,10 +306,10 @@ body.nordic-template {
 
 @media (max-width: 991.98px) {
   .nordic-shell {
-    padding: 0;
+    padding: 0.35rem;
   }
   .nordic-shell__content-frame {
-    padding: 0.75rem 0;
+    padding: 0.75rem;
   }
   .nordic-shell__content-grid,
   .nordic-shell__content-grid--with-left,
@@ -302,13 +325,13 @@ body.nordic-template {
 .nordic-shell .icms-comment-html,
 .nordic-shell .list-group-item,
 .nordic-shell .table {
-  background-color: #ffffff;
+  background-color: var(--nordic-surface);
 }
 
 .nordic-shell .card,
 .nordic-shell .icms-widget.card {
   border: 1px solid var(--nordic-line);
-  border-radius: var(--nordic-radius-lg);
+  border-radius: var(--nordic-radius-md);
   box-shadow: var(--nordic-shadow-card);
 }
 
