@@ -420,6 +420,7 @@ $this->addToolButton([
             const createBindingUrl = <?php echo json_encode($create_binding_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const deleteUrl = <?php echo json_encode($delete_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const setStatusUrl = <?php echo json_encode($set_status_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            const publishPageUrl = <?php echo json_encode($publish_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
             const modal = document.getElementById('lb-create-modal');
             const errorBox = document.getElementById('lb-create-error');
@@ -729,6 +730,47 @@ $this->addToolButton([
                 window.location.reload();
             }
 
+            async function publishPage(pageKey) {
+                if (!publishPageUrl) {
+                    return;
+                }
+
+                const body = new URLSearchParams();
+                body.set('key', pageKey);
+                body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
+
+                const response = await fetch(publishPageUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: body.toString(),
+                    credentials: 'same-origin'
+                });
+
+                const parsed = await readJsonOrText(response);
+                const result = parsed.json;
+
+                if (!response.ok) {
+                    const serverHint = result && result.message ? result.message : trimServerText(parsed.text);
+                    window.alert('Ошибка сервера (' + response.status + ').\n' + (serverHint || ''));
+                    return;
+                }
+
+                if (!result || typeof result !== 'object') {
+                    window.alert('Сервер вернул неожиданный ответ вместо JSON.\n' + trimServerText(parsed.text));
+                    return;
+                }
+
+                if (result.error) {
+                    window.alert(result.message || 'Не удалось опубликовать SSR');
+                    return;
+                }
+
+                window.location.reload();
+            }
+
             document.addEventListener('click', function (event) {
                 const target = event.target.closest('[data-lb-create-page], a.lb-create-page');
                 if (!target) {
@@ -817,6 +859,39 @@ $this->addToolButton([
                     window.alert('Не удалось обновить статус страницы.');
                 });
             });
+
+            document.addEventListener('click', function (event) {
+                const btn = event.target.closest('[data-nb-publish-page]');
+                if (!btn) {
+                    return;
+                }
+
+                if (!publishPageUrl) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const pageKey = btn.getAttribute('data-page-key') || '';
+                const pageTitle = btn.getAttribute('data-page-title') || pageKey;
+
+                if (!pageKey) {
+                    return;
+                }
+
+                const confirmed = window.confirm('Опубликовать SSR для страницы "' + pageTitle + '"?\n\nЭто обновит контент для Live-виджета nordicbuilder_render.');
+                if (!confirmed) {
+                    return;
+                }
+
+                btn.disabled = true;
+                publishPage(pageKey).catch(function (error) {
+                    console.error(error);
+                    window.alert('Не удалось опубликовать SSR.');
+                }).finally(function () {
+                    btn.disabled = false;
+                });
+            });
         })();
     </script>
     <?php $this->addBottom(ob_get_clean()); ?>
@@ -848,6 +923,9 @@ $this->addToolButton([
                 <div class="lb-page-card__actions">
                     <a class="lb-admin-btn lb-admin-btn--ghost" href="<?php html($page['view_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
                     <a class="lb-admin-btn lb-admin-btn--primary" href="<?php html($page['canvas_url']); ?>">Открыть редактор</a>
+                    <?php if (!empty($publish_page_url) && !empty($is_schema_installed)) { ?>
+                        <button class="lb-admin-btn lb-admin-btn--ghost" type="button" data-nb-publish-page="1" data-page-key="<?php html($page['key']); ?>" data-page-title="<?php html($page['title']); ?>">Опубликовать SSR</button>
+                    <?php } ?>
                     <?php if (!empty($set_status_url)) { ?>
                         <?php if (($page['status'] ?? 'draft') !== 'published') { ?>
                             <button class="lb-admin-btn lb-admin-btn--ghost" type="button" data-lb-set-status="published" data-page-key="<?php html($page['key']); ?>" data-page-title="<?php html($page['title']); ?>">Опубликовать</button>

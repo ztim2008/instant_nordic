@@ -47,3 +47,19 @@ CREATE TABLE IF NOT EXISTS `{#}nordicbuilder_binding_options` (
 	KEY `page_key` (`page_key`),
 	KEY `updated_at` (`updated_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `{#}nordicbuilder_page_renders` (
+	`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	`page_key` varchar(190) NOT NULL,
+	`title` varchar(255) NOT NULL DEFAULT '',
+	`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+	`meta_json` mediumtext NOT NULL,
+	`html` mediumtext NOT NULL,
+	`content_hash` char(64) NOT NULL DEFAULT '',
+	`published_by` int(10) unsigned NOT NULL DEFAULT '0',
+	`published_at` datetime NOT NULL,
+	`updated_at` datetime NOT NULL,
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `page_key` (`page_key`),
+	KEY `updated_at` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

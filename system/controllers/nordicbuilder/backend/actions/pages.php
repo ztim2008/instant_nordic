@@ -16,6 +16,7 @@ class actionNordicbuilderPages extends cmsAction {
 			'pages'              => $pages,
 			'is_schema_installed'=> $bridge_model->hasInstalledSchema(),
 			'create_page_url'    => href_to($this->controller->root_url, 'create_page'),
+			'publish_page_url'   => href_to($this->controller->root_url, 'publish_page'),
 			'create_binding_url' => href_to($this->controller->root_url, 'create_binding'),
 			'delete_page_url'    => href_to($this->controller->root_url, 'delete_page'),
 			'set_status_url'     => href_to($this->controller->root_url, 'set_page_status')

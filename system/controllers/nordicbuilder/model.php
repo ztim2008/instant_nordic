@@ -5,6 +5,7 @@ class modelNordicbuilder extends cmsModel {
 	const PAGE_DOCUMENT_TABLE = 'nordicbuilder_page_documents';
 	const PRESET_TOKEN_TABLE = 'nordicbuilder_preset_tokens';
 	const BINDING_OPTIONS_TABLE = 'nordicbuilder_binding_options';
+	const PAGE_RENDER_TABLE = 'nordicbuilder_page_renders';
 
 	public function hasInstalledSchema() {
 		return $this->hasPersistenceTables();
@@ -182,6 +183,77 @@ class modelNordicbuilder extends cmsModel {
 		}
 
 		return 'homepage';
+	}
+
+	public function sanitizePageKey($key) {
+		return $this->sanitizeDocumentKey($key);
+	}
+
+	public function getPublishedPageRenderByKey($page_key) {
+		$page_key = $this->sanitizeDocumentKey($page_key);
+		if ($page_key === '') {
+			return false;
+		}
+
+		if (!$this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+			return false;
+		}
+
+		$item = $this->getItemByField(self::PAGE_RENDER_TABLE, 'page_key', $page_key);
+		if (!$item) {
+			return false;
+		}
+
+		$item['meta'] = $this->decodeStoredJson($item['meta_json'] ?? '');
+
+		return $item;
+	}
+
+	public function savePublishedPageRender($page_key, array $meta, $html, $user_id = 0) {
+		$page_key = $this->sanitizeDocumentKey($page_key);
+		$html = (string) $html;
+
+		if ($page_key === '') {
+			return false;
+		}
+
+		if (!$this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+			return false;
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$meta_json = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		if (!is_string($meta_json)) {
+			$meta_json = '{}';
+		}
+
+		$data = [
+			'page_key'     => $page_key,
+			'title'        => (string) ($meta['title'] ?? ''),
+			'schema_version'=> (string) ($meta['schema_version'] ?? '1.0'),
+			'meta_json'    => $meta_json,
+			'html'         => $html,
+			'content_hash' => hash('sha256', $page_key . "\n" . $meta_json . "\n" . $html),
+			'published_by' => (int) $user_id,
+			'published_at' => $now,
+			'updated_at'   => $now
+		];
+
+		$existing = $this->getItemByField(self::PAGE_RENDER_TABLE, 'page_key', $page_key);
+
+		if ($existing) {
+			$this->update(self::PAGE_RENDER_TABLE, $existing['id'], $data);
+			$data['id'] = (int) $existing['id'];
+			return $data;
+		}
+
+		$id = $this->insert(self::PAGE_RENDER_TABLE, $data);
+		if (!$id) {
+			return false;
+		}
+
+		$data['id'] = (int) $id;
+		return $data;
 	}
 
 	public function buildEmptyLandingbuilderSchema($key, $title = '', array $fallback_schema = []) {

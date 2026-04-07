@@ -21,6 +21,26 @@
 
 `InstantCMS 2 backend -> nordic runtime template -> design system / global defaults -> visual builder workspace -> component library -> widget/data adapter layer`
 
+## Канон: правило зон (Variant B, без takeover)
+
+В runtime действует жесткое правило владения зонами: **builder управляет только зоной `content_body`**, а весь остальной каркас сайта (header/footer/sidebar и любые shell‑позиции темы) всегда остается обычным InstantCMS‑рендером. Это убирает конфликты, “магические” ветки в шаблоне и гарантирует parity preview/live, потому что на live вставляется один опубликованный SSR‑рендер.
+
+- **Builder‑зона:** только `content_body` (один виджет‑рендер `nordicbuilder.render` → опубликованный SSR HTML + SEO meta через `cms_template`).
+- **Instant‑зоны (не трогать builder‑ом):** `header`, `footer`, `sidebar_left`, `sidebar_right`, `before_content`, `after_content` и любые другие shell‑слоты темы.
+- **Запрещено в Variant B:** takeover/hybrid‑режимы в runtime, подавление чужих зон, инклюд preview‑шаблона внутрь body, “start widget” с глобальным инжектом тяжёлых JS/CSS.
+
+## Канон: как живет «тело сайта» (shell/body)
+
+Тело сайта живет как обычная страница InstantCMS в выбранной теме: `<body>` и shell‑структура (контейнеры, шапка, подвал, сайдбары, сетка) рендерятся темой и виджетами как раньше. Единственное отличие для landing‑страниц Variant B — внутри `content_body` вместо штатного контента выводится опубликованный SSR‑контент `nordicbuilder` (в обертке‑контейнере), чтобы стили и семантика страницы оставались предсказуемыми.
+
+## Канон: единый root‑namespace для builder‑контента
+
+Весь SSR‑контент `nordicbuilder`, вставляемый в `content_body`, обязан быть обернут в один корневой контейнер с **единым namespace‑классом** (например `.nb-runtime`). Все стили component library и блоков должны быть привязаны к этому namespace (без глобальных селекторов на `body`, `h1`, `.container` и т.п.), чтобы исключить конфликты со стилями темы и другими инстантовыми виджетами.
+
+- Root wrapper: `<div class="nb-runtime" data-nb-page-key="..." data-nb-version="...">...</div>`
+- CSS правило: все селекторы начинаются с `.nb-runtime ...`
+- Запрещено: глобальные reset/типографика без namespace, стилизация общих bootstrap‑классов без префикса.
+
 ## Что считаем зафиксированным на сейчас
 
 1. Текущий `landingbuilder` больше не считается финальной продуктовой границей.
