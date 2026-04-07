@@ -276,30 +276,39 @@ $lb_takeover_page = $lb_takeover_active ? $landingbuilder_takeover['page'] : [];
 $lb_takeover_runtime = $lb_takeover_active ? $landingbuilder_takeover['runtime'] : [];
 $lb_takeover_zones_by_slot = [];
 $lb_takeover_theme_context = ['theme' => [], 'vars' => []];
+$lb_site_theme_context = ['theme' => [], 'vars' => []];
+$lb_site_shell_style = '';
 $lb_takeover_shell_style = '';
 
+$lb_theme_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_theme.php';
+$lb_renderer_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_renderer.php';
+$lb_styles_lib = cmsConfig::get('root_path') . 'system/controllers/landingbuilder/helpers/runtime_styles.php';
+
+if (is_readable($lb_theme_lib)) {
+    require_once $lb_theme_lib;
+}
+if (is_readable($lb_renderer_lib)) {
+    require_once $lb_renderer_lib;
+}
+if (is_readable($lb_styles_lib)) {
+    require_once $lb_styles_lib;
+}
+
+if (function_exists('landingbuilder_get_runtime_theme_context_from_theme')) {
+    $lb_site_theme_context = landingbuilder_get_runtime_theme_context_from_theme([], []);
+}
+if (function_exists('landingbuilder_render_css_vars') && !empty($lb_site_theme_context['vars']) && is_array($lb_site_theme_context['vars'])) {
+    $lb_site_shell_style = landingbuilder_render_css_vars($lb_site_theme_context['vars']);
+}
+if (!$nordic_use_modern_skin && function_exists('landingbuilder_get_runtime_site_styles_css')) {
+    $lb_runtime_css = landingbuilder_get_runtime_site_styles_css();
+    if ($lb_runtime_css !== '') {
+        $this->addHead('<style>' . $lb_runtime_css . '</style>');
+    }
+    unset($lb_runtime_css);
+}
+
 if ($lb_takeover_active) {
-    $lb_theme_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_theme.php';
-    $lb_renderer_lib = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_renderer.php';
-    $lb_styles_lib = cmsConfig::get('root_path') . 'system/controllers/landingbuilder/helpers/runtime_styles.php';
-    if (is_readable($lb_theme_lib)) {
-        require_once $lb_theme_lib;
-    }
-    if (is_readable($lb_renderer_lib)) {
-        require_once $lb_renderer_lib;
-    }
-    if (is_readable($lb_styles_lib)) {
-        require_once $lb_styles_lib;
-    }
-
-    if (function_exists('landingbuilder_get_runtime_site_styles_css')) {
-        $lb_runtime_css = landingbuilder_get_runtime_site_styles_css();
-        if ($lb_runtime_css !== '') {
-            $this->addHead('<style>' . $lb_runtime_css . '</style>');
-        }
-        unset($lb_runtime_css);
-    }
-
     if (function_exists('landingbuilder_get_runtime_theme_context')) {
         $lb_takeover_theme_context = landingbuilder_get_runtime_theme_context($lb_takeover_page);
     }
@@ -318,6 +327,8 @@ if ($lb_takeover_active) {
         $lb_takeover_zones_by_slot[$slot_key] = $zone;
     }
 }
+
+$lb_effective_shell_style = $lb_takeover_shell_style !== '' ? $lb_takeover_shell_style : $lb_site_shell_style;
 
 $lbGetBuilderSlotHtml = function($slot_key) use ($lb_takeover_active, $lb_takeover_zones_by_slot, $device_type, $lb_takeover_theme_context, $lb_takeover_runtime) {
     if (!$lb_takeover_active) {
@@ -362,13 +373,123 @@ if ($has_right_content_sidebar) {
     $content_grid_class .= ' nordic-shell__content-grid--with-right';
 }
 
-// Dev toggle: во время разработки удобно держать внешний вид modern,
-// чтобы Nordic-стили не мешали отличать UI-баги от темы.
-// По умолчанию ДЛЯ АДМИНА оставляем Nordic skin.
-// Использование: ?nordic_skin=modern (явно modern).
-$nordic_dev_skin = (string) cmsCore::getInstance()->request->get('nordic_skin', '');
-$nordic_use_modern_skin = cmsUser::isAdmin() && ($nordic_dev_skin === 'modern');
-unset($nordic_dev_skin);
+// Стартовый UX по умолчанию: modern skin (привычная база для пользователей).
+// Для админа доступен override в рантайме:
+//   ?nordic_skin=nordic  -> принудительно Nordic skin
+//   ?nordic_skin=modern  -> принудительно Modern skin
+$nordic_skin_override = (string) cmsCore::getInstance()->request->get('nordic_skin', '');
+$nordic_use_modern_skin = true;
+
+if (cmsUser::isAdmin()) {
+    if ($nordic_skin_override === 'nordic') {
+        $nordic_use_modern_skin = false;
+    } else if ($nordic_skin_override === 'modern') {
+        $nordic_use_modern_skin = true;
+    }
+}
+
+unset($nordic_skin_override);
+
+$modern_skin_rows = null;
+
+if ($nordic_use_modern_skin && !$lb_takeover_active) {
+    try {
+        $widgets_model = cmsCore::getModel('widgets');
+
+        if ($widgets_model && method_exists($widgets_model, 'getLayoutRows')) {
+            $modern_skin_rows = $widgets_model->getLayoutRows('modern');
+
+            if (is_array($modern_skin_rows) && $modern_skin_rows) {
+                $legacy_bind_map = !empty($shell_scheme['legacy_bind_map']) && is_array($shell_scheme['legacy_bind_map'])
+                    ? $shell_scheme['legacy_bind_map']
+                    : [];
+
+                $has_modern_positions = $this->hasWidgetsOn(['pos_26', 'pos_27', 'pos_29', 'pos_8', 'pos_11']);
+                $effective_legacy_bind_map = $has_modern_positions ? [] : $legacy_bind_map;
+
+                // Transitional map modern->nordic нужен только до БД-синхронизации.
+                // После синхронизации nordic получает native modern позиции,
+                // и этот map должен быть отключен для 1:1 старта как modern.
+                $modern_skin_position_map = $has_modern_positions ? [] : [
+                    'pos_26'     => 'site_top',
+                    'pos_27'     => 'header_primary',
+                    'pos_31'     => '__nordic_void_pos_31',
+                    'pos_29'     => '__nordic_void_pos_29',
+                    'con_header' => 'hero',
+                    'pos_10'     => 'before_content',
+                    'pos_33'     => '__nordic_void_pos_33',
+                    'pos_8'      => 'content_body',
+                    'pos_34'     => 'content_sidebar_left',
+                    'pos_9'      => 'content_sidebar_right',
+                    'pos_17'     => 'after_content',
+                    'pos_18'     => '__nordic_void_pos_18',
+                    'pos_38'     => 'footer_col1_about',
+                    'pos_39'     => 'footer_col2_sections',
+                    'pos_40'     => 'footer_col3_contacts',
+                    'pos_11'     => 'footer_secondary',
+                    'pos_32'     => '__nordic_void_pos_32'
+                ];
+
+                if ($effective_legacy_bind_map || $modern_skin_position_map) {
+                    $mapPosition = function($position) use ($effective_legacy_bind_map, $modern_skin_position_map) {
+                        $position = trim((string) $position);
+                        if ($position === '') {
+                            return $position;
+                        }
+
+                        if (isset($modern_skin_position_map[$position])) {
+                            return (string) $modern_skin_position_map[$position];
+                        }
+
+                        return (string) ($effective_legacy_bind_map[$position] ?? $position);
+                    };
+
+                    $mapRows = function(array $rows) use (&$mapRows, $mapPosition) {
+                        foreach ($rows as $row_id => $row) {
+                            if (!empty($row['positions']) && is_array($row['positions'])) {
+                                $row['positions'] = array_values(array_unique(array_map($mapPosition, $row['positions'])));
+                            }
+
+                            if (!empty($row['cols']) && is_array($row['cols'])) {
+                                foreach ($row['cols'] as $col_id => $col) {
+                                    if (!empty($col['name'])) {
+                                        $col['name'] = $mapPosition($col['name']);
+                                    }
+
+                                    if (!empty($col['positions']) && is_array($col['positions'])) {
+                                        $col['positions'] = array_values(array_unique(array_map($mapPosition, $col['positions'])));
+                                    }
+
+                                    if (!empty($col['rows']) && is_array($col['rows'])) {
+                                        if (!empty($col['rows']['before']) && is_array($col['rows']['before'])) {
+                                            $col['rows']['before'] = $mapRows($col['rows']['before']);
+                                        }
+
+                                        if (!empty($col['rows']['after']) && is_array($col['rows']['after'])) {
+                                            $col['rows']['after'] = $mapRows($col['rows']['after']);
+                                        }
+                                    }
+
+                                    $row['cols'][$col_id] = $col;
+                                }
+                            }
+
+                            $rows[$row_id] = $row;
+                        }
+
+                        return $rows;
+                    };
+
+                    $modern_skin_rows = $mapRows($modern_skin_rows);
+                }
+            } else {
+                $modern_skin_rows = null;
+            }
+        }
+    } catch (Throwable $exception) {
+        $modern_skin_rows = null;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
@@ -389,6 +510,9 @@ unset($nordic_dev_skin);
         $this->addMainCSS('templates/modern/css/theme.css');
     } else {
         $this->addMainTplCSSName(['theme']);
+        if ($lb_effective_shell_style !== '') {
+            $this->addHead('<style>:root{' . $lb_effective_shell_style . '}</style>');
+        }
         // Nordic фирменные шрифты: PT Serif (контент) + Roboto Condensed (UI)
         $this->addHead('<link rel="dns-prefetch" href="https://fonts.googleapis.com">');
         $this->addHead('<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>');
@@ -434,14 +558,15 @@ unset($nordic_dev_skin);
                     if ($lb_after_html !== '') { echo $lb_after_html; }
                     echo '</main>';
                 } else {
+                    $rows_for_modern_skin = $modern_skin_rows ?: $rows;
                     $this->renderLayoutChild('scheme', [
-                        'rows' => $rows,
+                        'rows' => $rows_for_modern_skin,
                         'nordic_disable_reserved_filter' => true
                     ]);
                 }
             ?>
         <?php } else { ?>
-        <div class="nordic-shell nordic-shell--header-<?php html($shell_chrome['header_variant'] ?? 'classic'); ?> nordic-shell--footer-<?php html($shell_chrome['footer_variant'] ?? 'columns_4'); ?> nordic-shell--menu-<?php html($menu_placement); ?> nordic-shell--mobile-menu-<?php html($shell_chrome['mobile_menu_mode'] ?? 'drawer'); ?> nordic-shell--homepage-mode-<?php html($shell_chrome['homepage_shell_mode'] ?? 'inherit'); ?>"<?php if (!$nordic_use_modern_skin && !empty($lb_takeover_shell_style)) { ?> style="<?php html($lb_takeover_shell_style); ?>"<?php } ?>>
+        <div class="nordic-shell nordic-shell--header-<?php html($shell_chrome['header_variant'] ?? 'classic'); ?> nordic-shell--footer-<?php html($shell_chrome['footer_variant'] ?? 'columns_4'); ?> nordic-shell--menu-<?php html($menu_placement); ?> nordic-shell--mobile-menu-<?php html($shell_chrome['mobile_menu_mode'] ?? 'drawer'); ?> nordic-shell--homepage-mode-<?php html($shell_chrome['homepage_shell_mode'] ?? 'inherit'); ?>"<?php if (!$nordic_use_modern_skin && !empty($lb_effective_shell_style)) { ?> style="<?php html($lb_effective_shell_style); ?>"<?php } ?>>
 
             <?php if (!$config->is_site_on) { ?>
                 <div class="nordic-shell__notice">
