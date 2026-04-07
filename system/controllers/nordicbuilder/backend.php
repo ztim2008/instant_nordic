@@ -46,6 +46,13 @@ class backendNordicbuilder extends cmsBackend {
                 'options' => [
                     'icon'  => 'random'
                 ]
+            ],
+            [
+                'title' => 'Workspace',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'workspace']),
+                'options' => [
+                    'icon'  => 'wrench'
+                ]
             ]
         ];
     }

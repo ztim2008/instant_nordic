@@ -19,6 +19,7 @@ if (!function_exists('landingbuilder_get_runtime_site_styles_css')) {
 		.lb-runtime-block--autoscale{position:relative;left:50%;right:50%;width:100vw;max-width:100vw;margin-left:-50vw;margin-right:-50vw}
 		.lb-runtime-block--autoscale .container,.lb-runtime-block--autoscale .container-sm,.lb-runtime-block--autoscale .container-md,.lb-runtime-block--autoscale .container-lg,.lb-runtime-block--autoscale .container-xl,.lb-runtime-block--autoscale .container-xxl{max-width:none!important;width:100%!important}
 		.lb-section--autoscale-base-blocks,.lb-section--autoscale-base-blocks .lb-section-inner,.lb-section--autoscale-base-blocks .lb-columns,.lb-section--autoscale-base-blocks .lb-column{overflow:visible}
+		.lb-section--autoscale-wide .lb-section-inner{max-width:none;padding-left:0;padding-right:0}
 		.lb-section--container-text .lb-section-inner{max-width:760px}
 		.lb-section--container-standard .lb-section-inner{max-width:1120px}
 		.lb-section--container-wide .lb-section-inner{max-width:1320px}

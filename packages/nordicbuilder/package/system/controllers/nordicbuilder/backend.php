@@ -20,7 +20,7 @@ class backendNordicbuilder extends cmsBackend {
                 ]
             ],
             [
-                'title' => 'Макеты',
+                'title' => 'Все страницы',
 				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'pages']),
                 'options' => [
                     'icon' => 'file-alt'
@@ -45,6 +45,13 @@ class backendNordicbuilder extends cmsBackend {
 				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'bindings']),
                 'options' => [
                     'icon'  => 'random'
+                ]
+            ],
+            [
+                'title' => 'Workspace',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'workspace']),
+                'options' => [
+                    'icon'  => 'wrench'
                 ]
             ]
         ];

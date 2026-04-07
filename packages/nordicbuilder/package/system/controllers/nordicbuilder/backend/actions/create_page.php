@@ -22,7 +22,8 @@ class actionNordicbuilderCreatePage extends cmsAction {
 			'title'    => $this->request->get('title', ''),
 			'mode'     => $this->request->get('mode', 'instant_content_body'),
 			'status'   => $this->request->get('status', 'draft'),
-			'template' => $this->request->get('template', 'nordic')
+			'template' => $this->request->get('template', 'nordic'),
+			'adapter_key' => $this->request->get('adapter_key', '')
 		], $this->cms_user->id);
 
 		if (!$page) {

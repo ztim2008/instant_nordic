@@ -103,7 +103,7 @@ class actionNordicbuilderPublishPage extends cmsAction {
         if (!$saved) {
             return $this->cms_template->renderJSON([
                 'error'   => true,
-                'message' => 'Не удалось сохранить опубликованный SSR-рендер. Проверьте, установлена ли таблица nordicbuilder_page_renders.'
+                'message' => 'Не удалось сохранить опубликованный SSR-рендер. Таблица nordicbuilder_page_renders отсутствует или не может быть создана автоматически (проверьте права БД на CREATE TABLE).'
             ]);
         }
 

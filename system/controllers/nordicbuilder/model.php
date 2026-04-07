@@ -217,7 +217,7 @@ class modelNordicbuilder extends cmsModel {
 			return false;
 		}
 
-		if (!$this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+		if (!$this->ensurePageRenderTable()) {
 			return false;
 		}
 
@@ -399,11 +399,12 @@ class modelNordicbuilder extends cmsModel {
 
 	public function saveBridgePageSchema($page_key, array $schema, array $fallback_page = [], $user_id = 0, $status = 'draft') {
 		$layout = isset($schema['layout']) && is_array($schema['layout']) ? $schema['layout'] : [];
+		$effective_status = (string) ($status ?: ($fallback_page['status'] ?? 'draft'));
 		$page = array_merge($fallback_page, [
 			'key'         => $page_key,
 			'name'        => $page_key,
 			'title'       => (string) ($fallback_page['title'] ?? $page_key),
-			'status'      => (string) ($fallback_page['status'] ?? $status),
+			'status'      => $effective_status,
 			'mode'        => (string) ($fallback_page['mode'] ?? 'instant_content_body'),
 			'page_type'   => (string) ($fallback_page['page_type'] ?? 'standalone'),
 			'template'    => (string) (($layout['template'] ?? '') ?: ($fallback_page['template'] ?? 'nordic')),
@@ -413,7 +414,7 @@ class modelNordicbuilder extends cmsModel {
 
 		$document = $this->buildPageDocumentFromLandingbuilder($page);
 
-		return $this->savePageDocument($document, $user_id, (string) ($status ?: ($fallback_page['status'] ?? 'draft')));
+		return $this->savePageDocument($document, $user_id, $effective_status);
 	}
 
 	public function getPresetTokenByKey($key) {
@@ -770,11 +771,21 @@ class modelNordicbuilder extends cmsModel {
 	public function getPersistenceSummary() {
 		$tables = [];
 		$installed_tables_count = 0;
+		$missing_tables = [];
 
 		foreach ($this->getPersistenceTablesConfig() as $table) {
 			$is_installed = $this->db->isTableExists($table['table_name']);
+			$auto_healed = false;
+
+			if (!$is_installed) {
+				$auto_healed = $this->ensurePersistenceTable($table['table_name']);
+				$is_installed = $auto_healed || $this->db->isTableExists($table['table_name']);
+			}
+
 			if ($is_installed) {
 				$installed_tables_count++;
+			} else {
+				$missing_tables[] = $table['table_name'];
 			}
 
 			$tables[] = [
@@ -783,6 +794,7 @@ class modelNordicbuilder extends cmsModel {
 				'contract_key'   => $table['contract_key'],
 				'storage_target' => $table['storage_target'],
 				'is_installed'   => $is_installed,
+				'auto_healed'    => $auto_healed,
 				'count'          => $is_installed ? (int) $this->getCount($table['table_name'], 'id', true) : 0
 			];
 		}
@@ -791,6 +803,7 @@ class modelNordicbuilder extends cmsModel {
 			'is_installed'           => $installed_tables_count === count($tables),
 			'installed_tables_count' => $installed_tables_count,
 			'total_tables_count'     => count($tables),
+			'missing_tables'         => $missing_tables,
 			'tables'                 => $tables
 		];
 	}
@@ -822,8 +835,140 @@ class modelNordicbuilder extends cmsModel {
 				'table_name'     => self::BINDING_OPTIONS_TABLE,
 				'contract_key'   => 'binding-options',
 				'storage_target' => 'bindings.options_json'
+			],
+			[
+				'title'          => 'Published Page Renders',
+				'table_name'     => self::PAGE_RENDER_TABLE,
+				'contract_key'   => 'runtime-ssr-render',
+				'storage_target' => 'runtime.page_renders'
 			]
 		];
+	}
+
+	protected function ensurePersistenceTable($table_name) {
+		if ($table_name === self::PAGE_DOCUMENT_TABLE) {
+			return $this->ensurePageDocumentTable();
+		}
+
+		if ($table_name === self::PRESET_TOKEN_TABLE) {
+			return $this->ensurePresetTokenTable();
+		}
+
+		if ($table_name === self::BINDING_OPTIONS_TABLE) {
+			return $this->ensureBindingOptionsTable();
+		}
+
+		if ($table_name === self::PAGE_RENDER_TABLE) {
+			return $this->ensurePageRenderTable();
+		}
+
+		return false;
+	}
+
+	protected function ensurePageDocumentTable() {
+		if ($this->db->isTableExists(self::PAGE_DOCUMENT_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PAGE_DOCUMENT_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`document_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL,
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`page_type` varchar(32) NOT NULL DEFAULT '',
+			`editor_mode` varchar(32) NOT NULL DEFAULT '',
+			`status` varchar(32) NOT NULL DEFAULT 'draft',
+			`schema_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `document_key` (`document_key`),
+			KEY `status` (`status`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PAGE_DOCUMENT_TABLE);
+	}
+
+	protected function ensurePresetTokenTable() {
+		if ($this->db->isTableExists(self::PRESET_TOKEN_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PRESET_TOKEN_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`preset_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL,
+			`scope` varchar(32) NOT NULL DEFAULT 'site',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`tokens_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `preset_key` (`preset_key`),
+			KEY `scope` (`scope`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PRESET_TOKEN_TABLE);
+	}
+
+	protected function ensureBindingOptionsTable() {
+		if ($this->db->isTableExists(self::BINDING_OPTIONS_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::BINDING_OPTIONS_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`binding_key` varchar(190) NOT NULL,
+			`page_key` varchar(190) NOT NULL DEFAULT '',
+			`title` varchar(255) NOT NULL DEFAULT '',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`options_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `binding_key` (`binding_key`),
+			KEY `page_key` (`page_key`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::BINDING_OPTIONS_TABLE);
+	}
+
+	protected function ensurePageRenderTable() {
+		if ($this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PAGE_RENDER_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`page_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL DEFAULT '',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`meta_json` mediumtext NOT NULL,
+			`html` mediumtext NOT NULL,
+			`content_hash` char(64) NOT NULL DEFAULT '',
+			`published_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`published_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `page_key` (`page_key`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PAGE_RENDER_TABLE);
 	}
 
 	protected function normalizePageDocument(array $document) {
@@ -856,9 +1001,15 @@ class modelNordicbuilder extends cmsModel {
 
 	protected function hasPersistenceTables() {
 		foreach ($this->getPersistenceTablesConfig() as $table) {
-			if (!$this->db->isTableExists($table['table_name'])) {
-				return false;
+			if ($this->db->isTableExists($table['table_name'])) {
+				continue;
 			}
+
+			if ($this->ensurePersistenceTable($table['table_name'])) {
+				continue;
+			}
+
+			return false;
 		}
 
 		return true;

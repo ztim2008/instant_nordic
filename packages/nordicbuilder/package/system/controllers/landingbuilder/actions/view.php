@@ -13,9 +13,6 @@ class actionLandingbuilderView extends cmsAction {
 			}
 
 			$is_preview = ($page['status'] ?? 'draft') !== 'published';
-			if ($is_preview && !cmsUser::isAdmin()) {
-				return cmsCore::error404();
-			}
 
 			$runtime = $this->model->getRuntimePage($page);
 			$runtime['device_type'] = cmsRequest::getDeviceType();

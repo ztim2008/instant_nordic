@@ -327,8 +327,13 @@ class modelLandingbuilder extends cmsModel {
 		$status = !empty($data['status']) ? $data['status'] : 'draft';
 		$template = !empty($data['template']) ? $data['template'] : 'nordic';
 		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : [];
+		$adapter_key = trim((string) ($data['adapter_key'] ?? ''));
+		$adapter_definitions = $this->getAdapterDefinitions();
 		if (empty($schema['sections']) && empty($schema['zones'])) {
 			$schema = $this->getStarterSchemaForNewPage($key, $title, $template, $page_mode);
+		}
+		if ($adapter_key !== '' && isset($adapter_definitions[$adapter_key])) {
+			$schema['adapter_key'] = $adapter_key;
 		}
 		$now = date('Y-m-d H:i:s');
 
@@ -519,7 +524,32 @@ class modelLandingbuilder extends cmsModel {
 			if (!empty($schema['layout']['template'])) {
 				$fallback_page['template'] = (string) $schema['layout']['template'];
 			}
-			$result = $bridge_model->saveBridgePageSchema($page_key, $schema, $fallback_page ?: [], $user_id, (string) (($fallback_page['status'] ?? 'draft')));
+
+			$allowed_statuses = ['draft', 'prototype', 'idea', 'published'];
+			$status_candidates = [
+				$bridge_page['status'] ?? null,
+				$legacy_page['status'] ?? null,
+				$fallback_page['status'] ?? null
+			];
+			$effective_status = 'draft';
+
+			foreach ($status_candidates as $status_candidate) {
+				$status_candidate = is_string($status_candidate) ? trim($status_candidate) : '';
+				if (!in_array($status_candidate, $allowed_statuses, true)) {
+					continue;
+				}
+
+				if ($status_candidate === 'published') {
+					$effective_status = 'published';
+					break;
+				}
+
+				if ($effective_status === 'draft') {
+					$effective_status = $status_candidate;
+				}
+			}
+
+			$result = $bridge_model->saveBridgePageSchema($page_key, $schema, $fallback_page ?: [], $user_id, $effective_status);
 
 			if (!empty($result['is_valid'])) {
 				return $this->getPageByKey($page_key);
@@ -743,11 +773,14 @@ class modelLandingbuilder extends cmsModel {
 			'assignment_source_titles'=> $this->getShellAssignmentSourceTitles(),
 			'slot_titles'             => $slot_titles,
 			'content_slot_options'    => $this->getCanvasPageContentSlotOptions($shell, $slot_map),
+			'section_zone_options'    => $this->getCanvasSectionZoneOptions($shell, $slot_map),
+			'default_section_zone'    => $this->getDefaultZoneKey($page),
 			'effective_variant'       => [
 				'key'               => $shell['variant_key'] ?? 'site-default',
 				'title'             => $shell['variant_title'] ?? 'Базовый shell',
 				'assignment_source' => $shell['assignment_source'] ?? 'default',
 				'body_layout'       => $shell['body_layout'] ?? 'no_sidebars',
+				'body_columns'      => $shell['body_columns'] ?? [],
 				'content_slot'      => $shell['content_slot'] ?? 'content_body',
 				'active_slots'      => $active_slots
 			]
@@ -779,6 +812,40 @@ class modelLandingbuilder extends cmsModel {
 			$options[] = [
 				'value' => 'content_body',
 				'title' => $slot_titles['content_body'] ?? 'content_body'
+			];
+		}
+
+		return $options;
+	}
+
+	protected function getCanvasSectionZoneOptions(array $shell, array $slot_map) {
+
+		$allowed_slot_keys = ['hero', 'before_content', 'content_body', 'content_sidebar_left', 'content_sidebar_right', 'after_content'];
+		$slot_titles = $this->getNordicShellSlotTitleMap();
+		$options = [];
+
+		foreach (($shell['available_slots'] ?? $shell['active_slots'] ?? []) as $slot_key) {
+			if (!in_array($slot_key, $allowed_slot_keys, true)) {
+				continue;
+			}
+
+			$slot = $slot_map[$slot_key] ?? [];
+			if (($slot['render_mode'] ?? 'widgets') === 'native') {
+				continue;
+			}
+
+			$options[] = [
+				'value' => $slot_key,
+				'title' => $slot_titles[$slot_key] ?? $slot_key,
+				'hint'  => 'Секции конструктора будут рендериться в этой зоне shell.'
+			];
+		}
+
+		if (!$options) {
+			$options[] = [
+				'value' => 'before_content',
+				'title' => $slot_titles['before_content'] ?? 'before_content',
+				'hint'  => 'Fallback зона для секций, если shell еще не активировал отдельные builder slots.'
 			];
 		}
 
@@ -1614,6 +1681,37 @@ class modelLandingbuilder extends cmsModel {
 					]
 				]
 			],
+			'internal_content_generic' => [
+				'key'                  => 'internal_content_generic',
+				'title'                => 'Внутренняя страница (native body)',
+				'description'          => 'Builder добавляет секции вокруг нативного содержимого внутренней страницы InstantCMS любого типа.',
+				'shell'                => 'overlay',
+				'default_zone'         => 'before_content',
+				'native_content_label' => 'Здесь продолжает работать системное содержимое текущей внутренней страницы InstantCMS.',
+				'zones'                => [
+					[
+						'key'         => 'before_content',
+						'slot_key'    => 'before_content',
+						'title'       => 'Над системным содержимым',
+						'kind'        => 'builder',
+						'description' => 'Подходит для заголовка, промо-блоков и навигации перед нативным контентом.'
+					],
+					[
+						'key'         => 'content_body',
+						'slot_key'    => 'content_body',
+						'title'       => 'Системное содержимое страницы',
+						'kind'        => 'native',
+						'description' => 'Эта зона занимает slot content_body и остается под управлением стандартного рендера InstantCMS.'
+					],
+					[
+						'key'         => 'after_content',
+						'slot_key'    => 'after_content',
+						'title'       => 'Под системным содержимым',
+						'kind'        => 'builder',
+						'description' => 'Нижняя зона для CTA, связанных материалов и дополнительных секций.'
+					]
+				]
+			],
 			'user_profile' => [
 				'key'                  => 'user_profile',
 				'title'                => 'Профиль пользователя',
@@ -1799,6 +1897,10 @@ class modelLandingbuilder extends cmsModel {
 		$required_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
 		foreach ($required_params as $key => $expected) {
 			if (!array_key_exists($key, $route_params)) {
+				if ($this->allowsMissingBindingRouteParam($expected)) {
+					continue;
+				}
+
 				return false;
 			}
 
@@ -1811,12 +1913,34 @@ class modelLandingbuilder extends cmsModel {
 				continue;
 			}
 
-			if ((string) $actual !== (string) $expected) {
+			if (!$this->matchesBindingRouteParamValue($actual, $expected)) {
 				return false;
 			}
 		}
 
 		return true;
+	}
+
+	protected function allowsMissingBindingRouteParam($expected) {
+
+		if (is_array($expected)) {
+			return false;
+		}
+
+		$expected = trim((string) $expected);
+
+		return $expected !== '' && strpos($expected, '!') === 0;
+	}
+
+	protected function matchesBindingRouteParamValue($actual, $expected) {
+		$expected = (string) $expected;
+
+		if ($expected !== '' && strpos($expected, '!') === 0) {
+			$negative_expected = substr($expected, 1);
+			return (string) $actual !== $negative_expected;
+		}
+
+		return (string) $actual === $expected;
 	}
 
 	protected function scoreBindingOptionsDocument(array $document) {
@@ -1865,14 +1989,7 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	protected function canRenderOverlayPage(array $page, $is_admin = false) {
-
-		$status = $page['status'] ?? 'draft';
-
-		if ($status === 'published') {
-			return true;
-		}
-
-		return (bool) $is_admin;
+		return true;
 	}
 
 	protected function indexRuntimeZones(array $zones) {
@@ -1906,7 +2023,63 @@ class modelLandingbuilder extends cmsModel {
 			return 'content_category_generic';
 		}
 
+		$binding_adapter_key = $this->resolveAdapterKeyFromBindingOptions($page_key);
+		if ($binding_adapter_key !== '') {
+			return $binding_adapter_key;
+		}
+
 		return 'standalone_landing';
+	}
+
+	protected function resolveAdapterKeyFromBindingOptions($page_key) {
+
+		$page_key = (string) $page_key;
+		if ($page_key === '') {
+			return '';
+		}
+
+		$bridge_model = $this->getNordicbuilderBridgeModel();
+		if (!$bridge_model || !method_exists($bridge_model, 'getBindingOptionsCandidatesByPrefix')) {
+			return '';
+		}
+
+		$prefixes = ['overlay.user_profile', 'overlay.content_category', 'page.'];
+
+		foreach ($prefixes as $prefix) {
+			$candidates = $bridge_model->getBindingOptionsCandidatesByPrefix($prefix, 200);
+			if (!$candidates) {
+				continue;
+			}
+
+			foreach ($candidates as $candidate) {
+				$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
+				$candidate_page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
+				if ($candidate_page_key === '' || $candidate_page_key !== $page_key) {
+					continue;
+				}
+
+				$binding_key = (string) (($candidate['binding_key'] ?? '') ?: ($document['key'] ?? ''));
+				if (strpos($binding_key, 'overlay.user_profile') === 0) {
+					return 'user_profile';
+				}
+				if (strpos($binding_key, 'overlay.content_category') === 0) {
+					return 'content_category_generic';
+				}
+				if (strpos($binding_key, 'page.all_internal') === 0) {
+					return 'internal_content_generic';
+				}
+
+				$matching = isset($document['matching']) && is_array($document['matching']) ? $document['matching'] : [];
+				$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
+				$page_type_rule = trim((string) ($route_params['page_type'] ?? ''));
+
+				if ($page_type_rule === '!homepage') {
+					return 'internal_content_generic';
+				}
+			}
+		}
+
+		return '';
 	}
 
 	protected function resolvePageType(array $page) {
@@ -1988,8 +2161,26 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		foreach ($page['schema']['sections'] as $section) {
-			$zone_key = !empty($section['zone_key']) ? $section['zone_key'] : $adapter['default_zone'];
+			$explicit_zone_key = !empty($section['settings']['zone_key']) ? (string) $section['settings']['zone_key'] : '';
+			$legacy_zone_key = !empty($section['zone_key']) ? (string) $section['zone_key'] : '';
+			$default_zone_key = $this->normalizeRuntimeZoneKey($adapter['default_zone'] ?? 'before_content');
+
+			if ($explicit_zone_key !== '') {
+				$zone_key = $explicit_zone_key;
+			} elseif ($legacy_zone_key !== '' && $this->normalizeRuntimeZoneKey($legacy_zone_key) !== $default_zone_key) {
+				$zone_key = $legacy_zone_key;
+			} else {
+				$zone_key = $this->resolveImplicitSectionZoneKey($adapter, $shell);
+			}
 			$zone_key = $this->normalizeRuntimeZoneKey($zone_key);
+
+			// For adapters with native content_body, sections must not capture that slot.
+			if (
+				$zone_key === 'content_body' &&
+				$this->hasNativeRuntimeZone($adapter, 'content_body')
+			) {
+				$zone_key = $this->resolveImplicitSectionZoneKey($adapter, $shell);
+			}
 
 			if (!$this->isRuntimeBuilderSlotEnabled($shell, $zone_key)) {
 				continue;
@@ -2012,12 +2203,80 @@ class modelLandingbuilder extends cmsModel {
 		return array_values($zones);
 	}
 
+	protected function resolveImplicitSectionZoneKey(array $adapter, array $shell = []) {
+
+		$default_zone_key = $this->normalizeRuntimeZoneKey($adapter['default_zone'] ?? 'before_content');
+		if (
+			$default_zone_key !== '' &&
+			!$this->hasNativeRuntimeZone($adapter, $default_zone_key) &&
+			$this->isRuntimeBuilderSlotEnabled($shell, $default_zone_key)
+		) {
+			return $default_zone_key;
+		}
+
+		foreach (($adapter['zones'] ?? []) as $zone) {
+			if (($zone['kind'] ?? 'builder') !== 'builder') {
+				continue;
+			}
+
+			$candidate_zone_key = $this->normalizeRuntimeZoneKey($zone['slot_key'] ?? ($zone['key'] ?? ''));
+			if ($candidate_zone_key === '') {
+				continue;
+			}
+
+			if (!$this->isRuntimeBuilderSlotEnabled($shell, $candidate_zone_key)) {
+				continue;
+			}
+
+			return $candidate_zone_key;
+		}
+
+		return $default_zone_key;
+	}
+
+	protected function hasNativeRuntimeZone(array $adapter, $zone_key) {
+
+		$zone_key = $this->normalizeRuntimeZoneKey($zone_key);
+
+		foreach (($adapter['zones'] ?? []) as $zone) {
+			$current_zone_key = $this->normalizeRuntimeZoneKey($zone['key'] ?? '');
+			if ($current_zone_key !== $zone_key) {
+				continue;
+			}
+
+			return ($zone['kind'] ?? 'builder') === 'native';
+		}
+
+		return false;
+	}
+
 	protected function buildRuntimeShell(array $page, array $adapter) {
 
 		$layout = isset($page['schema']['layout']) && is_array($page['schema']['layout']) ? $page['schema']['layout'] : [];
 		$slot_positions = $this->getNordicShellSlotPositions();
 		$shell_variant = $this->resolveRuntimeShellVariant($page, $adapter);
+		$raw_body_columns_mode = trim((string) ($layout['body_columns_mode'] ?? ''));
+		$body_columns_mode = $this->normalizeBodyColumnsMode($raw_body_columns_mode);
+		if ($body_columns_mode === '') {
+			$body_columns_mode = $this->mapBodyLayoutToColumnsMode($shell_variant['body_layout'] ?? 'no_sidebars');
+		}
+		$body_left_span = $this->normalizeBodyColumnSpan($layout['body_left_span'] ?? 3, 3);
+		$body_right_span = $this->normalizeBodyColumnSpan($layout['body_right_span'] ?? 3, 3);
+
+		$body_columns = $this->buildRuntimeBodyColumnsState($body_columns_mode, $body_left_span, $body_right_span);
+		$body_layout = $this->mapBodyColumnsModeToBodyLayout($body_columns['mode']);
+
 		$active_slots = $this->normalizeShellSlots($shell_variant['active_slots']);
+		$active_slots = array_values(array_diff($active_slots, ['content_sidebar_left', 'content_sidebar_right']));
+
+		if (!empty($body_columns['has_left'])) {
+			$active_slots[] = 'content_sidebar_left';
+		}
+		if (!empty($body_columns['has_right'])) {
+			$active_slots[] = 'content_sidebar_right';
+		}
+
+		$active_slots = $this->normalizeShellSlots($active_slots);
 		$builder_slots = $active_slots;
 		$homepage_shell_mode = $shell_variant['homepage_shell_mode'];
 
@@ -2057,7 +2316,8 @@ class modelLandingbuilder extends cmsModel {
 			'variant_title'=> $shell_variant['title'],
 			'variant_scope'=> $shell_variant['scope'],
 			'assignment_source' => $shell_variant['assignment_source'],
-			'body_layout'  => $shell_variant['body_layout'],
+			'body_layout'  => $body_layout,
+			'body_columns' => $body_columns,
 			'chrome'       => [
 				'header_variant'      => $shell_variant['header_variant'],
 				'footer_variant'      => $shell_variant['footer_variant'],
@@ -2141,6 +2401,10 @@ class modelLandingbuilder extends cmsModel {
 			return 'category-pages';
 		}
 
+		if ($adapter_key === 'internal_content_generic') {
+			return 'site-default';
+		}
+
 		if ($adapter_key === 'user_profile') {
 			return 'profile-pages';
 		}
@@ -2173,7 +2437,7 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		$adapter_key = (string) ($adapter['key'] ?? '');
-		if (in_array($adapter_key, ['content_category_generic', 'user_profile', 'standalone_landing'], true)) {
+		if (in_array($adapter_key, ['content_category_generic', 'internal_content_generic', 'user_profile', 'standalone_landing'], true)) {
 			return 'adapter';
 		}
 
@@ -2476,7 +2740,10 @@ class modelLandingbuilder extends cmsModel {
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'shell_variant'=> '',
-			'content_slot' => 'content_body'
+			'content_slot' => 'content_body',
+			'body_columns_mode' => '',
+			'body_left_span' => 3,
+			'body_right_span' => 3
 		], $schema['layout']) : [
 			'template'     => 'nordic',
 			'scheme'       => $this->getNordicShellSchemeKey(),
@@ -2484,7 +2751,10 @@ class modelLandingbuilder extends cmsModel {
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'shell_variant'=> '',
-			'content_slot' => 'content_body'
+			'content_slot' => 'content_body',
+			'body_columns_mode' => '',
+			'body_left_span' => 3,
+			'body_right_span' => 3
 		];
 		$template_preset = (string) ($schema['theme']['template_preset'] ?? 'nordic_classic');
 		$template_config = $this->getTemplatePresetByKey($template_preset);
@@ -2492,6 +2762,9 @@ class modelLandingbuilder extends cmsModel {
 		$schema['layout']['scheme'] = !empty($schema['layout']['scheme']) ? (string) $schema['layout']['scheme'] : $this->getNordicShellSchemeKey();
 		$schema['layout']['shell_variant'] = $this->sanitizeShellVariantKey($schema['layout']['shell_variant']);
 		$schema['layout']['content_slot'] = $this->normalizeRuntimeZoneKey($schema['layout']['content_slot']);
+		$schema['layout']['body_columns_mode'] = $this->normalizeBodyColumnsMode($schema['layout']['body_columns_mode'] ?? '');
+		$schema['layout']['body_left_span'] = $this->normalizeBodyColumnSpan($schema['layout']['body_left_span'] ?? 3, 3);
+		$schema['layout']['body_right_span'] = $this->normalizeBodyColumnSpan($schema['layout']['body_right_span'] ?? 3, 3);
 		$schema['shell_slots'] = $this->normalizeShellSlots(isset($schema['shell_slots']) && is_array($schema['shell_slots']) ? $schema['shell_slots'] : []);
 
 		$schema['sections'] = isset($schema['sections']) && is_array($schema['sections']) ? array_values($schema['sections']) : [];
@@ -3047,6 +3320,105 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		return $normalized ?: $this->getDefaultShellSlots();
+	}
+
+	protected function normalizeBodyColumnsMode($mode) {
+
+		$mode = trim((string) $mode);
+		if ($mode === '') {
+			return '';
+		}
+		$allowed = ['1', '2-left', '2-right', '3'];
+
+		return in_array($mode, $allowed, true) ? $mode : '1';
+	}
+
+	protected function normalizeBodyColumnSpan($span, $default = 3) {
+
+		$default = (int) $default;
+		$value = is_numeric($span) ? (int) $span : $default;
+
+		if ($value < 2) {
+			$value = 2;
+		}
+		if ($value > 5) {
+			$value = 5;
+		}
+
+		return $value;
+	}
+
+	protected function mapBodyLayoutToColumnsMode($body_layout) {
+
+		$body_layout = trim((string) $body_layout);
+
+		if ($body_layout === 'left_sidebar') {
+			return '2-left';
+		}
+		if ($body_layout === 'right_sidebar') {
+			return '2-right';
+		}
+		if ($body_layout === 'two_sidebars') {
+			return '3';
+		}
+
+		return '1';
+	}
+
+	protected function mapBodyColumnsModeToBodyLayout($mode) {
+
+		$mode = $this->normalizeBodyColumnsMode($mode);
+
+		if ($mode === '2-left') {
+			return 'left_sidebar';
+		}
+		if ($mode === '2-right') {
+			return 'right_sidebar';
+		}
+		if ($mode === '3') {
+			return 'two_sidebars';
+		}
+
+		return 'no_sidebars';
+	}
+
+	protected function buildRuntimeBodyColumnsState($mode, $left_span, $right_span) {
+
+		$mode = $this->normalizeBodyColumnsMode($mode);
+		$left_span = $this->normalizeBodyColumnSpan($left_span, 3);
+		$right_span = $this->normalizeBodyColumnSpan($right_span, 3);
+
+		$has_left = in_array($mode, ['2-left', '3'], true);
+		$has_right = in_array($mode, ['2-right', '3'], true);
+
+		if (!$has_left) {
+			$left_span = 0;
+		}
+		if (!$has_right) {
+			$right_span = 0;
+		}
+
+		if ($has_left && $has_right && ($left_span + $right_span) > 8) {
+			$right_span = 8 - $left_span;
+			if ($right_span < 2) {
+				$right_span = 2;
+				$left_span = 6;
+			}
+		}
+
+		$body_span = 12 - $left_span - $right_span;
+		if ($body_span < 4) {
+			$body_span = 4;
+		}
+
+		return [
+			'mode' => $mode,
+			'has_left' => $has_left,
+			'has_right' => $has_right,
+			'left_span' => $left_span,
+			'right_span' => $right_span,
+			'body_span' => $body_span
+		];
 	}
 
 	protected function normalizeRuntimeZoneKey($zone_key) {

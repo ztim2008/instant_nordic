@@ -638,6 +638,219 @@ $canvas_state = [
         color: var(--lb-text-muted, #5b7282);
     }
 
+    .lb-native-body-scaffold {
+        border: 1px dashed rgba(15, 23, 42, 0.26);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.75rem;
+    }
+
+    .lb-native-body-scaffold--active {
+        border: 2px solid rgba(34, 197, 94, 0.72);
+        box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.24) inset;
+        background: rgba(240, 253, 244, 0.96);
+    }
+
+    .lb-native-body-scaffold__title {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 700;
+        color: #173042;
+    }
+
+    .lb-native-body-scaffold__desc {
+        margin: 0.35rem 0 0;
+        font-size: 12px;
+        color: #5f7284;
+        line-height: 1.45;
+    }
+
+    .lb-native-body-scaffold__actions {
+        margin-top: 0.6rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
+
+    .lb-native-body-layout {
+        margin-top: 0.75rem;
+        padding: 0.6rem;
+        border: 1px solid #d7e4de;
+        border-radius: 10px;
+        background: #f6fbf7;
+    }
+
+    .lb-native-body-layout__title {
+        margin: 0 0 0.45rem;
+        font-size: 12px;
+        font-weight: 700;
+        color: #224636;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    .lb-native-body-layout__modes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+
+    .lb-native-body-layout__mode {
+        border: 1px solid #bdd3c8;
+        border-radius: 999px;
+        padding: 0.28rem 0.58rem;
+        background: #ffffff;
+        color: #1f3f32;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .lb-native-body-layout__mode.is-active {
+        background: #1f9d55;
+        border-color: #1f9d55;
+        color: #ffffff;
+    }
+
+    .lb-native-body-layout__ranges {
+        margin-top: 0.55rem;
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .lb-native-body-layout__range {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .lb-native-body-layout__range label {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        color: #335f4b;
+    }
+
+    .lb-native-body-layout__range input[type="range"] {
+        width: 100%;
+    }
+
+    .lb-native-body-layout__range-value {
+        min-width: 2.5rem;
+        text-align: right;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1f3f32;
+    }
+
+    .lb-zone-workspace {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .lb-zone-workspace__lane {
+        border: 1px dashed #d4dee7;
+        border-radius: 10px;
+        padding: 0.45rem;
+        background: rgba(255, 255, 255, 0.72);
+    }
+
+    .lb-zone-workspace__lane-title {
+        margin: 0 0 0.45rem;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #577085;
+        font-weight: 700;
+    }
+
+    .lb-zone-workspace__middle {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.4fr) minmax(220px, 1fr);
+        gap: 0.65rem;
+    }
+
+    .lb-zone-workspace__column {
+        border: 1px dashed #d4dee7;
+        border-radius: 10px;
+        padding: 0.45rem;
+        background: rgba(255, 255, 255, 0.72);
+    }
+
+    .lb-zone-workspace__column--center {
+        border-style: solid;
+        border-color: #dce8e1;
+        background: rgba(247, 252, 248, 0.75);
+    }
+
+    .lb-zone-workspace__empty {
+        border: 1px dashed #d5dfe8;
+        border-radius: 8px;
+        padding: 0.55rem;
+        font-size: 12px;
+        color: #6b8395;
+        background: #f7fbff;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+    }
+
+    .lb-zone-workspace__empty button {
+        border: 1px solid #c6d5e1;
+        border-radius: 999px;
+        background: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        cursor: pointer;
+    }
+
+    .lb-advanced-details {
+        border: 1px dashed #d4dde5;
+        border-radius: 8px;
+        padding: 0.45rem 0.6rem;
+        margin: 0.45rem 0 0.65rem;
+        background: #fbfdff;
+    }
+
+    .lb-advanced-details summary {
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        color: #4a6477;
+        outline: none;
+    }
+
+    .lb-advanced-details[open] summary {
+        margin-bottom: 0.55rem;
+    }
+
+    @media (max-width: 1280px) {
+        .lb-zone-workspace__middle {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .lb-native-body-scaffold__btn {
+        border: 1px solid #d8e2ea;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #173042;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        padding: 0.35rem 0.55rem;
+        cursor: pointer;
+    }
+
+    .lb-native-body-scaffold__btn:hover {
+        border-color: #97b7cc;
+        background: #f8fcff;
+    }
+
     .lb-live-section {
         padding: 0.45rem;
         border: 1px solid rgba(15, 23, 42, 0.14);
@@ -645,6 +858,11 @@ $canvas_state = [
         background: transparent;
         box-shadow: none;
         transition: none;
+    }
+
+    .lb-live-section--zoned {
+        border-color: rgba(34, 197, 94, 0.6);
+        box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2) inset;
     }
 
     .lb-live-section__inner {
@@ -800,6 +1018,24 @@ $canvas_state = [
         background: #fee2e2;
         border-color: #f87171;
         color: #991b1b;
+    }
+
+    .lb-live-section__zone-badge {
+        position: absolute;
+        top: 0.1rem;
+        left: 1.6rem;
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.08rem 0.42rem;
+        border: 1px solid rgba(22, 163, 74, 0.45);
+        border-radius: 999px;
+        background: rgba(240, 253, 244, 0.95);
+        color: #166534;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        line-height: 1.25;
     }
 
     .lb-live-section--selected,
@@ -2566,6 +2802,8 @@ $canvas_state = [
 
         function normalizeSection(section, sectionIndex) {
             const next = Object.assign({}, section || {});
+            const normalizedZoneKey = String(next.zone_key || (next.settings && next.settings.zone_key) || '').trim();
+            const safeZoneKey = hasNativeBodyRuntimeSlot() && normalizedZoneKey === 'content_body' ? '' : normalizedZoneKey;
             next.uid = next.uid || uid('section');
             next.title = next.title || ('Секция ' + ((sectionIndex || 0) + 1));
             next.layout = next.layout || '1col';
@@ -2575,7 +2813,9 @@ $canvas_state = [
             next.container_preset = next.container_preset || 'standard';
             next.spacing_preset = next.spacing_preset || 'md';
             next.visibility = Object.assign(defaultVisibility(), next.visibility || {});
-            next.settings = Object.assign({background_class: '', padding: 'md', css_class: '', stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, next.settings || {});
+            next.settings = Object.assign({background_class: '', padding: 'md', css_class: '', zone_key: '', stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, next.settings || {});
+            next.settings.zone_key = safeZoneKey;
+            next.zone_key = safeZoneKey;
             next.columns = Array.isArray(next.columns) ? next.columns.map(function (column, columnIndex) {
                 return normalizeColumn(column, next.uid, columnIndex);
             }) : [];
@@ -3105,7 +3345,147 @@ $canvas_state = [
         }
 
         function isStandaloneLandingPage() {
-            return String(state.page.adapter_key || '') === 'standalone_landing';
+            const adapterKey = String(state.page.adapter_key || '');
+
+            if (adapterKey === 'standalone_landing') {
+                return true;
+            }
+
+            if (adapterKey === 'internal_content_generic' || adapterKey === 'content_category_generic' || adapterKey === 'user_profile') {
+                return false;
+            }
+
+            return !hasNativeBodyRuntimeSlot();
+        }
+
+        function hasNativeBodyRuntimeSlot() {
+            const activeSlots = Array.isArray(pageShellScreen.effective_variant && pageShellScreen.effective_variant.active_slots)
+                ? pageShellScreen.effective_variant.active_slots
+                : [];
+
+            return activeSlots.some(function (slot) {
+                return String(slot && slot.key || '') === 'content_body' && String(slot && slot.render_mode || '') === 'native';
+            });
+        }
+
+        function normalizeBodyColumnsMode(mode) {
+            const normalizedMode = String(mode || '').trim();
+            const allowedModes = ['1', '2-left', '2-right', '3'];
+
+            return allowedModes.indexOf(normalizedMode) !== -1 ? normalizedMode : '1';
+        }
+
+        function normalizeBodyColumnSpan(value, fallback) {
+            const fallbackValue = Number(fallback || 3);
+            let normalizedValue = Number(value);
+
+            if (!Number.isFinite(normalizedValue)) {
+                normalizedValue = fallbackValue;
+            }
+
+            normalizedValue = Math.round(normalizedValue);
+            if (normalizedValue < 2) {
+                normalizedValue = 2;
+            }
+            if (normalizedValue > 5) {
+                normalizedValue = 5;
+            }
+
+            return normalizedValue;
+        }
+
+        function mapBodyLayoutToColumnsMode(bodyLayout) {
+            const normalizedLayout = String(bodyLayout || '').trim();
+
+            if (normalizedLayout === 'left_sidebar') {
+                return '2-left';
+            }
+            if (normalizedLayout === 'right_sidebar') {
+                return '2-right';
+            }
+            if (normalizedLayout === 'two_sidebars') {
+                return '3';
+            }
+
+            return '1';
+        }
+
+        function resolveBodyColumnsState() {
+            state.schema.layout = state.schema.layout || {};
+
+            const effectiveVariant = pageShellScreen.effective_variant || {};
+            const effectiveColumns = effectiveVariant.body_columns || {};
+            const fallbackMode = normalizeBodyColumnsMode(effectiveColumns.mode || mapBodyLayoutToColumnsMode(effectiveVariant.body_layout || 'no_sidebars'));
+
+            let mode = normalizeBodyColumnsMode(state.schema.layout.body_columns_mode || fallbackMode);
+            let leftSpan = normalizeBodyColumnSpan(state.schema.layout.body_left_span, Number(effectiveColumns.left_span || 3));
+            let rightSpan = normalizeBodyColumnSpan(state.schema.layout.body_right_span, Number(effectiveColumns.right_span || 3));
+
+            const hasLeft = mode === '2-left' || mode === '3';
+            const hasRight = mode === '2-right' || mode === '3';
+
+            if (!hasLeft) {
+                leftSpan = 0;
+            }
+            if (!hasRight) {
+                rightSpan = 0;
+            }
+
+            if (hasLeft && hasRight && (leftSpan + rightSpan) > 8) {
+                rightSpan = Math.max(2, 8 - leftSpan);
+                if ((leftSpan + rightSpan) > 8) {
+                    leftSpan = 6;
+                    rightSpan = 2;
+                }
+            }
+
+            let bodySpan = 12 - leftSpan - rightSpan;
+            if (bodySpan < 4) {
+                bodySpan = 4;
+            }
+
+            state.schema.layout.body_columns_mode = mode;
+            state.schema.layout.body_left_span = hasLeft ? leftSpan : 0;
+            state.schema.layout.body_right_span = hasRight ? rightSpan : 0;
+
+            return {
+                mode: mode,
+                hasLeft: hasLeft,
+                hasRight: hasRight,
+                leftSpan: hasLeft ? leftSpan : 0,
+                rightSpan: hasRight ? rightSpan : 0,
+                bodySpan: bodySpan
+            };
+        }
+
+        function renderNativeBodyLayoutControls() {
+            const columns = resolveBodyColumnsState();
+            const modes = [
+                {key: '1', title: '1 колонка'},
+                {key: '2-left', title: '2 колонки (левый sidebar)'},
+                {key: '2-right', title: '2 колонки (правый sidebar)'},
+                {key: '3', title: '3 колонки'}
+            ];
+
+            return '' +
+                '<div class="lb-native-body-layout" data-role="native-body-layout">' +
+                    '<div class="lb-native-body-layout__title">Body Layout</div>' +
+                    '<div class="lb-native-body-layout__modes">' +
+                        modes.map(function (item) {
+                            const activeClass = columns.mode === item.key ? ' is-active' : '';
+                            return '<button type="button" class="lb-native-body-layout__mode' + activeClass + '" data-action="set-body-columns-mode" data-mode="' + escapeHtml(item.key) + '">' + escapeHtml(item.title) + '</button>';
+                        }).join('') +
+                    '</div>' +
+                    '<div class="lb-native-body-layout__ranges">' +
+                        (columns.hasLeft
+                            ? '<div class="lb-native-body-layout__range"><label>Ширина левого sidebar</label><div class="lb-native-body-layout__range-value">' + String(columns.leftSpan) + '/12</div><input type="range" min="2" max="5" step="1" value="' + String(columns.leftSpan) + '" data-role="body-span-range" data-field="body_left_span"></div>'
+                            : '') +
+                        (columns.hasRight
+                            ? '<div class="lb-native-body-layout__range"><label>Ширина правого sidebar</label><div class="lb-native-body-layout__range-value">' + String(columns.rightSpan) + '/12</div><input type="range" min="2" max="5" step="1" value="' + String(columns.rightSpan) + '" data-role="body-span-range" data-field="body_right_span"></div>'
+                            : '') +
+                        '<div class="lb-native-body-layout__range"><label>Ширина системного body</label><div class="lb-native-body-layout__range-value">' + String(columns.bodySpan) + '/12</div></div>' +
+                    '</div>' +
+                '</div>';
         }
 
         function resolveAutoShellVariantKey() {
@@ -3200,6 +3580,112 @@ $canvas_state = [
             });
         }
 
+        function getSectionZoneOptions(currentZoneKey) {
+            const nativeBodyMode = hasNativeBodyRuntimeSlot();
+            const currentKey = String(currentZoneKey || '').trim();
+            let options = Array.isArray(pageShellScreen.section_zone_options)
+                ? pageShellScreen.section_zone_options.map(function (option) {
+                    return {
+                        value: String(option.value || ''),
+                        title: option.title || getShellSlotTitle(option.value || '')
+                    };
+                }).filter(function (option) {
+                    return option.value !== '';
+                })
+                : [];
+
+            if (nativeBodyMode) {
+                options = options.filter(function (option) {
+                    return String(option.value || '') !== 'content_body';
+                });
+            }
+
+            if (!options.length) {
+                options = getPageContentSlotOptions().filter(function (option) {
+                    if (String(option.value || '') === 'content_body' && hasNativeBodyRuntimeSlot()) {
+                        return false;
+                    }
+
+                    return true;
+                });
+            }
+
+            if (currentKey && (!nativeBodyMode || currentKey !== 'content_body') && !options.some(function (option) {
+                return option.value === currentKey;
+            })) {
+                options.unshift({
+                    value: currentKey,
+                    title: getShellSlotTitle(currentKey)
+                });
+            }
+
+            let defaultZoneFromScreen = String(pageShellScreen.default_section_zone || '').trim();
+            if (nativeBodyMode && defaultZoneFromScreen === 'content_body') {
+                defaultZoneFromScreen = '';
+            }
+
+            const defaultZoneKey = defaultZoneFromScreen || (options[0] ? options[0].value : 'before_content');
+            const autoZoneKey = options.some(function (option) {
+                return option.value === defaultZoneKey;
+            }) ? defaultZoneKey : (options[0] ? options[0].value : defaultZoneKey);
+
+            return [{
+                value: '',
+                title: 'Авто (' + getShellSlotTitle(autoZoneKey) + ')'
+            }].concat(options);
+        }
+
+        function getSectionExplicitZoneKey(section) {
+            const rawZoneKey = section && section.settings && section.settings.zone_key
+                ? section.settings.zone_key
+                : (section && section.zone_key ? section.zone_key : '');
+
+            return String(rawZoneKey || '').trim();
+        }
+
+        function getSectionZoneTitleByKey(zoneKey) {
+            const normalizedZoneKey = String(zoneKey || '').trim();
+            if (!normalizedZoneKey) {
+                return '';
+            }
+
+            const options = getSectionZoneOptions(normalizedZoneKey);
+            const matchedOption = options.find(function (option) {
+                return String(option.value || '') === normalizedZoneKey;
+            });
+
+            return matchedOption ? String(matchedOption.title || normalizedZoneKey) : getShellSlotTitle(normalizedZoneKey);
+        }
+
+        function getDefaultSectionZoneKey() {
+            let defaultZoneFromScreen = String(pageShellScreen.default_section_zone || '').trim();
+            if (hasNativeBodyRuntimeSlot() && defaultZoneFromScreen === 'content_body') {
+                defaultZoneFromScreen = 'before_content';
+            }
+
+            if (defaultZoneFromScreen) {
+                return defaultZoneFromScreen;
+            }
+
+            const options = getSectionZoneOptions('').filter(function (option) {
+                return String(option.value || '').trim() !== '';
+            });
+
+            return options[0] ? String(options[0].value || 'before_content') : 'before_content';
+        }
+
+        function resolveSectionRenderZoneKey(section) {
+            const explicitZoneKey = getSectionExplicitZoneKey(section);
+            const fallbackZoneKey = getDefaultSectionZoneKey();
+            let zoneKey = explicitZoneKey || fallbackZoneKey;
+
+            if (hasNativeBodyRuntimeSlot() && zoneKey === 'content_body') {
+                zoneKey = fallbackZoneKey || 'before_content';
+            }
+
+            return String(zoneKey || 'before_content').trim();
+        }
+
         function syncPageLayoutWithEffectiveShell() {
             state.schema.layout = state.schema.layout || {shell_variant: '', content_slot: 'content_body'};
 
@@ -3211,6 +3697,8 @@ $canvas_state = [
             if (!hasCurrent && options.length) {
                 state.schema.layout.content_slot = options[0].value;
             }
+
+            resolveBodyColumnsState();
         }
 
         function renderPageShellSummary() {
@@ -3271,10 +3759,10 @@ $canvas_state = [
                 return map;
             }, {});
             const primarySlot = getPagePrimaryShellSlotKey();
-            const isStandaloneLanding = isStandaloneLandingPage();
-            const contentCopy = isStandaloneLanding
-                ? 'Сюда встраивается основной runtime страницы, которую вы собираете на холсте.'
-                : 'Для overlay-режима здесь живет системное содержимое страницы, а builder подключается поверх разрешенных зон.';
+            const nativeBodyMode = hasNativeBodyRuntimeSlot();
+            const contentCopy = nativeBodyMode
+                ? 'Для overlay-режима здесь живет системное содержимое страницы, а builder подключается поверх разрешенных зон.'
+                : 'Сюда встраивается основной runtime страницы, которую вы собираете на холсте.';
 
             return '' +
                 '<section class="lb-shell-map">' +
@@ -3321,7 +3809,7 @@ $canvas_state = [
                         renderShellSlotCard('content_body', 'lb-shell-slot--third', {
                             isActive: !!activeLookup.content_body,
                             isPageSlot: primarySlot === 'content_body',
-                            stateLabel: primarySlot === 'content_body' ? (isStandaloneLanding ? 'Сюда идет страница' : 'Системный content') : (!!activeLookup.content_body ? 'Активен' : 'Выключен'),
+                            stateLabel: primarySlot === 'content_body' ? (nativeBodyMode ? 'Системный content' : 'Сюда идет страница') : (!!activeLookup.content_body ? 'Активен' : 'Выключен'),
                             copy: contentCopy
                         }) +
                         renderShellSlotCard('content_sidebar_right', 'lb-shell-slot--third', {
@@ -3836,6 +4324,16 @@ $canvas_state = [
             return activeTitle + ': ' + columnTitle + ' = ' + String(info.units) + '/12 <- ' + info.sourceLabel;
         }
 
+        function areAllSectionsAutoscaleEnabled() {
+            if (!state || !state.schema || !Array.isArray(state.schema.sections) || !state.schema.sections.length) {
+                return false;
+            }
+
+            return state.schema.sections.every(function (section) {
+                return !!(section && section.settings && section.settings.autoscale_base_blocks === true);
+            });
+        }
+
         function renderSectionBreakpointPanel(section, sectionIndex) {
             if (!section || !Array.isArray(section.columns)) {
                 return '';
@@ -3852,6 +4350,8 @@ $canvas_state = [
             const tabletCurrent = activeKey === 'tablet' || activeKey === 'pad';
             const phoneCurrent = activeKey === 'phone' || activeKey === 'mobile';
             const widthSourceTooltip = hasResponsiveControls ? getSectionWidthSourceTooltip(section, state.activeDevice) : '';
+            const allSectionsAutoscale = areAllSectionsAutoscaleEnabled();
+            const hasMultipleSections = !!(state && state.schema && Array.isArray(state.schema.sections) && state.schema.sections.length > 1);
             const label = hasResponsiveControls ? 'стек' : 'блок';
 
             return '' +
@@ -3862,7 +4362,10 @@ $canvas_state = [
                           '<button type="button" class="lb-section-breakpoint' + (stackPhone ? ' is-active' : '') + (phoneCurrent ? ' is-current' : '') + '" data-action="toggle-section-stack-phone" data-section-index="' + sectionIndex + '" title="Телефон: складывать колонки" aria-label="Телефон: складывать колонки">M</button>' +
                           '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--inherit' + (widthInherit ? ' is-active' : '') + '" data-action="toggle-section-width-inherit" data-section-index="' + sectionIndex + '" title="Наследование ширин между устройствами" aria-label="Наследование ширин между устройствами">I<span class="lb-section-breakpoint__tooltip">' + escapeHtml(widthSourceTooltip) + '</span></button>'
                         : '') +
-                    '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--autoscale' + (autoscaleBaseBlocks ? ' is-active' : '') + '" data-action="toggle-section-autoscale-base-blocks" data-section-index="' + sectionIndex + '" title="Автоскейл базовых блоков: 12/12 -> 100% экрана" aria-label="Автоскейл базовых блоков">A</button>' +
+                                        '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--autoscale' + (autoscaleBaseBlocks ? ' is-active' : '') + '" data-action="toggle-section-autoscale-base-blocks" data-section-index="' + sectionIndex + '" title="Автоскейл: 1 колонка 12/12 -> блок 100vw; 2+ колонки -> секция на всю ширину" aria-label="Автоскейл базовых блоков">A</button>' +
+                                        (hasMultipleSections
+                                            ? '<button type="button" class="lb-section-breakpoint lb-section-breakpoint--autoscale-all' + (allSectionsAutoscale ? ' is-active' : '') + '" data-action="toggle-all-sections-autoscale-base-blocks" title="Автоскейл базовых блоков: включить или выключить во всех секциях" aria-label="Автоскейл во всех секциях">A+</button>'
+                                            : '') +
                 '</div>';
         }
 
@@ -4081,6 +4584,8 @@ $canvas_state = [
             const stackPhone = !(section && section.settings && section.settings.stack_phone === false);
             const widthInherit = !(section && section.settings && section.settings.width_inherit === false);
             const autoscaleBaseBlocks = !!(section && section.settings && section.settings.autoscale_base_blocks === true);
+            const allSectionsAutoscale = areAllSectionsAutoscaleEnabled();
+            const hasMultipleSections = !!(state && state.schema && Array.isArray(state.schema.sections) && state.schema.sections.length > 1);
 
             return '' +
                 '<div class="lb-field">' +
@@ -4088,7 +4593,10 @@ $canvas_state = [
                     '<label class="d-flex align-items-center mb-2"><input type="checkbox" class="mr-2" data-field="settings.stack_tablet"' + (stackTablet ? ' checked' : '') + '>Планшет: складывать в один столбик</label>' +
                     '<label class="d-flex align-items-center mb-0"><input type="checkbox" class="mr-2" data-field="settings.stack_phone"' + (stackPhone ? ' checked' : '') + '>Телефон: складывать в один столбик</label>' +
                     '<label class="d-flex align-items-center mt-2 mb-0"><input type="checkbox" class="mr-2" data-field="settings.width_inherit"' + (widthInherit ? ' checked' : '') + '>Наследовать ширины между устройствами</label>' +
-                    '<label class="d-flex align-items-center mt-2 mb-0"><input type="checkbox" class="mr-2" data-field="settings.autoscale_base_blocks"' + (autoscaleBaseBlocks ? ' checked' : '') + '>Автоскейл базовых блоков (12/12 -> 100% экрана)</label>' +
+                    '<label class="d-flex align-items-center mt-2 mb-0"><input type="checkbox" class="mr-2" data-field="settings.autoscale_base_blocks"' + (autoscaleBaseBlocks ? ' checked' : '') + '>Автоскейл: 1 колонка 12/12 -> блок 100vw, 2+ колонки -> секция на всю ширину</label>' +
+                    (hasMultipleSections
+                        ? '<button type="button" class="lb-btn lb-btn--ghost mt-2" data-action="toggle-all-sections-autoscale-base-blocks">' + (allSectionsAutoscale ? 'Выключить автоскейл во всех секциях' : 'Включить автоскейл во всех секциях') + '</button>'
+                        : '') +
                     '<div class="small text-muted mt-2">Активный предпросмотр: ' + escapeHtml(getDeviceTitle(state.activeDevice)) + '</div>' +
                 '</div>';
         }
@@ -4259,6 +4767,37 @@ $canvas_state = [
 
         function renderSectionLibrary() {
             const presets = Array.isArray(state.screen.section_presets) ? state.screen.section_presets : [];
+            const zoneOptions = getSectionZoneOptions('').filter(function (option) {
+                return String(option.value || '') !== '';
+            });
+            const zoneLookup = zoneOptions.reduce(function (map, option) {
+                map[String(option.value)] = option.title || String(option.value);
+                return map;
+            }, {});
+            const quickZoneCards = [
+                {
+                    zone_key: 'before_content',
+                    title: 'Блок над body',
+                    description: 'Добавляет готовую секцию перед системным content_body.'
+                },
+                {
+                    zone_key: 'content_sidebar_left',
+                    title: 'Блок в левый sidebar',
+                    description: 'Секция сразу создается в левой колонке рядом с body.'
+                },
+                {
+                    zone_key: 'content_sidebar_right',
+                    title: 'Блок в правый sidebar',
+                    description: 'Секция сразу создается в правой колонке рядом с body.'
+                },
+                {
+                    zone_key: 'after_content',
+                    title: 'Блок под body',
+                    description: 'Добавляет готовую секцию после системного content_body.'
+                }
+            ].filter(function (item) {
+                return !!zoneLookup[item.zone_key];
+            });
 
             sectionList.innerHTML = '' +
                 '<button type="button" class="lb-library-card" data-role="insert-empty-section">' +
@@ -4267,6 +4806,26 @@ $canvas_state = [
                         '<span class="lb-chip">Создать</span>' +
                     '</div>' +
                     '<div class="lb-library-card__meta lb-library-caption">Чистая секция без контента. Удобно, если нужен свой состав колонок и блоков.</div>' +
+                '</button>' +
+                (quickZoneCards.length
+                    ? '<div class="small text-muted mt-2 mb-2">Быстрые секции вокруг body</div>'
+                        + quickZoneCards.map(function (item) {
+                            return '' +
+                                '<button type="button" class="lb-library-card" data-role="insert-zone-section" data-zone-key="' + escapeHtml(item.zone_key) + '" data-zone-title="' + escapeHtml(item.title) + '">' +
+                                    '<div class="lb-library-card__row">' +
+                                        '<span class="lb-library-card__title">' + escapeHtml(item.title) + '</span>' +
+                                        '<span class="lb-chip">' + escapeHtml(zoneLookup[item.zone_key] || item.zone_key) + '</span>' +
+                                    '</div>' +
+                                    '<div class="lb-library-card__meta lb-library-caption">' + escapeHtml(item.description) + '</div>' +
+                                '</button>';
+                        }).join('')
+                    : '') +
+                '<button type="button" class="lb-library-card" data-role="native-body-info">' +
+                    '<div class="lb-library-card__row">' +
+                        '<span class="lb-library-card__title">Body (системный)</span>' +
+                        '<span class="lb-chip">Авто</span>' +
+                    '</div>' +
+                    '<div class="lb-library-card__meta lb-library-caption">Этот слой добавлять не нужно: native content_body рендерится автоматически InstantCMS.</div>' +
                 '</button>' +
                 presets.map(function (preset, index) {
                     const columnsCount = Array.isArray(preset.columns) ? preset.columns.length : getLayoutColumnCount(preset.layout || '1col');
@@ -4348,70 +4907,154 @@ $canvas_state = [
                 initTooltips(shellMap);
             }
 
-            const sectionsMarkup = state.schema.sections.length
-                ? state.schema.sections.map(function (section, sectionIndex) {
-                    const sectionVisible = isVisibleOnDevice(section.visibility);
-                    const layoutTitle = getLayoutOption(section.layout).title;
-                    const sectionPresentation = getSectionPresentation(section);
-                    const columnsStyle = getSectionColumnsStyle(section);
-                    const columnsStyleAttr = columnsStyle ? ' style="' + escapeHtml(columnsStyle) + '"' : '';
-                    const canResizeColumns = isColumnResizeEnabled(section);
-                    const resizeIndicatorMarkup = getResizeIndicatorMarkup(section, sectionIndex);
-                    const sectionBreakpointPanel = renderSectionBreakpointPanel(section, sectionIndex);
-                    const sectionClasses = [
-                        'lb-live-section',
-                        sectionPresentation.className,
-                        state.selection && state.selection.sectionIndex === sectionIndex ? 'lb-live-section--selected' : '',
-                        !sectionVisible ? 'lb-muted-device' : ''
-                    ].filter(Boolean).join(' ');
+            const showNativeBodyScaffold = hasNativeBodyRuntimeSlot();
+            const nativeBodyLayoutControls = showNativeBodyScaffold ? renderNativeBodyLayoutControls() : '';
+            const nativeBodyScaffoldMarkup = showNativeBodyScaffold
+                ? '' +
+                    '<div class="lb-native-body-scaffold lb-native-body-scaffold--active" data-role="native-body-scaffold">' +
+                        '<h4 class="lb-native-body-scaffold__title">Body (системный, auto)</h4>' +
+                        '<p class="lb-native-body-scaffold__desc">Это нативный content_body InstantCMS. Его не нужно создавать как секцию. Добавляйте секции вокруг body: над, в левый/правый sidebar и под body.</p>' +
+                        nativeBodyLayoutControls +
+                        '<div class="lb-native-body-scaffold__actions">' +
+                            '<button type="button" class="lb-native-body-scaffold__btn" data-role="insert-zone-section-canvas" data-zone-key="before_content" data-zone-title="Блок над body">+ Над body</button>' +
+                            '<button type="button" class="lb-native-body-scaffold__btn" data-role="insert-zone-section-canvas" data-zone-key="content_sidebar_left" data-zone-title="Блок в левый sidebar">+ Левый sidebar</button>' +
+                            '<button type="button" class="lb-native-body-scaffold__btn" data-role="insert-zone-section-canvas" data-zone-key="content_sidebar_right" data-zone-title="Блок в правый sidebar">+ Правый sidebar</button>' +
+                            '<button type="button" class="lb-native-body-scaffold__btn" data-role="insert-zone-section-canvas" data-zone-key="after_content" data-zone-title="Блок под body">+ Под body</button>' +
+                        '</div>' +
+                    '</div>'
+                : '';
 
-                    return '' +
-                        '<section class="' + escapeHtml(sectionClasses) + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
-                            '<div class="lb-live-section__inner">' +
-                                '<button type="button" class="lb-section-remove" data-action="delete-section" data-section-index="' + sectionIndex + '" title="Удалить секцию" aria-label="Удалить секцию">×</button>' +
-                                resizeIndicatorMarkup +
-                                sectionBreakpointPanel +
-                                '<div class="lb-live-columns ' + escapeHtml(getSectionLayoutClass(section.layout)) + '"' + columnsStyleAttr + '>' +
-                                    section.columns.map(function (column, columnIndex) {
-                                        const columnVisible = isVisibleOnDevice(column.visibility);
-                                        const columnWidthHint = getColumnWidthHoverHint(section, columnIndex, state.activeDevice);
-                                        const columnClasses = [
-                                            'lb-live-column',
-                                            state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? 'lb-live-column--selected' : '',
-                                            !columnVisible ? 'lb-muted-device' : ''
-                                        ].filter(Boolean).join(' ');
+            function renderSectionCard(section, sectionIndex) {
+                const sectionVisible = isVisibleOnDevice(section.visibility);
+                const sectionPresentation = getSectionPresentation(section);
+                const columnsStyle = getSectionColumnsStyle(section);
+                const columnsStyleAttr = columnsStyle ? ' style="' + escapeHtml(columnsStyle) + '"' : '';
+                const canResizeColumns = isColumnResizeEnabled(section);
+                const resizeIndicatorMarkup = getResizeIndicatorMarkup(section, sectionIndex);
+                const sectionBreakpointPanel = renderSectionBreakpointPanel(section, sectionIndex);
+                const explicitZoneKey = getSectionExplicitZoneKey(section);
+                const hasExplicitZone = explicitZoneKey !== '';
+                const zoneBadgeMarkup = hasExplicitZone
+                    ? '<span class="lb-live-section__zone-badge">Зона: ' + escapeHtml(getSectionZoneTitleByKey(explicitZoneKey)) + '</span>'
+                    : '';
+                const sectionClasses = [
+                    'lb-live-section',
+                    sectionPresentation.className,
+                    hasExplicitZone ? 'lb-live-section--zoned' : '',
+                    state.selection && state.selection.sectionIndex === sectionIndex ? 'lb-live-section--selected' : '',
+                    !sectionVisible ? 'lb-muted-device' : ''
+                ].filter(Boolean).join(' ');
 
-                                        return '' +
-                                            '<div class="' + escapeHtml(columnClasses) + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="' + escapeHtml(columnWidthHint) + '">' +
-                                                '<span class="lb-live-column__width-tooltip">' + escapeHtml(columnWidthHint) + '</span>' +
-                                                '<div class="lb-column-quick-actions"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Добавить блок или виджет">+</button></div>' +
-                                                (column.nodes.length
-                                                    ? column.nodes.map(function (node, nodeIndex) {
-                                                        const nodeVisible = isVisibleOnDevice(node.device_visibility);
-                                                        const nodeClasses = [
-                                                            'lb-live-node',
-                                                            node.type === 'system_widget' ? 'lb-live-node--widget' : 'lb-live-node--block',
-                                                            state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? 'lb-live-node--selected' : '',
-                                                            !nodeVisible ? 'lb-muted-device' : ''
-                                                        ].filter(Boolean).join(' ');
+                return '' +
+                    '<section class="' + escapeHtml(sectionClasses) + '" data-role="section" data-section-index="' + sectionIndex + '" data-drag-kind="section" draggable="true">' +
+                        '<div class="lb-live-section__inner">' +
+                            '<button type="button" class="lb-section-remove" data-action="delete-section" data-section-index="' + sectionIndex + '" title="Удалить секцию" aria-label="Удалить секцию">×</button>' +
+                            zoneBadgeMarkup +
+                            resizeIndicatorMarkup +
+                            sectionBreakpointPanel +
+                            '<div class="lb-live-columns ' + escapeHtml(getSectionLayoutClass(section.layout)) + '"' + columnsStyleAttr + '>' +
+                                section.columns.map(function (column, columnIndex) {
+                                    const columnVisible = isVisibleOnDevice(column.visibility);
+                                    const columnWidthHint = getColumnWidthHoverHint(section, columnIndex, state.activeDevice);
+                                    const columnClasses = [
+                                        'lb-live-column',
+                                        state.selection && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex ? 'lb-live-column--selected' : '',
+                                        !columnVisible ? 'lb-muted-device' : ''
+                                    ].filter(Boolean).join(' ');
 
-                                                        return '' +
-                                                            '<div class="' + escapeHtml(nodeClasses) + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
-	                                                                '<button type="button" class="lb-node-remove" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" title="Удалить элемент" aria-label="Удалить элемент">×</button>' +
-	                                                                renderNodeLivePreview(node) +
-                                                            '</div>';
-                                                    }).join('')
-                                                    : '<div class="lb-live-column__empty"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Открыть библиотеку">+</button></div>') +
-                                                (canResizeColumns && columnIndex < section.columns.length - 1
-                                                    ? '<button type="button" class="lb-column-resizer" data-role="column-resizer" data-section-index="' + sectionIndex + '" data-left-column-index="' + columnIndex + '" title="Потяните, чтобы изменить ширину колонок" aria-label="Изменить ширину колонок"></button>'
-                                                    : '') +
-                                            '</div>';
-                                    }).join('') +
-                                '</div>' +
+                                    return '' +
+                                        '<div class="' + escapeHtml(columnClasses) + '" data-role="column" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="' + escapeHtml(columnWidthHint) + '">' +
+                                            '<span class="lb-live-column__width-tooltip">' + escapeHtml(columnWidthHint) + '</span>' +
+                                            '<div class="lb-column-quick-actions"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Добавить блок или виджет">+</button></div>' +
+                                            (column.nodes.length
+                                                ? column.nodes.map(function (node, nodeIndex) {
+                                                    const nodeVisible = isVisibleOnDevice(node.device_visibility);
+                                                    const nodeClasses = [
+                                                        'lb-live-node',
+                                                        node.type === 'system_widget' ? 'lb-live-node--widget' : 'lb-live-node--block',
+                                                        state.selection && state.selection.type === 'node' && state.selection.sectionIndex === sectionIndex && state.selection.columnIndex === columnIndex && state.selection.nodeIndex === nodeIndex ? 'lb-live-node--selected' : '',
+                                                        !nodeVisible ? 'lb-muted-device' : ''
+                                                    ].filter(Boolean).join(' ');
+
+                                                    return '' +
+                                                        '<div class="' + escapeHtml(nodeClasses) + '" data-role="node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" data-drag-kind="node" draggable="true">' +
+                                                            '<button type="button" class="lb-node-remove" data-action="delete-node" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" data-node-index="' + nodeIndex + '" title="Удалить элемент" aria-label="Удалить элемент">×</button>' +
+                                                            renderNodeLivePreview(node) +
+                                                        '</div>';
+                                                }).join('')
+                                                : '<div class="lb-live-column__empty"><button type="button" class="lb-btn lb-btn--ghost" data-action="open-library" data-tab="blocks" data-section-index="' + sectionIndex + '" data-column-index="' + columnIndex + '" title="Открыть библиотеку">+</button></div>') +
+                                            (canResizeColumns && columnIndex < section.columns.length - 1
+                                                ? '<button type="button" class="lb-column-resizer" data-role="column-resizer" data-section-index="' + sectionIndex + '" data-left-column-index="' + columnIndex + '" title="Потяните, чтобы изменить ширину колонок" aria-label="Изменить ширину колонок"></button>'
+                                                : '') +
+                                        '</div>';
+                                }).join('') +
                             '</div>' +
-                        '</section>';
-                }).join('')
-                : '' +
+                        '</div>' +
+                    '</section>';
+            }
+
+            const sectionCards = state.schema.sections.map(function (section, sectionIndex) {
+                return {
+                    zoneKey: resolveSectionRenderZoneKey(section),
+                    html: renderSectionCard(section, sectionIndex)
+                };
+            });
+
+            function renderZoneEmpty(zoneKey, text, buttonTitle) {
+                return '' +
+                    '<div class="lb-zone-workspace__empty">' +
+                        '<span>' + escapeHtml(text) + '</span>' +
+                        '<button type="button" data-role="insert-zone-section-canvas" data-zone-key="' + escapeHtml(zoneKey) + '" data-zone-title="' + escapeHtml(buttonTitle) + '">+ Добавить</button>' +
+                    '</div>';
+            }
+
+            let sectionsMarkup = '';
+
+            if (showNativeBodyScaffold) {
+                const beforeSections = sectionCards.filter(function (item) {
+                    return item.zoneKey === 'before_content' || item.zoneKey === 'hero' || item.zoneKey === '';
+                }).map(function (item) { return item.html; }).join('');
+
+                const leftSections = sectionCards.filter(function (item) {
+                    return item.zoneKey === 'content_sidebar_left';
+                }).map(function (item) { return item.html; }).join('');
+
+                const rightSections = sectionCards.filter(function (item) {
+                    return item.zoneKey === 'content_sidebar_right';
+                }).map(function (item) { return item.html; }).join('');
+
+                const afterSections = sectionCards.filter(function (item) {
+                    return item.zoneKey === 'after_content';
+                }).map(function (item) { return item.html; }).join('');
+
+                sectionsMarkup = '' +
+                    '<div class="lb-zone-workspace">' +
+                        '<div class="lb-zone-workspace__lane" data-zone-key="before_content">' +
+                            '<p class="lb-zone-workspace__lane-title">Зона: перед body</p>' +
+                            (beforeSections || renderZoneEmpty('before_content', 'Зона над body пока пустая.', 'Блок над body')) +
+                        '</div>' +
+                        '<div class="lb-zone-workspace__middle">' +
+                            '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_left">' +
+                                '<p class="lb-zone-workspace__lane-title">Левый sidebar</p>' +
+                                (leftSections || renderZoneEmpty('content_sidebar_left', 'Левый sidebar пока пустой.', 'Блок в левый sidebar')) +
+                            '</div>' +
+                            '<div class="lb-zone-workspace__column lb-zone-workspace__column--center" data-zone-key="content_body">' +
+                                nativeBodyScaffoldMarkup +
+                            '</div>' +
+                            '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_right">' +
+                                '<p class="lb-zone-workspace__lane-title">Правый sidebar</p>' +
+                                (rightSections || renderZoneEmpty('content_sidebar_right', 'Правый sidebar пока пустой.', 'Блок в правый sidebar')) +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="lb-zone-workspace__lane" data-zone-key="after_content">' +
+                            '<p class="lb-zone-workspace__lane-title">Зона: после body</p>' +
+                            (afterSections || renderZoneEmpty('after_content', 'Зона под body пока пустая.', 'Блок под body')) +
+                        '</div>' +
+                    '</div>';
+            } else if (sectionCards.length) {
+                sectionsMarkup = sectionCards.map(function (item) { return item.html; }).join('');
+            } else {
+                sectionsMarkup = '' +
                     '<div class="lb-starter" data-role="page">' +
                         '<div class="lb-starter__icon">＋</div>' +
                         '<p class="lb-starter__title">Страница пока пустая</p>' +
@@ -4424,6 +5067,7 @@ $canvas_state = [
                         '</div>' +
                         '<p class="lb-starter__hint">Готовые секции доступны в полноэкранной <strong>Библиотеке</strong>.</p>' +
                     '</div>';
+            }
 
             canvasRoot.innerHTML = '' +
                 '<div class="lb-live-page" style="' + escapeHtml(pageThemeStyle) + '" data-role="page">' +
@@ -4476,26 +5120,32 @@ $canvas_state = [
 
             if (selection.type === 'section') {
                 const section = state.schema.sections[selection.sectionIndex];
+                const sectionZoneValue = String((section.settings && section.settings.zone_key) || section.zone_key || '');
                 selectionSummary.innerHTML = '<strong>Секция</strong><br><span class="text-muted">' + escapeHtml(section.title) + '</span>';
                 selectionControls.innerHTML = '' +
+                    '<div class="small text-muted mb-2">Базовый режим: задайте расположение секции вокруг body и ширину колонок. Расширенные semantic-настройки доступны ниже.</div>' +
                     '<div class="form-group mb-2">' +
                         fieldLabel('Название секции', 'Это имя видят редакторы внутри конструктора. На сайте его можно не показывать.') +
                         '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(section.title) + '">' +
                     '</div>' +
 	                renderLayoutRangeControls(section.layout) +
-                    renderSelectField('Тип секции', 'Смысл секции на странице: первый экран, контент, действие, каталог и так далее.', 'section_type', sectionTypeOptions, section.section_type) +
-                    renderSelectField('Стилевой пресет', 'Готовый пресет оформления секции.', 'style_preset', sectionStyleOptions, section.style_preset) +
-                    renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
+                    renderSelectField('Зона в shell', 'Куда рендерится секция внутри каркаса: над контентом, в сайдбаре или под контентом.', 'settings.zone_key', getSectionZoneOptions(sectionZoneValue), sectionZoneValue) +
                     renderSelectField('Пресет контейнера', 'Управляет рабочей шириной секции. Для 100% выберите «Во всю ширину».', 'container_preset', pageThemeOptions.container_preset, section.container_preset) +
                     renderSelectField('Вертикальный ритм', 'Отступы сверху и снизу для секции.', 'spacing_preset', spacingPresetOptions, section.spacing_preset) +
-                    '<div class="lb-field">' +
-                        fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
-                        '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
-                    '</div>' +
-                    '<div class="lb-field">' +
-                        fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
-                        '<input type="text" class="lb-control" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
-                    '</div>' +
+                    '<details class="lb-advanced-details">' +
+                        '<summary>Расширенные настройки секции</summary>' +
+                        renderSelectField('Тип секции', 'Смысл секции на странице: первый экран, контент, действие, каталог и так далее.', 'section_type', sectionTypeOptions, section.section_type) +
+                        renderSelectField('Стилевой пресет', 'Готовый пресет оформления секции.', 'style_preset', sectionStyleOptions, section.style_preset) +
+                        renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
+                        '<div class="lb-field">' +
+                            fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
+                            '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
+                        '</div>' +
+                        '<div class="lb-field">' +
+                            fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
+                            '<input type="text" class="lb-control" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
+                        '</div>' +
+                    '</details>' +
                     '<div class="lb-field">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
                         renderVisibilityControls('visibility', section.visibility) +
@@ -4798,6 +5448,33 @@ $canvas_state = [
                 spacing_preset: 'md',
                 visibility: defaultVisibility(),
                 settings: {background_class: '', padding: 'md', css_class: ''},
+                columns: []
+            }, state.schema.sections.length);
+
+            state.schema.sections.push(section);
+            setSelection({type: 'section', sectionIndex: state.schema.sections.length - 1});
+            setDrawerOpen('library', false);
+            setCanvasDirty(true);
+        }
+
+        function insertQuickZoneSection(zoneKey, title) {
+            const sectionUid = uid('section');
+            const layout = state.screen.default_section_layout || '1col';
+            const sectionTitle = String(title || '').trim() || ('Секция ' + (state.schema.sections.length + 1));
+            const resolvedZone = String(zoneKey || '').trim();
+
+            const section = normalizeSection({
+                uid: sectionUid,
+                title: sectionTitle,
+                layout: layout,
+                section_type: 'content',
+                style_preset: 'content',
+                background_tone: 'base',
+                container_preset: state.schema.theme.container_preset || 'standard',
+                spacing_preset: 'md',
+                visibility: defaultVisibility(),
+                settings: {background_class: '', padding: 'md', css_class: '', zone_key: resolvedZone},
+                zone_key: resolvedZone,
                 columns: []
             }, state.schema.sections.length);
 
@@ -5173,6 +5850,10 @@ $canvas_state = [
                 syncSectionColumnsWithLayout(target);
             }
 
+            if (state.selection && state.selection.type === 'section' && field.dataset.field === 'settings.zone_key') {
+                target.zone_key = String(value || '').trim();
+            }
+
             if (state.selection && state.selection.type === 'page' && field.dataset.field === 'theme.template_preset') {
                 syncTemplatePresetLayoutTemplate();
                 syncPageLayoutWithEffectiveShell();
@@ -5282,6 +5963,44 @@ $canvas_state = [
                 section.settings.width_inherit = section.settings.width_inherit === false;
 
                 stopColumnResize();
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'toggle-all-sections-autoscale-base-blocks') {
+                const sections = Array.isArray(state.schema.sections) ? state.schema.sections : [];
+                if (!sections.length) {
+                    return true;
+                }
+
+                syncSelectedWidgetFormIntoState();
+
+                const enableAutoscale = !sections.every(function (section) {
+                    return !!(section && section.settings && section.settings.autoscale_base_blocks === true);
+                });
+
+                sections.forEach(function (section) {
+                    if (!section || typeof section !== 'object') {
+                        return;
+                    }
+
+                    section.settings = Object.assign({stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, section.settings || {});
+                    section.settings.autoscale_base_blocks = enableAutoscale;
+                });
+
+                setCanvasDirty(true);
+                renderCanvas();
+                return true;
+            }
+
+            if (action === 'set-body-columns-mode') {
+                const mode = normalizeBodyColumnsMode(actionTarget.dataset.mode || '1');
+
+                state.schema.layout = state.schema.layout || {};
+                state.schema.layout.body_columns_mode = mode;
+                resolveBodyColumnsState();
+
                 setCanvasDirty(true);
                 renderCanvas();
                 return true;
@@ -5478,6 +6197,13 @@ $canvas_state = [
                 return;
             }
 
+            const quickZoneButton = event.target.closest('[data-role="insert-zone-section-canvas"]');
+            if (quickZoneButton) {
+                event.preventDefault();
+                insertQuickZoneSection(String(quickZoneButton.dataset.zoneKey || ''), String(quickZoneButton.dataset.zoneTitle || ''));
+                return;
+            }
+
             const nodeTarget = event.target.closest('[data-role="node"]');
             if (nodeTarget) {
                 setSelection({
@@ -5512,6 +6238,26 @@ $canvas_state = [
             if (pageTarget || event.target === canvasRoot) {
                 setSelection({type: 'page'});
             }
+        });
+
+        canvasRoot.addEventListener('input', function (event) {
+            const range = event.target.closest('[data-role="body-span-range"]');
+            if (!range) {
+                return;
+            }
+
+            state.schema.layout = state.schema.layout || {};
+
+            if (range.dataset.field === 'body_left_span') {
+                state.schema.layout.body_left_span = normalizeBodyColumnSpan(range.value, 3);
+            }
+            if (range.dataset.field === 'body_right_span') {
+                state.schema.layout.body_right_span = normalizeBodyColumnSpan(range.value, 3);
+            }
+
+            resolveBodyColumnsState();
+            setCanvasDirty(true);
+            renderCanvas();
         });
 
         canvasRoot.addEventListener('pointerdown', function (event) {
@@ -5570,6 +6316,18 @@ $canvas_state = [
             const emptyButton = event.target.closest('[data-role="insert-empty-section"]');
             if (emptyButton) {
                 addSection();
+                return;
+            }
+
+            const zoneButton = event.target.closest('[data-role="insert-zone-section"]');
+            if (zoneButton) {
+                insertQuickZoneSection(String(zoneButton.dataset.zoneKey || ''), String(zoneButton.dataset.zoneTitle || ''));
+                return;
+            }
+
+            const nativeInfoButton = event.target.closest('[data-role="native-body-info"]');
+            if (nativeInfoButton) {
+                window.alert('Системный body добавлять не нужно: content_body уже рендерится автоматически. Используйте секции вокруг body (над/сайдбары/под).');
                 return;
             }
 

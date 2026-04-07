@@ -258,6 +258,21 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		return $section_enabled && $column_units === 12;
 	}
 
+	function landingbuilder_runtime_count_visible_columns(array $section, $device_type) {
+		$columns = !empty($section['columns']) && is_array($section['columns']) ? $section['columns'] : [];
+		$count = 0;
+
+		foreach ($columns as $column) {
+			if (!landingbuilder_runtime_is_visible($column['visibility'] ?? [], $device_type)) {
+				continue;
+			}
+
+			$count++;
+		}
+
+		return $count;
+	}
+
 	function landingbuilder_get_runtime_overlay_column_class($layout, $column_index, $columns_count) {
 		if ($layout === '2col_sidebar_right') {
 			return $column_index === 0 ? 'col-lg-8 col-md-7' : 'col-lg-4 col-md-5';
@@ -547,8 +562,14 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		}
 
 		if ($html === false || $html === null || $html === '') {
+			$show_widget_fallback = !empty($context['show_widget_fallback']);
+
 			if ($surface === 'site') {
-				return '';
+				if (!$show_widget_fallback) {
+					return '';
+				}
+
+				return '<div class="lb-runtime-widget-fallback"><strong>' . html($widget_title, false) . '</strong><span>Системный виджет недоступен в preview-контексте.' . html($failure_hint, false) . '</span></div>';
 			}
 
 			if ($surface === 'overlay') {
@@ -602,6 +623,8 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			: false;
 		$active_units = landingbuilder_runtime_resolve_section_units($section, $device_type);
 		$is_stacked_active = landingbuilder_runtime_is_stacked_for_device($section, $device_type);
+		$visible_columns_count = landingbuilder_runtime_count_visible_columns($section, $device_type);
+		$section_autoscale_wide = $section_autoscale_base_blocks && $visible_columns_count > 1;
 
 		ob_start();
 		if ($surface === 'overlay') {
@@ -641,7 +664,9 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			<?php
 		} elseif ($surface === 'site') {
 			$grid_class = landingbuilder_get_runtime_layout_class($section['layout'] ?? '1col');
-			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class'] . ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '');
+			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class']
+				. ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '')
+				. ($section_autoscale_wide ? ' lb-section--autoscale-wide' : '');
 			?>
 			<section class="<?php html(trim($section_class)); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
 				<div class="lb-section-inner">
@@ -666,7 +691,9 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			<?php
 		} else {
 			$grid_class = landingbuilder_get_runtime_layout_class($section['layout'] ?? '1col');
-			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class'] . ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '');
+			$section_class = 'lb-section ' . $grid_class . ' ' . $section_theme['class']
+				. ($section_autoscale_base_blocks ? ' lb-section--autoscale-base-blocks' : '')
+				. ($section_autoscale_wide ? ' lb-section--autoscale-wide' : '');
 			?>
 			<section class="<?php html(trim($section_class)); ?>" data-style-preset="<?php html($section_theme['style_preset']); ?>" data-background-tone="<?php html($section_theme['background_tone']); ?>" data-container-preset="<?php html($section_theme['container_preset']); ?>" data-spacing-preset="<?php html($section_theme['spacing_preset']); ?>" data-slot-key="<?php html($zone_key ?: ($context['slot_key'] ?? '')); ?>">
 				<div class="lb-section-inner">

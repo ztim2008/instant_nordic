@@ -212,6 +212,11 @@ ob_start();
 	.lb-section--autoscale-base-blocks .lb-column {
 		overflow: visible;
 	}
+	.lb-section--autoscale-wide .lb-section-inner {
+		max-width: none;
+		padding-left: 0;
+		padding-right: 0;
+	}
 	.lb-node-card {
 		margin-top: 12px;
 		padding: 16px;
@@ -298,6 +303,40 @@ ob_start();
 		margin-top: 10px;
 		font-size: 13px;
 		color: var(--lb-text-muted, #6b7f8d);
+	}
+	.lb-runtime-widget-fallback {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 14px;
+		border-radius: 12px;
+		border: 1px dashed #c7d4df;
+		background: #f8fbfd;
+		color: #476173;
+		font-size: 13px;
+	}
+	.lb-runtime-widget-fallback strong {
+		font-size: 14px;
+		color: #2b4558;
+	}
+	.lb-preview-native-body {
+		margin: 0 0 var(--lb-section-gap, 24px);
+		padding: 16px;
+		border-radius: 14px;
+		border: 1px dashed #9ecf9f;
+		background: #edf8ee;
+		color: #2f5a33;
+	}
+	.lb-preview-native-body__title {
+		font-size: 13px;
+		font-weight: 700;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		margin-bottom: 6px;
+	}
+	.lb-preview-native-body__text {
+		font-size: 14px;
+		line-height: 1.45;
 	}
 	.lb-section--container-text .lb-section-inner {
 		max-width: 760px;
@@ -533,13 +572,21 @@ ob_start();
 <?php if ($is_compact) { ?>
 	<div class="lb-runtime-embed" style="<?php html($page_theme_style); ?>" data-global-style-preset="<?php html($page_theme['global_style_preset']); ?>" data-color-preset="<?php html($page_theme['color_preset']); ?>" data-typography-preset="<?php html($page_theme['typography_preset']); ?>" data-container-preset="<?php html($page_theme['container_preset']); ?>">
 		<?php foreach ($zones as $zone) { ?>
+			<?php if (($zone['kind'] ?? 'builder') === 'native') { ?>
+				<div class="lb-preview-native-body" data-slot-key="<?php html($zone['slot_key'] ?? ($zone['key'] ?? 'content_body')); ?>">
+					<div class="lb-preview-native-body__title"><?php html($zone['title'] ?? 'Body (системный)'); ?></div>
+					<div class="lb-preview-native-body__text"><?php html(($zone['native_label'] ?? '') ?: ($adapter['native_content_label'] ?? 'Системное содержимое этой страницы рендерится в живом маршруте сайта.')); ?></div>
+				</div>
+				<?php continue; ?>
+			<?php } ?>
 			<?php if (($zone['kind'] ?? 'builder') !== 'builder') { continue; } ?>
 			<?php if (empty($zone['sections'])) { continue; } ?>
 			<?php echo landingbuilder_render_runtime_zone_sections($zone, [
 				'device_type'   => $device_type,
 				'theme_context' => $theme_context,
 				'slot_map'      => $slot_map,
-				'surface'       => 'site'
+				'surface'       => 'site',
+				'show_widget_fallback' => true
 			]); ?>
 		<?php } ?>
 	</div>

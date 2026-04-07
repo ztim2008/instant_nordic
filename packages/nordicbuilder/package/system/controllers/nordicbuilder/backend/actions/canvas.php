@@ -6,10 +6,24 @@ class actionNordicbuilderCanvas extends cmsAction {
 		$document_key = $this->model->resolvePrimaryVisualDocumentKey($this->request->get('document_key', ''));
 		$workspace_summary = $this->model->getWorkspaceSummary();
 		$bridge_model = cmsCore::getModel('landingbuilder');
+		$missing_tables = isset($workspace_summary['persistence']['missing_tables']) && is_array($workspace_summary['persistence']['missing_tables'])
+			? array_values(array_filter(array_map('strval', $workspace_summary['persistence']['missing_tables'])))
+			: [];
+		$blocking_missing_tables = array_values(array_diff($missing_tables, ['nordicbuilder_page_renders']));
 
-		if (empty($workspace_summary['persistence']['is_installed'])) {
-			cmsUser::addSessionMessage('Сначала нужно установить persistence-таблицы nordicbuilder, иначе visual workspace не сможет сохранять документы.', 'error');
+		if ($blocking_missing_tables) {
+			$message = 'Сначала нужно установить persistence-таблицы nordicbuilder, иначе visual workspace не сможет сохранять документы.';
+			if ($blocking_missing_tables) {
+				$message .= ' Отсутствуют таблицы: ' . implode(', ', $blocking_missing_tables) . '.';
+			}
+			$message .= ' Если таблицы не создаются автоматически, проверьте права БД на CREATE TABLE.';
+
+			cmsUser::addSessionMessage($message, 'error');
 			return $this->redirect(href_to($this->root_url, 'workspace'));
+		}
+
+		if (in_array('nordicbuilder_page_renders', $missing_tables, true)) {
+			cmsUser::addSessionMessage('Таблица nordicbuilder_page_renders отсутствует: canvas и сохранение документов работают, но SSR publish будет недоступен до создания таблицы (права CREATE TABLE).', 'warning');
 		}
 
 		$page_key = trim((string) $page_key);

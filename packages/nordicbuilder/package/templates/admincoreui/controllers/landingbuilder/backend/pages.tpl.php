@@ -47,7 +47,6 @@ $this->addToolButton([
     .lb-admin-hero {
         padding: 1.5rem 1.65rem;
     }
-
     .lb-admin-hero__top {
         display: flex;
         align-items: center;
@@ -343,16 +342,14 @@ $this->addToolButton([
 <div class="lb-admin-ui">
     <section class="lb-admin-hero">
         <div class="lb-admin-hero__top">
-            <h3 class="lb-admin-title">Макеты страниц сайта</h3>
+            <h3 class="lb-admin-title">Страницы сайта</h3>
             <?php if ($is_schema_installed) { ?>
                 <button type="button" class="lb-admin-btn lb-admin-btn--primary" data-lb-create-page>Новая страница</button>
             <?php } ?>
         </div>
         <p class="lb-admin-copy">
             <?php if ($is_schema_installed) { ?>
-                Здесь вы настраиваете внешний вид ключевых страниц сайта (например: Главная, Профиль, Категория).
-                Это не новые страницы InstantCMS — типы контента и их страницы по‑прежнему находятся в разделе «Контент».
-                Открывайте редактор и меняйте секции и блоки на холсте.
+                Каждая страница — это готовый макет. Открывайте редактор, меняйте секции и блоки прямо на холсте.
             <?php } else { ?>
                 Страницы недоступны для редактирования до установки компонента.
             <?php } ?>
@@ -384,11 +381,14 @@ $this->addToolButton([
                 </div>
 
                 <div class="lb-field">
-                    <div class="lb-label">Где применять<span class="lb-help" title="Можно не привязывать сейчас: просто создастся макет и откроется канвас.">?</span></div>
+                    <div class="lb-label">Где применять<span class="lb-help" title="Можно не привязывать сейчас: просто создастся макет и откроется канвас. Для внутренних страниц Instant доступны готовые пресеты.">?</span></div>
                     <select class="lb-select" id="lb-apply">
                         <option value="none">Не привязывать сейчас</option>
                         <option value="homepage">Главная страница</option>
+                        <option value="all_except_homepage">Все внутренние страницы (кроме главной)</option>
                         <option value="url">Выборочные страницы (URL-маски)</option>
+                        <option value="overlay_content_category_board">Категория объявлений (board)</option>
+                        <option value="overlay_user_profile">Профиль пользователя</option>
                     </select>
                 </div>
 
@@ -493,6 +493,13 @@ $this->addToolButton([
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = 'page.homepage';
                     }
+                } else if (apply === 'all_except_homepage') {
+                    bindingKeyWrap.style.display = '';
+                    urlMasksWrap.style.display = 'none';
+                    excludeMasksWrap.style.display = 'none';
+                    if (!bindingKeyInput.value.trim()) {
+                        bindingKeyInput.value = 'page.all_internal';
+                    }
                 } else if (apply === 'url') {
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = '';
@@ -500,11 +507,41 @@ $this->addToolButton([
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = pageKey ? ('page.' + pageKey) : 'page.marketing';
                     }
+                } else if (apply === 'overlay_content_category_board') {
+                    bindingKeyWrap.style.display = '';
+                    urlMasksWrap.style.display = 'none';
+                    excludeMasksWrap.style.display = 'none';
+                    if (!bindingKeyInput.value.trim()) {
+                        bindingKeyInput.value = 'overlay.content_category.board';
+                    }
+                } else if (apply === 'overlay_user_profile') {
+                    bindingKeyWrap.style.display = '';
+                    urlMasksWrap.style.display = 'none';
+                    excludeMasksWrap.style.display = 'none';
+                    if (!bindingKeyInput.value.trim()) {
+                        bindingKeyInput.value = 'overlay.user_profile.default';
+                    }
                 } else {
                     bindingKeyWrap.style.display = 'none';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                 }
+            }
+
+            function resolveAdapterKeyForApply(apply) {
+                if (apply === 'all_except_homepage') {
+                    return 'internal_content_generic';
+                }
+
+                if (apply === 'overlay_content_category_board') {
+                    return 'content_category_generic';
+                }
+
+                if (apply === 'overlay_user_profile') {
+                    return 'user_profile';
+                }
+
+                return '';
             }
 
             async function readJsonOrText(response) {
@@ -556,6 +593,11 @@ $this->addToolButton([
                 body.set('template', 'nordic');
                 body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
 
+                const adapterKey = resolveAdapterKeyForApply(apply);
+                if (adapterKey) {
+                    body.set('adapter_key', adapterKey);
+                }
+
                 const response = await fetch(createUrl, {
                     method: 'POST',
                     headers: {
@@ -571,7 +613,7 @@ $this->addToolButton([
 
                 if (!response.ok) {
                     const serverHint = result && result.message ? result.message : trimServerText(parsed.text);
-                    setError('Ошибка сервера (' + response.status + ').\n' + (serverHint || ''));
+                    setError('Ошибка сервера (' + response.status + ').\n' + (serverHint || '')); 
                     return;
                 }
 
@@ -602,9 +644,21 @@ $this->addToolButton([
                         bindingBody.set('route_params_json', JSON.stringify({ ctrl: '', action: 'index', page_type: 'homepage' }));
                     }
 
+                    if (apply === 'all_except_homepage') {
+                        bindingBody.set('route_params_json', JSON.stringify({ page_type: '!homepage' }));
+                    }
+
                     if (apply === 'url') {
                         bindingBody.set('url_masks', urlMasksInput.value || '');
                         bindingBody.set('exclude_masks', excludeMasksInput.value || '');
+                    }
+
+                    if (apply === 'overlay_content_category_board') {
+                        bindingBody.set('route_params_json', JSON.stringify({ overlay: 'content_category', ctype: 'board' }));
+                    }
+
+                    if (apply === 'overlay_user_profile') {
+                        bindingBody.set('route_params_json', JSON.stringify({ overlay: 'user_profile' }));
                     }
 
                     try {
@@ -912,7 +966,7 @@ $this->addToolButton([
                 </div>
                 <div class="lb-page-card__meta">
                     <div class="lb-page-kv">
-                        <span class="lb-page-kv__label">Применение</span>
+                        <span class="lb-page-kv__label">Режим</span>
                         <span class="lb-page-kv__value"><?php html($page_mode_titles[$page['mode']] ?? $page['mode']); ?></span>
                     </div>
                     <div class="lb-page-kv">
@@ -926,7 +980,7 @@ $this->addToolButton([
                 </div>
                 <div class="lb-page-card__actions">
                     <a class="lb-admin-btn lb-admin-btn--ghost" href="<?php html($page['view_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
-                    <a class="lb-admin-btn lb-admin-btn--primary" href="<?php html($page['canvas_url']); ?>">Редактировать макет</a>
+                    <a class="lb-admin-btn lb-admin-btn--primary" href="<?php html($page['canvas_url']); ?>">Открыть редактор</a>
                     <?php if (!empty($publish_page_url) && !empty($is_schema_installed)) { ?>
                         <button class="lb-admin-btn lb-admin-btn--ghost" type="button" data-nb-publish-page="1" data-page-key="<?php html($page['key']); ?>" data-page-title="<?php html($page['title']); ?>">Опубликовать SSR</button>
                     <?php } ?>

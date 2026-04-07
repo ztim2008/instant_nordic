@@ -13,6 +13,43 @@
 - Какие риски остались:
 - Следующий шаг:
 
+## 2026-04-07
+
+- Что планировалось:
+	- закрыть сценарий «все внутренние страницы кроме главной» так, чтобы `content_body` брался из нативного рендера InstantCMS для любых типов внутреннего контента.
+- Что сделано:
+	- в canvas inspector добавлен визуальный выбор `Зона в shell` для секции (auto / before_content / content_sidebar_left / content_sidebar_right / after_content / content_body по доступности), чтобы сценарии «блоки над native body + сайдбары + блоки под body» настраивались без ручного JSON;
+	- backend screen `page_shell` теперь отдает `section_zone_options` и `default_section_zone`, а frontend синхронизирует `settings.zone_key` <-> `section.zone_key` для корректного runtime-роутинга секций по зонам;
+	- в `landingbuilder` добавлен универсальный adapter `internal_content_generic` с native-слотом `content_body` и builder-зонами `before_content`/`after_content`;
+	- `createPage()` начал принимать `adapter_key` и записывать его в `schema.adapter_key` при создании страницы;
+	- backend actions `create_page` для `landingbuilder` и `nordicbuilder` начали прокидывать `adapter_key` из AJAX-запроса;
+	- в мастере создания страницы (`pages.tpl.php`) добавлен resolver adapter по режиму применения:
+	  - `all_except_homepage` -> `internal_content_generic`;
+	  - `overlay_content_category_board` -> `content_category_generic`;
+	  - `overlay_user_profile` -> `user_profile`.
+	- синхронизированы package mirrors для `landingbuilder` и `nordicbuilder`.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [system/controllers/nordicbuilder/backend/actions/create_page.php](../system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+- Что проверено:
+	- `php -l` проходит на всех измененных PHP-файлах в live и package mirrors;
+	- editor diagnostics не показывают новых ошибок в измененных файлах;
+	- `cmp -s` подтверждает parity source/mirror для модели, actions и шаблона.
+- Какие риски остались:
+	- новый adapter применяется к новым страницам через мастер; для уже созданных страниц нужно вручную сменить `schema.adapter_key` на `internal_content_generic`.
+	- для сценариев с нестандартными shell-variant может понадобиться ручная фиксация `layout.shell_variant` на странице.
+- Следующий шаг:
+	- вручную проверить в админке создание страницы через «Все внутренние страницы (кроме главной)» и убедиться, что на внутренних маршрутах отображается нативный `content_body` с builder-обвязкой.
+
 ## 2026-04-05
 
 - Что планировалось:
@@ -1001,6 +1038,23 @@
 - Какие риски остались:
 	- внешний preview-route (`/nordicbuilder/view/*`) для guest по-прежнему `404`, поэтому финальный визуальный smoke нужно делать в admin-сессии.
 
+### 2026-04-07 / Bridge save: устранен откат статуса страницы в draft
+
+- Симптом:
+	- после сохранения canvas часть страниц начинала отдаваться как preview (`status != published`), из-за чего для guest маршрут `/nordicbuilder/view/{page_key}` возвращал `404`.
+- Причина:
+	- при bridge-сохранении статус брался из fallback-страницы и мог неявно возвращаться в `draft`.
+- Что изменено:
+	- в `landingbuilder/model.php` для bridge save добавлен расчет `effective_status` с защитой от деградации статуса (приоритет `published`, затем валидные статусы-кандидаты);
+	- в `nordicbuilder/model.php` (`saveBridgePageSchema`) выровнен приоритет статуса: используется вычисленный `effective_status` и для page payload, и для `savePageDocument`.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- diagnostics: `No errors found` по всем измененным live + mirror файлам;
+	- `cmp` parity подтвержден для всех синхронизированных моделей.
+
 ### 2026-04-07 / canvas: русификация stack + целевой regression (3 сценария)
 
 - Что планировалось:
@@ -1036,3 +1090,353 @@
 	- для pixel-level подтверждения UX нужен короткий ручной проход в интерфейсе.
 - Точка отката:
 	- `backups/checkpoints/20260407-143558-canvas-russian-stack-regression`.
+
+### 2026-04-07 / Autoscale: массовое включение для всех секций
+
+- Что планировалось:
+	- убрать ограничение UX, когда `A` нужно включать по одной секции;
+	- дать быстрый сценарий «сделать весь лендинг широким» одним действием.
+- Что сделано:
+	- в breakpoint-панель секции добавлена кнопка `A+`, которая включает/выключает `autoscale_base_blocks` сразу во всех секциях текущей страницы;
+	- в правую панель секции добавлена отдельная кнопка `Включить/Выключить автоскейл во всех секциях`;
+	- добавлен единый action-handler `toggle-all-sections-autoscale-base-blocks` с массовым обновлением `section.settings.autoscale_base_blocks` по всей схеме;
+	- изменения синхронизированы в package mirrors.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- editor diagnostics: `No errors found` для live + mirror `canvas.tpl.php`;
+	- побайтная parity-проверка `cmp` подтверждает синхронность live и двух mirrors.
+- Какие риски остались:
+	- требуется короткий ручной UX smoke в браузере на странице с 2+ секциями, чтобы визуально подтвердить массовое переключение.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-153352-autoscale-all-sections`.
+
+### 2026-04-07 / Autoscale: 2+ колонки и устранение путаницы A/A+
+
+- Симптом:
+	- в секциях с двумя колонками включение `A` не давало ожидаемого эффекта «широкой секции»;
+	- при единственной секции на странице `A` визуально выглядел связанным с `A+`, что путало UX.
+- Что изменено:
+	- runtime: добавлен расчет видимых колонок секции и новый класс `lb-section--autoscale-wide` для случая `autoscale_base_blocks=true` и `visible_columns_count > 1`;
+	- CSS (live + preview): для `lb-section--autoscale-wide` секция растягивается на всю ширину (`.lb-section-inner{max-width:none;padding-left:0;padding-right:0}`);
+	- full-bleed поведение базовых блоков через `lb-runtime-block--autoscale` оставлено только для 12/12, чтобы не ломать 2-колоночную сетку перекрытиями;
+	- canvas UX: `A+` показывается только если на странице больше одной секции;
+	- подпись/tooltip `A` уточнены: `1 колонка 12/12 -> блок 100vw; 2+ колонки -> секция на всю ширину`.
+- Какие файлы затронуты:
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [system/controllers/landingbuilder/helpers/runtime_styles.php](../system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [templates/default/controllers/landingbuilder/view.tpl.php](../templates/default/controllers/landingbuilder/view.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- editor diagnostics: `No errors found` по live + mirror копиям всех измененных файлов;
+	- `cmp` parity подтвержден для runtime renderer, runtime styles, preview view и canvas template.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-155006-autoscale-2col-wide`.
+
+### 2026-04-07 / Autoscale: отложенные фиксы (backlog)
+
+- Зафиксировано как отложенные задачи:
+	- развести настройки на два явных режима в UI: `wide section` и `full-bleed block`, чтобы `A` не совмещала два сценария;
+	- добавить визуальный индикатор активного режима на секции (бейдж в header секции и в правом инспекторе);
+	- добавить guard для 2+ колонок: если выбран режим full-bleed блока, показывать пояснение и не применять конфликтный рендер;
+	- сделать короткий smoke-чеклист для `1col 12/12`, `2col 6/6`, `2col sidebar`, `stack mobile/tablet`, `container full/standard`;
+	- проверить и выровнять parity preview/live на тех же сценариях в авторизованной сессии.
+- Критерий закрытия backlog-пункта:
+	- пользователь без дополнительных пояснений понимает, какой именно режим включен;
+	- в 2-колоночных секциях не возникает ожидания full-bleed для каждой колонки;
+	- ручной smoke по матрице сценариев проходит без визуальных расхождений preview/live.
+
+### 2026-04-07 / SSR publish + внутренние Instant-страницы (bindings)
+
+- Симптом:
+	- при `Опубликовать SSR` возникала ошибка про отсутствующую таблицу `nordicbuilder_page_renders`;
+	- для внутренних страниц нужен быстрый путь привязки к native Instant-ссылкам без ручного JSON редактирования.
+- Что изменено:
+	- в `nordicbuilder model` добавлен auto-heal: при publish вызывается `ensurePageRenderTable()`, которая создает `nordicbuilder_page_renders` при отсутствии;
+	- `Published Page Renders` добавлен в persistence summary, чтобы отсутствие таблицы было видно в служебной панели;
+	- в `publish_page` сообщение об ошибке уточнено: если auto-create не сработал, указывается на права БД (`CREATE TABLE`);
+	- в мастере `Новый макет страницы` добавлены готовые пресеты привязки внутренних страниц Instant:
+		- `Категория объявлений (board)` -> `overlay.content_category.board`;
+		- `Профиль пользователя` -> `overlay.user_profile.default`.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [system/controllers/nordicbuilder/backend/actions/publish_page.php](../system/controllers/nordicbuilder/backend/actions/publish_page.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- package mirrors в `packages/nordicbuilder/package/` и `packages/landingbuilder/package/`.
+- Что проверено:
+	- editor diagnostics: `No errors found` по всем измененным live + mirror файлам;
+	- `cmp` parity подтвержден для model/action/template между live и mirrors.
+- Какие риски остались:
+	- для `content item` (карточка контента) отдельный overlay-hook пока не реализован, поэтому из коробки закрыты сценарии `content category` и `user profile`.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-160830-ssr-publish-and-internal-bindings`.
+
+### 2026-04-07 / Сценарий "все внутренние страницы кроме главной" + native content_body
+
+- Что изменено:
+	- в matching `route_params` для bindings добавлена поддержка отрицания по значению через префикс `!`;
+	- в мастере "Новый макет страницы" добавлен пресет:
+		- `Все внутренние страницы (кроме главной)`;
+		- создает правило `page.all_internal` с `route_params_json: { "page_type": "!homepage" }`;
+	- в `templates/nordic/main.tpl.php` (и package mirror) исправлен full takeover рендер:
+		- если выбранный content slot помечен как `native`, теперь выводится системный `$this->body()`;
+		- это закрывает сценарий страницы-обертки, где builder рендерит зоны до/после, а нативный контент Instant остается в `content_body`.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- package mirrors в `packages/landingbuilder/package/`, `packages/nordicbuilder/package/`, `packages/nordic/package/`.
+- Что проверено:
+	- синтаксические проверки/diagnostics для измененных PHP/TPL файлов — без ошибок;
+	- пресет и генерация `route_params_json` присутствуют в live + mirrors;
+	- parity live/mirrors подтверждено по ключевым измененным файлам.
+- Риски:
+	- отрицание `!` реализовано для скалярного значения route-параметра; массивные комбинированные отрицания не поддерживаются (не требовались в данном сценарии).
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-183500-internal-all-except-home-and-native-body`.
+
+### 2026-04-07 / Устранена блокировка visual workspace по schema check
+
+- Симптом:
+	- при открытии canvas появлялось сообщение: `Сначала нужно установить persistence-таблицы nordicbuilder...` даже в сценарии, где рабочие таблицы уже есть.
+- Причина:
+	- `hasInstalledSchema()` проверял все persistence-таблицы, включая `nordicbuilder_page_renders`; на инстансах со старой схемой отсутствие этой таблицы блокировало вход в visual workspace.
+- Что изменено:
+	- в `modelNordicbuilder::hasPersistenceTables()` добавлен auto-heal для `nordicbuilder_page_renders`:
+		- если таблица отсутствует, вызывается `ensurePageRenderTable()`;
+		- при успешном создании schema-check продолжает работу без ложного fail.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php)
+- Что проверено:
+	- diagnostics: `No errors found` по live + package model;
+	- parity `cmp` для `model.php` live/package подтвержден.
+- Риски:
+	- если у БД нет права `CREATE TABLE`, auto-heal не сработает и schema-check останется красным (ожидаемое поведение).
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-190100-schema-installed-autofix`.
+
+### 2026-04-07 / Canvas redirect fix + пункт Workspace в меню
+
+- Симптом:
+	- часть страниц (например свежесозданная `vnytri`) при попытке открыть canvas перебрасывались в `workspace`.
+- Причина:
+	- schema-check в `nordicbuilder` считал persistence «неустановленным», если отсутствовала любая из ключевых таблиц.
+- Что изменено:
+	- в `modelNordicbuilder` добавлен auto-heal не только для `page_renders`, но и для базовых таблиц:
+		- `nordicbuilder_page_documents`
+		- `nordicbuilder_preset_tokens`
+		- `nordicbuilder_binding_options`
+		- `nordicbuilder_page_renders`
+	- в backend-меню конструктора добавлен прямой пункт `Workspace`.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [system/controllers/nordicbuilder/backend.php](../system/controllers/nordicbuilder/backend.php)
+	- package mirrors в `packages/nordicbuilder/package/`.
+- Что проверено:
+	- diagnostics: `No errors found` по измененным live + package файлам;
+	- parity `cmp` для `model.php` и `backend.php` между live/package подтвержден.
+- Риски:
+	- если у БД нет `CREATE TABLE`, авто-восстановление не сможет создать таблицы и редирект в `workspace` останется (ожидаемо, нужна ручная SQL-установка).
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-193000-canvas-open-and-workspace-menu`.
+
+### 2026-04-07 / Debug persistence guard для canvas
+
+- Симптом:
+	- даже после пересоздания страниц canvas продолжал редиректить в `workspace` с сообщением про неустановленные persistence-таблицы.
+- Причина:
+	- guard в `actionNordicbuilderCanvas` опирается на `getWorkspaceSummary()->persistence`, а `getPersistenceSummary()` до этого выполнял только пассивную проверку `isTableExists`.
+- Что изменено:
+	- `getPersistenceSummary()` переведен в активный режим:
+		- для каждой отсутствующей persistence-таблицы выполняется попытка auto-heal через `ensurePersistenceTable()`;
+		- в summary добавлено поле `missing_tables`.
+	- сообщение в `canvas` стало диагностическим:
+		- выводит точный список отсутствующих таблиц;
+		- добавляет явную подсказку проверить права БД на `CREATE TABLE`, если авто-создание не сработало.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- package mirrors в `packages/nordicbuilder/package/`.
+- Что проверено:
+	- diagnostics: `No errors found` по измененным live + package файлам;
+	- parity `cmp` для `model.php` и `backend/actions/canvas.php` между live/package подтвержден.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-201500-canvas-persistence-debug`.
+
+### 2026-04-07 / Hotfix: canvas не блокируется при отсутствии только page_renders
+
+- Симптом:
+	- guard в canvas продолжал редиректить в `workspace`, когда отсутствовала только таблица `nordicbuilder_page_renders`.
+- Что изменено:
+	- в `actionNordicbuilderCanvas` блокирующей ошибкой теперь считаются только отсутствующие базовые persistence-таблицы документов;
+	- если отсутствует только `nordicbuilder_page_renders`, canvas открывается, но показывается warning, что SSR publish недоступен до появления таблицы.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/canvas.php)
+- Что проверено:
+	- diagnostics: `No errors found`;
+	- parity `cmp` live/package подтвержден.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-203500-canvas-unblock-when-only-ssr-missing`.
+
+### 2026-04-07 / Canvas UX: быстрые секции вокруг body
+
+- Что изменено:
+	- в библиотеке секций добавлены быстрые карточки: `Блок над body`, `Блок в левый sidebar`, `Блок в правый sidebar`, `Блок под body`;
+	- каждая карточка создает секцию сразу с нужной `zone_key`, без ручной настройки в инспекторе;
+	- добавлена отдельная карточка `Body (системный)` с пояснением, что native `content_body` создается автоматически и не добавляется как секция.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` для live + mirror `canvas.tpl.php` без ошибок;
+	- diagnostics: `No errors found` для live + mirrors;
+	- mirrors синхронизированы копированием live-файла.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-180452-quick-zone-section-buttons`.
+
+### 2026-04-07 / Canvas UX: видимый системный body на холсте
+
+- Что изменено:
+	- для внутренних страниц (не standalone) на холсте добавлен видимый блок `Body (системный, auto)`;
+	- внутри блока добавлены кнопки быстрого добавления секций в зоны: `Над body`, `Левый sidebar`, `Правый sidebar`, `Под body`;
+	- пустой starter-экран больше не скрывает логику на внутренних страницах: пользователь сразу видит, что body уже существует автоматически.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` без ошибок для live + mirrors;
+	- diagnostics: `No errors found` для live + mirrors;
+	- parity live/mirrors подтверждена копированием и проверкой.
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-182450-native-body-visible-scaffold`.
+
+### 2026-04-07 / Public overlay + green zone highlight
+
+- Что изменено:
+	- снято ограничение предпросмотра/overlay только для админа: страницы landingbuilder теперь рендерятся и для обычных пользователей даже при статусе, отличном от `published`;
+	- улучшен матчинг route params: отрицательные условия вида `!value` больше не ломают биндинг, если конкретный ключ отсутствует в route context;
+	- на canvas добавлена визуальная green-подсветка:
+		- системный `Body (системный, auto)` теперь выделяется зеленой рамкой;
+		- секции с явно заданной `Зона в shell` выделяются зеленой рамкой и бейджем зоны.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/actions/view.php](../system/controllers/landingbuilder/actions/view.php)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php](../packages/landingbuilder/package/system/controllers/landingbuilder/actions/view.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/actions/view.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/actions/view.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` без ошибок для live + всех mirror-файлов;
+	- diagnostics: `No errors found` для ключевых live-файлов;
+	- parity подтверждена через `sha256sum` (live == mirrors).
+- Точка отката:
+	- `backups/manual-checkpoints/20260407-221500-public-overlay-and-canvas-zone-highlight`.
+
+### 2026-04-07 / Body frame pro-mode: 1/2/3 колонки вокруг native body + ширины
+
+- Что изменено:
+	- для overlay-страниц добавлен режим body-frame `1 / 2-left / 2-right / 3` в `schema.layout`;
+	- добавлены управляемые ширины колонок (`body_left_span`, `body_right_span`) с нормализацией и ограничениями;
+	- runtime-shell теперь учитывает body-frame режим при активации sidebar slots (`content_sidebar_left/right`), а не только системный variant;
+	- в `nordic/main.tpl.php` builder-sidebars начали рендериться как полноценные колонки вокруг системного body в takeover-режиме;
+	- в canvas native-body scaffold добавлены controls для выбора режима 1/2/3 и drag-диапазоны ширины sidebar;
+	- в CSS `nordic/theme.css` включены переменные `--lb-content-left-span/right-span/main-span` для фактической ширины колонок на live.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [templates/nordic/css/theme.css](../templates/nordic/css/theme.css)
+	- mirrors в `packages/landingbuilder/package/`, `packages/nordicbuilder/package/`, `packages/nordic/package/`.
+- Что проверено:
+	- `php -l` без ошибок для live + mirror копий измененных PHP/TPL файлов;
+	- `cmp` parity = `0` по всем парам live/mirror для model/canvas/main/theme;
+	- diagnostics `No errors found` по ключевым live-файлам.
+- Риски:
+	- для старых страниц с вручную сохраненной зоной `content_body` у секции нужен один цикл «открыть canvas -> сохранить», чтобы схема полностью очистилась от legacy-конфликтов;
+	- если для выбранного режима не добавлены секции в sidebar-зоны, колонка не появится (ожидаемое поведение).
+- Точки отката:
+	- `backups/manual-checkpoints/20260407-234500-body-layout-dnd-start`;
+	- `backups/manual-checkpoints/20260407-232300-native-body-hard-guard`.
+	- `backups/manual-checkpoints/20260407-235500-body-frame-pro-mode-complete`.
+
+### 2026-04-08 / Canvas UX cleanup: зоны вокруг body + упрощенный инспектор секции
+
+- Что изменено:
+	- в canvas для native-body режима секции сгруппированы по рабочим зонам: `перед body`, `левый sidebar`, `body`, `правый sidebar`, `после body`;
+	- добавлены явные empty-state панели с кнопкой `+ Добавить` для каждой зоны, чтобы было понятно, почему sidebar может быть пустым;
+	- системный `Body (системный, auto)` теперь живет в центральной колонке middle-области, а не «сверху всего»;
+	- в инспекторе секции оставлен базовый набор полей (название, layout, зона, контейнер, ритм), а `Тип секции` / `Стилевой пресет` / служебные CSS-поля перенесены в сворачиваемый блок `Расширенные настройки секции`;
+	- добавлена responsive-адаптация middle-области зон для узких экранов.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` без ошибок для live + mirror `canvas.tpl.php`;
+	- parity `cmp` live/mirror = `0` для обеих mirrors;
+	- diagnostics: `No errors found` по live `canvas.tpl.php`.
+- Риски:
+	- reorder секций по-прежнему общий (не отдельный per-zone), поэтому при активном DnD стоит дополнительно контролировать поле `Зона в shell`;
+	- для страниц со старыми схемами может понадобиться одно сохранение, чтобы визуальная группировка и runtime совпали полностью.
+- Точка отката:
+	- `backups/manual-checkpoints/20260408-000500-canvas-zone-workspace-simplify`.
+
+### 2026-04-08 / Hotfix: убран дублирующийся native body scaffold в canvas
+
+- Симптом:
+	- после UX cleanup системный блок `Body (системный, auto)` показывался дважды: в центре zone-workspace и отдельно сверху холста.
+- Что изменено:
+	- в рендере canvas удален дополнительный верхний вывод `nativeBodyScaffoldMarkup`; scaffold остается только внутри центральной колонки zone-workspace.
+- Какие файлы затронуты:
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+- Что проверено:
+	- `php -l` без ошибок для live + mirror `canvas.tpl.php`;
+	- parity `cmp` live/mirror = `0` для обеих mirrors;
+	- diagnostics: `No errors found` по live `canvas.tpl.php`.
+- Риски:
+	- нет известных функциональных рисков; изменение ограничено HTML-сборкой одной ветки рендера canvas.
+- Точка отката:
+	- `backups/manual-checkpoints/20260408-000500-canvas-zone-workspace-simplify`.
+
+### 2026-04-07 / Закрытие дня: canvas-shell стабилизация и UX вокруг body
+
+- Что планировалось:
+	- довести сценарий внутренних страниц до состояния, где native `content_body` стабильно виден, а builder предсказуемо работает вокруг него;
+	- упростить canvas UX для нетехнического пользователя.
+- Что сделано:
+	- завершена серия фиксов runtime/template/canvas для native body (fallback adapter/bindings, hard guard зон, shell-aware routing секций);
+	- доведен body frame pro-mode (`1/2-left/2-right/3` + spans) от схемы до live runtime;
+	- canvas переведен в zone-first представление (`перед body` / `левый` / `body` / `правый` / `после body`) и упрощен inspector секции;
+	- внесен hotfix дублирования `Body (системный, auto)` на холсте;
+	- синхронизированы live + package mirrors для `landingbuilder`, `nordicbuilder`, `nordic`.
+- Какие файлы затронуты:
+	- core/model/actions/runtime/template/canvas файлы в `system/`, `templates/`, `packages/landingbuilder/`, `packages/nordicbuilder/`, `packages/nordic/`;
+	- журналы: `docs/WORKLOG.md`, `docs/worklogs/2026-04-07-instant-page-compatibility-pivot.md`, `LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md`.
+- Что проверено:
+	- серия `php -l` по измененным live+mirror PHP/TPL файлам проходит;
+	- parity проверка `cmp` для ключевых live/mirror пар проходит;
+	- editor diagnostics по ключевым измененным файлам без новых ошибок.
+- Какие риски остались:
+	- ручной продуктовый smoke (guest/admin, preview/live, сценарии зон вокруг body) еще не закрыт;
+	- reorder секций в canvas пока остается общим, не отдельным per-zone.
+- План на завтра (2026-04-08):
+	1. Пройти ручной smoke по матрице: `homepage`, внутренняя `/board`, профиль пользователя; guest/admin; canvas/preview/live parity.
+	2. Добить UX-полировку per-zone reorder и сделать поведение «куда упала секция» максимально очевидным.
+	3. Зафиксировать результаты в `docs/WORKLOG.md` и закрыть regression-checklist для body-frame + native-body зон.
+- Точка отката:
+	- `backups/manual-checkpoints/20260408-000500-canvas-zone-workspace-simplify`.

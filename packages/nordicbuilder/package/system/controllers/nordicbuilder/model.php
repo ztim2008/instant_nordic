@@ -83,16 +83,16 @@ class modelNordicbuilder extends cmsModel {
 			$stored_document = $stored_documents_index[$key] ?? null;
 
 			return [
-				'key'                => $key,
-				'title'              => (string) ($page['title'] ?? ''),
-				'mode'               => (string) ($page['mode'] ?? ''),
-				'page_type'          => (string) ($page['page_type'] ?? ''),
-				'adapter_key'        => (string) ($page['adapter_key'] ?? ''),
-				'status'             => (string) ($page['status'] ?? 'draft'),
-				'is_imported'        => (bool) $stored_document,
-				'document_status'    => (string) ($stored_document['status'] ?? ''),
+				'key'               => $key,
+				'title'             => (string) ($page['title'] ?? ''),
+				'mode'              => (string) ($page['mode'] ?? ''),
+				'page_type'         => (string) ($page['page_type'] ?? ''),
+				'adapter_key'       => (string) ($page['adapter_key'] ?? ''),
+				'status'            => (string) ($page['status'] ?? 'draft'),
+				'is_imported'       => (bool) $stored_document,
+				'document_status'   => (string) ($stored_document['status'] ?? ''),
 				'document_updated_at'=> (string) ($stored_document['updated_at'] ?? ''),
-				'migration_state'    => $stored_document ? 'imported' : 'pending'
+				'migration_state'   => $stored_document ? 'imported' : 'pending'
 			];
 		}, $pages);
 
@@ -217,7 +217,7 @@ class modelNordicbuilder extends cmsModel {
 			return false;
 		}
 
-		if (!$this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+		if (!$this->ensurePageRenderTable()) {
 			return false;
 		}
 
@@ -399,11 +399,12 @@ class modelNordicbuilder extends cmsModel {
 
 	public function saveBridgePageSchema($page_key, array $schema, array $fallback_page = [], $user_id = 0, $status = 'draft') {
 		$layout = isset($schema['layout']) && is_array($schema['layout']) ? $schema['layout'] : [];
+		$effective_status = (string) ($status ?: ($fallback_page['status'] ?? 'draft'));
 		$page = array_merge($fallback_page, [
 			'key'         => $page_key,
 			'name'        => $page_key,
 			'title'       => (string) ($fallback_page['title'] ?? $page_key),
-			'status'      => (string) ($fallback_page['status'] ?? $status),
+			'status'      => $effective_status,
 			'mode'        => (string) ($fallback_page['mode'] ?? 'instant_content_body'),
 			'page_type'   => (string) ($fallback_page['page_type'] ?? 'standalone'),
 			'template'    => (string) (($layout['template'] ?? '') ?: ($fallback_page['template'] ?? 'nordic')),
@@ -413,7 +414,7 @@ class modelNordicbuilder extends cmsModel {
 
 		$document = $this->buildPageDocumentFromLandingbuilder($page);
 
-		return $this->savePageDocument($document, $user_id, (string) ($status ?: ($fallback_page['status'] ?? 'draft')));
+		return $this->savePageDocument($document, $user_id, $effective_status);
 	}
 
 	public function getPresetTokenByKey($key) {
@@ -649,11 +650,11 @@ class modelNordicbuilder extends cmsModel {
 		return [
 			'is_valid' => $failed_count === 0,
 			'summary'  => [
-				'requested_count'    => count($page_keys),
-				'imported_count'     => $imported_count,
-				'skipped_count'      => $skipped_count,
-				'failed_count'       => $failed_count,
-				'overwrite_existing' => $overwrite_existing
+				'requested_count'   => count($page_keys),
+				'imported_count'    => $imported_count,
+				'skipped_count'     => $skipped_count,
+				'failed_count'      => $failed_count,
+				'overwrite_existing'=> $overwrite_existing
 			],
 			'items'    => $items
 		];
@@ -770,11 +771,21 @@ class modelNordicbuilder extends cmsModel {
 	public function getPersistenceSummary() {
 		$tables = [];
 		$installed_tables_count = 0;
+		$missing_tables = [];
 
 		foreach ($this->getPersistenceTablesConfig() as $table) {
 			$is_installed = $this->db->isTableExists($table['table_name']);
+			$auto_healed = false;
+
+			if (!$is_installed) {
+				$auto_healed = $this->ensurePersistenceTable($table['table_name']);
+				$is_installed = $auto_healed || $this->db->isTableExists($table['table_name']);
+			}
+
 			if ($is_installed) {
 				$installed_tables_count++;
+			} else {
+				$missing_tables[] = $table['table_name'];
 			}
 
 			$tables[] = [
@@ -783,6 +794,7 @@ class modelNordicbuilder extends cmsModel {
 				'contract_key'   => $table['contract_key'],
 				'storage_target' => $table['storage_target'],
 				'is_installed'   => $is_installed,
+				'auto_healed'    => $auto_healed,
 				'count'          => $is_installed ? (int) $this->getCount($table['table_name'], 'id', true) : 0
 			];
 		}
@@ -791,6 +803,7 @@ class modelNordicbuilder extends cmsModel {
 			'is_installed'           => $installed_tables_count === count($tables),
 			'installed_tables_count' => $installed_tables_count,
 			'total_tables_count'     => count($tables),
+			'missing_tables'         => $missing_tables,
 			'tables'                 => $tables
 		];
 	}
@@ -822,8 +835,140 @@ class modelNordicbuilder extends cmsModel {
 				'table_name'     => self::BINDING_OPTIONS_TABLE,
 				'contract_key'   => 'binding-options',
 				'storage_target' => 'bindings.options_json'
+			],
+			[
+				'title'          => 'Published Page Renders',
+				'table_name'     => self::PAGE_RENDER_TABLE,
+				'contract_key'   => 'runtime-ssr-render',
+				'storage_target' => 'runtime.page_renders'
 			]
 		];
+	}
+
+	protected function ensurePersistenceTable($table_name) {
+		if ($table_name === self::PAGE_DOCUMENT_TABLE) {
+			return $this->ensurePageDocumentTable();
+		}
+
+		if ($table_name === self::PRESET_TOKEN_TABLE) {
+			return $this->ensurePresetTokenTable();
+		}
+
+		if ($table_name === self::BINDING_OPTIONS_TABLE) {
+			return $this->ensureBindingOptionsTable();
+		}
+
+		if ($table_name === self::PAGE_RENDER_TABLE) {
+			return $this->ensurePageRenderTable();
+		}
+
+		return false;
+	}
+
+	protected function ensurePageDocumentTable() {
+		if ($this->db->isTableExists(self::PAGE_DOCUMENT_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PAGE_DOCUMENT_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`document_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL,
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`page_type` varchar(32) NOT NULL DEFAULT '',
+			`editor_mode` varchar(32) NOT NULL DEFAULT '',
+			`status` varchar(32) NOT NULL DEFAULT 'draft',
+			`schema_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `document_key` (`document_key`),
+			KEY `status` (`status`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PAGE_DOCUMENT_TABLE);
+	}
+
+	protected function ensurePresetTokenTable() {
+		if ($this->db->isTableExists(self::PRESET_TOKEN_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PRESET_TOKEN_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`preset_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL,
+			`scope` varchar(32) NOT NULL DEFAULT 'site',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`tokens_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `preset_key` (`preset_key`),
+			KEY `scope` (`scope`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PRESET_TOKEN_TABLE);
+	}
+
+	protected function ensureBindingOptionsTable() {
+		if ($this->db->isTableExists(self::BINDING_OPTIONS_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::BINDING_OPTIONS_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`binding_key` varchar(190) NOT NULL,
+			`page_key` varchar(190) NOT NULL DEFAULT '',
+			`title` varchar(255) NOT NULL DEFAULT '',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`options_json` mediumtext NOT NULL,
+			`updated_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`created_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `binding_key` (`binding_key`),
+			KEY `page_key` (`page_key`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::BINDING_OPTIONS_TABLE);
+	}
+
+	protected function ensurePageRenderTable() {
+		if ($this->db->isTableExists(self::PAGE_RENDER_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::PAGE_RENDER_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`page_key` varchar(190) NOT NULL,
+			`title` varchar(255) NOT NULL DEFAULT '',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`meta_json` mediumtext NOT NULL,
+			`html` mediumtext NOT NULL,
+			`content_hash` char(64) NOT NULL DEFAULT '',
+			`published_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`published_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `page_key` (`page_key`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+
+		return $this->db->isTableExists(self::PAGE_RENDER_TABLE);
 	}
 
 	protected function normalizePageDocument(array $document) {
@@ -832,7 +977,7 @@ class modelNordicbuilder extends cmsModel {
 		$document['key'] = $this->sanitizeDocumentKey($document['key'] ?? '');
 		$document['title'] = trim((string) ($document['title'] ?? ''));
 		$document['page_type'] = !empty($document['page_type']) ? (string) $document['page_type'] : 'standalone';
-		$document['editor_mode'] = !empty($document['editor_mode']) ? (string) ($document['editor_mode']) : 'canvas';
+		$document['editor_mode'] = !empty($document['editor_mode']) ? (string) $document['editor_mode'] : 'canvas';
 		$document['meta'] = isset($document['meta']) && is_array($document['meta']) ? $document['meta'] : [];
 		$document['theme'] = isset($document['theme']) && is_array($document['theme']) ? $document['theme'] : [];
 		$document['layout'] = isset($document['layout']) && is_array($document['layout']) ? $document['layout'] : [];
@@ -856,9 +1001,15 @@ class modelNordicbuilder extends cmsModel {
 
 	protected function hasPersistenceTables() {
 		foreach ($this->getPersistenceTablesConfig() as $table) {
-			if (!$this->db->isTableExists($table['table_name'])) {
-				return false;
+			if ($this->db->isTableExists($table['table_name'])) {
+				continue;
 			}
+
+			if ($this->ensurePersistenceTable($table['table_name'])) {
+				continue;
+			}
+
+			return false;
 		}
 
 		return true;
@@ -971,115 +1122,115 @@ class modelNordicbuilder extends cmsModel {
 
 		$allowed_page_types = ['standalone', 'system_overlay', 'ctype_overlay'];
 		if ($page_type !== '' && !in_array($page_type, $allowed_page_types, true)) {
-			$errors['page_type'] = 'Неподдерживаемый тип страницы.';
+			$errors['page_type'] = 'Unsupported page_type.';
 		}
 
 		$allowed_editor_modes = ['canvas', 'overlay'];
 		if ($editor_mode !== '' && !in_array($editor_mode, $allowed_editor_modes, true)) {
-			$errors['editor_mode'] = 'Неподдерживаемый режим редактора.';
+			$errors['editor_mode'] = 'Unsupported editor_mode.';
 		}
 
 		if (empty($payload['kind']) || !in_array($payload['kind'], ['nordicbuilder.page', 'nordicbuilder.contract'], true)) {
-			$errors['kind'] = 'Неподдерживаемый тип документа.';
+			$errors['kind'] = 'Unsupported page document kind.';
 		}
 
 		if (!isset($payload['meta']) || !is_array($payload['meta'])) {
-			$errors['meta'] = 'Meta должно быть объектом.';
+			$errors['meta'] = 'Meta must be an object.';
 		}
 
 		if (isset($payload['theme']) && !is_array($payload['theme'])) {
-			$errors['theme'] = 'Theme должно быть объектом.';
+			$errors['theme'] = 'Theme must be an object.';
 		}
 
 		if (isset($payload['layout']) && !is_array($payload['layout'])) {
-			$errors['layout'] = 'Layout должно быть объектом.';
+			$errors['layout'] = 'Layout must be an object.';
 		}
 
 		if (!isset($payload['zones']) || !is_array($payload['zones']) || !$payload['zones']) {
-			$errors['zones'] = 'Нужна хотя бы одна зона.';
+			$errors['zones'] = 'Zones must contain at least one zone.';
 			return $errors;
 		}
 
 		foreach ($payload['zones'] as $zone_index => $zone) {
 			if (!is_array($zone)) {
-				$errors['zones.' . $zone_index] = 'Зона должна быть объектом.';
+				$errors['zones.' . $zone_index] = 'Zone must be an object.';
 				continue;
 			}
 
 			if (empty($zone['zone_key'])) {
-				$errors['zones.' . $zone_index . '.zone_key'] = 'Нужен ключ зоны.';
+				$errors['zones.' . $zone_index . '.zone_key'] = 'Zone key is required.';
 			}
 
 			if (!isset($zone['sections']) || !is_array($zone['sections'])) {
-				$errors['zones.' . $zone_index . '.sections'] = 'Секции зоны должны быть массивом.';
+				$errors['zones.' . $zone_index . '.sections'] = 'Zone sections must be an array.';
 				continue;
 			}
 
 			foreach ($zone['sections'] as $section_index => $section) {
 				if (!is_array($section)) {
-					$errors['zones.' . $zone_index . '.sections.' . $section_index] = 'Секция должна быть объектом.';
+					$errors['zones.' . $zone_index . '.sections.' . $section_index] = 'Section must be an object.';
 					continue;
 				}
 
 				if (empty($section['uid'])) {
-					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.uid'] = 'Нужен uid секции.';
+					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.uid'] = 'Section uid is required.';
 				}
 
 				if (empty($section['title'])) {
-					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.title'] = 'Нужен заголовок секции.';
+					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.title'] = 'Section title is required.';
 				}
 
 				if (!isset($section['columns']) || !is_array($section['columns']) || !$section['columns']) {
-					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns'] = 'Колонки секции должны быть непустым массивом.';
+					$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns'] = 'Section columns must be a non-empty array.';
 					continue;
 				}
 
 				foreach ($section['columns'] as $column_index => $column) {
 					if (!is_array($column)) {
-						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index] = 'Колонка должна быть объектом.';
+						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index] = 'Column must be an object.';
 						continue;
 					}
 
 					if (empty($column['uid'])) {
-						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.uid'] = 'Нужен uid колонки.';
+						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.uid'] = 'Column uid is required.';
 					}
 
 					if (!isset($column['nodes']) || !is_array($column['nodes'])) {
-						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes'] = 'Элементы колонки должны быть массивом.';
+						$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes'] = 'Column nodes must be an array.';
 						continue;
 					}
 
 					foreach ($column['nodes'] as $node_index => $node) {
 						if (!is_array($node)) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index] = 'Элемент должен быть объектом.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index] = 'Node must be an object.';
 							continue;
 						}
 
 						if (empty($node['uid'])) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.uid'] = 'Нужен uid элемента.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.uid'] = 'Node uid is required.';
 						}
 
 						$node_type = (string) ($node['type'] ?? '');
 						if (!in_array($node_type, ['block', 'system_widget'], true)) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.type'] = 'Неподдерживаемый тип элемента.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.type'] = 'Unsupported node type.';
 						}
 
 						if ($node_type === 'block' && empty($node['label']) && empty($node['source_key'])) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.label'] = 'Для блока нужен заголовок или source_key.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.label'] = 'Block node must define label or source_key.';
 						}
 
 						if ($node_type === 'block') {
 							$manifest = $this->getBlockManifest((string) ($node['source_key'] ?? ''));
 
 							if (!$manifest) {
-								$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.source_key'] = 'Неизвестный блок (нет манифеста).';
+								$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.source_key'] = 'Unknown block manifest.';
 							} else {
 								if (!in_array($page_type, (array) ($manifest['supports']['page_types'] ?? []), true)) {
-									$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.page_type'] = 'Блок не поддерживается для этого типа страницы.';
+									$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.page_type'] = 'Block is not supported for this page_type.';
 								}
 
 								if (!in_array($editor_mode, (array) ($manifest['supports']['editor_modes'] ?? []), true)) {
-									$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.editor_mode'] = 'Блок не поддерживается для этого режима редактора.';
+									$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.editor_mode'] = 'Block is not supported for this editor_mode.';
 								}
 
 								foreach ((array) ($manifest['props_schema'] ?? []) as $prop) {
@@ -1090,18 +1241,18 @@ class modelNordicbuilder extends cmsModel {
 
 									$prop_value = $node['options'][$prop_key];
 									if (($prop['type'] ?? 'string') === 'string' && !(is_scalar($prop_value) || $prop_value === null)) {
-										$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.options.' . $prop_key] = 'Значение свойства блока должно быть строкой (или совместимым со строкой).';
+										$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.options.' . $prop_key] = 'Block prop must be a string-compatible value.';
 									}
 								}
 							}
 						}
 
 						if ($node_type === 'system_widget' && empty($node['label']) && empty($node['widget_name'])) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.widget_name'] = 'Для системного виджета нужен заголовок или widget_name.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.widget_name'] = 'System widget node must define label or widget_name.';
 						}
 
 						if (isset($node['options']) && !is_array($node['options'])) {
-							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.options'] = 'Options элемента должны быть объектом.';
+							$errors['zones.' . $zone_index . '.sections.' . $section_index . '.columns.' . $column_index . '.nodes.' . $node_index . '.options'] = 'Node options must be an object.';
 						}
 					}
 				}

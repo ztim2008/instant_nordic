@@ -87,13 +87,11 @@ try {
                 $takeover_page = $lb_model->getPageByKey($takeover_page_key);
                 if ($takeover_page) {
                     $is_preview = ($takeover_page['status'] ?? 'draft') !== 'published';
-                    if (!$is_preview || cmsUser::isAdmin()) {
-                        $takeover_runtime = $lb_model->getRuntimePage($takeover_page);
-                        $takeover_runtime['device_type'] = cmsRequest::getDeviceType();
-                        $takeover_runtime['is_preview'] = $is_preview;
-                        $landingbuilder_takeover = ['page' => $takeover_page, 'runtime' => $takeover_runtime];
-                        $landingbuilder_shell_runtime = $takeover_runtime['shell'];
-                    }
+                    $takeover_runtime = $lb_model->getRuntimePage($takeover_page);
+                    $takeover_runtime['device_type'] = cmsRequest::getDeviceType();
+                    $takeover_runtime['is_preview'] = $is_preview;
+                    $landingbuilder_takeover = ['page' => $takeover_page, 'runtime' => $takeover_runtime];
+                    $landingbuilder_shell_runtime = $takeover_runtime['shell'];
                 }
             }
         }
@@ -371,6 +369,17 @@ $lbGetBuilderSlotHtml = function($slot_key) use ($lb_takeover_active, $lb_takeov
     ]);
 };
 
+$lbIsNativeRuntimeSlot = function($slot_key) use ($lb_takeover_active, $lb_takeover_runtime) {
+    if (!$lb_takeover_active) {
+        return false;
+    }
+
+    $slot_map = !empty($lb_takeover_runtime['slot_map']) && is_array($lb_takeover_runtime['slot_map']) ? $lb_takeover_runtime['slot_map'] : [];
+    $slot_meta = isset($slot_map[$slot_key]) && is_array($slot_map[$slot_key]) ? $slot_map[$slot_key] : [];
+
+    return ($slot_meta['render_mode'] ?? 'builder') === 'native';
+};
+
 $left_sidebar_positions = $resolveSlotPositions('content_sidebar_left');
 $right_sidebar_positions = $resolveSlotPositions('content_sidebar_right');
 $content_body_positions = $resolveSlotPositions('content_body');
@@ -379,10 +388,37 @@ $has_left_content_sidebar = $isSlotEnabled('content_sidebar_left') && $this->has
 $has_right_content_sidebar = $isSlotEnabled('content_sidebar_right') && $this->hasWidgetsOn($right_sidebar_positions);
 $has_content_body_widgets = $this->hasWidgetsOn($content_body_positions);
 
+$lb_left_sidebar_html = '';
+$lb_right_sidebar_html = '';
+$content_grid_style = '';
+
 if ($lb_takeover_active) {
-    $has_left_content_sidebar = false;
-    $has_right_content_sidebar = false;
+    $lb_left_sidebar_html = $lbGetBuilderSlotHtml('content_sidebar_left');
+    $lb_right_sidebar_html = $lbGetBuilderSlotHtml('content_sidebar_right');
+
+    $body_columns = $lb_takeover_runtime['shell']['body_columns'] ?? ($lb_takeover_page['schema']['layout']['body_columns'] ?? []);
+    $body_columns_mode = (string) ($body_columns['mode'] ?? '1');
+    $body_left_span = (int) ($body_columns['left_span'] ?? 0);
+    $body_right_span = (int) ($body_columns['right_span'] ?? 0);
+    $body_main_span = (int) ($body_columns['body_span'] ?? 12);
+
+    $has_left_content_sidebar = in_array($body_columns_mode, ['2-left', '3'], true) && ($lb_left_sidebar_html !== '');
+    $has_right_content_sidebar = in_array($body_columns_mode, ['2-right', '3'], true) && ($lb_right_sidebar_html !== '');
     $has_content_body_widgets = false;
+
+    if (!$has_left_content_sidebar) {
+        $body_left_span = 0;
+    }
+    if (!$has_right_content_sidebar) {
+        $body_right_span = 0;
+    }
+
+    $body_main_span = 12 - $body_left_span - $body_right_span;
+    if ($body_main_span < 4) {
+        $body_main_span = 4;
+    }
+
+    $content_grid_style = '--lb-content-left-span:' . $body_left_span . ';--lb-content-right-span:' . $body_right_span . ';--lb-content-main-span:' . $body_main_span . ';';
 }
 
 $content_grid_class = 'nordic-shell__content-grid';
@@ -546,8 +582,10 @@ if ($nordic_use_modern_skin) {
                 // смесь modern CSS + nordic markup и визуальная «поломка».
                 if ($lb_takeover_active) {
                     $content_slot_key = (string) (($lb_takeover_runtime['shell']['content_slot'] ?? '') ?: 'content_body');
+                    $resolved_content_slot_key = $content_slot_key;
                     $lb_content_html = $lbGetBuilderSlotHtml($content_slot_key);
                     if ($lb_content_html === '' && $content_slot_key !== 'content_body') {
+                        $resolved_content_slot_key = 'content_body';
                         $lb_content_html = $lbGetBuilderSlotHtml('content_body');
                     }
 
@@ -585,7 +623,11 @@ if ($nordic_use_modern_skin) {
                     if ($lb_hero_html !== '') { echo $lb_hero_html; }
                     $lb_before_html = $lbGetBuilderSlotHtml('before_content');
                     if ($lb_before_html !== '') { echo $lb_before_html; }
-                    if ($lb_content_html !== '') { echo $lb_content_html; }
+                    if ($lb_content_html !== '') {
+                        echo $lb_content_html;
+                    } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                        $this->body();
+                    }
                     $lb_after_html = $lbGetBuilderSlotHtml('after_content');
                     if ($lb_after_html !== '') { echo $lb_after_html; }
                     echo '</main>';
@@ -642,10 +684,14 @@ if ($nordic_use_modern_skin) {
 
             <main class="nordic-shell__main">
                 <div class="nordic-shell__content-frame" id="nordic-content-frame" data-slot="content_body">
-                    <div class="<?php html($content_grid_class); ?>">
+                    <div class="<?php html($content_grid_class); ?>"<?php if ($content_grid_style !== '') { ?> style="<?php html($content_grid_style); ?>"<?php } ?>>
                         <?php if ($has_left_content_sidebar) { ?>
                             <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--left" data-slot="content_sidebar_left">
-                                <?php $renderPositionGroup($left_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                <?php if ($lb_takeover_active) { ?>
+                                    <?php echo $lb_left_sidebar_html; ?>
+                                <?php } else { ?>
+                                    <?php $renderPositionGroup($left_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                <?php } ?>
                             </aside>
                         <?php } ?>
                         <div class="nordic-shell__content-body-slot" data-slot="content_body">
@@ -656,13 +702,17 @@ if ($nordic_use_modern_skin) {
                                 <?php
                                     if ($lb_takeover_active) {
                                         $content_slot_key = (string) (($lb_takeover_runtime['shell']['content_slot'] ?? '') ?: 'content_body');
+                                        $resolved_content_slot_key = $content_slot_key;
                                         $lb_content_html = $lbGetBuilderSlotHtml($content_slot_key);
                                         if ($lb_content_html === '' && $content_slot_key !== 'content_body') {
+                                            $resolved_content_slot_key = 'content_body';
                                             $lb_content_html = $lbGetBuilderSlotHtml('content_body');
                                         }
 
                                         if ($lb_content_html !== '') {
                                             echo $lb_content_html;
+                                        } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                                            $this->body();
                                         }
                                     } else {
                                         $this->body();
@@ -672,7 +722,11 @@ if ($nordic_use_modern_skin) {
                         </div>
                         <?php if ($has_right_content_sidebar) { ?>
                             <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--right" data-slot="content_sidebar_right">
-                                <?php $renderPositionGroup($right_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                <?php if ($lb_takeover_active) { ?>
+                                    <?php echo $lb_right_sidebar_html; ?>
+                                <?php } else { ?>
+                                    <?php $renderPositionGroup($right_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                <?php } ?>
                             </aside>
                         <?php } ?>
                     </div>
