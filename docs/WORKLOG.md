@@ -1440,3 +1440,54 @@
 	3. Зафиксировать результаты в `docs/WORKLOG.md` и закрыть regression-checklist для body-frame + native-body зон.
 - Точка отката:
 	- `backups/manual-checkpoints/20260408-000500-canvas-zone-workspace-simplify`.
+
+### 2026-04-07 / Подготовлен короткий блог-материал про вектор Nordic Builder
+
+- Что сделано:
+	- подготовлена короткая статья для публикации в блоге о векторе развития конструктора, целях и практических преимуществах для пользователя и команды.
+- Где лежит:
+	- [docs/blog/2026-04-07-nordicbuilder-vector.md](blog/2026-04-07-nordicbuilder-vector.md)
+- Примечание:
+	- текст ориентирован на product-аудиторию, без перегруза техническими деталями, и может использоваться как черновик для публичной публикации.
+
+### 2026-04-08 / Проверка сценариев native body + секции вокруг body
+
+- Цель проверки:
+	- `content_body` в native-режимах остается под управлением системы;
+	- builder рендерит только зоны вокруг body;
+	- секции не могут захватить `content_body` даже при legacy `zone_key`.
+- Что подтверждено по коду:
+	- в runtime `buildRuntimeZones()` включен hard-guard: секция с `zone_key=content_body` при native-адаптере автоматически уводится в разрешенную builder-зону;
+	- в canvas нормализация секций и zone selector не позволяют закреплять секции в native `content_body`;
+	- в `templates/nordic/main.tpl.php` при native slot/overlay fallback рендерится системный `$this->body()`, а builder-sidebars выводятся отдельно.
+- Live-проверка маршрутов:
+	1. Сценарий «body для всего сайта + секции вокруг него»:
+		- `/` открывается с системным содержимым и доп. блоками builder вокруг body.
+	2. Сценарий «body только для одного типа контента + блоки»:
+		- `/board` (категория board) открывается с нативным body категории и builder-блоками вокруг.
+		- `/users/profile` возвращает `404` (маршрут невалидный на этом инстансе), рабочий профильный маршрут: `/users/1`.
+- Что проверено технично:
+	- `php -l` без ошибок для `system/controllers/landingbuilder/model.php`, `templates/nordic/main.tpl.php`, `templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php`;
+	- diagnostics: `No errors found` по этим файлам;
+	- parity `cmp` live/mirror = `0` для model/canvas/main.
+- Риски:
+	- для режима «весь сайт» нужен явный набор bindings (как минимум `homepage` + `all_except_homepage`), иначе часть маршрутов не попадет под нужный page key;
+	- для отдельных overlay-сценариев нужно проверять корректный рабочий route конкретного проекта (пример: профиль — `/users/{id}`).
+
+### 2026-04-08 / Применение canonical bindings для сценария «весь сайт»
+
+- Что сделано:
+	- в таблице `cms_nordicbuilder_binding_options` ключи правил приведены к каноническим:
+		- `page.glav` -> `page.homepage`
+		- `page.all_ver` -> `page.all_internal`
+	- синхронизированы и внутренние JSON-ключи `options_json.key`.
+- Что проверено:
+	- в БД подтверждены правила:
+		- `page.homepage` -> `glav`
+		- `page.all_internal` -> `ver` (`route_params.page_type = !homepage`);
+	- live DOM-проверка:
+		- `/` содержит builder-секции (`data-slot-key=content_body`, count=4);
+		- `/board` содержит builder-секцию (`data-slot-key=after_content`, count=1);
+		- `/users/1` содержит builder-секцию (`data-slot-key=after_content`, count=1).
+- Точка отката данных:
+	- `backups/manual-checkpoints/20260408-090500-bindings-canonicalize/cms_nordicbuilder_binding_options.sql`.

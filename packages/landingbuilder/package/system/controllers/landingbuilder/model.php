@@ -1973,6 +1973,13 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
+		// Do not render overlay for synthetic default pages.
+		// Overlay should appear only when a real page is stored
+		// in landingbuilder table or in nordicbuilder bridge documents.
+		if (!$this->hasStoredOverlayPageByKey($page_key)) {
+			return false;
+		}
+
 		$page = $this->getPageByKey($page_key);
 		if (!$page || !$this->canRenderOverlayPage($page, $is_admin)) {
 			return false;
@@ -1990,6 +1997,31 @@ class modelLandingbuilder extends cmsModel {
 
 	protected function canRenderOverlayPage(array $page, $is_admin = false) {
 		return true;
+	}
+
+	protected function hasStoredOverlayPageByKey($page_key) {
+
+		$page_key = (string) $page_key;
+		if ($page_key === '') {
+			return false;
+		}
+
+		if ($this->hasInstalledSchema()) {
+			$legacy_page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
+			if ($legacy_page) {
+				return true;
+			}
+		}
+
+		$bridge_model = $this->getNordicbuilderBridgeModel();
+		if ($bridge_model && method_exists($bridge_model, 'getPageDocumentByKey')) {
+			$stored_document = $bridge_model->getPageDocumentByKey($page_key);
+			if ($stored_document) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	protected function indexRuntimeZones(array $zones) {
@@ -2164,6 +2196,7 @@ class modelLandingbuilder extends cmsModel {
 			$explicit_zone_key = !empty($section['settings']['zone_key']) ? (string) $section['settings']['zone_key'] : '';
 			$legacy_zone_key = !empty($section['zone_key']) ? (string) $section['zone_key'] : '';
 			$default_zone_key = $this->normalizeRuntimeZoneKey($adapter['default_zone'] ?? 'before_content');
+			$has_explicit_zone = $explicit_zone_key !== '' || ($legacy_zone_key !== '' && $this->normalizeRuntimeZoneKey($legacy_zone_key) !== $default_zone_key);
 
 			if ($explicit_zone_key !== '') {
 				$zone_key = $explicit_zone_key;
@@ -2183,7 +2216,9 @@ class modelLandingbuilder extends cmsModel {
 			}
 
 			if (!$this->isRuntimeBuilderSlotEnabled($shell, $zone_key)) {
-				continue;
+				if (!$has_explicit_zone) {
+					continue;
+				}
 			}
 
 			if (!isset($zones[$zone_key])) {

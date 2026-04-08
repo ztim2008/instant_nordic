@@ -623,10 +623,38 @@ if ($nordic_use_modern_skin) {
                     if ($lb_hero_html !== '') { echo $lb_hero_html; }
                     $lb_before_html = $lbGetBuilderSlotHtml('before_content');
                     if ($lb_before_html !== '') { echo $lb_before_html; }
-                    if ($lb_content_html !== '') {
-                        echo $lb_content_html;
-                    } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
-                        $this->body();
+                    $has_content_sidebars = $has_left_content_sidebar || $has_right_content_sidebar;
+
+                    if ($has_content_sidebars) {
+                        $main_span = max(1, min(12, (int) ($body_main_span ?? 12)));
+                        $left_span = max(1, min(11, (int) ($body_left_span ?? 3)));
+                        $right_span = max(1, min(11, (int) ($body_right_span ?? 3)));
+
+                        echo '<div class="row g-4 align-items-start">';
+
+                        if ($has_left_content_sidebar && $lb_left_sidebar_html !== '') {
+                            echo '<aside class="col-12 col-lg-' . $left_span . '" data-slot="content_sidebar_left">' . $lb_left_sidebar_html . '</aside>';
+                        }
+
+                        echo '<div class="col-12 col-lg-' . $main_span . '" data-slot="content_body">';
+                        if ($lb_content_html !== '') {
+                            echo $lb_content_html;
+                        } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                            $this->body();
+                        }
+                        echo '</div>';
+
+                        if ($has_right_content_sidebar && $lb_right_sidebar_html !== '') {
+                            echo '<aside class="col-12 col-lg-' . $right_span . '" data-slot="content_sidebar_right">' . $lb_right_sidebar_html . '</aside>';
+                        }
+
+                        echo '</div>';
+                    } else {
+                        if ($lb_content_html !== '') {
+                            echo $lb_content_html;
+                        } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                            $this->body();
+                        }
                     }
                     $lb_after_html = $lbGetBuilderSlotHtml('after_content');
                     if ($lb_after_html !== '') { echo $lb_after_html; }
