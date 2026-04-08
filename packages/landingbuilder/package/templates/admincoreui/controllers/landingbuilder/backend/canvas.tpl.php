@@ -3458,6 +3458,18 @@ $canvas_state = [
             };
         }
 
+        function syncNativeBodyAutoscaleStateFromSections() {
+            const sections = Array.isArray(state.schema.sections) ? state.schema.sections : [];
+            const allSectionsAutoscale = sections.length > 0 && sections.every(function (section) {
+                return !!(section && section.settings && section.settings.autoscale_base_blocks === true);
+            });
+
+            state.schema.layout = state.schema.layout || {};
+            state.schema.layout.native_body_autoscale = allSectionsAutoscale;
+
+            return allSectionsAutoscale;
+        }
+
         function renderNativeBodyLayoutControls() {
             const columns = resolveBodyColumnsState();
             const modes = [
@@ -5989,6 +6001,9 @@ $canvas_state = [
                     section.settings.autoscale_base_blocks = enableAutoscale;
                 });
 
+                state.schema.layout = state.schema.layout || {};
+                state.schema.layout.native_body_autoscale = enableAutoscale;
+
                 setCanvasDirty(true);
                 renderCanvas();
                 return true;
@@ -6015,6 +6030,7 @@ $canvas_state = [
                 syncSelectedWidgetFormIntoState();
                 section.settings = Object.assign({stack_tablet: false, stack_phone: true, width_inherit: true, autoscale_base_blocks: false}, section.settings || {});
                 section.settings.autoscale_base_blocks = section.settings.autoscale_base_blocks !== true;
+                syncNativeBodyAutoscaleStateFromSections();
 
                 setCanvasDirty(true);
                 renderCanvas();

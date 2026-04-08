@@ -391,10 +391,39 @@ $has_content_body_widgets = $this->hasWidgetsOn($content_body_positions);
 $lb_left_sidebar_html = '';
 $lb_right_sidebar_html = '';
 $content_grid_style = '';
+$lb_native_body_autoscale = false;
 
 if ($lb_takeover_active) {
     $lb_left_sidebar_html = $lbGetBuilderSlotHtml('content_sidebar_left');
     $lb_right_sidebar_html = $lbGetBuilderSlotHtml('content_sidebar_right');
+
+    $layout_state = isset($lb_takeover_page['schema']['layout']) && is_array($lb_takeover_page['schema']['layout'])
+        ? $lb_takeover_page['schema']['layout']
+        : [];
+
+    $lb_native_body_autoscale = !empty($layout_state['native_body_autoscale']);
+    $has_explicit_native_body_autoscale = array_key_exists('native_body_autoscale', $layout_state);
+
+    if (!$has_explicit_native_body_autoscale) {
+        $autoscale_sections = isset($lb_takeover_page['schema']['sections']) && is_array($lb_takeover_page['schema']['sections'])
+            ? $lb_takeover_page['schema']['sections']
+            : [];
+
+        if ($autoscale_sections) {
+            $lb_native_body_autoscale = true;
+
+            foreach ($autoscale_sections as $autoscale_section) {
+                $autoscale_settings = isset($autoscale_section['settings']) && is_array($autoscale_section['settings'])
+                    ? $autoscale_section['settings']
+                    : [];
+
+                if (($autoscale_settings['autoscale_base_blocks'] ?? false) !== true) {
+                    $lb_native_body_autoscale = false;
+                    break;
+                }
+            }
+        }
+    }
 
     $body_columns = $lb_takeover_runtime['shell']['body_columns'] ?? ($lb_takeover_page['schema']['layout']['body_columns'] ?? []);
     $body_columns_mode = (string) ($body_columns['mode'] ?? '1');
@@ -584,10 +613,12 @@ if ($nordic_use_modern_skin) {
                     $content_slot_key = (string) (($lb_takeover_runtime['shell']['content_slot'] ?? '') ?: 'content_body');
                     $resolved_content_slot_key = $content_slot_key;
                     $lb_content_html = $lbGetBuilderSlotHtml($content_slot_key);
+                    $lb_can_render_native_body = false;
                     if ($lb_content_html === '' && $content_slot_key !== 'content_body') {
                         $resolved_content_slot_key = 'content_body';
                         $lb_content_html = $lbGetBuilderSlotHtml('content_body');
                     }
+                    $lb_can_render_native_body = $lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing');
 
                     $rows_for_modern_skin = $modern_skin_rows ?: $rows;
                     $modern_header_positions = ['pos_26', 'pos_27', 'pos_29', 'pos_31'];
@@ -639,8 +670,10 @@ if ($nordic_use_modern_skin) {
                         echo '<div class="col-12 col-lg-' . $main_span . '" data-slot="content_body">';
                         if ($lb_content_html !== '') {
                             echo $lb_content_html;
-                        } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                        } elseif ($lb_can_render_native_body) {
+                            echo '<div class="lb-native-body-runtime">';
                             $this->body();
+                            echo '</div>';
                         }
                         echo '</div>';
 
@@ -652,8 +685,14 @@ if ($nordic_use_modern_skin) {
                     } else {
                         if ($lb_content_html !== '') {
                             echo $lb_content_html;
-                        } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                        } elseif ($lb_can_render_native_body) {
+                            $native_body_class = 'lb-native-body-runtime';
+                            if ($lb_native_body_autoscale) {
+                                $native_body_class .= ' lb-native-body-runtime--autoscale';
+                            }
+                            echo '<div class="' . html($native_body_class, false) . '">';
                             $this->body();
+                            echo '</div>';
                         }
                     }
                     $lb_after_html = $lbGetBuilderSlotHtml('after_content');
@@ -740,7 +779,13 @@ if ($nordic_use_modern_skin) {
                                         if ($lb_content_html !== '') {
                                             echo $lb_content_html;
                                         } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
+                                            $native_body_class = 'lb-native-body-runtime';
+                                            if ($lb_native_body_autoscale && !$has_left_content_sidebar && !$has_right_content_sidebar) {
+                                                $native_body_class .= ' lb-native-body-runtime--autoscale';
+                                            }
+                                            echo '<div class="' . html($native_body_class, false) . '">';
                                             $this->body();
+                                            echo '</div>';
                                         }
                                     } else {
                                         $this->body();
