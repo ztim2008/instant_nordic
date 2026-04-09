@@ -27,10 +27,17 @@ class backendNordicbuilder extends cmsBackend {
                 ]
             ],
             [
-                'title' => 'Дизайн-система',
-				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'defaults']),
+                'title' => 'Instant: глобальные',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'instant']),
                 'options' => [
                     'icon' => 'paint-brush'
+                ]
+            ],
+            [
+                'title' => 'Токены блоков',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'tokens']),
+                'options' => [
+                    'icon' => 'layer-group'
                 ]
             ]
         ];

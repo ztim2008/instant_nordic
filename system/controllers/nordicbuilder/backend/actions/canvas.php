@@ -101,7 +101,7 @@ class actionNordicbuilderCanvas extends cmsAction {
 			'pages_url'           => href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'pages'])
 		];
 		$screen['preview_url'] = href_to('nordicbuilder', 'view', [$page['key']]);
-		$screen['design_url'] = href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'defaults']);
+		$screen['design_url'] = href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'tokens']);
 
 		return $this->cms_template->render('backend/canvas', [
 			'menu'   => $this->controller->getBackendMenu(),

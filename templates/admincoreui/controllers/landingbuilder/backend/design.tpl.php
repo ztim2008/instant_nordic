@@ -11,10 +11,29 @@ $preview_context = function_exists('landingbuilder_get_runtime_theme_context_fro
 $preview_style = function_exists('landingbuilder_render_css_vars') ? landingbuilder_render_css_vars($preview_context['vars']) : '';
 $runtime_catalog = function_exists('landingbuilder_get_theme_runtime_catalog') ? landingbuilder_get_theme_runtime_catalog() : [];
 $preview_url = (string) ($screen['preview_url'] ?? '');
+$page_variant = (string) ($screen['page_variant'] ?? 'default');
+$page_title = (string) ($screen['page_title'] ?? 'Нордик: Глобальный стиль');
+$page_heading = (string) ($screen['page_heading'] ?? 'Глобальный стиль');
+$page_description = (string) ($screen['page_description'] ?? 'Настройка глобального визуального стандарта сайта. Изменения сохраняются централизованно и применяются для canvas, preview и live runtime.');
+$form_card_title = (string) ($screen['form_card_title'] ?? 'Глобальные настройки дизайн-системы');
+$switch_url = (string) ($screen['switch_url'] ?? '');
+$switch_title = (string) ($screen['switch_title'] ?? '');
+$breadcrumb_title = (string) ($screen['breadcrumb_title'] ?? '');
+$note_text = (string) ($screen['note_text'] ?? 'После сохранения выбранные настройки становятся глобальной основой дизайн-системы и используются единообразно в canvas, preview и live.');
 
-$this->setPageTitle('Нордик: Глобальный стиль');
+if ($breadcrumb_title === '') {
+	if ($page_variant === 'instant') {
+		$breadcrumb_title = 'Instant: глобальные';
+	} elseif ($page_variant === 'tokens') {
+		$breadcrumb_title = 'Токены блоков';
+	} else {
+		$breadcrumb_title = 'Глобальный стиль';
+	}
+}
+
+$this->setPageTitle($page_title);
 $this->addBreadcrumb('Нордик');
-$this->addBreadcrumb('Глобальный стиль');
+$this->addBreadcrumb($breadcrumb_title);
 $this->addMenuItems('admin_toolbar', $menu);
 
 $this->addToolButton([
@@ -30,6 +49,15 @@ $this->addToolButton([
 	'href'  => $this->href_to('pages'),
 	'icon'  => 'file-alt'
 ]);
+
+if ($switch_url !== '' && $switch_title !== '') {
+	$this->addToolButton([
+		'class' => 'list',
+		'title' => $switch_title,
+		'href'  => $switch_url,
+		'icon'  => 'exchange-alt'
+	]);
+}
 
 ?>
 <style>
@@ -86,8 +114,15 @@ $this->addToolButton([
 
 <div class="card mb-4">
 	<div class="card-body">
-		<h3 class="h5 mb-3">Глобальный стиль</h3>
-		<p class="text-muted mb-0">Этот экран больше не является главным маршрутом конструктора. Здесь выбирается шаблон сайта и редкие общие настройки: стартовая палитра, типографика, контейнеры, кнопки и карточки по умолчанию. Основная визуальная работа со страницей и локальным стилем должна происходить прямо на холсте.</p>
+		<div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+			<div>
+				<h3 class="h5 mb-2"><?php html($page_heading); ?></h3>
+				<p class="text-muted mb-0"><?php html($page_description); ?></p>
+			</div>
+			<?php if ($switch_url !== '' && $switch_title !== '') { ?>
+				<a class="btn btn-outline-primary btn-sm" href="<?php html($switch_url); ?>">Перейти: <?php html($switch_title); ?></a>
+			<?php } ?>
+		</div>
 	</div>
 </div>
 
@@ -196,7 +231,7 @@ $this->addToolButton([
 				</section>
 			</div>
 
-			<div class="lb-design-note">После сохранения этот стиль становится глобальной основой: шаблон, палитра, типографика, контейнеры и состояния компонентов применяются как стартовый стандарт для всего сайта. Детальная настройка отдельной страницы остаётся на холсте.</div>
+			<div class="lb-design-note"><?php html($note_text); ?></div>
 
 			<div class="lb-design-runtime-preview">
 				<div class="lb-design-runtime-preview__head">Живой предпросмотр страницы</div>
@@ -211,7 +246,7 @@ $this->addToolButton([
 	</div>
 	<div class="col-xl-7 mb-4">
 		<div class="card h-100">
-			<div class="card-header">Шаблон сайта и редкие общие настройки</div>
+			<div class="card-header"><?php html($form_card_title); ?></div>
 			<div class="card-body lb-design-form-box">
 				<?php $this->renderForm($form, $theme, [
 					'action' => '',

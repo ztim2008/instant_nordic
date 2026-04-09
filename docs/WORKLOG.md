@@ -1903,3 +1903,59 @@
 	- в текущем встроенном браузере нет авторизованной админ-сессии (`Доступ запрещён`), поэтому интерактивный manual smoke live iframe нужно пройти в рабочей админ-сессии.
 - Следующий шаг:
 	- выполнить ручной smoke на странице `Дизайн-система`: смена 3-4 пресетов, проверка live карточки, проверка iframe-применения и затем сохранить/перезагрузить экран.
+
+## 2026-04-09 / Design System split: Instant + Tokens
+
+- Что планировалось:
+	- строго разделить управление дизайн-системой на две отдельные страницы: глобальные Instant-настройки и токены будущих блоков, с единым обязательным live preview.
+- Что сделано:
+	- в `nordicbuilder` добавлены отдельные backend actions `instant` и `tokens` с раздельным сохранением payload по своим доменам настроек;
+	- добавлены отдельные формы `form_instant_global` и `form_tokens`, чтобы на каждой странице показывались только релевантные controls;
+	- legacy action `defaults` переведен в alias-редирект на `tokens` для обратной совместимости;
+	- backend-меню разделено на два явных пункта (`Instant: глобальные`, `Токены блоков`), а переход из canvas ведет на страницу токенов блоков;
+	- общий шаблон `design.tpl.php` сделан variant-aware: динамические title/breadcrumb/описания/заголовок формы/переключение между страницами;
+	- для `nordicbuilder` добавлены отдельные tpl-обертки `backend/instant` и `backend/tokens`, обе используют единый шаблон с обязательным live iframe preview;
+	- в `landingbuilder/backend/actions/design.php` исправлен error-fallback: добавлен `default_surface_preset`.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/backend.php](../system/controllers/nordicbuilder/backend.php)
+	- [system/controllers/nordicbuilder/backend/actions/canvas.php](../system/controllers/nordicbuilder/backend/actions/canvas.php)
+	- [system/controllers/nordicbuilder/backend/actions/defaults.php](../system/controllers/nordicbuilder/backend/actions/defaults.php)
+	- [system/controllers/nordicbuilder/backend/actions/instant.php](../system/controllers/nordicbuilder/backend/actions/instant.php)
+	- [system/controllers/nordicbuilder/backend/actions/tokens.php](../system/controllers/nordicbuilder/backend/actions/tokens.php)
+	- [system/controllers/nordicbuilder/backend/forms/form_instant_global.php](../system/controllers/nordicbuilder/backend/forms/form_instant_global.php)
+	- [system/controllers/nordicbuilder/backend/forms/form_tokens.php](../system/controllers/nordicbuilder/backend/forms/form_tokens.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/instant.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/instant.tpl.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/tokens.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/tokens.tpl.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [system/controllers/landingbuilder/backend/actions/design.php](../system/controllers/landingbuilder/backend/actions/design.php)
+	- [docs/NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md](NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- `php -l` проходит на новых/обновленных actions/forms/templates в live;
+	- после синхронизации live -> package mirrors выполнена проверка parity (`cmp -s`) по новым split-файлам.
+- Какие риски остались:
+	- интерактивный визуальный smoke двух страниц в авторизованной админ-сессии еще не пройден в инструменте;
+	- требуется ручная проверка UX-переходов `Instant <-> Tokens` и применения пресетов в iframe на реальных страницах.
+- Следующий шаг:
+	- выполнить короткий авторизованный smoke обеих страниц (смена 2-3 пресетов на каждой, сохранение, reload), затем зафиксировать checkpoint-коммит итерации.
+
+## 2026-04-09 / Закрытие дня по Design System split
+
+- Что планировалось:
+	- закрыть день по регламенту с фиксацией smoke-результата и checkpoint точки отката.
+- Что сделано:
+	- оформлен отдельный smoke-чеклист по split-страницам DS;
+	- зафиксирован фактический статус manual smoke как `BLOCKED` в инструменте browser из-за отсутствия авторизованной admin-сессии (`Доступ запрещён` на `instant/tokens`);
+	- подтверждена техническая готовность изменений: маршруты, формы, lint и parity live/mirror;
+	- подготовлено закрытие дня через checkpoint snapshot.
+- Какие файлы затронуты:
+	- [docs/checklists/NORDICBUILDER-DESIGN-SYSTEM-SPLIT-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-DESIGN-SYSTEM-SPLIT-SMOKE-2026-04-09.md)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- browser-проверка URL `instant/tokens` в текущей сессии возвращает `Доступ запрещён`;
+	- `php -l` по измененным split-файлам проходит;
+	- `cmp -s` подтверждает parity между live и package mirrors.
+- Какие риски остались:
+	- интерактивный UX smoke страниц `Instant`/`Tokens` (изменение пресетов, live iframe, save/reload) еще не пройден в авторизованной сессии.
+- Следующий шаг:
+	- в рабочей авторизованной админ-сессии выполнить ручной smoke по чеклисту и обновить статус до PASS/FAIL.

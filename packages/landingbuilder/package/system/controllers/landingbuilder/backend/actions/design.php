@@ -52,6 +52,7 @@ class actionLandingbuilderDesign extends cmsAction {
 				'default_container_preset' => $data['container_preset'] ?? '',
 				'default_button_preset' => $data['button_preset'] ?? '',
 				'default_card_preset' => $data['card_preset'] ?? '',
+				'default_surface_preset' => $data['surface_preset'] ?? '',
 				'default_section_spacing' => $data['section_spacing'] ?? '',
 				'default_radius_preset' => $data['radius_preset'] ?? '',
 				'default_density_preset' => $data['density_preset'] ?? '',
