@@ -1805,6 +1805,10 @@
 		- `data_source_mode` (`manual` / `ctype.list`),
 		- `data_ctype_name`, `data_limit`, `data_sort`,
 		- field mapping (`data_value_field`/`data_label_field`/`data_note_field` и `data_question_field`/`data_answer_field`);
+	- добавлен link-bridge для данных блока:
+		- режимы ссылок `none` / `auto` / `field` / `template`,
+		- безопасная нормализация URL,
+		- рендер кликабельных карточек в metrics и ссылки `Подробнее` в FAQ;
 	- в runtime renderer добавлен безопасный fetch данных из InstantCMS:
 		- автонормализация ctype,
 		- fallback на ctype из route context,

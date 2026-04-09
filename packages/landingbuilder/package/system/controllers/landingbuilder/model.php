@@ -1732,6 +1732,14 @@ class modelLandingbuilder extends cmsModel {
 					['key' => 'data_value_field', 'title' => 'Поле значения', 'type' => 'text', 'placeholder' => 'id'],
 					['key' => 'data_label_field', 'title' => 'Поле подписи', 'type' => 'text', 'placeholder' => 'title'],
 					['key' => 'data_note_field', 'title' => 'Поле заметки', 'type' => 'text', 'placeholder' => 'date_pub'],
+					['key' => 'data_link_mode', 'title' => 'Ссылки для карточек', 'type' => 'select', 'options' => [
+						['value' => 'none', 'title' => 'Без ссылок'],
+						['value' => 'auto', 'title' => 'Авто (url/href записи)'],
+						['value' => 'field', 'title' => 'Из поля записи'],
+						['value' => 'template', 'title' => 'По шаблону']
+					]],
+					['key' => 'data_link_field', 'title' => 'Поле ссылки', 'type' => 'text', 'placeholder' => 'url'],
+					['key' => 'data_link_template', 'title' => 'Шаблон ссылки', 'type' => 'text', 'placeholder' => '/{ctype}/{slug}'],
 					['key' => 'columns', 'title' => 'Количество колонок', 'type' => 'select', 'options' => [
 						['value' => '2', 'title' => '2 колонки'],
 						['value' => '3', 'title' => '3 колонки'],
@@ -1765,6 +1773,9 @@ class modelLandingbuilder extends cmsModel {
 					'data_value_field' => 'id',
 					'data_label_field' => 'title',
 					'data_note_field'  => 'date_pub',
+					'data_link_mode'   => 'auto',
+					'data_link_field'  => 'url',
+					'data_link_template'=> '/{ctype}/{slug}',
 					'columns'     => '3',
 					'card_style'  => 'soft',
 					'section_bg'  => '#f8fafc',
@@ -1805,6 +1816,14 @@ class modelLandingbuilder extends cmsModel {
 					]],
 					['key' => 'data_question_field', 'title' => 'Поле вопроса', 'type' => 'text', 'placeholder' => 'title'],
 					['key' => 'data_answer_field', 'title' => 'Поле ответа', 'type' => 'text', 'placeholder' => 'teaser'],
+					['key' => 'data_link_mode', 'title' => 'Ссылки для FAQ', 'type' => 'select', 'options' => [
+						['value' => 'none', 'title' => 'Без ссылок'],
+						['value' => 'auto', 'title' => 'Авто (url/href записи)'],
+						['value' => 'field', 'title' => 'Из поля записи'],
+						['value' => 'template', 'title' => 'По шаблону']
+					]],
+					['key' => 'data_link_field', 'title' => 'Поле ссылки', 'type' => 'text', 'placeholder' => 'url'],
+					['key' => 'data_link_template', 'title' => 'Шаблон ссылки', 'type' => 'text', 'placeholder' => '/{ctype}/{slug}'],
 					['key' => 'layout_mode', 'title' => 'Раскладка FAQ', 'type' => 'select', 'options' => [
 						['value' => 'single', 'title' => 'Одна колонка'],
 						['value' => 'two', 'title' => 'Две колонки']
@@ -1830,6 +1849,9 @@ class modelLandingbuilder extends cmsModel {
 					'data_sort'          => 'date_desc',
 					'data_question_field'=> 'title',
 					'data_answer_field'  => 'teaser',
+					'data_link_mode'     => 'auto',
+					'data_link_field'    => 'url',
+					'data_link_template' => '/{ctype}/{slug}',
 					'layout_mode'   => 'single',
 					'open_first'    => 1,
 					'section_bg'    => '#ffffff',
