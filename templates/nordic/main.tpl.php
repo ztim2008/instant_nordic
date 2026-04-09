@@ -48,11 +48,15 @@ $landingbuilder_takeover = null;
 try {
     $ctrl = (string) ($nordic_context['ctrl'] ?? '');
     $action = (string) ($nordic_context['action'] ?? '');
-    $lb_route_uses_overlay_hooks = ($ctrl === 'content' && $action === 'category') || ($ctrl === 'users' && $action === 'profile');
+    $page_type = (string) ($nordic_context['page_type'] ?? '');
+    $lb_route_uses_overlay_hooks =
+        ($ctrl === 'content' && $action === 'category') ||
+        ($ctrl === 'users' && $action === 'profile') ||
+        in_array($page_type, ['content-category', 'user-profile'], true);
     $lb_push_effective_trace('template.route-context', [
         'ctrl' => $ctrl,
         'action' => $action,
-        'page_type' => (string) ($nordic_context['page_type'] ?? ''),
+        'page_type' => $page_type,
         'uses_overlay_hooks' => $lb_route_uses_overlay_hooks,
         'integration_enabled' => $lb_front_integration_enabled
     ]);

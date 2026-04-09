@@ -81,3 +81,29 @@
 1. Runtime trace и авторизованный smoke выполнены; P0 больше не находится только в статусе `static-verified`.
 2. Подтвержден production-факт: на текущем инстансе route-context для category/profile отличается от ожидаемых в статической матрице (`content/category`, `users/profile`).
 3. Для окончательного закрытия overlay-ветки нужен отдельный cut по route classifier в `page_context`/template условиях, чтобы category/profile попадали в overlay branch детерминированно.
+
+## Update 2026-04-09 (route classifier cut + финальный smoke)
+
+### Что исправлено
+
+1. В `templates/nordic/page_context.php` добавлена нормализация ctype-style маршрутов:
+   - `/board` -> `content/index`;
+   - `/board/<slug>` -> `content/category`;
+   - `/board/<item>.html` -> `content/item`;
+   - `/users/<id>` -> `users/profile`.
+2. В `templates/nordic/main.tpl.php` overlay-guard усилен проверкой по `page_type` (`content-category`, `user-profile`) как safety-net.
+
+### Повторный авторизованный smoke (admin cookie, `lb_trace=1`)
+
+| URL | HTTP | Runtime route-context | Overlay guard | Итог ветки |
+| --- | --- | --- | --- | --- |
+| `/` | `200` | `ctrl='' action='index' page_type='homepage'` | `0` | `template.takeover-applied` |
+| `/board` | `200` | `ctrl='content' action='index' page_type='content-list'` | `0` | `template.takeover-skip (empty-effective-page-key)` |
+| `/board/7-prodam-kvartiru-v-novostroike.html` | `200` | `ctrl='content' action='item' page_type='content-item'` | `0` | `template.takeover-skip (empty-effective-page-key)` |
+| `/board/nedvizhimost` | `200` | `ctrl='content' action='category' page_type='content-category'` | `1` | `template.takeover-skip (overlay-or-landingbuilder-route)` |
+| `/users/1` | `200` | `ctrl='users' action='profile' page_type='user-profile'` | `1` | `template.takeover-skip (overlay-or-landingbuilder-route)` |
+
+### Финальный статус
+
+1. Все 5 веток route matrix подтверждены в runtime на реальных URL.
+2. P0 по route-matrix (trace + авторизованный smoke) закрыт.

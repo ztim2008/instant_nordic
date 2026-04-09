@@ -31,6 +31,36 @@ if ($_nc_is_root) {
     $_nc_action = 'index';
 }
 
+$_nc_uri = trim((string) ($_nc_core->uri ?? ''), '/');
+$_nc_uri_parts = $_nc_uri === '' ? [] : array_values(array_filter(explode('/', $_nc_uri), 'strlen'));
+
+// Нормализуем content маршруты ctype-style (/news/*, /board/*) к общим action.
+if ($_nc_ctrl === 'content') {
+    $_nc_known_content_actions = ['index', 'category', 'item', 'add', 'edit'];
+
+    if (!in_array($_nc_action, $_nc_known_content_actions, true)) {
+        $_nc_ctype_segment = (string) ($_nc_uri_parts[0] ?? '');
+        $_nc_detail_segment = (string) ($_nc_uri_parts[1] ?? '');
+
+        if ($_nc_ctype_segment !== '' && $_nc_action === $_nc_ctype_segment) {
+            if ($_nc_detail_segment === '') {
+                $_nc_action = 'index';
+            } elseif (preg_match('/\\.html$/i', $_nc_detail_segment)) {
+                $_nc_action = 'item';
+            } else {
+                $_nc_action = 'category';
+            }
+        }
+    }
+
+    unset($_nc_known_content_actions, $_nc_ctype_segment, $_nc_detail_segment);
+}
+
+// Нормализуем профиль пользователя вида /users/{id} к action=profile.
+if ($_nc_ctrl === 'users' && preg_match('/^\\d+$/', $_nc_action)) {
+    $_nc_action = 'profile';
+}
+
 /**
  * Матрица контекста: controller + action → preset
  *
@@ -261,4 +291,14 @@ $nordic_context = [
     'action'          => $_nc_action,
 ];
 
-unset($_nc_core, $_nc_ctrl, $_nc_action, $_nc_is_root, $_nc_context_matrix, $_nc_matched, $_nc_rule, $_nc_matched);
+unset(
+    $_nc_core,
+    $_nc_ctrl,
+    $_nc_action,
+    $_nc_is_root,
+    $_nc_uri,
+    $_nc_uri_parts,
+    $_nc_context_matrix,
+    $_nc_matched,
+    $_nc_rule
+);

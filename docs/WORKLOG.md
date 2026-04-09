@@ -162,6 +162,11 @@
 	- в runtime добавлен debug trace выбора `effective page key` на двух уровнях: resolver (`landingbuilder/model.php`) и шаблонные ветки (`templates/nordic/main.tpl.php`);
 	- для admin-debug добавлен HTML trace marker `lb-effective-page-trace` при `lb_trace=1`, чтобы подтверждать ветку выбора напрямую через HTTP smoke;
 	- выполнен авторизованный smoke по 5 маршрутам (`/`, `/board`, `/board/7-prodam-kvartiru-v-novostroike.html`, `/board/nedvizhimost`, `/users/1`) с фиксацией route-context/effective key.
+	- выполнен targeted route-classifier cut: ctype-style маршруты (`/board`, `/board/<slug>`, `/board/<item>.html`) и `/users/<id>` нормализуются в `content/index|category|item` и `users/profile`;
+	- повторный авторизованный smoke по тем же 5 маршрутам подтвердил, что category/profile детерминированно уходят в overlay-ветку;
+	- P0 route-matrix переведен в статус closed (runtime-verified по всем 5 веткам).
+	- подготовлен отдельный ручной чеклист визуального parity-smoke для category/profile после route-classifier cut.
+	- parity-smoke чеклист закрыт автоматическим проходом (admin+guest): все целевые URL вернули `200`, category/profile подтвердили overlay-ветку по trace, статус чеклиста `PASS`.
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -182,6 +187,9 @@
 	- [docs/ROLLBACK-AND-RECOVERY.md](ROLLBACK-AND-RECOVERY.md)
 	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
 	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+	- [templates/nordic/page_context.php](../templates/nordic/page_context.php)
+	- [packages/nordic/package/templates/nordic/page_context.php](../packages/nordic/package/templates/nordic/page_context.php)
+	- [docs/checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md)
 - Что проверено:
 	- `php -l` без ошибок для всех измененных live/mirror PHP и tpl-файлов;
 	- `cmp -s` подтверждает parity между live и package mirrors;
@@ -192,13 +200,21 @@
 	- `php -l` проходит для обновленных `landingbuilder/model.php` и `templates/nordic/main.tpl.php` (live + package mirrors).
 	- авторизованный smoke (`icms[auth]` + `lb_trace=1`) по 5 маршрутам возвращает `HTTP 200` и отдает trace marker `lb-effective-page-trace` на каждом маршруте.
 	- в trace зафиксированы фактические route-context и итог выбора: homepage -> `template.takeover-applied`, остальные 4 маршрута -> `template.takeover-skip (empty-effective-page-key)`.
+	- дополнительный strict checkpoint перед route-cut выполнен: backup `backups/db/builders-20260409-075202.sql.gz`, git tag `snapshot/20260409-075203`.
+	- `php -l` проходит для обновленных `templates/nordic/page_context.php` и `templates/nordic/main.tpl.php` (live + package mirrors).
+	- повторный trace smoke подтверждает ожидаемую нормализацию и ветвление:
+	  - `/board` -> `content/index`;
+	  - `/board/7-prodam-kvartiru-v-novostroike.html` -> `content/item`;
+	  - `/board/nedvizhimost` -> `content/category` + `overlay` ветка;
+	  - `/users/1` -> `users/profile` + `overlay` ветка.
+	- авто-smoke (admin+guest) по parity-checklist завершен со статусом `PASS`; результат зафиксирован в [docs/checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md).
 - Какие риски остались:
 	- runtime DB-учетка из `system/config/config.php` по-прежнему не проходит dump preflight; для strict checkpoint сейчас используется override dump-учетка, нужно выделить отдельную dump-role вместо `root`;
 	- сценарий сквозных секций требует ручного smoke в админке (создание трех страниц + проверка маршрутов `/`, внутренние страницы, category конкретного ctype).
-	- на текущем инстансе category/profile URL дают route-context `content/board` и `users/1`, поэтому overlay-ветка (`content/category`, `users/profile`) не активируется; нужен отдельный route-classifier cut.
 - Следующий шаг:
-	- сделать targeted cut route-classifier в `page_context`/template условиях, чтобы category/profile детерминированно попадали в overlay branch.
-	- после route-classifier cut повторить авторизованный smoke по 5 маршрутам и обновить `docs/worklogs/2026-04-09-route-matrix-audit.md` до полного runtime-verified статуса по всем веткам.
+	- стартовать P1 `Inspector sanity`: убрать/скрыть controls без runtime-эффекта и оставить только предсказуемые поля.
+	- после `Inspector sanity` сделать короткий P1 smoke по canvas (desktop/tablet/mobile + quick-actions секций).
+	- выделить отдельную dump-роль для checkpoint/backup, чтобы убрать временную зависимость от `root` override.
 
 ## 2026-04-07
 
