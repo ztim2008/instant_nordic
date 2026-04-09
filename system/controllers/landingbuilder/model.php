@@ -1740,6 +1740,11 @@ class modelLandingbuilder extends cmsModel {
 					]],
 					['key' => 'data_link_field', 'title' => 'Поле ссылки', 'type' => 'text', 'placeholder' => 'url'],
 					['key' => 'data_link_template', 'title' => 'Шаблон ссылки', 'type' => 'text', 'placeholder' => '/{ctype}/{slug}'],
+					['key' => 'data_link_target', 'title' => 'Открывать ссылки', 'type' => 'select', 'options' => [
+						['value' => '_self', 'title' => 'В текущей вкладке'],
+						['value' => '_blank', 'title' => 'В новой вкладке']
+					]],
+					['key' => 'data_link_rel', 'title' => 'rel для ссылок', 'type' => 'text', 'placeholder' => 'noopener noreferrer nofollow'],
 					['key' => 'columns', 'title' => 'Количество колонок', 'type' => 'select', 'options' => [
 						['value' => '2', 'title' => '2 колонки'],
 						['value' => '3', 'title' => '3 колонки'],
@@ -1776,6 +1781,8 @@ class modelLandingbuilder extends cmsModel {
 					'data_link_mode'   => 'auto',
 					'data_link_field'  => 'url',
 					'data_link_template'=> '/{ctype}/{slug}',
+					'data_link_target' => '_self',
+					'data_link_rel'    => '',
 					'columns'     => '3',
 					'card_style'  => 'soft',
 					'section_bg'  => '#f8fafc',
@@ -1824,6 +1831,11 @@ class modelLandingbuilder extends cmsModel {
 					]],
 					['key' => 'data_link_field', 'title' => 'Поле ссылки', 'type' => 'text', 'placeholder' => 'url'],
 					['key' => 'data_link_template', 'title' => 'Шаблон ссылки', 'type' => 'text', 'placeholder' => '/{ctype}/{slug}'],
+					['key' => 'data_link_target', 'title' => 'Открывать ссылки', 'type' => 'select', 'options' => [
+						['value' => '_self', 'title' => 'В текущей вкладке'],
+						['value' => '_blank', 'title' => 'В новой вкладке']
+					]],
+					['key' => 'data_link_rel', 'title' => 'rel для ссылок', 'type' => 'text', 'placeholder' => 'noopener noreferrer nofollow'],
 					['key' => 'layout_mode', 'title' => 'Раскладка FAQ', 'type' => 'select', 'options' => [
 						['value' => 'single', 'title' => 'Одна колонка'],
 						['value' => 'two', 'title' => 'Две колонки']
@@ -1852,6 +1864,8 @@ class modelLandingbuilder extends cmsModel {
 					'data_link_mode'     => 'auto',
 					'data_link_field'    => 'url',
 					'data_link_template' => '/{ctype}/{slug}',
+					'data_link_target'   => '_self',
+					'data_link_rel'      => '',
 					'layout_mode'   => 'single',
 					'open_first'    => 1,
 					'section_bg'    => '#ffffff',

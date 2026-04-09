@@ -1809,6 +1809,10 @@
 		- режимы ссылок `none` / `auto` / `field` / `template`,
 		- безопасная нормализация URL,
 		- рендер кликабельных карточек в metrics и ссылки `Подробнее` в FAQ;
+	- расширены link-настройки для UX:
+		- target (`_self` / `_blank`) на уровне блока,
+		- `rel` как явная настройка,
+		- safe-policy в runtime: для `_blank` автоматически добавляются `noopener noreferrer`, для внешних ссылок добавляется `nofollow`;
 	- в runtime renderer добавлен безопасный fetch данных из InstantCMS:
 		- автонормализация ctype,
 		- fallback на ctype из route context,

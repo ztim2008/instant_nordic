@@ -227,6 +227,82 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		return '';
 	}
 
+	function landingbuilder_runtime_normalize_link_target($value) {
+		$target = trim((string) $value);
+		return $target === '_blank' ? '_blank' : '_self';
+	}
+
+	function landingbuilder_runtime_is_external_link($href) {
+		$url = trim((string) $href);
+		if (!preg_match('~^https?://~i', $url)) {
+			return false;
+		}
+
+		$link_host = strtolower((string) parse_url($url, PHP_URL_HOST));
+		$current_host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+		if ($current_host !== '') {
+			$current_host = preg_replace('/:\\d+$/', '', $current_host);
+		}
+
+		if ($link_host === '' || $current_host === '') {
+			return false;
+		}
+
+		$normalize_host = static function ($host) {
+			$prepared = trim((string) $host);
+			return strpos($prepared, 'www.') === 0 ? substr($prepared, 4) : $prepared;
+		};
+
+		return $normalize_host($link_host) !== $normalize_host($current_host);
+	}
+
+	function landingbuilder_runtime_normalize_link_rel($value, $is_external = false, $target = '_self') {
+		$allowed = ['noopener', 'noreferrer', 'nofollow', 'ugc', 'sponsored'];
+		$prepared = [];
+		foreach (preg_split('/\s+/', trim((string) $value)) as $token) {
+			$candidate = strtolower(trim((string) $token));
+			if ($candidate === '' || !in_array($candidate, $allowed, true) || in_array($candidate, $prepared, true)) {
+				continue;
+			}
+			$prepared[] = $candidate;
+		}
+
+		if ($target === '_blank') {
+			foreach (['noopener', 'noreferrer'] as $safe_token) {
+				if (!in_array($safe_token, $prepared, true)) {
+					$prepared[] = $safe_token;
+				}
+			}
+		}
+
+		if ($is_external && !in_array('nofollow', $prepared, true)) {
+			$prepared[] = 'nofollow';
+		}
+
+		return implode(' ', $prepared);
+	}
+
+	function landingbuilder_runtime_build_link_attrs($href, $target = '_self', $rel = '') {
+		$safe_href = landingbuilder_runtime_sanitize_link($href);
+		if ($safe_href === '') {
+			return '';
+		}
+
+		$safe_target = landingbuilder_runtime_normalize_link_target($target);
+		$is_external = landingbuilder_runtime_is_external_link($safe_href);
+		$safe_rel = landingbuilder_runtime_normalize_link_rel($rel, $is_external, $safe_target);
+
+		$attrs = ' href="' . html($safe_href, false) . '"';
+		if ($safe_target === '_blank') {
+			$attrs .= ' target="_blank"';
+		}
+		if ($safe_rel !== '') {
+			$attrs .= ' rel="' . html($safe_rel, false) . '"';
+		}
+
+		return $attrs;
+	}
+
 	function landingbuilder_runtime_is_visible($visibility, $device_type) {
 		if (!is_array($visibility)) {
 			return true;
@@ -857,6 +933,8 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			$data_link_mode = landingbuilder_runtime_normalize_link_mode($options['data_link_mode'] ?? 'none');
 			$data_link_field = trim((string) ($options['data_link_field'] ?? 'url'));
 			$data_link_template = trim((string) ($options['data_link_template'] ?? '/{ctype}/{slug}'));
+			$data_link_target = landingbuilder_runtime_normalize_link_target($options['data_link_target'] ?? '_self');
+			$data_link_rel = trim((string) ($options['data_link_rel'] ?? ''));
 			$section_bg = $normalize_color($options['section_bg'] ?? '#f8fafc', '#f8fafc');
 			$card_bg = $normalize_color($options['card_bg'] ?? '#ffffff', '#ffffff');
 			$value_color = $normalize_color($options['value_color'] ?? '#0f172a', '#0f172a');
@@ -926,7 +1004,7 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 				$card_base[] = 'border:1px solid ' . $border_color;
 			}
 
-			$cards_html = implode('', array_map(function ($row) use ($card_base, $value_color, $label_color, $note_color) {
+			$cards_html = implode('', array_map(function ($row) use ($card_base, $value_color, $label_color, $note_color, $data_link_target, $data_link_rel) {
 				$parts = array_map('trim', explode('|', $row, 4));
 				$value = $parts[0] ?? '';
 				$label = $parts[1] ?? '';
@@ -938,7 +1016,8 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 					. ($note ? '<div style="margin-top:4px;font-size:12px;color:' . html($note_color, false) . ';">' . html($note, false) . '</div>' : '');
 
 				if ($link !== '') {
-					$content = '<a href="' . html($link, false) . '" style="display:block;color:inherit;text-decoration:none;">' . $content . '</a>';
+					$link_attrs = landingbuilder_runtime_build_link_attrs($link, $data_link_target, $data_link_rel);
+					$content = '<a' . $link_attrs . ' style="display:block;color:inherit;text-decoration:none;">' . $content . '</a>';
 				}
 
 				return '<div style="' . html(implode(';', $card_base), false) . '">'
@@ -961,6 +1040,8 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			$data_link_mode = landingbuilder_runtime_normalize_link_mode($options['data_link_mode'] ?? 'none');
 			$data_link_field = trim((string) ($options['data_link_field'] ?? 'url'));
 			$data_link_template = trim((string) ($options['data_link_template'] ?? '/{ctype}/{slug}'));
+			$data_link_target = landingbuilder_runtime_normalize_link_target($options['data_link_target'] ?? '_self');
+			$data_link_rel = trim((string) ($options['data_link_rel'] ?? ''));
 			$section_bg = $normalize_color($options['section_bg'] ?? '#ffffff', '#ffffff');
 			$question_bg = $normalize_color($options['question_bg'] ?? '#f8fafc', '#f8fafc');
 			$question_color = $normalize_color($options['question_color'] ?? '#0f172a', '#0f172a');
@@ -1037,13 +1118,21 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 					continue;
 				}
 
+				$link_html = '';
+				if ($link) {
+					$link_attrs = landingbuilder_runtime_build_link_attrs($link, $data_link_target, $data_link_rel);
+					if ($link_attrs !== '') {
+						$link_html = '<div style="margin-top:10px;"><a' . $link_attrs . ' style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:' . html($accent_color, false) . ';text-decoration:none;">Подробнее</a></div>';
+					}
+				}
+
 				$faq_items[] = '<details' . (($open_first && $index === 0) ? ' open' : '') . ' style="background:' . html($question_bg, false) . ';border:1px solid ' . html($border_color, false) . ';border-radius:' . $radius . 'px;padding:12px 14px;">'
 					. '<summary style="cursor:pointer;list-style:none;font-weight:700;color:' . html($question_color, false) . ';display:flex;align-items:center;gap:8px;">'
 					. '<span style="display:inline-flex;width:10px;height:10px;border-radius:999px;background:' . html($accent_color, false) . ';"></span>'
 					. html($question ?: 'Вопрос', false)
 					. '</summary>'
 					. '<div style="margin-top:10px;color:' . html($answer_color, false) . ';line-height:1.65;">' . html($answer ?: 'Ответ будет добавлен позже.', false) . '</div>'
-					. ($link ? '<div style="margin-top:10px;"><a href="' . html($link, false) . '" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:' . html($accent_color, false) . ';text-decoration:none;">Подробнее</a></div>' : '')
+					. $link_html
 					. '</details>';
 			}
 
