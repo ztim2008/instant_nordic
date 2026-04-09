@@ -527,6 +527,720 @@ class modelNordicbuilder extends cmsModel {
 		return (bool) $this->deleteFiltered(self::PAGE_DOCUMENT_TABLE);
 	}
 
+	public function installQuickDemo($user_id = 0) {
+		$bridge_model = cmsCore::getModel('landingbuilder');
+		if (!$bridge_model || !method_exists($bridge_model, 'createPage') || !method_exists($bridge_model, 'savePageSchema')) {
+			return [
+				'is_valid' => false,
+				'mode' => 'quick',
+				'errors' => ['Landingbuilder bridge model is unavailable for demo install.']
+			];
+		}
+
+		$blueprint = $this->getQuickDemoBlueprint();
+		$report = [
+			'is_valid' => true,
+			'mode' => 'quick',
+			'pages' => [
+				'created' => 0,
+				'updated' => 0,
+				'failed' => 0,
+				'items' => []
+			],
+			'bindings' => [
+				'created' => 0,
+				'updated' => 0,
+				'failed' => 0,
+				'items' => []
+			],
+			'global_sections_source' => [
+				'requested' => (string) ($blueprint['global_source_page_key'] ?? ''),
+				'saved' => '',
+				'mode' => 'auto'
+			],
+			'errors' => []
+		];
+
+		foreach ((array) ($blueprint['pages'] ?? []) as $page_definition) {
+			$page_key = $this->sanitizeDocumentKey($page_definition['key'] ?? '');
+			if ($page_key === '') {
+				$report['pages']['failed']++;
+				$report['errors'][] = 'Demo page key is empty.';
+				continue;
+			}
+
+			$title = trim((string) ($page_definition['title'] ?? $page_key));
+			$status = trim((string) ($page_definition['status'] ?? 'prototype'));
+			$adapter_key = trim((string) ($page_definition['adapter_key'] ?? ''));
+			$inherit_global_sections = !empty($page_definition['inherit_global_sections']);
+			$use_as_global_sections_source = !empty($page_definition['use_as_global_sections_source']);
+			$schema = isset($page_definition['schema']) && is_array($page_definition['schema']) ? $page_definition['schema'] : ['sections' => []];
+
+			if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+				$schema['layout'] = [];
+			}
+
+			$schema['layout']['template'] = 'nordic';
+			$schema['layout']['page_mode'] = 'instant_content_body';
+			$schema['layout']['inherit_global_sections'] = $inherit_global_sections;
+			$schema['layout']['use_as_global_sections_source'] = $use_as_global_sections_source;
+
+			if ($adapter_key !== '') {
+				$schema['adapter_key'] = $adapter_key;
+			}
+
+			$payload = [
+				'key' => $page_key,
+				'title' => $title,
+				'mode' => 'instant_content_body',
+				'status' => $status,
+				'template' => 'nordic',
+				'adapter_key' => $adapter_key,
+				'disable_starter_seed' => true,
+				'inherit_global_sections' => $inherit_global_sections,
+				'use_as_global_sections_source' => $use_as_global_sections_source,
+				'schema' => $schema
+			];
+
+			$existing_page = method_exists($bridge_model, 'getPageByKey') ? $bridge_model->getPageByKey($page_key) : false;
+			if ($existing_page) {
+				$saved = $bridge_model->savePageSchema($page_key, $schema, $user_id, 'Quick demo sync');
+				if (!$saved) {
+					$report['pages']['failed']++;
+					$report['errors'][] = 'Failed to update demo page: ' . $page_key;
+					$report['pages']['items'][] = [
+						'key' => $page_key,
+						'title' => $title,
+						'status' => 'failed',
+						'message' => 'Failed to save schema.'
+					];
+					continue;
+				}
+
+				if (method_exists($bridge_model, 'setPageStatusByKey')) {
+					$bridge_model->setPageStatusByKey($page_key, $status, $user_id);
+				}
+
+				$report['pages']['updated']++;
+				$report['pages']['items'][] = [
+					'key' => $page_key,
+					'title' => $title,
+					'status' => 'updated',
+					'message' => 'Page schema synced.'
+				];
+				continue;
+			}
+
+			$created_page = $bridge_model->createPage($payload, $user_id);
+			if (!$created_page) {
+				$report['pages']['failed']++;
+				$report['errors'][] = 'Failed to create demo page: ' . $page_key;
+				$report['pages']['items'][] = [
+					'key' => $page_key,
+					'title' => $title,
+					'status' => 'failed',
+					'message' => 'createPage returned false.'
+				];
+				continue;
+			}
+
+			$report['pages']['created']++;
+			$report['pages']['items'][] = [
+				'key' => $page_key,
+				'title' => $title,
+				'status' => 'created',
+				'message' => 'Page created.'
+			];
+		}
+
+		foreach ((array) ($blueprint['bindings'] ?? []) as $binding_definition) {
+			$binding_key = $this->sanitizeDocumentKey($binding_definition['key'] ?? '');
+			$page_key = $this->sanitizeDocumentKey($binding_definition['page_key'] ?? '');
+
+			if ($binding_key === '' || $page_key === '') {
+				$report['bindings']['failed']++;
+				$report['errors'][] = 'Demo binding key/page_key is empty.';
+				continue;
+			}
+
+			$document = [
+				'schema_version' => '1.0',
+				'key' => $binding_key,
+				'title' => (string) ($binding_definition['title'] ?? $binding_key),
+				'page_key' => $page_key,
+				'priority' => (int) ($binding_definition['priority'] ?? 0),
+				'matching' => [
+					'url_masks' => (array) ($binding_definition['url_masks'] ?? []),
+					'exclude_masks' => (array) ($binding_definition['exclude_masks'] ?? []),
+					'route_params' => (array) ($binding_definition['route_params'] ?? []),
+					'require_https' => !empty($binding_definition['require_https'])
+				],
+				'fallback' => [
+					'strategy' => 'theme',
+					'on_missing_page' => 'theme',
+					'on_missing_adapter' => 'theme',
+					'on_missing_preset' => 'binding_default'
+				],
+				'rules' => [
+					'allow_structural_overlay' => true,
+					'allow_dynamic_blocks' => true,
+					'allow_custom_css' => false
+				],
+				'meta' => [
+					'managed_by' => 'quick-demo'
+				]
+			];
+
+			$existing_binding = $this->getBindingOptionsByKey($binding_key);
+			$result = $this->saveBindingOptions($binding_key, $document, $user_id);
+
+			if (empty($result['is_valid'])) {
+				$report['bindings']['failed']++;
+				$report['errors'][] = 'Failed to save demo binding: ' . $binding_key;
+				$report['bindings']['items'][] = [
+					'key' => $binding_key,
+					'page_key' => $page_key,
+					'status' => 'failed',
+					'message' => 'saveBindingOptions returned invalid result.'
+				];
+				continue;
+			}
+
+			$item_status = $existing_binding ? 'updated' : 'created';
+			if ($existing_binding) {
+				$report['bindings']['updated']++;
+			} else {
+				$report['bindings']['created']++;
+			}
+
+			$report['bindings']['items'][] = [
+				'key' => $binding_key,
+				'page_key' => $page_key,
+				'status' => $item_status,
+				'message' => 'Binding saved.'
+			];
+		}
+
+		$options = (array) cmsController::loadOptions('landingbuilder');
+		$requested_source = $this->sanitizeDocumentKey($blueprint['global_source_page_key'] ?? '');
+		$saved_source = '';
+
+		if ($requested_source !== '' && method_exists($bridge_model, 'getPageByKey')) {
+			$source_page = $bridge_model->getPageByKey($requested_source);
+			if ($source_page) {
+				$saved_source = $requested_source;
+			} else {
+				$report['errors'][] = 'Global source page was not found: ' . $requested_source;
+			}
+		}
+
+		$options['global_sections_source_page_key'] = $saved_source;
+		$options['demo_content_mode'] = 'quick';
+		$options['demo_content_installed_at'] = date('Y-m-d H:i:s');
+		cmsController::saveOptions('landingbuilder', $options);
+
+		$report['global_sections_source']['saved'] = $saved_source;
+		$report['global_sections_source']['mode'] = $saved_source !== '' ? 'explicit' : 'auto';
+
+		if ($report['pages']['failed'] > 0 || $report['bindings']['failed'] > 0) {
+			$report['is_valid'] = false;
+		}
+
+		return $report;
+	}
+
+	public function removeQuickDemo($user_id = 0) {
+		$bridge_model = cmsCore::getModel('landingbuilder');
+		if (!$bridge_model || !method_exists($bridge_model, 'deletePageByKey')) {
+			return [
+				'is_valid' => false,
+				'mode' => 'quick',
+				'errors' => ['Landingbuilder bridge model is unavailable for demo remove.']
+			];
+		}
+
+		$blueprint = $this->getQuickDemoBlueprint();
+		$report = [
+			'is_valid' => true,
+			'mode' => 'quick',
+			'pages' => [
+				'removed' => 0,
+				'missed' => 0,
+				'failed' => 0,
+				'items' => []
+			],
+			'bindings' => [
+				'removed' => 0,
+				'missed' => 0,
+				'failed' => 0,
+				'items' => []
+			],
+			'global_sections_source' => [
+				'previous' => '',
+				'saved' => '',
+				'mode' => 'auto'
+			],
+			'errors' => []
+		];
+
+		$binding_keys = [];
+		foreach ((array) ($blueprint['bindings'] ?? []) as $binding_definition) {
+			$binding_key = $this->sanitizeDocumentKey($binding_definition['key'] ?? '');
+			if ($binding_key !== '') {
+				$binding_keys[] = $binding_key;
+			}
+		}
+
+		foreach ($this->getBindingOptionsCandidatesByPrefix('demo.', 500) as $candidate) {
+			$candidate_key = $this->sanitizeDocumentKey($candidate['binding_key'] ?? '');
+			if ($candidate_key !== '') {
+				$binding_keys[] = $candidate_key;
+			}
+		}
+		$binding_keys = array_values(array_unique($binding_keys));
+
+		foreach ($binding_keys as $binding_key) {
+			$existing_binding = $this->getBindingOptionsByKey($binding_key);
+			if (!$existing_binding) {
+				$report['bindings']['missed']++;
+				$report['bindings']['items'][] = [
+					'key' => $binding_key,
+					'status' => 'missed',
+					'message' => 'Binding not found.'
+				];
+				continue;
+			}
+
+			$deleted = $this->deleteBindingOptionsByKey($binding_key);
+			if (!$deleted) {
+				$report['bindings']['failed']++;
+				$report['errors'][] = 'Failed to delete demo binding: ' . $binding_key;
+				$report['bindings']['items'][] = [
+					'key' => $binding_key,
+					'status' => 'failed',
+					'message' => 'Delete operation returned false.'
+				];
+				continue;
+			}
+
+			$report['bindings']['removed']++;
+			$report['bindings']['items'][] = [
+				'key' => $binding_key,
+				'status' => 'removed',
+				'message' => 'Binding deleted.'
+			];
+		}
+
+		$page_keys = [];
+		foreach ((array) ($blueprint['pages'] ?? []) as $page_definition) {
+			$page_key = $this->sanitizeDocumentKey($page_definition['key'] ?? '');
+			if ($page_key !== '') {
+				$page_keys[] = $page_key;
+			}
+		}
+
+		if (method_exists($bridge_model, 'getPagesForAdmin')) {
+			foreach ((array) $bridge_model->getPagesForAdmin() as $page) {
+				$page_key = $this->sanitizeDocumentKey($page['key'] ?? '');
+				if ($this->isDemoPageKey($page_key)) {
+					$page_keys[] = $page_key;
+				}
+			}
+		}
+
+		$page_keys = array_values(array_unique($page_keys));
+
+		foreach ($page_keys as $page_key) {
+			$existing_page = method_exists($bridge_model, 'getPageByKey') ? $bridge_model->getPageByKey($page_key) : false;
+			if (!$existing_page) {
+				$report['pages']['missed']++;
+				$report['pages']['items'][] = [
+					'key' => $page_key,
+					'status' => 'missed',
+					'message' => 'Page not found.'
+				];
+				continue;
+			}
+
+			$deleted = $bridge_model->deletePageByKey($page_key);
+			if (!$deleted) {
+				$report['pages']['failed']++;
+				$report['errors'][] = 'Failed to delete demo page: ' . $page_key;
+				$report['pages']['items'][] = [
+					'key' => $page_key,
+					'status' => 'failed',
+					'message' => 'Delete operation returned false.'
+				];
+				continue;
+			}
+
+			$this->deleteBindingOptionsByPageKey($page_key);
+			$this->deletePageDocumentByKey($page_key);
+
+			$report['pages']['removed']++;
+			$report['pages']['items'][] = [
+				'key' => $page_key,
+				'status' => 'removed',
+				'message' => 'Page deleted.'
+			];
+		}
+
+		$options = (array) cmsController::loadOptions('landingbuilder');
+		$current_source = $this->sanitizeDocumentKey($options['global_sections_source_page_key'] ?? '');
+		$report['global_sections_source']['previous'] = $current_source;
+
+		if ($this->isDemoPageKey($current_source)) {
+			$current_source = '';
+		}
+
+		$options['global_sections_source_page_key'] = $current_source;
+		$options['demo_content_mode'] = 'off';
+		$options['demo_content_installed_at'] = '';
+		cmsController::saveOptions('landingbuilder', $options);
+
+		$report['global_sections_source']['saved'] = $current_source;
+		$report['global_sections_source']['mode'] = $current_source !== '' ? 'explicit' : 'auto';
+
+		if ($report['pages']['failed'] > 0 || $report['bindings']['failed'] > 0) {
+			$report['is_valid'] = false;
+		}
+
+		return $report;
+	}
+
+	protected function getQuickDemoBlueprint() {
+		return [
+			'global_source_page_key' => 'demo-site-frame',
+			'pages' => [
+				[
+					'key' => 'demo-homepage',
+					'title' => 'Демо: Главная',
+					'status' => 'published',
+					'adapter_key' => 'standalone_landing',
+					'inherit_global_sections' => false,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						$this->buildQuickDemoSection('demo-home-hero', 'Главный оффер', 'core.hero', [
+							'eyebrow' => 'Quick Demo',
+							'title' => 'Готовая стартовая страница после установки',
+							'text' => 'Этот блок можно редактировать сразу в канве: текст, кнопка и порядок секций.',
+							'button_label' => 'Открыть canvas',
+							'button_url' => '/admin/controllers/edit/nordicbuilder'
+						]),
+						$this->buildQuickDemoSection('demo-home-proof', 'Что уже настроено', 'core.hero', [
+							'eyebrow' => 'Visual-first',
+							'title' => 'Страница, правила применения и preview уже связаны',
+							'text' => 'Созданы демо-правила с приоритетами, поэтому поведение маршрутов предсказуемо из коробки.',
+							'button_label' => 'Правила применения',
+							'button_url' => '/admin/controllers/edit/nordicbuilder/bindings'
+						])
+					])
+				],
+				[
+					'key' => 'demo-site-frame',
+					'title' => 'Демо: Сквозные секции',
+					'status' => 'published',
+					'adapter_key' => 'internal_content_generic',
+					'inherit_global_sections' => false,
+					'use_as_global_sections_source' => true,
+					'schema' => $this->buildQuickDemoSchema([
+						$this->buildQuickDemoSection('demo-frame-nav', 'Сквозная навигация', 'core.navigation', [
+							'class' => 'menu nav justify-content-center',
+							'menu' => '',
+							'template' => 'menu'
+						], 'before_content'),
+						$this->buildQuickDemoSection('demo-frame-cta', 'Сквозной CTA', 'core.hero', [
+							'eyebrow' => 'Сквозная секция',
+							'title' => 'Единый нижний блок для внутренних страниц',
+							'text' => 'Любая страница с inherit_global_sections получает этот CTA автоматически.',
+							'button_label' => 'Оставить заявку',
+							'button_url' => '/contact'
+						], 'after_content')
+					])
+				],
+				[
+					'key' => 'demo-content-list',
+					'title' => 'Демо: Список контента',
+					'status' => 'published',
+					'adapter_key' => 'internal_content_generic',
+					'inherit_global_sections' => true,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						$this->buildQuickDemoSection('demo-list-hero', 'Список материалов', 'core.hero', [
+							'eyebrow' => 'Demo route',
+							'title' => 'Список контента: low-priority вариант',
+							'text' => 'Эта страница участвует в конфликте priority и обычно проигрывает high-правилу.',
+							'button_label' => 'Проверить board',
+							'button_url' => '/board'
+						])
+					])
+				],
+				[
+					'key' => 'demo-content-item',
+					'title' => 'Демо: Карточка материала',
+					'status' => 'published',
+					'adapter_key' => 'internal_content_generic',
+					'inherit_global_sections' => true,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						$this->buildQuickDemoSection('demo-item-hero', 'Карточка', 'core.hero', [
+							'eyebrow' => 'Demo route',
+							'title' => 'Карточка материала (content/item)',
+							'text' => 'Используется для сценария внутренней страницы материала и наследует сквозные секции.',
+							'button_label' => 'Назад к списку',
+							'button_url' => '/board'
+						])
+					])
+				],
+				[
+					'key' => 'demo-category-board',
+					'title' => 'Демо: Категория board',
+					'status' => 'published',
+					'adapter_key' => 'content_category_generic',
+					'inherit_global_sections' => true,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						[
+							'uid' => 'demo-board-header',
+							'title' => 'Категория board',
+							'layout' => '2col_sidebar_right',
+							'settings' => [
+								'zone_key' => 'content_body',
+								'style_preset' => 'content',
+								'container_preset' => 'wide',
+								'spacing_preset' => 'md'
+							],
+							'columns' => [
+								[
+									'uid' => 'demo-board-main',
+									'title' => 'Контент',
+									'nodes' => [[
+										'uid' => 'demo-board-main-node',
+										'type' => 'block',
+										'source_key' => 'ads.category-header',
+										'label' => 'Шапка категории',
+										'options' => [
+											'eyebrow' => 'Overlay demo',
+											'title' => 'Категория board с демо-обвязкой',
+											'text' => 'Этот блок работает поверх нативной страницы категории через overlay binding.'
+										]
+									]]
+								],
+								[
+									'uid' => 'demo-board-side',
+									'title' => 'Фильтры',
+									'nodes' => [[
+										'uid' => 'demo-board-side-node',
+										'type' => 'block',
+										'source_key' => 'ads.filter-bar',
+										'label' => 'Фильтры',
+										'options' => [
+											'title' => 'Демо-фильтры',
+											'items_text' => "Новые\nС фото\nОт собственника"
+										]
+									]]
+								]
+							]
+						]
+					])
+				],
+				[
+					'key' => 'demo-user-profile',
+					'title' => 'Демо: Профиль',
+					'status' => 'published',
+					'adapter_key' => 'user_profile',
+					'inherit_global_sections' => true,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						[
+							'uid' => 'demo-profile-cover',
+							'title' => 'Обложка профиля',
+							'layout' => '2col_equal',
+							'settings' => [
+								'zone_key' => 'content_body',
+								'style_preset' => 'content',
+								'container_preset' => 'wide',
+								'spacing_preset' => 'md'
+							],
+							'columns' => [
+								[
+									'uid' => 'demo-profile-main',
+									'title' => 'Обложка',
+									'nodes' => [[
+										'uid' => 'demo-profile-main-node',
+										'type' => 'block',
+										'source_key' => 'profile.cover-hero',
+										'label' => 'Профиль',
+										'options' => [
+											'eyebrow' => 'Overlay demo',
+											'title' => 'Профиль с демо-обложкой',
+											'text' => 'Показывает принцип overlay на странице профиля пользователя.'
+										]
+									]]
+								],
+								[
+									'uid' => 'demo-profile-side',
+									'title' => 'Показатели',
+									'nodes' => [[
+										'uid' => 'demo-profile-side-node',
+										'type' => 'block',
+										'source_key' => 'profile.quick-stats',
+										'label' => 'Статистика',
+										'options' => [
+											'title' => 'Demo KPI',
+											'items_text' => "24|проекта\n4.9|рейтинг\n2ч|средний ответ"
+										]
+									]]
+								]
+							]
+						]
+					])
+				],
+				[
+					'key' => 'demo-priority-high',
+					'title' => 'Демо: Priority winner',
+					'status' => 'published',
+					'adapter_key' => 'internal_content_generic',
+					'inherit_global_sections' => true,
+					'use_as_global_sections_source' => false,
+					'schema' => $this->buildQuickDemoSchema([
+						$this->buildQuickDemoSection('demo-high-hero', 'Priority winner', 'core.hero', [
+							'eyebrow' => 'Priority 900',
+							'title' => 'Это high-priority страница для content/index',
+							'text' => 'Используется для проверки детерминированного winner: high rule должен выигрывать у low.',
+							'button_label' => 'Открыть /board',
+							'button_url' => '/board'
+						])
+					])
+				]
+			],
+			'bindings' => [
+				[
+					'key' => 'demo.page_homepage',
+					'title' => 'Demo: homepage',
+					'page_key' => 'demo-homepage',
+					'priority' => 100,
+					'route_params' => [
+						'ctrl' => '',
+						'action' => 'index',
+						'page_type' => 'homepage'
+					]
+				],
+				[
+					'key' => 'demo.page_internal_default',
+					'title' => 'Demo: internal default',
+					'page_key' => 'demo-site-frame',
+					'priority' => 40,
+					'route_params' => [
+						'ctrl' => 'content',
+						'action' => 'index',
+						'page_type' => 'content-list'
+					]
+				],
+				[
+					'key' => 'demo.page_content_list_low',
+					'title' => 'Demo: content list low',
+					'page_key' => 'demo-content-list',
+					'priority' => 120,
+					'route_params' => [
+						'ctrl' => 'content',
+						'action' => 'index',
+						'page_type' => 'content-list'
+					]
+				],
+				[
+					'key' => 'demo.page_content_list_high',
+					'title' => 'Demo: content list high',
+					'page_key' => 'demo-priority-high',
+					'priority' => 900,
+					'route_params' => [
+						'ctrl' => 'content',
+						'action' => 'index',
+						'page_type' => 'content-list'
+					]
+				],
+				[
+					'key' => 'demo.page_content_item',
+					'title' => 'Demo: content item',
+					'page_key' => 'demo-content-item',
+					'priority' => 150,
+					'route_params' => [
+						'ctrl' => 'content',
+						'action' => 'item',
+						'page_type' => 'content-item'
+					]
+				],
+				[
+					'key' => 'demo.overlay_board_category',
+					'title' => 'Demo: board category overlay',
+					'page_key' => 'demo-category-board',
+					'priority' => 300,
+					'route_params' => [
+						'overlay' => 'content_category',
+						'ctrl' => 'content',
+						'action' => 'category',
+						'ctype' => 'board'
+					]
+				],
+				[
+					'key' => 'demo.overlay_user_profile',
+					'title' => 'Demo: user profile overlay',
+					'page_key' => 'demo-user-profile',
+					'priority' => 300,
+					'route_params' => [
+						'overlay' => 'user_profile',
+						'ctrl' => 'users',
+						'action' => 'profile'
+					]
+				]
+			]
+		];
+	}
+
+	protected function buildQuickDemoSchema(array $sections) {
+		return [
+			'layout' => [
+				'template' => 'nordic',
+				'page_mode' => 'instant_content_body'
+			],
+			'sections' => $sections
+		];
+	}
+
+	protected function buildQuickDemoSection($uid, $title, $source_key, array $options = [], $zone_key = 'content_body') {
+		return [
+			'uid' => (string) $uid,
+			'title' => (string) $title,
+			'layout' => '1col',
+			'settings' => [
+				'zone_key' => (string) $zone_key,
+				'style_preset' => 'content',
+				'container_preset' => 'wide',
+				'spacing_preset' => 'md'
+			],
+			'columns' => [[
+				'uid' => (string) $uid . '-column',
+				'title' => 'Контент',
+				'nodes' => [[
+					'uid' => (string) $uid . '-node',
+					'type' => 'block',
+					'source_key' => (string) $source_key,
+					'label' => (string) $title,
+					'options' => $options
+				]]
+			]]
+		];
+	}
+
+	protected function isDemoPageKey($page_key) {
+		$page_key = $this->sanitizeDocumentKey($page_key);
+		if ($page_key === '') {
+			return false;
+		}
+
+		return strpos($page_key, 'demo-') === 0;
+	}
+
 	public function savePageDocument(array $document, $user_id = 0, $status = 'draft') {
 		$normalized = $this->normalizePageDocument($document);
 

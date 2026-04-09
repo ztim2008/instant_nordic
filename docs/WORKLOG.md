@@ -246,14 +246,24 @@
 	- в UI экрана `Правила применения` добавлено поле `Priority` (форма + таблица), а мастер создания страницы теперь передает `priority` при быстром создании binding.
 	- согласован следующий продуктовый шаг: full-cycle demo после установки компонента, чтобы новый пользователь видел рабочий пример вместо пустого canvas.
 	- создан канонический spec demo-cycle с двумя режимами (`Quick Demo` и `Full Template`), binding matrix, правилами idempotent install/remove и DoD для onboarding + bug-hunting.
+	- реализован Stage 1 backend seed service для `Quick Demo`: в `nordicbuilder` добавлены idempotent методы `installQuickDemo()` и `removeQuickDemo()` с отчетом по страницам/правилам и управлением `global_sections_source_page_key`.
+	- добавлены новые AJAX actions `install_demo` и `remove_demo` в backend `nordicbuilder` (live + package mirror) для вызова demo install/remove из админки.
+	- выполнен e2e прогон full-cycle: первый `install_demo` создает 7 demo-страниц и 7 demo-правил, повторный `install_demo` обновляет их без дублей, `remove_demo` удаляет demo-сущности и сбрасывает explicit source в auto.
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md](../LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md)
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php)
+	- [system/controllers/nordicbuilder/backend/actions/install_demo.php](../system/controllers/nordicbuilder/backend/actions/install_demo.php)
+	- [system/controllers/nordicbuilder/backend/actions/remove_demo.php](../system/controllers/nordicbuilder/backend/actions/remove_demo.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/install_demo.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/install_demo.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/remove_demo.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/remove_demo.php)
 - Какие риски остались:
 	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
 	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
+	- `Full Template` режим пока не реализован в коде (на этапе 1 доступен только `Quick Demo`).
 - Следующий шаг:
-	- реализовать этап 1 из нового demo-cycle spec: backend seed service для `Quick Demo` с idempotent install/remove и отчетом результата.
-	- после этапа 1 запустить quick smoke по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1`.
+	- реализовать этап 2 demo-cycle: добавить в экран `Страницы` UI-блок `Demo Content` с кнопками `Установить Quick Demo` и `Удалить Demo`.
+	- после добавления UI-кнопок выполнить quick smoke по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1` с установленным demo.
 
 ## 2026-04-07
 
