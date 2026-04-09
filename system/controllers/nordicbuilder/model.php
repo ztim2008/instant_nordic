@@ -465,11 +465,15 @@ class modelNordicbuilder extends cmsModel {
 		$items = $this->orderBy('updated_at', 'desc')
 			->limit(0, $limit)
 			->get(self::BINDING_OPTIONS_TABLE, function ($item) {
+				$document = $this->decodeStoredJson($item['options_json'] ?? '');
+				$priority = is_array($document) ? (int) ($document['priority'] ?? 0) : 0;
+
 				return [
 					'binding_key'   => (string) ($item['binding_key'] ?? ''),
 					'page_key'      => (string) ($item['page_key'] ?? ''),
 					'title'         => (string) ($item['title'] ?? ''),
 					'schema_version'=> (string) ($item['schema_version'] ?? ''),
+					'priority'      => $priority,
 					'updated_at'    => (string) ($item['updated_at'] ?? ''),
 				];
 			});

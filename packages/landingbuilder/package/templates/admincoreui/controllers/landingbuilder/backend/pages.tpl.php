@@ -16,6 +16,26 @@ $page_status_titles = [
 ];
 
 $content_types = isset($content_types) && is_array($content_types) ? $content_types : [];
+$global_sections_source_options = isset($global_sections_source_options) && is_array($global_sections_source_options)
+    ? $global_sections_source_options
+    : [];
+$global_sections_source_url = (string) ($global_sections_source_url ?? '');
+$explicit_global_sections_source_page_key = trim((string) ($explicit_global_sections_source_page_key ?? ''));
+$effective_global_sections_source_page_key = trim((string) ($effective_global_sections_source_page_key ?? ''));
+
+$source_titles = [];
+foreach ($global_sections_source_options as $source_option) {
+    $option_key = trim((string) ($source_option['key'] ?? ''));
+    if ($option_key === '') {
+        continue;
+    }
+    $source_titles[$option_key] = (string) ($source_option['title'] ?? $option_key);
+}
+
+$effective_source_title = 'Не выбран';
+if ($effective_global_sections_source_page_key !== '' && isset($source_titles[$effective_global_sections_source_page_key])) {
+    $effective_source_title = $source_titles[$effective_global_sections_source_page_key];
+}
 
 $this->setPageTitle('Нордик: страницы');
 $this->addBreadcrumb('Нордик');
@@ -55,6 +75,36 @@ $this->addToolButton([
         justify-content: space-between;
         gap: 12px;
         flex-wrap: wrap;
+    }
+
+    .lb-admin-hero__settings {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px dashed #d8e2ea;
+        display: grid;
+        gap: 10px;
+    }
+
+    .lb-inline-settings {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .lb-inline-settings__grow {
+        flex: 1 1 320px;
+    }
+
+    .lb-status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        background: #edf6ff;
+        color: #2a5272;
+        font-size: 12px;
+        font-weight: 700;
     }
 
     .lb-admin-eyebrow {
@@ -307,6 +357,10 @@ $this->addToolButton([
         outline: none;
     }
 
+    .lb-input--sm {
+        max-width: 140px;
+    }
+
     .lb-textarea {
         min-height: 92px;
         resize: vertical;
@@ -379,6 +433,40 @@ $this->addToolButton([
                 Страницы недоступны для редактирования до установки компонента.
             <?php } ?>
         </p>
+
+        <?php if ($is_schema_installed) { ?>
+            <div class="lb-admin-hero__settings">
+                <div class="lb-label">Источник сквозных секций<span class="lb-help" title="Из этой страницы будут подмешиваться сквозные секции в другие макеты с флагом inherit_global_sections.">?</span></div>
+                <div class="lb-inline-settings">
+                    <select class="lb-select lb-inline-settings__grow" id="lb-global-source-select" <?php echo $global_sections_source_options ? '' : 'disabled'; ?>>
+                        <option value="">Авто: по флагу «Источник сквозных секций» на странице</option>
+                        <?php if ($global_sections_source_options) { ?>
+                            <?php foreach ($global_sections_source_options as $source_option) { ?>
+                                <?php $source_key = trim((string) ($source_option['key'] ?? '')); if ($source_key === '') { continue; } ?>
+                                <?php $source_title = (string) ($source_option['title'] ?? $source_key); ?>
+                                <?php $is_flag_source = !empty($source_option['is_flag_source']); ?>
+                                <option value="<?php html($source_key); ?>" <?php echo $explicit_global_sections_source_page_key === $source_key ? 'selected' : ''; ?>>
+                                    <?php html($source_title); ?> (<?php html($source_key); ?>)<?php echo $is_flag_source ? ' • отмечена как источник' : ''; ?>
+                                </option>
+                            <?php } ?>
+                        <?php } ?>
+                    </select>
+                    <button type="button" class="lb-admin-btn lb-admin-btn--ghost" id="lb-global-source-save" <?php echo $global_sections_source_options ? '' : 'disabled'; ?>>Сохранить источник</button>
+                </div>
+                <div class="lb-note" id="lb-global-source-note">
+                    Эффективный источник сейчас:
+                    <span class="lb-status-chip">
+                        <?php html($effective_source_title); ?>
+                        <?php if ($effective_global_sections_source_page_key !== '') { ?>
+                            (<?php html($effective_global_sections_source_page_key); ?>)
+                        <?php } ?>
+                    </span>
+                </div>
+                <?php if (!$global_sections_source_options) { ?>
+                    <div class="lb-note">Сначала создайте хотя бы одну страницу, чтобы выбрать явный источник сквозных секций.</div>
+                <?php } ?>
+            </div>
+        <?php } ?>
     </section>
 
 <?php if ($is_schema_installed) { ?>
@@ -422,6 +510,11 @@ $this->addToolButton([
                 <div class="lb-field" id="lb-binding-key-wrap" style="display:none">
                     <div class="lb-label">binding_key<span class="lb-help" title="Уникальный ключ правила. Для full takeover используем префикс page.*">?</span></div>
                     <input class="lb-input" type="text" id="lb-binding-key" placeholder="page.homepage" autocomplete="off">
+                </div>
+
+                <div class="lb-field" id="lb-binding-priority-wrap" style="display:none">
+                    <div class="lb-label">Priority правила<span class="lb-help" title="Чем выше число, тем выше приоритет правила. При равном priority действует специфичность и стабильный порядок ключа.">?</span></div>
+                    <input class="lb-input lb-input--sm" type="number" id="lb-binding-priority" value="0" min="-100000" max="100000" step="1" autocomplete="off">
                 </div>
 
                 <div class="lb-field" id="lb-exclude-ctypes-wrap" style="display:none">
@@ -483,6 +576,7 @@ $this->addToolButton([
         (function () {
             const createUrl = <?php echo json_encode($create_page_url, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const createBindingUrl = <?php echo json_encode($create_binding_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            const setGlobalSourceUrl = <?php echo json_encode($global_sections_source_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const deleteUrl = <?php echo json_encode($delete_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const setStatusUrl = <?php echo json_encode($set_status_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const publishPageUrl = <?php echo json_encode($publish_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -494,6 +588,8 @@ $this->addToolButton([
             const applySelect = document.getElementById('lb-apply');
             const bindingKeyWrap = document.getElementById('lb-binding-key-wrap');
             const bindingKeyInput = document.getElementById('lb-binding-key');
+            const bindingPriorityWrap = document.getElementById('lb-binding-priority-wrap');
+            const bindingPriorityInput = document.getElementById('lb-binding-priority');
             const urlMasksWrap = document.getElementById('lb-url-masks-wrap');
             const urlMasksInput = document.getElementById('lb-url-masks');
             const excludeMasksWrap = document.getElementById('lb-exclude-masks-wrap');
@@ -504,6 +600,9 @@ $this->addToolButton([
             const singleCtypeSelect = document.getElementById('lb-single-ctype');
             const csrfInput = document.getElementById('lb-csrf');
             const submitBtn = document.getElementById('lb-create-submit');
+            const globalSourceSelect = document.getElementById('lb-global-source-select');
+            const globalSourceSaveBtn = document.getElementById('lb-global-source-save');
+            const globalSourceNote = document.getElementById('lb-global-source-note');
 
             function slugify(value) {
                 return String(value || '')
@@ -527,10 +626,14 @@ $this->addToolButton([
                 setError('');
                 applySelect.value = 'none';
                 bindingKeyWrap.style.display = 'none';
+                bindingPriorityWrap.style.display = 'none';
                 urlMasksWrap.style.display = 'none';
                 excludeMasksWrap.style.display = 'none';
                 excludeCtypesWrap.style.display = 'none';
                 singleCtypeWrap.style.display = 'none';
+                if (bindingPriorityInput) {
+                    bindingPriorityInput.value = '0';
+                }
                 excludeCtypeInputs.forEach(function (input) {
                     input.checked = false;
                 });
@@ -593,6 +696,7 @@ $this->addToolButton([
 
                 if (apply === 'homepage') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -602,6 +706,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'all_except_homepage') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -611,6 +716,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'url') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = '';
                     excludeMasksWrap.style.display = '';
                     excludeCtypesWrap.style.display = 'none';
@@ -620,6 +726,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'overlay_content_category_single') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -629,6 +736,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'overlay_content_category_all') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = '';
@@ -638,6 +746,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'overlay_content_category_board') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -647,6 +756,7 @@ $this->addToolButton([
                     }
                 } else if (apply === 'overlay_user_profile') {
                     bindingKeyWrap.style.display = '';
+                    bindingPriorityWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -656,6 +766,7 @@ $this->addToolButton([
                     }
                 } else {
                     bindingKeyWrap.style.display = 'none';
+                    bindingPriorityWrap.style.display = 'none';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
                     excludeCtypesWrap.style.display = 'none';
@@ -715,6 +826,65 @@ $this->addToolButton([
                     return str;
                 }
                 return str.slice(0, max) + '\n…';
+            }
+
+            function updateGlobalSourceNote(result) {
+                if (!globalSourceNote || !result || typeof result !== 'object') {
+                    return;
+                }
+
+                const key = String(result.global_sections_source_page_key || '');
+                const title = String(result.global_sections_source_title || '');
+
+                let text = 'Эффективный источник сейчас: ';
+                if (!key) {
+                    text += 'авто (по флагу на странице или не выбран)';
+                } else {
+                    text += title ? (title + ' (' + key + ')') : key;
+                }
+
+                globalSourceNote.textContent = text;
+            }
+
+            async function saveGlobalSectionsSource() {
+                if (!setGlobalSourceUrl || !globalSourceSelect) {
+                    return;
+                }
+
+                const body = new URLSearchParams();
+                body.set('global_sections_source_page_key', String(globalSourceSelect.value || ''));
+                body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
+
+                const response = await fetch(setGlobalSourceUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: body.toString(),
+                    credentials: 'same-origin'
+                });
+
+                const parsed = await readJsonOrText(response);
+                const result = parsed.json;
+
+                if (!response.ok) {
+                    const hint = result && result.message ? result.message : trimServerText(parsed.text);
+                    window.alert('Ошибка сервера (' + response.status + ').\n' + (hint || ''));
+                    return;
+                }
+
+                if (!result || typeof result !== 'object') {
+                    window.alert('Сервер вернул неожиданный ответ вместо JSON.\n' + trimServerText(parsed.text));
+                    return;
+                }
+
+                if (result.error) {
+                    window.alert(result.message || 'Не удалось сохранить источник сквозных секций.');
+                    return;
+                }
+
+                updateGlobalSourceNote(result);
             }
 
             async function createPageAndMaybeBind() {
@@ -790,6 +960,7 @@ $this->addToolButton([
                     bindingBody.set('binding_key', bindingKey);
                     bindingBody.set('page_key', key);
                     bindingBody.set('title', title);
+                    bindingBody.set('priority', bindingPriorityInput ? String(bindingPriorityInput.value || '0') : '0');
 
                     if (apply === 'homepage') {
                         bindingBody.set('route_params_json', JSON.stringify({ ctrl: '', action: 'index', page_type: 'homepage' }));
@@ -1150,6 +1321,18 @@ $this->addToolButton([
                     btn.disabled = false;
                 });
             });
+
+            if (globalSourceSaveBtn && globalSourceSelect && setGlobalSourceUrl) {
+                globalSourceSaveBtn.addEventListener('click', function () {
+                    globalSourceSaveBtn.disabled = true;
+                    saveGlobalSectionsSource().catch(function (error) {
+                        console.error(error);
+                        window.alert('Не удалось сохранить источник сквозных секций.');
+                    }).finally(function () {
+                        globalSourceSaveBtn.disabled = false;
+                    });
+                });
+            }
         })();
     </script>
     <?php $this->addBottom(ob_get_clean()); ?>

@@ -109,6 +109,8 @@ class actionNordicbuilderBindings extends cmsAction {
 			$binding_key = trim((string) $this->request->get('binding_key', ''));
 			$title = trim((string) $this->request->get('title', ''));
 			$page_key = trim((string) $this->request->get('page_key', ''));
+			$priority = (int) $this->request->get('priority', 0);
+			$priority = max(-100000, min(100000, $priority));
 
 			$url_masks = $this->parseLinesToList((string) $this->request->get('url_masks', ''));
 			$exclude_masks = $this->parseLinesToList((string) $this->request->get('exclude_masks', ''));
@@ -151,6 +153,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key'           => $binding_key,
 					'title'         => $title,
 					'page_key'      => $page_key,
+					'priority'      => $priority,
 					'matching'      => [
 						'url_masks'      => $url_masks,
 						'exclude_masks'  => $exclude_masks,
@@ -186,6 +189,7 @@ class actionNordicbuilderBindings extends cmsAction {
 				'key' => $binding_key,
 				'title' => $title,
 				'page_key' => $page_key,
+				'priority' => $priority,
 				'matching' => [
 					'url_masks' => $url_masks,
 					'exclude_masks' => $exclude_masks,
@@ -276,6 +280,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key' => 'page.homepage',
 					'title' => 'Главная страница',
 					'page_key' => 'homepage',
+					'priority' => 100,
 					'matching' => [
 						'url_masks' => [],
 						'exclude_masks' => [],
@@ -296,6 +301,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key' => 'page.content_list',
 					'title' => 'Список контента (content/index)',
 					'page_key' => 'content-list',
+					'priority' => 10,
 					'matching' => [
 						'url_masks' => [],
 						'exclude_masks' => [],
@@ -316,6 +322,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key' => 'page.content_item',
 					'title' => 'Запись контента (content/item)',
 					'page_key' => 'content-item',
+					'priority' => 10,
 					'matching' => [
 						'url_masks' => [],
 						'exclude_masks' => [],
@@ -336,6 +343,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key' => 'overlay.content_category.board',
 					'title' => 'Категории объявлений (board)',
 					'page_key' => 'ads-category',
+					'priority' => 50,
 					'matching' => [
 						'url_masks' => [],
 						'exclude_masks' => [],
@@ -356,6 +364,7 @@ class actionNordicbuilderBindings extends cmsAction {
 					'key' => 'overlay.user_profile.default',
 					'title' => 'Профиль пользователя (обложка)',
 					'page_key' => 'profile-cover',
+					'priority' => 50,
 					'matching' => [
 						'url_masks' => [],
 						'exclude_masks' => [],

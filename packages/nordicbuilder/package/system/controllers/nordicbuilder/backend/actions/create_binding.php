@@ -27,6 +27,8 @@ class actionNordicbuilderCreateBinding extends cmsAction {
 		$binding_key = trim((string) $this->request->get('binding_key', ''));
 		$page_key = trim((string) $this->request->get('page_key', ''));
 		$title = trim((string) $this->request->get('title', ''));
+		$priority = (int) $this->request->get('priority', 0);
+		$priority = max(-100000, min(100000, $priority));
 
 		if ($binding_key === '' || $page_key === '') {
 			return $this->cms_template->renderJSON([
@@ -56,6 +58,7 @@ class actionNordicbuilderCreateBinding extends cmsAction {
 			'key'           => $binding_key,
 			'title'         => $title,
 			'page_key'      => $page_key,
+			'priority'      => $priority,
 			'matching'      => [
 				'url_masks'      => $url_masks,
 				'exclude_masks'  => $exclude_masks,

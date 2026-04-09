@@ -36,6 +36,9 @@ class actionNordicbuilderPages extends cmsAction {
 				$page['view_url'] = (string) $preview_routes[$page_key];
 			}
 		}
+		unset($page);
+
+		$global_source_screen = $this->buildGlobalSectionsSourceScreen($pages, $bridge_model);
 
 		return $this->cms_template->render('backend/pages', [
 			'menu'               => $this->controller->getBackendMenu(),
@@ -47,8 +50,71 @@ class actionNordicbuilderPages extends cmsAction {
 			'publish_page_url'   => href_to($this->controller->root_url, 'publish_page'),
 			'create_binding_url' => href_to($this->controller->root_url, 'create_binding'),
 			'delete_page_url'    => href_to($this->controller->root_url, 'delete_page'),
-			'set_status_url'     => href_to($this->controller->root_url, 'set_page_status')
+			'set_status_url'     => href_to($this->controller->root_url, 'set_page_status'),
+			'global_sections_source_url' => href_to($this->controller->root_url, 'set_global_sections_source'),
+			'global_sections_source_options' => $global_source_screen['options'],
+			'explicit_global_sections_source_page_key' => $global_source_screen['explicit_page_key'],
+			'effective_global_sections_source_page_key' => $global_source_screen['effective_page_key']
 		]);
+	}
+
+	protected function buildGlobalSectionsSourceScreen(array $pages, $bridge_model) {
+		$options = (array) cmsController::loadOptions('landingbuilder');
+		$explicit_page_key = trim((string) ($options['global_sections_source_page_key'] ?? ''));
+		$explicit_page_key = $this->sanitizePageKey($explicit_page_key);
+
+		$source_options = [];
+		$flag_source_keys = [];
+
+		foreach ($pages as $page) {
+			$page_key = trim((string) ($page['key'] ?? ''));
+			if ($page_key === '') {
+				continue;
+			}
+
+			$layout = isset($page['schema']['layout']) && is_array($page['schema']['layout'])
+				? $page['schema']['layout']
+				: [];
+			$is_flag_source = !empty($layout['use_as_global_sections_source']);
+
+			if ($is_flag_source) {
+				$flag_source_keys[] = $page_key;
+			}
+
+			$source_options[] = [
+				'key' => $page_key,
+				'title' => (string) ($page['title'] ?? $page_key),
+				'is_flag_source' => $is_flag_source
+			];
+		}
+
+		$effective_page_key = '';
+		$known_keys = array_column($source_options, 'key');
+
+		if ($explicit_page_key !== '' && in_array($explicit_page_key, $known_keys, true)) {
+			$effective_page_key = $explicit_page_key;
+		} elseif ($flag_source_keys) {
+			sort($flag_source_keys, SORT_STRING);
+			$effective_page_key = (string) $flag_source_keys[0];
+		}
+
+		return [
+			'options' => $source_options,
+			'explicit_page_key' => $explicit_page_key,
+			'effective_page_key' => $effective_page_key
+		];
+	}
+
+	protected function sanitizePageKey($value) {
+		$value = trim((string) $value);
+		if ($value === '') {
+			return '';
+		}
+
+		$value = strtolower($value);
+		$value = preg_replace('/[^a-z0-9\-_]/', '', $value) ?: '';
+
+		return trim($value);
 	}
 
 	protected function resolvePreviewRoutesByPageKey() {

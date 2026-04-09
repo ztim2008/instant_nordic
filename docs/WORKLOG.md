@@ -242,12 +242,18 @@
 	- при наличии нескольких подходящих binding-правил выбор теперь детерминирован: используется rank (priority + specificity) и стабильный tie-break по `binding_key`, вместо зависимости от `updated_at`.
 	- для `resolveAdapterKeyFromBindingOptions` добавлен тот же deterministic rank, чтобы adapter не "прыгал" при одинаковых масках и частых правках правил.
 	- `php -l` проходит для обновленного `landingbuilder/model.php` (live + package mirrors) после deterministic update в `global sections source` и `binding resolver`.
+	- в UI экрана `Страницы` добавлен явный селектор `Источник сквозных секций` с сохранением в `landingbuilder` options (`global_sections_source_page_key`) через новые AJAX actions.
+	- в UI экрана `Правила применения` добавлено поле `Priority` (форма + таблица), а мастер создания страницы теперь передает `priority` при быстром создании binding.
+	- согласован следующий продуктовый шаг: full-cycle demo после установки компонента, чтобы новый пользователь видел рабочий пример вместо пустого canvas.
+	- создан канонический spec demo-cycle с двумя режимами (`Quick Demo` и `Full Template`), binding matrix, правилами idempotent install/remove и DoD для onboarding + bug-hunting.
+- Какие файлы затронуты:
+	- [LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md](../LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md)
 - Какие риски остались:
 	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
 	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
 - Следующий шаг:
-	- собрать короткий ручной UX-feedback по канве телефона (удобно ли воспринимается `Body Layout` при `1/2/3` режимах).
-	- назначить дату первой ротации пароля `lb_dump_ops` и ответственного.
+	- реализовать этап 1 из нового demo-cycle spec: backend seed service для `Quick Demo` с idempotent install/remove и отчетом результата.
+	- после этапа 1 запустить quick smoke по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1`.
 
 ## 2026-04-07
 
@@ -267,8 +273,16 @@
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/backend/actions/set_global_sections_source.php](../system/controllers/landingbuilder/backend/actions/set_global_sections_source.php)
 	- [system/controllers/nordicbuilder/backend/actions/create_page.php](../system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [system/controllers/nordicbuilder/backend/actions/pages.php](../system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [system/controllers/nordicbuilder/backend/actions/bindings.php](../system/controllers/nordicbuilder/backend/actions/bindings.php)
+	- [system/controllers/nordicbuilder/backend/actions/create_binding.php](../system/controllers/nordicbuilder/backend/actions/create_binding.php)
+	- [system/controllers/nordicbuilder/backend/actions/set_global_sections_source.php](../system/controllers/nordicbuilder/backend/actions/set_global_sections_source.php)
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
 	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php)
 	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
 	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
 	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)

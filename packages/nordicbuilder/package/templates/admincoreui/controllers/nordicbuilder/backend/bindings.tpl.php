@@ -8,6 +8,7 @@ $this->addMenuItems('admin_toolbar', $menu);
 $binding_key = (string) ($doc['key'] ?? $selected_key ?? '');
 $title = (string) ($doc['title'] ?? '');
 $page_key = (string) ($doc['page_key'] ?? '');
+$priority = (int) ($doc['priority'] ?? 0);
 
 $matching = isset($doc['matching']) && is_array($doc['matching']) ? $doc['matching'] : [];
 $url_masks = isset($matching['url_masks']) && is_array($matching['url_masks']) ? $matching['url_masks'] : [];
@@ -80,6 +81,7 @@ if ($form_action_url !== '' && $form_query) {
 							<tr>
 								<th>binding_key</th>
 								<th>page_key</th>
+								<th>priority</th>
 								<th class="text-end">Действия</th>
 							</tr>
 							</thead>
@@ -91,6 +93,7 @@ if ($form_action_url !== '' && $form_query) {
 										<?php if (!empty($item['title'])) { ?><div class="text-muted small"><?php html($item['title']); ?></div><?php } ?>
 									</td>
 									<td><?php html($item['page_key'] ?? ''); ?></td>
+									<td><span class="badge text-bg-light"><?php html((string) ((int) ($item['priority'] ?? 0))); ?></span></td>
 									<td class="text-end">
 										<form method="post" action="<?php html($list_action_url); ?>" style="display:inline-block" onsubmit="return confirm('Удалить это правило?');">
 											<?php echo html_csrf_token(); ?>
@@ -180,6 +183,12 @@ if ($form_action_url !== '' && $form_query) {
 						<div class="text-muted small mt-1">Ключ макета из списка макетов Nordic (например: <code>ads-category</code>, <code>profile-cover</code> или ваш кастомный ключ).</div>
 					</div>
 
+					<div class="mb-3">
+						<label class="form-label">Priority</label>
+						<input type="number" name="priority" class="form-control" value="<?php html((string) $priority); ?>" min="-100000" max="100000" step="1">
+						<div class="text-muted small mt-1">Чем выше число, тем выше приоритет правила. При равном priority используется специфичность условия и стабильный порядок ключа.</div>
+					</div>
+
 					<div id="nb-expert-fields" style="display:none;">
 
 					<div class="mb-3">
@@ -192,7 +201,8 @@ if ($form_action_url !== '' && $form_query) {
 					<div class="row">
 						<div class="col-md-6 mb-3">
 							<label class="form-label">matching.url_masks</label>
-							<textarea name="url_masks" class="form-control" rows="5" placeholder="news/*\nboard/*\n"><?php html($mask_lines); ?></textarea>
+							<textarea name="url_masks" class="form-control" rows="5" placeholder="news/*
+board/*"><?php html($mask_lines); ?></textarea>
 							<div class="text-muted small mt-1">По одной маске на строку. <code>*</code> — любой хвост.</div>
 						</div>
 						<div class="col-md-6 mb-3">
