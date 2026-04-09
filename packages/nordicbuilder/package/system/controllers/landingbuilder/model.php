@@ -1578,6 +1578,204 @@ class modelLandingbuilder extends cmsModel {
 					'title'      => 'Ключевые показатели',
 					'items_text' => "120|завершенных заказов\n4.9|средний рейтинг\n7 лет|на рынке"
 				]
+			],
+			'pro.flex-composer' => [
+				'key'           => 'pro.flex-composer',
+				'title'         => 'PRO: Гибкий компоновщик',
+				'default_label' => 'Гибкий компоновщик',
+				'description'   => 'Один универсальный блок для геро-секции, CTA и контентного сплита с детальной настройкой структуры и визуала.',
+				'summary'       => 'Меняет структуру, цвета, расположение контента/медиа и карточку поверхности из одного inspector-профиля.',
+				'fields'        => [
+					['key' => 'eyebrow', 'title' => 'Надзаголовок', 'type' => 'text', 'placeholder' => 'Например: Premium section'],
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Соберите гибкую секцию без кода'],
+					['key' => 'text', 'title' => 'Текст', 'type' => 'textarea', 'placeholder' => 'Короткое описание оффера, услуги или раздела.'],
+					['key' => 'layout_mode', 'title' => 'Структура блока', 'type' => 'select', 'options' => [
+						['value' => 'split-left', 'title' => 'Контент слева, медиа справа'],
+						['value' => 'split-right', 'title' => 'Медиа слева, контент справа'],
+						['value' => 'stack-center', 'title' => 'Контент по центру (стек)'],
+						['value' => 'media-background', 'title' => 'Медиа как фон секции']
+					]],
+					['key' => 'columns_ratio', 'title' => 'Пропорция колонок', 'type' => 'select', 'options' => [
+						['value' => '6-6', 'title' => '50 / 50'],
+						['value' => '5-7', 'title' => '42 / 58'],
+						['value' => '7-5', 'title' => '58 / 42'],
+						['value' => '4-8', 'title' => '33 / 67'],
+						['value' => '8-4', 'title' => '67 / 33']
+					]],
+					['key' => 'content_align', 'title' => 'Выравнивание контента', 'type' => 'select', 'options' => [
+						['value' => 'left', 'title' => 'Слева'],
+						['value' => 'center', 'title' => 'По центру'],
+						['value' => 'right', 'title' => 'Справа']
+					]],
+					['key' => 'content_width', 'title' => 'Ширина контента', 'type' => 'select', 'options' => [
+						['value' => 'narrow', 'title' => 'Узкая'],
+						['value' => 'standard', 'title' => 'Стандартная'],
+						['value' => 'wide', 'title' => 'Широкая'],
+						['value' => 'full', 'title' => 'Во всю доступную ширину']
+					]],
+					['key' => 'button_label', 'title' => 'Основная кнопка: текст', 'type' => 'text', 'placeholder' => 'Оставить заявку'],
+					['key' => 'button_url', 'title' => 'Основная кнопка: ссылка', 'type' => 'text', 'placeholder' => '/contact'],
+					['key' => 'secondary_label', 'title' => 'Вторичная кнопка: текст', 'type' => 'text', 'placeholder' => 'Смотреть кейсы'],
+					['key' => 'secondary_url', 'title' => 'Вторичная кнопка: ссылка', 'type' => 'text', 'placeholder' => '/cases'],
+					['key' => 'features_text', 'title' => 'Список акцентов по строкам', 'type' => 'textarea', 'placeholder' => "SEO-ready\nБыстрая загрузка\nГибкие адаптивные сетки"],
+					['key' => 'show_media', 'title' => 'Показывать медиа', 'type' => 'checkbox'],
+					['key' => 'image_url', 'title' => 'Картинка (URL)', 'type' => 'text', 'placeholder' => 'https://.../image.jpg'],
+					['key' => 'image_fit', 'title' => 'Режим картинки', 'type' => 'select', 'options' => [
+						['value' => 'cover', 'title' => 'Заполнить (cover)'],
+						['value' => 'contain', 'title' => 'Вписать (contain)']
+					]],
+					['key' => 'image_shape', 'title' => 'Форма медиа', 'type' => 'select', 'options' => [
+						['value' => 'rounded', 'title' => 'Скругленная'],
+						['value' => 'square', 'title' => 'Прямоугольная'],
+						['value' => 'circle', 'title' => 'Круглая']
+					]],
+					['key' => 'image_shadow', 'title' => 'Тень медиа', 'type' => 'select', 'options' => [
+						['value' => 'none', 'title' => 'Без тени'],
+						['value' => 'soft', 'title' => 'Мягкая'],
+						['value' => 'strong', 'title' => 'Контрастная']
+					]],
+					['key' => 'background_mode', 'title' => 'Фон секции', 'type' => 'select', 'options' => [
+						['value' => 'solid', 'title' => 'Сплошной цвет'],
+						['value' => 'gradient', 'title' => 'Градиент'],
+						['value' => 'none', 'title' => 'Прозрачный']
+					]],
+					['key' => 'bg_color_start', 'title' => 'Цвет фона 1 (HEX)', 'type' => 'text', 'placeholder' => '#0f172a'],
+					['key' => 'bg_color_end', 'title' => 'Цвет фона 2 (HEX)', 'type' => 'text', 'placeholder' => '#1d4ed8'],
+					['key' => 'text_color', 'title' => 'Основной цвет текста (HEX)', 'type' => 'text', 'placeholder' => '#f8fafc'],
+					['key' => 'muted_text_color', 'title' => 'Вторичный цвет текста (HEX)', 'type' => 'text', 'placeholder' => '#cbd5e1'],
+					['key' => 'accent_color', 'title' => 'Акцентный цвет (HEX)', 'type' => 'text', 'placeholder' => '#22c55e'],
+					['key' => 'surface_mode', 'title' => 'Подложка контента', 'type' => 'select', 'options' => [
+						['value' => 'transparent', 'title' => 'Прозрачная'],
+						['value' => 'card', 'title' => 'Карточка'],
+						['value' => 'glass', 'title' => 'Стекло']
+					]],
+					['key' => 'surface_color', 'title' => 'Цвет подложки (HEX)', 'type' => 'text', 'placeholder' => '#0b1220'],
+					['key' => 'padding_y', 'title' => 'Вертикальный padding (px)', 'type' => 'number'],
+					['key' => 'gap', 'title' => 'Отступ между зонами (px)', 'type' => 'number'],
+					['key' => 'radius', 'title' => 'Радиус (px)', 'type' => 'number']
+				],
+				'defaults'      => [
+					'eyebrow'         => 'PRO блок',
+					'title'           => 'Гибкий блок с управлением структурой и визуалом',
+					'text'            => 'Меняйте раскладку, цветовую систему, подложку, акценты и поведение медиа без правки шаблона.',
+					'layout_mode'     => 'split-left',
+					'columns_ratio'   => '6-6',
+					'content_align'   => 'left',
+					'content_width'   => 'standard',
+					'button_label'    => 'Оставить заявку',
+					'button_url'      => '',
+					'secondary_label' => 'Смотреть кейсы',
+					'secondary_url'   => '',
+					'features_text'   => "SEO-ready\nБыстрый runtime\nГибкая композиция",
+					'show_media'      => 1,
+					'image_url'       => '',
+					'image_fit'       => 'cover',
+					'image_shape'     => 'rounded',
+					'image_shadow'    => 'soft',
+					'background_mode' => 'gradient',
+					'bg_color_start'  => '#0f172a',
+					'bg_color_end'    => '#1d4ed8',
+					'text_color'      => '#f8fafc',
+					'muted_text_color'=> '#cbd5e1',
+					'accent_color'    => '#22c55e',
+					'surface_mode'    => 'glass',
+					'surface_color'   => '#0b1220',
+					'padding_y'       => 56,
+					'gap'             => 28,
+					'radius'          => 22
+				]
+			],
+			'pro.metrics-grid-pro' => [
+				'key'           => 'pro.metrics-grid-pro',
+				'title'         => 'PRO: Метрики и карточки',
+				'default_label' => 'Метрики PRO',
+				'description'   => 'Гибкая сетка метрик с настраиваемыми колонками, фоном, карточками и цветовыми токенами.',
+				'summary'       => 'Подходит для KPI, достижений, trust-блоков и быстрых числовых доказательств.',
+				'fields'        => [
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Результаты в цифрах'],
+					['key' => 'text', 'title' => 'Пояснение', 'type' => 'textarea', 'placeholder' => 'Коротко объясните, что означают показатели.'],
+					['key' => 'items_text', 'title' => 'Показатели по строкам', 'type' => 'textarea', 'placeholder' => "1200|Лидов в месяц|Среднее за квартал\n4.9|Рейтинг|На основании 840 отзывов\n18 мин|Ответ менеджера|Средний SLA"],
+					['key' => 'columns', 'title' => 'Количество колонок', 'type' => 'select', 'options' => [
+						['value' => '2', 'title' => '2 колонки'],
+						['value' => '3', 'title' => '3 колонки'],
+						['value' => '4', 'title' => '4 колонки']
+					]],
+					['key' => 'card_style', 'title' => 'Стиль карточек', 'type' => 'select', 'options' => [
+						['value' => 'soft', 'title' => 'Мягкие'],
+						['value' => 'outline', 'title' => 'С обводкой'],
+						['value' => 'solid', 'title' => 'Плотные'],
+						['value' => 'glass', 'title' => 'Стекло']
+					]],
+					['key' => 'section_bg', 'title' => 'Фон секции (HEX)', 'type' => 'text', 'placeholder' => '#f8fafc'],
+					['key' => 'card_bg', 'title' => 'Фон карточки (HEX)', 'type' => 'text', 'placeholder' => '#ffffff'],
+					['key' => 'value_color', 'title' => 'Цвет значения (HEX)', 'type' => 'text', 'placeholder' => '#0f172a'],
+					['key' => 'label_color', 'title' => 'Цвет подписи (HEX)', 'type' => 'text', 'placeholder' => '#475569'],
+					['key' => 'note_color', 'title' => 'Цвет заметки (HEX)', 'type' => 'text', 'placeholder' => '#64748b'],
+					['key' => 'accent_color', 'title' => 'Акцент (HEX)', 'type' => 'text', 'placeholder' => '#2563eb'],
+					['key' => 'border_color', 'title' => 'Цвет границы (HEX)', 'type' => 'text', 'placeholder' => '#dbeafe'],
+					['key' => 'radius', 'title' => 'Радиус карточек (px)', 'type' => 'number'],
+					['key' => 'padding_y', 'title' => 'Вертикальный padding секции (px)', 'type' => 'number'],
+					['key' => 'gap', 'title' => 'Gap между карточками (px)', 'type' => 'number']
+				],
+				'defaults'      => [
+					'title'       => 'Результаты в цифрах',
+					'text'        => 'Коротко и наглядно покажите эффективность, сроки и качество работы.',
+					'items_text'  => "1200|Лидов в месяц|Среднее за квартал\n4.9|Рейтинг|На основании 840 отзывов\n18 мин|Ответ менеджера|Средний SLA",
+					'columns'     => '3',
+					'card_style'  => 'soft',
+					'section_bg'  => '#f8fafc',
+					'card_bg'     => '#ffffff',
+					'value_color' => '#0f172a',
+					'label_color' => '#334155',
+					'note_color'  => '#64748b',
+					'accent_color'=> '#2563eb',
+					'border_color'=> '#dbeafe',
+					'radius'      => 16,
+					'padding_y'   => 44,
+					'gap'         => 18
+				]
+			],
+			'pro.faq-adaptive-pro' => [
+				'key'           => 'pro.faq-adaptive-pro',
+				'title'         => 'PRO: FAQ адаптивный',
+				'default_label' => 'FAQ PRO',
+				'description'   => 'FAQ-блок с адаптивной сеткой, раскрытием по умолчанию и управлением цветами вопросов/ответов.',
+				'summary'       => 'Подходит для лендинга, карточек услуг и страниц с частыми возражениями.',
+				'fields'        => [
+					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Частые вопросы'],
+					['key' => 'text', 'title' => 'Подзаголовок', 'type' => 'textarea', 'placeholder' => 'Коротко объясните, что здесь можно узнать.'],
+					['key' => 'items_text', 'title' => 'Пары вопрос|ответ по строкам', 'type' => 'textarea', 'placeholder' => "Сколько длится запуск?|Обычно 5-10 рабочих дней.\nЕсть ли поддержка?|Да, сопровождение включено.\nМожно ли интегрировать CRM?|Да, подключаем любую популярную CRM."],
+					['key' => 'layout_mode', 'title' => 'Раскладка FAQ', 'type' => 'select', 'options' => [
+						['value' => 'single', 'title' => 'Одна колонка'],
+						['value' => 'two', 'title' => 'Две колонки']
+					]],
+					['key' => 'open_first', 'title' => 'Открывать первый вопрос', 'type' => 'checkbox'],
+					['key' => 'section_bg', 'title' => 'Фон секции (HEX)', 'type' => 'text', 'placeholder' => '#ffffff'],
+					['key' => 'question_bg', 'title' => 'Фон вопроса (HEX)', 'type' => 'text', 'placeholder' => '#f8fafc'],
+					['key' => 'question_color', 'title' => 'Цвет вопроса (HEX)', 'type' => 'text', 'placeholder' => '#0f172a'],
+					['key' => 'answer_color', 'title' => 'Цвет ответа (HEX)', 'type' => 'text', 'placeholder' => '#334155'],
+					['key' => 'border_color', 'title' => 'Цвет границы (HEX)', 'type' => 'text', 'placeholder' => '#e2e8f0'],
+					['key' => 'accent_color', 'title' => 'Акцент иконки (HEX)', 'type' => 'text', 'placeholder' => '#2563eb'],
+					['key' => 'radius', 'title' => 'Радиус (px)', 'type' => 'number'],
+					['key' => 'padding_y', 'title' => 'Вертикальный padding секции (px)', 'type' => 'number'],
+					['key' => 'gap', 'title' => 'Отступ между вопросами (px)', 'type' => 'number']
+				],
+				'defaults'      => [
+					'title'         => 'Частые вопросы',
+					'text'          => 'Собрали ответы на ключевые вопросы до старта проекта.',
+					'items_text'    => "Сколько длится запуск?|Обычно 5-10 рабочих дней.\nЕсть ли поддержка?|Да, сопровождение включено.\nМожно ли интегрировать CRM?|Да, подключаем любую популярную CRM.",
+					'layout_mode'   => 'single',
+					'open_first'    => 1,
+					'section_bg'    => '#ffffff',
+					'question_bg'   => '#f8fafc',
+					'question_color'=> '#0f172a',
+					'answer_color'  => '#334155',
+					'border_color'  => '#e2e8f0',
+					'accent_color'  => '#2563eb',
+					'radius'        => 14,
+					'padding_y'     => 40,
+					'gap'           => 12
+				]
 			]
 		];
 	}

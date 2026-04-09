@@ -366,5 +366,171 @@ return [
 			'summary'           => 'Набор коротких показателей профиля в компактной сетке.',
 			'migration_aliases' => ['статистика профиля', 'показатель', 'стат', 'рейтинг']
 		]
+	],
+	'pro.flex-composer' => [
+		'kind'           => 'nordicbuilder.block',
+		'schema_version' => '1.0',
+		'key'            => 'pro.flex-composer',
+		'title'          => 'PRO: Гибкий компоновщик',
+		'category'       => 'content',
+		'supports'       => [
+			'canvas_node_kinds' => ['block'],
+			'page_types'        => ['standalone', 'system_overlay', 'ctype_overlay'],
+			'editor_modes'      => ['overlay', 'canvas']
+		],
+		'render'         => [
+			'runtime_component' => 'pro-flex-composer',
+			'surface_modes'     => ['runtime', 'overlay']
+		],
+		'props_schema'   => [
+			['key' => 'title', 'type' => 'string', 'title' => 'Заголовок'],
+			['key' => 'text', 'type' => 'string', 'title' => 'Текст'],
+			['key' => 'layout_mode', 'type' => 'string', 'title' => 'Структура блока'],
+			['key' => 'columns_ratio', 'type' => 'string', 'title' => 'Пропорция колонок'],
+			['key' => 'content_align', 'type' => 'string', 'title' => 'Выравнивание'],
+			['key' => 'button_label', 'type' => 'string', 'title' => 'Основная кнопка'],
+			['key' => 'secondary_label', 'type' => 'string', 'title' => 'Вторичная кнопка'],
+			['key' => 'features_text', 'type' => 'string', 'title' => 'Список акцентов'],
+			['key' => 'image_url', 'type' => 'string', 'title' => 'Картинка'],
+			['key' => 'background_mode', 'type' => 'string', 'title' => 'Фон секции'],
+			['key' => 'bg_color_start', 'type' => 'string', 'title' => 'Цвет фона 1'],
+			['key' => 'bg_color_end', 'type' => 'string', 'title' => 'Цвет фона 2'],
+			['key' => 'accent_color', 'type' => 'string', 'title' => 'Акцент'],
+			['key' => 'surface_mode', 'type' => 'string', 'title' => 'Подложка'],
+			['key' => 'padding_y', 'type' => 'number', 'title' => 'Padding по Y'],
+			['key' => 'gap', 'type' => 'number', 'title' => 'Gap'],
+			['key' => 'radius', 'type' => 'number', 'title' => 'Радиус']
+		],
+		'defaults'       => [
+			'title'           => 'Гибкий блок с управлением структурой и визуалом',
+			'text'            => 'Меняйте раскладку, цветовую систему, подложку, акценты и поведение медиа без правки шаблона.',
+			'layout_mode'     => 'split-left',
+			'columns_ratio'   => '6-6',
+			'content_align'   => 'left',
+			'button_label'    => 'Оставить заявку',
+			'secondary_label' => 'Смотреть кейсы',
+			'features_text'   => "SEO-ready\nБыстрый runtime\nГибкая композиция",
+			'show_media'      => 1,
+			'image_url'       => '',
+			'background_mode' => 'gradient',
+			'bg_color_start'  => '#0f172a',
+			'bg_color_end'    => '#1d4ed8',
+			'accent_color'    => '#22c55e',
+			'surface_mode'    => 'glass',
+			'padding_y'       => 56,
+			'gap'             => 28,
+			'radius'          => 22
+		],
+		'meta'           => [
+			'default_label'     => 'Гибкий компоновщик',
+			'summary'           => 'Универсальная PRO-секция с полной настройкой структуры, цветов и медиа.',
+			'migration_aliases' => ['pro компоновщик', 'гибкий hero', 'flex composer', 'adaptive hero']
+		]
+	],
+	'pro.metrics-grid-pro' => [
+		'kind'           => 'nordicbuilder.block',
+		'schema_version' => '1.0',
+		'key'            => 'pro.metrics-grid-pro',
+		'title'          => 'PRO: Метрики и карточки',
+		'category'       => 'content',
+		'supports'       => [
+			'canvas_node_kinds' => ['block'],
+			'page_types'        => ['standalone', 'system_overlay', 'ctype_overlay'],
+			'editor_modes'      => ['overlay', 'canvas']
+		],
+		'render'         => [
+			'runtime_component' => 'pro-metrics-grid',
+			'surface_modes'     => ['runtime', 'overlay']
+		],
+		'props_schema'   => [
+			['key' => 'title', 'type' => 'string', 'title' => 'Заголовок'],
+			['key' => 'text', 'type' => 'string', 'title' => 'Пояснение'],
+			['key' => 'items_text', 'type' => 'string', 'title' => 'Показатели'],
+			['key' => 'columns', 'type' => 'string', 'title' => 'Колонки'],
+			['key' => 'card_style', 'type' => 'string', 'title' => 'Стиль карточек'],
+			['key' => 'section_bg', 'type' => 'string', 'title' => 'Фон секции'],
+			['key' => 'card_bg', 'type' => 'string', 'title' => 'Фон карточки'],
+			['key' => 'value_color', 'type' => 'string', 'title' => 'Цвет значения'],
+			['key' => 'label_color', 'type' => 'string', 'title' => 'Цвет подписи'],
+			['key' => 'note_color', 'type' => 'string', 'title' => 'Цвет заметки'],
+			['key' => 'accent_color', 'type' => 'string', 'title' => 'Акцент'],
+			['key' => 'border_color', 'type' => 'string', 'title' => 'Граница'],
+			['key' => 'radius', 'type' => 'number', 'title' => 'Радиус'],
+			['key' => 'gap', 'type' => 'number', 'title' => 'Gap']
+		],
+		'defaults'       => [
+			'title'       => 'Результаты в цифрах',
+			'text'        => 'Коротко и наглядно покажите эффективность, сроки и качество работы.',
+			'items_text'  => "1200|Лидов в месяц|Среднее за квартал\n4.9|Рейтинг|На основании 840 отзывов\n18 мин|Ответ менеджера|Средний SLA",
+			'columns'     => '3',
+			'card_style'  => 'soft',
+			'section_bg'  => '#f8fafc',
+			'card_bg'     => '#ffffff',
+			'value_color' => '#0f172a',
+			'label_color' => '#334155',
+			'note_color'  => '#64748b',
+			'accent_color'=> '#2563eb',
+			'border_color'=> '#dbeafe',
+			'radius'      => 16,
+			'padding_y'   => 44,
+			'gap'         => 18
+		],
+		'meta'           => [
+			'default_label'     => 'Метрики PRO',
+			'summary'           => 'Гибкая сетка метрик и доверительных цифр с настраиваемыми карточками.',
+			'migration_aliases' => ['kpi', 'метрики', 'цифры', 'достижения']
+		]
+	],
+	'pro.faq-adaptive-pro' => [
+		'kind'           => 'nordicbuilder.block',
+		'schema_version' => '1.0',
+		'key'            => 'pro.faq-adaptive-pro',
+		'title'          => 'PRO: FAQ адаптивный',
+		'category'       => 'content',
+		'supports'       => [
+			'canvas_node_kinds' => ['block'],
+			'page_types'        => ['standalone', 'system_overlay', 'ctype_overlay'],
+			'editor_modes'      => ['overlay', 'canvas']
+		],
+		'render'         => [
+			'runtime_component' => 'pro-faq-adaptive',
+			'surface_modes'     => ['runtime', 'overlay']
+		],
+		'props_schema'   => [
+			['key' => 'title', 'type' => 'string', 'title' => 'Заголовок'],
+			['key' => 'text', 'type' => 'string', 'title' => 'Подзаголовок'],
+			['key' => 'items_text', 'type' => 'string', 'title' => 'Вопросы и ответы'],
+			['key' => 'layout_mode', 'type' => 'string', 'title' => 'Раскладка'],
+			['key' => 'open_first', 'type' => 'boolean', 'title' => 'Открывать первый'],
+			['key' => 'section_bg', 'type' => 'string', 'title' => 'Фон секции'],
+			['key' => 'question_bg', 'type' => 'string', 'title' => 'Фон вопроса'],
+			['key' => 'question_color', 'type' => 'string', 'title' => 'Цвет вопроса'],
+			['key' => 'answer_color', 'type' => 'string', 'title' => 'Цвет ответа'],
+			['key' => 'border_color', 'type' => 'string', 'title' => 'Граница'],
+			['key' => 'accent_color', 'type' => 'string', 'title' => 'Акцент'],
+			['key' => 'radius', 'type' => 'number', 'title' => 'Радиус'],
+			['key' => 'gap', 'type' => 'number', 'title' => 'Gap']
+		],
+		'defaults'       => [
+			'title'         => 'Частые вопросы',
+			'text'          => 'Собрали ответы на ключевые вопросы до старта проекта.',
+			'items_text'    => "Сколько длится запуск?|Обычно 5-10 рабочих дней.\nЕсть ли поддержка?|Да, сопровождение включено.\nМожно ли интегрировать CRM?|Да, подключаем любую популярную CRM.",
+			'layout_mode'   => 'single',
+			'open_first'    => 1,
+			'section_bg'    => '#ffffff',
+			'question_bg'   => '#f8fafc',
+			'question_color'=> '#0f172a',
+			'answer_color'  => '#334155',
+			'border_color'  => '#e2e8f0',
+			'accent_color'  => '#2563eb',
+			'radius'        => 14,
+			'padding_y'     => 40,
+			'gap'           => 12
+		],
+		'meta'           => [
+			'default_label'     => 'FAQ PRO',
+			'summary'           => 'FAQ-секция с адаптивной раскладкой, аккордеоном и цветовым контролем.',
+			'migration_aliases' => ['faq pro', 'частые вопросы', 'аккордеон', 'faq адаптивный']
+		]
 	]
 ];

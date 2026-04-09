@@ -13,7 +13,10 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			'ads.category-header'   => 'Шапка категории объявлений',
 			'ads.filter-bar'        => 'Панель фильтров',
 			'profile.cover-hero'    => 'Обложка профиля',
-			'profile.quick-stats'   => 'Короткая статистика профиля'
+			'profile.quick-stats'   => 'Короткая статистика профиля',
+			'pro.flex-composer'     => 'PRO: Гибкий компоновщик',
+			'pro.metrics-grid-pro'  => 'PRO: Метрики и карточки',
+			'pro.faq-adaptive-pro'  => 'PRO: FAQ адаптивный'
 		];
 	}
 
@@ -325,6 +328,29 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		$image_url_raw = trim((string) ($options['image_url'] ?? ''));
 		$image_url = preg_match('~^(https?://|/)~i', $image_url_raw) ? $image_url_raw : '';
 		$html = (string) ($options['html'] ?? '');
+		$normalize_color = static function ($value, $fallback) {
+			$color = trim((string) $value);
+			return preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6})$/i', $color) ? $color : $fallback;
+		};
+		$normalize_number = static function ($value, $fallback, $min, $max) {
+			if (!is_numeric($value)) {
+				return $fallback;
+			}
+
+			$number = (int) round((float) $value);
+			if ($number < $min) {
+				$number = $min;
+			}
+			if ($number > $max) {
+				$number = $max;
+			}
+
+			return $number;
+		};
+		$normalize_enum = static function ($value, array $allowed, $fallback) {
+			$value = trim((string) $value);
+			return in_array($value, $allowed, true) ? $value : $fallback;
+		};
 
 		$body = '';
 		if ($key === 'core.hero') {
@@ -482,6 +508,247 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 					$caption = $parts[1] ?? '';
 					return '<div class="lb-block-stat"><div class="lb-block-stat__value">' . html($value, false) . '</div><div class="lb-block-stat__caption">' . html($caption ?: 'Показатель', false) . '</div></div>';
 				}, $items)) . '</div>';
+		} elseif ($key === 'pro.flex-composer') {
+			$layout_mode = $normalize_enum($options['layout_mode'] ?? '', ['split-left', 'split-right', 'stack-center', 'media-background'], 'split-left');
+			$columns_ratio = $normalize_enum($options['columns_ratio'] ?? '', ['6-6', '5-7', '7-5', '4-8', '8-4'], '6-6');
+			$content_align = $normalize_enum($options['content_align'] ?? '', ['left', 'center', 'right'], 'left');
+			$content_width = $normalize_enum($options['content_width'] ?? '', ['narrow', 'standard', 'wide', 'full'], 'standard');
+			$image_fit = $normalize_enum($options['image_fit'] ?? '', ['cover', 'contain'], 'cover');
+			$image_shape = $normalize_enum($options['image_shape'] ?? '', ['rounded', 'square', 'circle'], 'rounded');
+			$image_shadow = $normalize_enum($options['image_shadow'] ?? '', ['none', 'soft', 'strong'], 'soft');
+			$background_mode = $normalize_enum($options['background_mode'] ?? '', ['solid', 'gradient', 'none'], 'gradient');
+			$surface_mode = $normalize_enum($options['surface_mode'] ?? '', ['transparent', 'card', 'glass'], 'glass');
+			$padding_y = $normalize_number($options['padding_y'] ?? 56, 56, 20, 180);
+			$gap = $normalize_number($options['gap'] ?? 28, 28, 8, 96);
+			$radius = $normalize_number($options['radius'] ?? 22, 22, 0, 60);
+
+			$bg_start = $normalize_color($options['bg_color_start'] ?? '#0f172a', '#0f172a');
+			$bg_end = $normalize_color($options['bg_color_end'] ?? '#1d4ed8', '#1d4ed8');
+			$text_color = $normalize_color($options['text_color'] ?? '#f8fafc', '#f8fafc');
+			$muted_text_color = $normalize_color($options['muted_text_color'] ?? '#cbd5e1', '#cbd5e1');
+			$accent_color = $normalize_color($options['accent_color'] ?? '#22c55e', '#22c55e');
+			$surface_color = $normalize_color($options['surface_color'] ?? '#0b1220', '#0b1220');
+
+			$secondary_label_local = trim((string) ($options['secondary_label'] ?? $secondary_label));
+			$secondary_url_raw = trim((string) ($options['secondary_url'] ?? ''));
+			$secondary_url = preg_match('~^(https?://|/|#)~i', $secondary_url_raw) ? $secondary_url_raw : '';
+
+			$features_text = trim((string) ($options['features_text'] ?? ''));
+			$features = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $features_text))));
+			$show_media = !empty($options['show_media']) && $image_url !== '';
+
+			$ratio_map = [
+				'6-6' => 'minmax(0,6fr) minmax(0,6fr)',
+				'5-7' => 'minmax(0,5fr) minmax(0,7fr)',
+				'7-5' => 'minmax(0,7fr) minmax(0,5fr)',
+				'4-8' => 'minmax(0,4fr) minmax(0,8fr)',
+				'8-4' => 'minmax(0,8fr) minmax(0,4fr)'
+			];
+			$content_width_map = [
+				'narrow'   => '640px',
+				'standard' => '820px',
+				'wide'     => '1080px',
+				'full'     => '100%'
+			];
+			$text_align_map = [
+				'left' => 'left',
+				'center' => 'center',
+				'right' => 'right'
+			];
+			$items_align_map = [
+				'left' => 'flex-start',
+				'center' => 'center',
+				'right' => 'flex-end'
+			];
+
+			$section_styles = ['padding:' . $padding_y . 'px 28px', 'border-radius:' . $radius . 'px', 'color:' . $text_color, 'overflow:hidden'];
+			if ($layout_mode === 'media-background' && $show_media) {
+				$bg_image_safe = preg_replace('~[^a-z0-9:/._?=&%\-]~i', '', $image_url);
+				$section_styles[] = "background-image:linear-gradient(135deg, {$bg_start}DD 0%, {$bg_end}CC 100%),url('{$bg_image_safe}')";
+				$section_styles[] = 'background-size:cover';
+				$section_styles[] = 'background-position:center';
+			} elseif ($background_mode === 'gradient') {
+				$section_styles[] = 'background:linear-gradient(135deg,' . $bg_start . ' 0%,' . $bg_end . ' 100%)';
+			} elseif ($background_mode === 'solid') {
+				$section_styles[] = 'background:' . $bg_start;
+			} else {
+				$section_styles[] = 'background:transparent';
+			}
+
+			$surface_styles = ['border-radius:' . max(10, $radius - 4) . 'px', 'padding:24px'];
+			if ($surface_mode === 'card') {
+				$surface_styles[] = 'background:' . $surface_color;
+				$surface_styles[] = 'border:1px solid ' . $accent_color;
+				$surface_styles[] = 'box-shadow:0 14px 34px rgba(15,23,42,0.22)';
+			} elseif ($surface_mode === 'glass') {
+				$surface_styles[] = 'background:rgba(255,255,255,0.10)';
+				$surface_styles[] = 'border:1px solid rgba(255,255,255,0.26)';
+				$surface_styles[] = 'backdrop-filter:blur(6px)';
+			} else {
+				$surface_styles[] = 'background:transparent';
+			}
+
+			$button_primary = '';
+			if ($button_label !== '') {
+				$button_primary = $button_url !== ''
+					? '<a href="' . html($button_url, false) . '" class="btn" style="background:' . html($accent_color, false) . ';color:#ffffff;border:none;padding:10px 18px;border-radius:999px;font-weight:700;">' . html($button_label, false) . '</a>'
+					: '<span class="btn" style="background:' . html($accent_color, false) . ';color:#ffffff;border:none;padding:10px 18px;border-radius:999px;font-weight:700;opacity:.7;">' . html($button_label, false) . '</span>';
+			}
+
+			$button_secondary = '';
+			if ($secondary_label_local !== '') {
+				$button_secondary = $secondary_url !== ''
+					? '<a href="' . html($secondary_url, false) . '" class="btn" style="background:transparent;color:' . html($text_color, false) . ';border:1px solid ' . html($accent_color, false) . ';padding:10px 18px;border-radius:999px;font-weight:600;">' . html($secondary_label_local, false) . '</a>'
+					: '<span class="btn" style="background:transparent;color:' . html($text_color, false) . ';border:1px solid ' . html($accent_color, false) . ';padding:10px 18px;border-radius:999px;font-weight:600;opacity:.8;">' . html($secondary_label_local, false) . '</span>';
+			}
+
+			$actions_html = ($button_primary || $button_secondary)
+				? '<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:' . html($items_align_map[$content_align], false) . ';margin-top:18px;">' . $button_primary . $button_secondary . '</div>'
+				: '';
+
+			$features_html = $features
+				? '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:' . html($items_align_map[$content_align], false) . ';margin-top:16px;">' . implode('', array_map(function ($item) use ($accent_color) {
+					return '<span style="display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.12);border:1px solid ' . html($accent_color, false) . ';font-size:12px;">' . html($item, false) . '</span>';
+				}, $features)) . '</div>'
+				: '';
+
+			$image_radius = $image_shape === 'circle' ? '999px' : ($image_shape === 'square' ? '0px' : (string) max(8, $radius - 6) . 'px');
+			$image_shadow_css = $image_shadow === 'strong'
+				? '0 28px 52px rgba(2,6,23,0.48)'
+				: ($image_shadow === 'soft' ? '0 16px 30px rgba(2,6,23,0.28)' : 'none');
+			$media_html = $show_media && $layout_mode !== 'media-background'
+				? '<div style="width:100%;min-height:220px;"><img src="' . html($image_url, false) . '" alt="" loading="lazy" style="display:block;width:100%;height:100%;min-height:220px;object-fit:' . html($image_fit, false) . ';border-radius:' . html($image_radius, false) . ';box-shadow:' . html($image_shadow_css, false) . ';" /></div>'
+				: '';
+
+			$content_html = ''
+				. ($eyebrow ? '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:' . html($muted_text_color, false) . ';margin-bottom:10px;">' . html($eyebrow, false) . '</div>' : '')
+				. '<h2 style="margin:0 0 12px;font-size:clamp(28px,4vw,46px);line-height:1.1;color:' . html($text_color, false) . ';">' . html($heading ?: 'Гибкий блок', false) . '</h2>'
+				. ($text ? '<p style="margin:0;color:' . html($muted_text_color, false) . ';font-size:16px;line-height:1.6;">' . html($text, false) . '</p>' : '')
+				. $actions_html
+				. $features_html;
+
+			$content_wrapper = '<div style="max-width:' . html($content_width_map[$content_width], false) . ';text-align:' . html($text_align_map[$content_align], false) . ';margin:' . ($content_align === 'center' ? '0 auto' : ($content_align === 'right' ? '0 0 0 auto' : '0')) . ';">' . $content_html . '</div>';
+			$content_box = '<div style="' . html(implode(';', $surface_styles), false) . '">' . $content_wrapper . '</div>';
+
+			if ($layout_mode === 'stack-center' || $layout_mode === 'media-background') {
+				$body = '<section style="' . html(implode(';', $section_styles), false) . '"><div style="max-width:1200px;margin:0 auto;display:grid;gap:' . $gap . 'px;">' . $content_box . $media_html . '</div></section>';
+			} else {
+				$grid_template = $show_media ? ($ratio_map[$columns_ratio] ?? $ratio_map['6-6']) : 'minmax(0,1fr)';
+				$first = $content_box;
+				$second = $media_html;
+				if ($layout_mode === 'split-right') {
+					$first = $media_html;
+					$second = $content_box;
+				}
+
+				$body = '<section style="' . html(implode(';', $section_styles), false) . '"><div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:' . html($grid_template, false) . ';gap:' . $gap . 'px;align-items:center;">' . $first . $second . '</div></section>';
+			}
+		} elseif ($key === 'pro.metrics-grid-pro') {
+			$columns = $normalize_enum($options['columns'] ?? '', ['2', '3', '4'], '3');
+			$card_style = $normalize_enum($options['card_style'] ?? '', ['soft', 'outline', 'solid', 'glass'], 'soft');
+			$section_bg = $normalize_color($options['section_bg'] ?? '#f8fafc', '#f8fafc');
+			$card_bg = $normalize_color($options['card_bg'] ?? '#ffffff', '#ffffff');
+			$value_color = $normalize_color($options['value_color'] ?? '#0f172a', '#0f172a');
+			$label_color = $normalize_color($options['label_color'] ?? '#334155', '#334155');
+			$note_color = $normalize_color($options['note_color'] ?? '#64748b', '#64748b');
+			$accent_color = $normalize_color($options['accent_color'] ?? '#2563eb', '#2563eb');
+			$border_color = $normalize_color($options['border_color'] ?? '#dbeafe', '#dbeafe');
+			$radius = $normalize_number($options['radius'] ?? 16, 16, 0, 44);
+			$padding_y = $normalize_number($options['padding_y'] ?? 44, 44, 16, 140);
+			$gap = $normalize_number($options['gap'] ?? 18, 18, 8, 56);
+
+			$items_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			if (!$items_rows) {
+				$items_rows = ['1200|Лидов в месяц|Среднее за квартал', '4.9|Рейтинг|На основании 840 отзывов', '18 мин|Ответ менеджера|Средний SLA'];
+			}
+
+			$grid_map = ['2' => 'repeat(2,minmax(0,1fr))', '3' => 'repeat(3,minmax(0,1fr))', '4' => 'repeat(4,minmax(0,1fr))'];
+			$card_base = ['border-radius:' . $radius . 'px', 'padding:18px'];
+			if ($card_style === 'solid') {
+				$card_base[] = 'background:' . $accent_color;
+				$card_base[] = 'border:1px solid ' . $accent_color;
+			} elseif ($card_style === 'outline') {
+				$card_base[] = 'background:transparent';
+				$card_base[] = 'border:1px solid ' . $border_color;
+			} elseif ($card_style === 'glass') {
+				$card_base[] = 'background:rgba(255,255,255,0.58)';
+				$card_base[] = 'border:1px solid ' . $border_color;
+				$card_base[] = 'backdrop-filter:blur(4px)';
+			} else {
+				$card_base[] = 'background:' . $card_bg;
+				$card_base[] = 'border:1px solid ' . $border_color;
+			}
+
+			$cards_html = implode('', array_map(function ($row) use ($card_base, $value_color, $label_color, $note_color) {
+				$parts = array_map('trim', explode('|', $row, 3));
+				$value = $parts[0] ?? '';
+				$label = $parts[1] ?? '';
+				$note = $parts[2] ?? '';
+
+				return '<div style="' . html(implode(';', $card_base), false) . '">'
+					. '<div style="font-size:clamp(28px,3.5vw,42px);font-weight:800;line-height:1;color:' . html($value_color, false) . ';">' . html($value ?: '0', false) . '</div>'
+					. '<div style="margin-top:6px;font-size:14px;font-weight:700;color:' . html($label_color, false) . ';">' . html($label ?: 'Показатель', false) . '</div>'
+					. ($note ? '<div style="margin-top:4px;font-size:12px;color:' . html($note_color, false) . ';">' . html($note, false) . '</div>' : '')
+					. '</div>';
+			}, $items_rows));
+
+			$body = ''
+				. '<section style="padding:' . $padding_y . 'px 28px;background:' . html($section_bg, false) . ';border-radius:' . $radius . 'px;">'
+				. '<div style="max-width:1220px;margin:0 auto;">'
+				. '<h3 style="margin:0 0 10px;font-size:clamp(24px,3vw,36px);color:' . html($value_color, false) . ';">' . html($heading ?: 'Результаты в цифрах', false) . '</h3>'
+				. ($text ? '<p style="margin:0 0 18px;color:' . html($label_color, false) . ';font-size:15px;line-height:1.6;">' . html($text, false) . '</p>' : '')
+				. '<div style="display:grid;grid-template-columns:' . html($grid_map[$columns], false) . ';gap:' . $gap . 'px;">' . $cards_html . '</div>'
+				. '</div>'
+				. '</section>';
+		} elseif ($key === 'pro.faq-adaptive-pro') {
+			$layout_mode = $normalize_enum($options['layout_mode'] ?? '', ['single', 'two'], 'single');
+			$open_first = !empty($options['open_first']);
+			$section_bg = $normalize_color($options['section_bg'] ?? '#ffffff', '#ffffff');
+			$question_bg = $normalize_color($options['question_bg'] ?? '#f8fafc', '#f8fafc');
+			$question_color = $normalize_color($options['question_color'] ?? '#0f172a', '#0f172a');
+			$answer_color = $normalize_color($options['answer_color'] ?? '#334155', '#334155');
+			$border_color = $normalize_color($options['border_color'] ?? '#e2e8f0', '#e2e8f0');
+			$accent_color = $normalize_color($options['accent_color'] ?? '#2563eb', '#2563eb');
+			$radius = $normalize_number($options['radius'] ?? 14, 14, 0, 36);
+			$padding_y = $normalize_number($options['padding_y'] ?? 40, 40, 16, 120);
+			$gap = $normalize_number($options['gap'] ?? 12, 12, 6, 40);
+
+			$faq_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			if (!$faq_rows) {
+				$faq_rows = [
+					'Сколько длится запуск?|Обычно 5-10 рабочих дней.',
+					'Есть ли поддержка?|Да, сопровождение включено.',
+					'Можно ли интегрировать CRM?|Да, подключаем любую популярную CRM.'
+				];
+			}
+
+			$faq_items = [];
+			foreach ($faq_rows as $index => $row) {
+				$parts = array_map('trim', explode('|', $row, 2));
+				$question = $parts[0] ?? '';
+				$answer = $parts[1] ?? '';
+				if ($question === '' && $answer === '') {
+					continue;
+				}
+
+				$faq_items[] = '<details' . (($open_first && $index === 0) ? ' open' : '') . ' style="background:' . html($question_bg, false) . ';border:1px solid ' . html($border_color, false) . ';border-radius:' . $radius . 'px;padding:12px 14px;">'
+					. '<summary style="cursor:pointer;list-style:none;font-weight:700;color:' . html($question_color, false) . ';display:flex;align-items:center;gap:8px;">'
+					. '<span style="display:inline-flex;width:10px;height:10px;border-radius:999px;background:' . html($accent_color, false) . ';"></span>'
+					. html($question ?: 'Вопрос', false)
+					. '</summary>'
+					. '<div style="margin-top:10px;color:' . html($answer_color, false) . ';line-height:1.65;">' . html($answer ?: 'Ответ будет добавлен позже.', false) . '</div>'
+					. '</details>';
+			}
+
+			$grid_template = $layout_mode === 'two' ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)';
+			$body = ''
+				. '<section style="padding:' . $padding_y . 'px 28px;background:' . html($section_bg, false) . ';border-radius:' . $radius . 'px;">'
+				. '<div style="max-width:1160px;margin:0 auto;">'
+				. '<h3 style="margin:0 0 10px;font-size:clamp(24px,3vw,34px);color:' . html($question_color, false) . ';">' . html($heading ?: 'Частые вопросы', false) . '</h3>'
+				. ($text ? '<p style="margin:0 0 16px;color:' . html($answer_color, false) . ';line-height:1.6;">' . html($text, false) . '</p>' : '')
+				. '<div style="display:grid;grid-template-columns:' . html($grid_template, false) . ';gap:' . $gap . 'px;">' . implode('', $faq_items) . '</div>'
+				. '</div>'
+				. '</section>';
 		} else {
 			$body = $surface === 'overlay'
 				? '<h3>' . html($heading ?: $title, false) . '</h3><p>' . html($text ?: 'Блок Нордик уже подключен к живой странице. Следующим шагом сюда можно подать реальные props и data bindings.', false) . '</p>'

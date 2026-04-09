@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-04-06",
-  "current_block": "core.hero",
+  "updated_at": "2026-04-09",
+  "current_block": "pro.flex-composer",
   "status": {
-    "spec_reviewed": false,
-    "data_model_checked": false,
+    "spec_reviewed": true,
+    "data_model_checked": true,
     "json_contract_checked": true,
-    "adapter_checked": false,
-    "docs_updated": false,
+    "adapter_checked": true,
+    "docs_updated": true,
     "tests_or_manual_checks_done": false,
-    "git_snapshot_created": false,
+    "git_snapshot_created": true,
     "deployed_to_prod": false
   },
-  "notes": "Сделан первый реальный блок для проверки end-to-end: core.hero (градиентный фон + кнопка + опциональная картинка). Блок добавлен в UI-каталог, в manifest registry, в runtime renderer и в Nordic theme.css; пресет hero_simple вставляет core.hero. Осталось: ручная проверка на канвасе/в превью, решение по docs/spec и адаптерам."
+  "notes": "Сделан взрослый pivot к компактному набору: добавлены pro.flex-composer, pro.metrics-grid-pro и pro.faq-adaptive-pro с расширенными inspector controls. Синхронизированы block catalog, manifest registry и runtime renderer (live + package mirrors). Создан pre-change checkpoint snapshot/20260409-131648 с backup БД; остается ручной визуальный smoke canvas/preview/live и финальный publish-check."
 }

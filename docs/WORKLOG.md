@@ -1763,3 +1763,35 @@
 		- `/users/1` содержит builder-секцию (`data-slot-key=after_content`, count=1).
 - Точка отката данных:
 	- `backups/manual-checkpoints/20260408-090500-bindings-canonicalize/cms_nordicbuilder_binding_options.sql`.
+
+## 2026-04-09 / Pivot на 3 advanced PRO-блока
+
+- Что планировалось:
+	- уйти от большого числа однотипных блоков к 2-3 мощным конфигурируемым блокам;
+	- реализовать минимум один блок с гибкой сменой структуры, цветов и внутренней композиции.
+- Что сделано:
+	- в block catalog добавлены 3 блока: `pro.flex-composer`, `pro.metrics-grid-pro`, `pro.faq-adaptive-pro`;
+	- в manifest registry добавлены соответствующие runtime-контракты, defaults и meta;
+	- в runtime renderer добавлены title map и реальные ветки рендера для всех 3 блоков;
+	- `pro.flex-composer` реализован как структурно-гибкий блок: `split-left/split-right/stack-center/media-background`, ratio колонок, surface mode, палитра, media fit/shape/shadow, CTA и feature pills;
+	- live-файлы синхронизированы в package mirrors (`landingbuilder` + `nordicbuilder`).
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/nordicbuilder/data/block_manifests.php](../system/controllers/nordicbuilder/data/block_manifests.php)
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/data/block_manifests.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/data/block_manifests.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](checklists/NEW_BLOCK_CHECKLIST_STATUS.json)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- pre-change checkpoint выполнен: создан backup `backups/db/builders-20260409-131647.sql.gz` и snapshot `snapshot/20260409-131648`;
+	- `php -l` без ошибок для обновленного `runtime_renderer.php`;
+	- parity-синхронизация live -> package mirrors выполнена.
+- Какие риски остались:
+	- не выполнен полный авторизованный visual smoke в canvas/preview/live для новых блоков на desktop/tablet/mobile;
+	- не выполнен целевой publish-check для подтверждения SSR parity в production flow.
+- Следующий шаг:
+	- пройти короткий smoke по 3 блокам (создание на canvas -> сохранение -> preview/live), затем зафиксировать результат отдельным checkpoint-коммитом.
