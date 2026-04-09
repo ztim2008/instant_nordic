@@ -22,6 +22,14 @@ $global_sections_source_options = isset($global_sections_source_options) && is_a
 $global_sections_source_url = (string) ($global_sections_source_url ?? '');
 $explicit_global_sections_source_page_key = trim((string) ($explicit_global_sections_source_page_key ?? ''));
 $effective_global_sections_source_page_key = trim((string) ($effective_global_sections_source_page_key ?? ''));
+$install_demo_url = (string) ($install_demo_url ?? '');
+$remove_demo_url = (string) ($remove_demo_url ?? '');
+$demo_content_mode = trim((string) ($demo_content_mode ?? 'off'));
+if ($demo_content_mode === '') {
+    $demo_content_mode = 'off';
+}
+$demo_mode_is_quick = ($demo_content_mode === 'quick');
+$demo_mode_title = $demo_mode_is_quick ? 'Quick Demo установлен' : 'Demo выключен';
 
 $source_titles = [];
 foreach ($global_sections_source_options as $source_option) {
@@ -105,6 +113,22 @@ $this->addToolButton([
         color: #2a5272;
         font-size: 12px;
         font-weight: 700;
+    }
+
+    .lb-status-chip--ok {
+        background: #eaf8ef;
+        color: #1f6a3a;
+    }
+
+    .lb-status-chip--muted {
+        background: #edf1f5;
+        color: #5d7083;
+    }
+
+    .lb-demo-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
 
     .lb-admin-eyebrow {
@@ -466,6 +490,21 @@ $this->addToolButton([
                     <div class="lb-note">Сначала создайте хотя бы одну страницу, чтобы выбрать явный источник сквозных секций.</div>
                 <?php } ?>
             </div>
+
+            <?php if ($install_demo_url !== '' || $remove_demo_url !== '') { ?>
+                <div class="lb-admin-hero__settings" id="lb-demo-content-panel">
+                    <div class="lb-label">Demo Content<span class="lb-help" title="Быстрый сценарий onboarding: набор демо-страниц и правил применения для изучения продукта и smoke-проверок.">?</span></div>
+                    <div class="lb-note">Установите готовый Quick Demo, чтобы сразу увидеть рабочий сценарий вместо пустого canvas. Повторная установка идемпотентна и не создает дубли.</div>
+                    <div class="lb-demo-actions">
+                        <button type="button" class="lb-admin-btn lb-admin-btn--primary" id="lb-demo-install" <?php echo $install_demo_url !== '' ? '' : 'disabled'; ?>>Установить Quick Demo</button>
+                        <button type="button" class="lb-admin-btn lb-admin-btn--ghost" id="lb-demo-remove" <?php echo $remove_demo_url !== '' ? '' : 'disabled'; ?>>Удалить Demo</button>
+                    </div>
+                    <div class="lb-note" id="lb-demo-status-line">
+                        Текущий режим:
+                        <span class="lb-status-chip <?php echo $demo_mode_is_quick ? 'lb-status-chip--ok' : 'lb-status-chip--muted'; ?>" id="lb-demo-status"><?php html($demo_mode_title); ?></span>
+                    </div>
+                </div>
+            <?php } ?>
         <?php } ?>
     </section>
 
@@ -577,6 +616,8 @@ $this->addToolButton([
             const createUrl = <?php echo json_encode($create_page_url, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const createBindingUrl = <?php echo json_encode($create_binding_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const setGlobalSourceUrl = <?php echo json_encode($global_sections_source_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            const installDemoUrl = <?php echo json_encode($install_demo_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            const removeDemoUrl = <?php echo json_encode($remove_demo_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const deleteUrl = <?php echo json_encode($delete_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const setStatusUrl = <?php echo json_encode($set_status_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
             const publishPageUrl = <?php echo json_encode($publish_page_url ?? '', JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
@@ -603,6 +644,9 @@ $this->addToolButton([
             const globalSourceSelect = document.getElementById('lb-global-source-select');
             const globalSourceSaveBtn = document.getElementById('lb-global-source-save');
             const globalSourceNote = document.getElementById('lb-global-source-note');
+            const demoInstallBtn = document.getElementById('lb-demo-install');
+            const demoRemoveBtn = document.getElementById('lb-demo-remove');
+            const demoStatusNode = document.getElementById('lb-demo-status');
 
             function slugify(value) {
                 return String(value || '')
@@ -885,6 +929,101 @@ $this->addToolButton([
                 }
 
                 updateGlobalSourceNote(result);
+            }
+
+            function updateDemoStatus(mode) {
+                if (!demoStatusNode) {
+                    return;
+                }
+
+                const normalized = String(mode || '').trim();
+                if (normalized === 'quick') {
+                    demoStatusNode.textContent = 'Quick Demo установлен';
+                    demoStatusNode.classList.remove('lb-status-chip--muted');
+                    demoStatusNode.classList.add('lb-status-chip--ok');
+                    return;
+                }
+
+                demoStatusNode.textContent = 'Demo выключен';
+                demoStatusNode.classList.remove('lb-status-chip--ok');
+                demoStatusNode.classList.add('lb-status-chip--muted');
+            }
+
+            function summarizeDemoResult(action, result) {
+                const payload = (result && typeof result === 'object' && result.result && typeof result.result === 'object')
+                    ? result.result
+                    : {};
+                const pages = (payload.pages && typeof payload.pages === 'object') ? payload.pages : {};
+                const bindings = (payload.bindings && typeof payload.bindings === 'object') ? payload.bindings : {};
+
+                if (action === 'install') {
+                    return [
+                        'Quick Demo установлен.',
+                        'Страницы: создано ' + String(pages.created || 0) + ', обновлено ' + String(pages.updated || 0) + ', ошибок ' + String(pages.failed || 0),
+                        'Правила: создано ' + String(bindings.created || 0) + ', обновлено ' + String(bindings.updated || 0) + ', ошибок ' + String(bindings.failed || 0)
+                    ].join('\n');
+                }
+
+                return [
+                    'Quick Demo удален.',
+                    'Страницы: удалено ' + String(pages.removed || 0) + ', пропущено ' + String(pages.missed || 0) + ', ошибок ' + String(pages.failed || 0),
+                    'Правила: удалено ' + String(bindings.removed || 0) + ', пропущено ' + String(bindings.missed || 0) + ', ошибок ' + String(bindings.failed || 0)
+                ].join('\n');
+            }
+
+            async function runDemoOperation(action) {
+                const isInstall = action === 'install';
+                const endpoint = isInstall ? installDemoUrl : removeDemoUrl;
+                if (!endpoint) {
+                    return;
+                }
+
+                const confirmText = isInstall
+                    ? 'Установить Quick Demo?\n\nБудут созданы/обновлены demo-страницы и demo-правила применения.'
+                    : 'Удалить Demo?\n\nБудут удалены demo-страницы и demo-правила (без затрагивания обычных страниц).';
+
+                if (!window.confirm(confirmText)) {
+                    return;
+                }
+
+                const body = new URLSearchParams();
+                body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
+                if (isInstall) {
+                    body.set('mode', 'quick');
+                }
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
+                    body: body.toString(),
+                    credentials: 'same-origin'
+                });
+
+                const parsed = await readJsonOrText(response);
+                const result = parsed.json;
+
+                if (!response.ok) {
+                    const hint = result && result.message ? result.message : trimServerText(parsed.text);
+                    window.alert('Ошибка сервера (' + response.status + ').\n' + (hint || ''));
+                    return;
+                }
+
+                if (!result || typeof result !== 'object') {
+                    window.alert('Сервер вернул неожиданный ответ вместо JSON.\n' + trimServerText(parsed.text));
+                    return;
+                }
+
+                if (result.error) {
+                    window.alert(result.message || 'Операция demo завершилась ошибкой.');
+                    return;
+                }
+
+                updateDemoStatus(isInstall ? 'quick' : 'off');
+                window.alert(summarizeDemoResult(action, result));
+                window.location.reload();
             }
 
             async function createPageAndMaybeBind() {
@@ -1330,6 +1469,42 @@ $this->addToolButton([
                         window.alert('Не удалось сохранить источник сквозных секций.');
                     }).finally(function () {
                         globalSourceSaveBtn.disabled = false;
+                    });
+                });
+            }
+
+            if (demoInstallBtn && installDemoUrl) {
+                demoInstallBtn.addEventListener('click', function () {
+                    demoInstallBtn.disabled = true;
+                    if (demoRemoveBtn) {
+                        demoRemoveBtn.disabled = true;
+                    }
+                    runDemoOperation('install').catch(function (error) {
+                        console.error(error);
+                        window.alert('Не удалось установить Quick Demo.');
+                    }).finally(function () {
+                        demoInstallBtn.disabled = false;
+                        if (demoRemoveBtn && removeDemoUrl) {
+                            demoRemoveBtn.disabled = false;
+                        }
+                    });
+                });
+            }
+
+            if (demoRemoveBtn && removeDemoUrl) {
+                demoRemoveBtn.addEventListener('click', function () {
+                    demoRemoveBtn.disabled = true;
+                    if (demoInstallBtn) {
+                        demoInstallBtn.disabled = true;
+                    }
+                    runDemoOperation('remove').catch(function (error) {
+                        console.error(error);
+                        window.alert('Не удалось удалить Demo.');
+                    }).finally(function () {
+                        demoRemoveBtn.disabled = false;
+                        if (demoInstallBtn && installDemoUrl) {
+                            demoInstallBtn.disabled = false;
+                        }
                     });
                 });
             }

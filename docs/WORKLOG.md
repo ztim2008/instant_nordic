@@ -249,6 +249,9 @@
 	- реализован Stage 1 backend seed service для `Quick Demo`: в `nordicbuilder` добавлены idempotent методы `installQuickDemo()` и `removeQuickDemo()` с отчетом по страницам/правилам и управлением `global_sections_source_page_key`.
 	- добавлены новые AJAX actions `install_demo` и `remove_demo` в backend `nordicbuilder` (live + package mirror) для вызова demo install/remove из админки.
 	- выполнен e2e прогон full-cycle: первый `install_demo` создает 7 demo-страниц и 7 demo-правил, повторный `install_demo` обновляет их без дублей, `remove_demo` удаляет demo-сущности и сбрасывает explicit source в auto.
+	- реализован Stage 2 UI в экране `Страницы`: добавлен блок `Demo Content` с кнопками `Установить Quick Demo` и `Удалить Demo`, текущим статусом режима и JS-обработчиками с confirm/summary/reload.
+	- выполнен интерактивный browser-smoke по UI-кнопкам: `Удалить Demo` переключает статус в `Demo выключен`, `Установить Quick Demo` возвращает `Quick Demo установлен` и поднимает demo-страницы/правила обратно.
+	- исправлена регрессия в ссылке `Правила применения` на карточках страниц: убран двойной префикс `/admin/controllers/edit`, URL теперь ведет на корректный admin-route `.../nordicbuilder/bindings?page_key=...`.
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md](../LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md)
 	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
@@ -257,13 +260,18 @@
 	- [system/controllers/nordicbuilder/backend/actions/remove_demo.php](../system/controllers/nordicbuilder/backend/actions/remove_demo.php)
 	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/install_demo.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/install_demo.php)
 	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/remove_demo.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/remove_demo.php)
+	- [system/controllers/nordicbuilder/backend/actions/pages.php](../system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
 - Какие риски остались:
 	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
 	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
 	- `Full Template` режим пока не реализован в коде (на этапе 1 доступен только `Quick Demo`).
 - Следующий шаг:
-	- реализовать этап 2 demo-cycle: добавить в экран `Страницы` UI-блок `Demo Content` с кнопками `Установить Quick Demo` и `Удалить Demo`.
-	- после добавления UI-кнопок выполнить quick smoke по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1` с установленным demo.
+	- реализовать этап 3 demo-cycle: зафиксировать отдельный quick-smoke checklist по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1` с установленным demo и добавить автопрогон/инструкцию в docs.
+	- добавить в UI короткий отчет последней demo-операции (время, создано/обновлено/удалено), чтобы админ видел результат без всплывающего окна.
 
 ## 2026-04-07
 

@@ -39,13 +39,18 @@ class actionNordicbuilderPages extends cmsAction {
 		unset($page);
 
 		$global_source_screen = $this->buildGlobalSectionsSourceScreen($pages, $bridge_model);
+		$landingbuilder_options = (array) cmsController::loadOptions('landingbuilder');
+		$demo_content_mode = trim((string) ($landingbuilder_options['demo_content_mode'] ?? 'off'));
+		if ($demo_content_mode === '') {
+			$demo_content_mode = 'off';
+		}
 
 		return $this->cms_template->render('backend/pages', [
 			'menu'               => $this->controller->getBackendMenu(),
 			'pages'              => $pages,
 			'content_types'      => $content_types,
 			'is_schema_installed'=> $bridge_model->hasInstalledSchema(),
-			'bindings_url'       => href_to('admin', 'controllers', ['edit', $this->controller->root_url, 'bindings']),
+			'bindings_url'       => href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'bindings']),
 			'create_page_url'    => href_to($this->controller->root_url, 'create_page'),
 			'publish_page_url'   => href_to($this->controller->root_url, 'publish_page'),
 			'create_binding_url' => href_to($this->controller->root_url, 'create_binding'),
@@ -54,7 +59,10 @@ class actionNordicbuilderPages extends cmsAction {
 			'global_sections_source_url' => href_to($this->controller->root_url, 'set_global_sections_source'),
 			'global_sections_source_options' => $global_source_screen['options'],
 			'explicit_global_sections_source_page_key' => $global_source_screen['explicit_page_key'],
-			'effective_global_sections_source_page_key' => $global_source_screen['effective_page_key']
+			'effective_global_sections_source_page_key' => $global_source_screen['effective_page_key'],
+			'install_demo_url' => href_to($this->controller->root_url, 'install_demo'),
+			'remove_demo_url' => href_to($this->controller->root_url, 'remove_demo'),
+			'demo_content_mode' => $demo_content_mode
 		]);
 	}
 
