@@ -2,6 +2,31 @@
 
 class actionNordicbuilderDefaults extends cmsAction {
 
+    private function resolveDesignPreviewUrl($bridge_model) {
+        $preview_page_key = '';
+        $pages = $bridge_model->getPagesForAdmin();
+
+        if ($pages) {
+            foreach ($pages as $page) {
+                $page_key = (string) ($page['key'] ?? '');
+                if ($page_key === 'homepage') {
+                    $preview_page_key = 'homepage';
+                    break;
+                }
+
+                if ($page_key !== '') {
+                    $preview_page_key = $page_key;
+                }
+            }
+        }
+
+        if ($preview_page_key === '') {
+            return '/';
+        }
+
+        return href_to('nordicbuilder', 'view', [$preview_page_key]);
+    }
+
     public function run() {
         $bridge_model = cmsCore::getModel('landingbuilder');
         $catalog = $bridge_model->getThemeOptionCatalog();
@@ -36,10 +61,13 @@ class actionNordicbuilderDefaults extends cmsAction {
             cmsUser::addSessionMessage(LANG_FORM_ERRORS, 'error');
         }
 
+        $screen = $bridge_model->getDesignSystemScreen($theme, $catalog);
+        $screen['preview_url'] = $this->resolveDesignPreviewUrl($bridge_model);
+
         return $this->cms_template->render('backend/defaults', [
             'menu'   => $this->controller->getBackendMenu(),
             'theme'  => $theme,
-            'screen' => $bridge_model->getDesignSystemScreen($theme, $catalog),
+            'screen' => $screen,
             'form'   => $form,
             'errors' => $errors ?? false
         ]);

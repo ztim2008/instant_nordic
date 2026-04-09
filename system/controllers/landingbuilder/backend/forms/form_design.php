@@ -61,6 +61,11 @@ class formLandingbuilderDesign extends cmsForm {
 						'default' => 'quiet',
 						'items' => $catalog['card_preset']
 					]),
+					new fieldList('surface_preset', [
+						'title' => 'Поверхности сайта',
+						'default' => 'neutral',
+						'items' => $catalog['surface_preset']
+					]),
 					new fieldList('radius_preset', [
 						'title' => 'Радиусы интерфейса',
 						'default' => 'none',

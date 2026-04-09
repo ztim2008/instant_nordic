@@ -9,6 +9,8 @@ $preview_context = function_exists('landingbuilder_get_runtime_theme_context_fro
 	? landingbuilder_get_runtime_theme_context_from_theme($screen['theme'], $screen['theme'])
 	: ['vars' => [], 'theme' => $screen['theme']];
 $preview_style = function_exists('landingbuilder_render_css_vars') ? landingbuilder_render_css_vars($preview_context['vars']) : '';
+$runtime_catalog = function_exists('landingbuilder_get_theme_runtime_catalog') ? landingbuilder_get_theme_runtime_catalog() : [];
+$preview_url = (string) ($screen['preview_url'] ?? '');
 
 $this->setPageTitle('Нордик: Глобальный стиль');
 $this->addBreadcrumb('Нордик');
@@ -73,6 +75,11 @@ $this->addToolButton([
 	.lb-ds-dark .lb-design-kicker {color:rgba(255,255,255,.66)}
 	.lb-ds-dark .lb-ds-btn--secondary {border-color:rgba(255,255,255,.35);color:#fff}
 	.lb-design-note {padding:1rem 1.1rem;border:1px dashed var(--lb-border-color,#cad5df);border-radius:14px;background:var(--lb-surface-soft,#f8fbfd);color:var(--lb-text-muted,#5b7282);margin-top:1rem}
+	.lb-design-runtime-preview {margin-top:1rem;border:1px solid var(--lb-border-color,#dce4ea);border-radius:14px;overflow:hidden;background:#fff}
+	.lb-design-runtime-preview__head {padding:.65rem .9rem;border-bottom:1px solid var(--lb-border-color,#dce4ea);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--lb-text-muted,#64748b);background:var(--lb-surface-soft,#f8fbfd)}
+	.lb-design-runtime-preview__status {padding:.55rem .9rem;border-bottom:1px solid var(--lb-border-color,#dce4ea);font-size:12px;color:var(--lb-text-muted,#64748b);background:#fff}
+	 .lb-design-runtime-preview iframe {display:block;width:100%;height:340px;border:0;background:#fff}
+	 .lb-design-runtime-preview__empty {padding:1rem .9rem;font-size:13px;color:var(--lb-text-muted,#64748b)}
 	@media (max-width: 1199.98px) {.lb-ds-grid{grid-template-columns:1fr}}
 	@media (max-width: 991.98px) {.lb-design-summary{grid-template-columns:1fr}}
 </style>
@@ -86,7 +93,7 @@ $this->addToolButton([
 
 <div class="row lb-design-layout">
 	<div class="col-xl-5 mb-4">
-		<div class="lb-design-preview" style="<?php html($preview_style); ?>">
+		<div class="lb-design-preview" id="lb-design-preview-root" style="<?php html($preview_style); ?>">
 			<div class="lb-design-kicker">Глобальная дизайн-система</div>
 			<h2 class="lb-design-title">Стилевая матрица сайта: типографика, цвета, состояния</h2>
 			<p class="lb-design-lead">Это не просто форма, а единый стандарт внешнего вида для всего сайта. После сохранения выбранные значения становятся глобальной базой для каркаса и новых страниц.</p>
@@ -190,12 +197,22 @@ $this->addToolButton([
 			</div>
 
 			<div class="lb-design-note">После сохранения этот стиль становится глобальной основой: шаблон, палитра, типографика, контейнеры и состояния компонентов применяются как стартовый стандарт для всего сайта. Детальная настройка отдельной страницы остаётся на холсте.</div>
+
+			<div class="lb-design-runtime-preview">
+				<div class="lb-design-runtime-preview__head">Живой предпросмотр страницы</div>
+				<div class="lb-design-runtime-preview__status" id="lb-design-live-status">Изменения применяются в превью сразу, без сохранения.</div>
+				<?php if ($preview_url !== '') { ?>
+					<iframe id="lb-design-live-frame" src="<?php html($preview_url); ?>" title="Живой предпросмотр"></iframe>
+				<?php } else { ?>
+					<div class="lb-design-runtime-preview__empty">Для live preview пока не найдена страница. Создайте страницу в разделе «Все страницы» и откройте экран снова.</div>
+				<?php } ?>
+			</div>
 		</div>
 	</div>
 	<div class="col-xl-7 mb-4">
 		<div class="card h-100">
 			<div class="card-header">Шаблон сайта и редкие общие настройки</div>
-			<div class="card-body">
+			<div class="card-body lb-design-form-box">
 				<?php $this->renderForm($form, $theme, [
 					'action' => '',
 					'method' => 'post'
@@ -204,3 +221,107 @@ $this->addToolButton([
 		</div>
 	</div>
 </div>
+
+<script>
+	(function () {
+		const runtimeCatalog = <?php echo json_encode($runtime_catalog, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> || {};
+		const previewRoot = document.getElementById('lb-design-preview-root');
+		const liveFrame = document.getElementById('lb-design-live-frame');
+		const liveStatus = document.getElementById('lb-design-live-status');
+		const formBox = document.querySelector('.lb-design-form-box');
+		const form = formBox ? formBox.querySelector('form') : null;
+
+		if (!previewRoot || !form) {
+			return;
+		}
+
+		const themeKeys = [
+			'template_preset',
+			'global_style_preset',
+			'color_preset',
+			'typography_preset',
+			'container_preset',
+			'button_preset',
+			'card_preset',
+			'surface_preset',
+			'section_spacing',
+			'radius_preset',
+			'density_preset',
+			'contrast_preset'
+		];
+
+		function getThemeState() {
+			const defaults = Object.assign({}, runtimeCatalog.defaults || {});
+			themeKeys.forEach(function (key) {
+				const field = form.querySelector('[name="' + key + '"]');
+				if (field && field.value) {
+					defaults[key] = String(field.value);
+				}
+			});
+			return defaults;
+		}
+
+		function getThemeVars(theme) {
+			const catalog = runtimeCatalog || {};
+			return Object.assign({}, catalog.base_vars || {}, {
+				'--lb-page-max-width': ((catalog.container_presets || {})[theme.container_preset]) || '1120px',
+				'--lb-section-gap': ((catalog.section_spacing || {})[theme.section_spacing]) || '32px'
+			}, ((catalog.global_style_presets || {})[theme.global_style_preset]) || {}, ((catalog.color_presets || {})[theme.color_preset]) || {}, ((catalog.typography_presets || {})[theme.typography_preset]) || {}, ((catalog.radius_presets || {})[theme.radius_preset]) || {}, ((catalog.density_presets || {})[theme.density_preset]) || {}, ((catalog.contrast_presets || {})[theme.contrast_preset]) || {}, ((catalog.button_presets || {})[theme.button_preset]) || {}, ((catalog.card_presets || {})[theme.card_preset]) || {}, ((catalog.surface_presets || {})[theme.surface_preset]) || {});
+		}
+
+		function renderVars(vars) {
+			return Object.keys(vars || {}).reduce(function (parts, key) {
+				const value = vars[key];
+				if (value === null || value === undefined || value === '') {
+					return parts;
+				}
+				parts.push(key + ':' + value);
+				return parts;
+			}, []).join(';');
+		}
+
+		function applyVarsToFrame(vars) {
+			if (!liveFrame) {
+				return;
+			}
+
+			let frameDoc;
+			try {
+				frameDoc = liveFrame.contentDocument || (liveFrame.contentWindow ? liveFrame.contentWindow.document : null);
+			} catch (error) {
+				if (liveStatus) {
+					liveStatus.textContent = 'Live preview недоступен: ограничение доступа к iframe.';
+				}
+				return;
+			}
+
+			if (!frameDoc || !frameDoc.documentElement) {
+				return;
+			}
+
+			Object.keys(vars || {}).forEach(function (key) {
+				frameDoc.documentElement.style.setProperty(key, vars[key]);
+			});
+
+			if (liveStatus) {
+				liveStatus.textContent = 'Live preview обновлён: изменения применены без сохранения.';
+			}
+		}
+
+		function applyLivePreview() {
+			const theme = getThemeState();
+			const vars = getThemeVars(theme);
+			previewRoot.setAttribute('style', renderVars(vars));
+			applyVarsToFrame(vars);
+		}
+
+		form.addEventListener('change', applyLivePreview);
+		form.addEventListener('input', applyLivePreview);
+
+		if (liveFrame) {
+			liveFrame.addEventListener('load', applyLivePreview);
+		}
+
+		applyLivePreview();
+	})();
+</script>

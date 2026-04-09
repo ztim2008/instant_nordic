@@ -141,6 +141,7 @@ Design system в Нордик это канонический слой токе�
 Подробная карта "на что можно влиять по всему сайту" вынесена в отдельный рабочий документ:
 
 - `docs/NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md`
+- `docs/NORDICBUILDER-DESIGN-SYSTEM-CONTRACT-V1.md`
 
 Этот документ является практической матрицей для реализации экрана `Глобальные стили` и расширения control-scope без вмешательства в core движка.
 

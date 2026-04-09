@@ -2,6 +2,31 @@
 
 class actionLandingbuilderDesign extends cmsAction {
 
+	private function resolveDesignPreviewUrl() {
+		$preview_page_key = '';
+		$pages = $this->model->getPagesForAdmin();
+
+		if ($pages) {
+			foreach ($pages as $page) {
+				$page_key = (string) ($page['key'] ?? '');
+				if ($page_key === 'homepage') {
+					$preview_page_key = 'homepage';
+					break;
+				}
+
+				if ($page_key !== '') {
+					$preview_page_key = $page_key;
+				}
+			}
+		}
+
+		if ($preview_page_key === '') {
+			return '/';
+		}
+
+		return href_to('landingbuilder', 'view', [$preview_page_key]);
+	}
+
 	public function run() {
 
 		$catalog = $this->model->getThemeOptionCatalog();
@@ -36,10 +61,13 @@ class actionLandingbuilderDesign extends cmsAction {
 			cmsUser::addSessionMessage(LANG_FORM_ERRORS, 'error');
 		}
 
+		$screen = $this->model->getDesignSystemScreen($theme, $catalog);
+		$screen['preview_url'] = $this->resolveDesignPreviewUrl();
+
 		return $this->cms_template->render('backend/design', [
 			'menu'   => $this->controller->getBackendMenu(),
 			'theme'  => $theme,
-			'screen' => $this->model->getDesignSystemScreen($theme, $catalog),
+			'screen' => $screen,
 			'form'   => $form,
 			'errors' => $errors ?? false
 		]);

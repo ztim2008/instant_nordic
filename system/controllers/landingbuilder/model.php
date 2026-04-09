@@ -1062,6 +1062,12 @@ class modelLandingbuilder extends cmsModel {
 				['value' => 'raised', 'title' => 'Поднятые', 'description' => 'Карточки с более заметной глубиной и тенью.'],
 				['value' => 'outline', 'title' => 'С обводкой', 'description' => 'Легкая геометрия с акцентом на границу.']
 			],
+			'surface_preset' => [
+				['value' => 'neutral', 'title' => 'Нейтральные поверхности', 'description' => 'Сбалансированный baseline для большинства страниц и контента.'],
+				['value' => 'soft', 'title' => 'Мягкие поверхности', 'description' => 'Более спокойные карточки и панели с приглушенной геометрией.'],
+				['value' => 'elevated', 'title' => 'Поднятые поверхности', 'description' => 'Больше глубины и читаемая иерархия слоев по тени.'],
+				['value' => 'contrast', 'title' => 'Контрастные поверхности', 'description' => 'Выраженные поверхности для акцентных секций и UI-плашек.']
+			],
 			'section_spacing' => [
 				['value' => 'compact', 'title' => 'Компактный', 'description' => 'Плотный вертикальный ритм для каталожных страниц.'],
 				['value' => 'comfortable', 'title' => 'Комфортный', 'description' => 'Сбалансированный ритм по умолчанию.'],
@@ -1126,6 +1132,7 @@ class modelLandingbuilder extends cmsModel {
 			'container_preset'    => !empty($options['default_container_preset']) ? (string) $options['default_container_preset'] : '',
 			'button_preset'       => !empty($options['default_button_preset']) ? (string) $options['default_button_preset'] : '',
 			'card_preset'         => !empty($options['default_card_preset']) ? (string) $options['default_card_preset'] : '',
+			'surface_preset'      => !empty($options['default_surface_preset']) ? (string) $options['default_surface_preset'] : '',
 			'section_spacing'     => !empty($options['default_section_spacing']) ? (string) $options['default_section_spacing'] : '',
 			'radius_preset'       => !empty($options['default_radius_preset']) ? (string) $options['default_radius_preset'] : '',
 			'density_preset'      => !empty($options['default_density_preset']) ? (string) $options['default_density_preset'] : '',
@@ -1145,6 +1152,7 @@ class modelLandingbuilder extends cmsModel {
 		$options['default_container_preset'] = $theme['container_preset'];
 		$options['default_button_preset'] = $theme['button_preset'];
 		$options['default_card_preset'] = $theme['card_preset'];
+		$options['default_surface_preset'] = $theme['surface_preset'];
 		$options['default_section_spacing'] = $theme['section_spacing'];
 		$options['default_radius_preset'] = $theme['radius_preset'];
 		$options['default_density_preset'] = $theme['density_preset'];
@@ -1171,6 +1179,7 @@ class modelLandingbuilder extends cmsModel {
 				['label' => 'Контейнеры', 'value' => $this->getThemeOptionTitle('container_preset', $theme['container_preset'], $catalog)],
 				['label' => 'Кнопки', 'value' => $this->getThemeOptionTitle('button_preset', $theme['button_preset'], $catalog)],
 				['label' => 'Карточки', 'value' => $this->getThemeOptionTitle('card_preset', $theme['card_preset'], $catalog)],
+				['label' => 'Поверхности', 'value' => $this->getThemeOptionTitle('surface_preset', $theme['surface_preset'], $catalog)],
 				['label' => 'Ритм секций', 'value' => $this->getThemeOptionTitle('section_spacing', $theme['section_spacing'], $catalog)],
 				['label' => 'Скругления', 'value' => $this->getThemeOptionTitle('radius_preset', $theme['radius_preset'], $catalog)],
 				['label' => 'Плотность', 'value' => $this->getThemeOptionTitle('density_preset', $theme['density_preset'], $catalog)],
@@ -3720,6 +3729,7 @@ class modelLandingbuilder extends cmsModel {
 			'container_preset'    => 'standard',
 			'button_preset'       => 'soft_accent',
 			'card_preset'         => 'quiet',
+			'surface_preset'      => 'neutral',
 			'section_spacing'     => 'comfortable',
 			'radius_preset'       => 'none',
 			'density_preset'      => 'balanced',

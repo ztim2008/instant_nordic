@@ -1838,3 +1838,68 @@
 	- не проверены edge-cases для ctype с нетиповой структурой полей (например, пустой `teaser`/`description`).
 - Следующий шаг:
 	- пройти быстрый smoke на 2 сценариях (`pro.metrics-grid-pro`, `pro.faq-adaptive-pro`) с реальным ctype и проверить fallback на `items_text`.
+
+## 2026-04-09 / Design System Foundation V1
+
+- Что планировалось:
+	- превратить глобальные токены в полноценный профессиональный фундамент дизайн-системы, который работает одинаково в canvas, preview и live runtime.
+- Что сделано:
+	- введен формальный foundation-ключ `surface_preset` на уровне theme state и global defaults (`neutral` / `soft` / `elevated` / `contrast`);
+	- обновлены model и save pipeline: `surface_preset` теперь участвует в `getSiteThemeDefaults()`, `saveSiteThemeSettings()` и в summary экрана глобального стиля;
+	- форма `Глобальный стиль` расширена полем `Поверхности сайта`;
+	- runtime-тема расширена до Design System Contract V1:
+		- добавлены `surface_presets`,
+		- добавлены semantic role vars (`--lb-role-*`),
+		- merge-пайплайн включает surface слой наряду с color/typography/radius/density/contrast/button/card;
+	- устранена критичная parity-дыра: canvas `getThemeVars()` теперь собирает тот же набор пресетов, что и runtime (включая radius/density/contrast/surface);
+	- создан формальный документ контракта `docs/NORDICBUILDER-DESIGN-SYSTEM-CONTRACT-V1.md` и добавлена связка из основной дизайн-спеки;
+	- активный план обновлен с фиксацией запуска Design System Contract V1.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/forms/form_design.php](../system/controllers/landingbuilder/backend/forms/form_design.php)
+	- [templates/default/controllers/landingbuilder/runtime_theme.php](../templates/default/controllers/landingbuilder/runtime_theme.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [docs/NORDICBUILDER-DESIGN-SYSTEM-CONTRACT-V1.md](NORDICBUILDER-DESIGN-SYSTEM-CONTRACT-V1.md)
+	- [LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md](../LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md)
+	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- `php -l` пройдет после синхронизации live -> package mirrors для всех измененных PHP/TPL файлов;
+	- проверяется фактический parity через повторный просмотр merge-цепочки canvas/runtime.
+- Какие риски остались:
+	- нужен ручной визуальный smoke в авторизованной сессии админки: проверка переключения `surface_preset` и `density/contrast` на canvas/preview/live;
+	- для legacy страниц без явного `surface_preset` нужен целевой sanity-check fallback (`neutral`).
+- Следующий шаг:
+	- синхронизировать package mirrors, прогнать `php -l`, затем выполнить короткий visual smoke и зафиксировать checkpoint этой итерации.
+
+## 2026-04-09 / Отдельная страница дизайн-системы + live preview
+
+- Что планировалось:
+	- сделать «по-взрослому», как в nordic-builder.ru: выделенный экран дизайн-системы в меню и обязательный живой предпросмотр без сохранения на каждый клик.
+- Что сделано:
+	- в backend-меню `nordicbuilder` добавлен отдельный пункт `Дизайн-система`;
+	- для экранов глобального стиля в `landingbuilder` и `nordicbuilder` добавлен расчет `preview_url` с fallback на доступную страницу;
+	- в шаблон экрана `design.tpl.php` внедрен live preview layer:
+		- реактивный пересчет token vars на изменение полей формы,
+		- мгновенное применение стилей к локальной preview-карточке,
+		- обязательный iframe живой страницы с применением тех же vars в рантайме без сохранения;
+	- UX-статус live preview отображает успешное применение изменений или причину недоступности iframe.
+- Какие файлы затронуты:
+	- [system/controllers/nordicbuilder/backend.php](../system/controllers/nordicbuilder/backend.php)
+	- [system/controllers/nordicbuilder/backend/actions/defaults.php](../system/controllers/nordicbuilder/backend/actions/defaults.php)
+	- [system/controllers/landingbuilder/backend/actions/design.php](../system/controllers/landingbuilder/backend/actions/design.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/defaults.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/defaults.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/design.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/design.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/design.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/design.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/design.tpl.php)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- `php -l` без ошибок для всех измененных live/mirror PHP/TPL файлов;
+	- `cmp -s` подтверждает parity между live и package mirrors по action/template/menu файлам.
+- Какие риски остались:
+	- в текущем встроенном браузере нет авторизованной админ-сессии (`Доступ запрещён`), поэтому интерактивный manual smoke live iframe нужно пройти в рабочей админ-сессии.
+- Следующий шаг:
+	- выполнить ручной smoke на странице `Дизайн-система`: смена 3-4 пресетов, проверка live карточки, проверка iframe-применения и затем сохранить/перезагрузить экран.

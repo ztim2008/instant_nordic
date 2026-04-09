@@ -25,6 +25,13 @@ class backendNordicbuilder extends cmsBackend {
                 'options' => [
                     'icon' => 'file-alt'
                 ]
+            ],
+            [
+                'title' => 'Дизайн-система',
+				'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'defaults']),
+                'options' => [
+                    'icon' => 'paint-brush'
+                ]
             ]
         ];
     }

@@ -160,6 +160,7 @@
   - visual layer шаблона `nordic` отвязан от прямого CSS-импорта `modern`: поднят собственный `foundation.css`, `theme.css` переведен на Nordic-only слой, а SCSS разложен на partials `tokens`, `base`, `shell`, `components` с синхронным package mirror; `inherit => ['modern']` пока сохраняется только как техническая runtime-совместимость, а не как источник видимого дизайна.
   - shared admin UI `landingbuilder`/`nordicbuilder` переведен на взрослый Nordic-styled слой: canvas получил собственные кнопки, controls, library cards и version cards, а `pages`, `shell` и `shell variant` ушли от bootstrap-таблиц в собственные product-style cards/panels.
   - для этого UI подготовлен отдельный ручной smoke checklist под актуальные admin routes `nordicbuilder/pages -> canvas -> defaults` и bridge-screen `landingbuilder/shell`.
+  - запущен формальный `Design System Contract V1`: в runtime/model/forms добавлен foundation-ключ `surface_preset`, введены semantic role vars и выровнен merge-пайплайн пресетов между canvas и live runtime.
 - Ограничение этапа:
   - foundation не должен превращаться в бесконечное проектирование идеальной платформы;
   - internal tooling допустим как инженерная опора, но не должен выдаваться за главный builder UI;

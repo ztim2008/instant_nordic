@@ -19,6 +19,7 @@
 9. Радиусы (`radius_preset`)
 10. Плотность интерфейса (`density_preset`)
 11. Контраст (`contrast_preset`)
+12. Поверхности (`surface_preset`)
 
 ## 2) Доступные пресеты (фактический каталог)
 
@@ -82,6 +83,12 @@
 - `balanced`
 - `strong`
 
+12. `surface_preset`:
+- `neutral`
+- `soft`
+- `elevated`
+- `contrast`
+
 ## 3) Runtime токены (полный список CSS variables)
 
 Эти переменные уже участвуют в runtime-генерации темы и являются реальным рычагом глобального визуального управления:
@@ -127,6 +134,25 @@
 39. `--lb-topbar-padding-x`
 40. `--lb-page-max-width`
 41. `--lb-section-gap`
+42. `--lb-surface-panel-background`
+43. `--lb-surface-panel-border`
+44. `--lb-surface-panel-shadow`
+45. `--lb-role-text-primary`
+46. `--lb-role-text-secondary`
+47. `--lb-role-heading`
+48. `--lb-role-border`
+49. `--lb-role-surface-base`
+50. `--lb-role-surface-soft`
+51. `--lb-role-surface-contrast`
+52. `--lb-role-action-primary`
+53. `--lb-role-action-on-primary`
+54. `--lb-role-card-bg`
+55. `--lb-role-card-border`
+56. `--lb-role-card-shadow`
+
+Источник контракта:
+
+- `docs/NORDICBUILDER-DESIGN-SYSTEM-CONTRACT-V1.md`
 
 ## 4) Какие элементы InstantCMS уже покрыты глобальным стилем
 

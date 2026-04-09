@@ -16,6 +16,7 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 			'container_preset'    => 'standard',
 			'button_preset'       => 'soft_accent',
 			'card_preset'         => 'quiet',
+			'surface_preset'      => 'neutral',
 			'section_spacing'     => 'comfortable',
 			'radius_preset'       => 'none',
 			'density_preset'      => 'balanced',
@@ -34,6 +35,7 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 			'container_preset'    => 'default_container_preset',
 			'button_preset'       => 'default_button_preset',
 			'card_preset'         => 'default_card_preset',
+			'surface_preset'      => 'default_surface_preset',
 			'section_spacing'     => 'default_section_spacing',
 			'radius_preset'       => 'default_radius_preset',
 			'density_preset'      => 'default_density_preset',
@@ -290,6 +292,40 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 					'--lb-card-shadow'     => 'none'
 				]
 			],
+			'surface_presets' => [
+				'neutral' => [
+					'--lb-surface-panel-background' => 'var(--lb-surface-color)',
+					'--lb-surface-panel-border'     => 'var(--lb-border-color)',
+					'--lb-surface-panel-shadow'     => 'var(--lb-shadow-sm)',
+					'--lb-card-background'          => 'var(--lb-surface-color)',
+					'--lb-card-border'              => 'var(--lb-border-color)',
+					'--lb-card-shadow'              => 'var(--lb-shadow-sm)'
+				],
+				'soft' => [
+					'--lb-surface-panel-background' => 'var(--lb-surface-soft)',
+					'--lb-surface-panel-border'     => 'rgba(0, 0, 0, 0.04)',
+					'--lb-surface-panel-shadow'     => 'none',
+					'--lb-card-background'          => 'var(--lb-surface-soft)',
+					'--lb-card-border'              => 'rgba(0, 0, 0, 0.04)',
+					'--lb-card-shadow'              => 'none'
+				],
+				'elevated' => [
+					'--lb-surface-panel-background' => 'var(--lb-surface-color)',
+					'--lb-surface-panel-border'     => 'rgba(0, 0, 0, 0.03)',
+					'--lb-surface-panel-shadow'     => 'var(--lb-shadow-md)',
+					'--lb-card-background'          => 'var(--lb-surface-color)',
+					'--lb-card-border'              => 'rgba(0, 0, 0, 0.03)',
+					'--lb-card-shadow'              => 'var(--lb-shadow-md)'
+				],
+				'contrast' => [
+					'--lb-surface-panel-background' => 'var(--lb-contrast-surface)',
+					'--lb-surface-panel-border'     => 'rgba(255, 255, 255, 0.2)',
+					'--lb-surface-panel-shadow'     => '0 14px 30px rgba(10, 21, 31, 0.24)',
+					'--lb-card-background'          => 'var(--lb-contrast-surface)',
+					'--lb-card-border'              => 'rgba(255, 255, 255, 0.2)',
+					'--lb-card-shadow'              => '0 14px 30px rgba(10, 21, 31, 0.24)'
+				]
+			],
 			'base_vars' => [
 				'--lb-page-background'      => '#f4f7fa',
 				'--lb-surface-color'        => '#ffffff',
@@ -329,7 +365,22 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 				'--lb-button-padding-x'     => '22px',
 				'--lb-topbar-padding-y'     => '12px',
 				'--lb-topbar-padding-x'     => '18px',
-				'--lb-border-contrast'      => 'rgba(23, 48, 66, 0.18)'
+				'--lb-border-contrast'      => 'rgba(23, 48, 66, 0.18)',
+				'--lb-surface-panel-background' => 'var(--lb-surface-color)',
+				'--lb-surface-panel-border'     => 'var(--lb-border-color)',
+				'--lb-surface-panel-shadow'     => 'var(--lb-shadow-sm)',
+				'--lb-role-text-primary'        => 'var(--lb-text-color)',
+				'--lb-role-text-secondary'      => 'var(--lb-text-muted)',
+				'--lb-role-heading'             => 'var(--lb-heading-color)',
+				'--lb-role-border'              => 'var(--lb-border-color)',
+				'--lb-role-surface-base'        => 'var(--lb-surface-color)',
+				'--lb-role-surface-soft'        => 'var(--lb-surface-soft)',
+				'--lb-role-surface-contrast'    => 'var(--lb-contrast-surface)',
+				'--lb-role-action-primary'      => 'var(--lb-accent-color)',
+				'--lb-role-action-on-primary'   => 'var(--lb-accent-contrast)',
+				'--lb-role-card-bg'             => 'var(--lb-card-background)',
+				'--lb-role-card-border'         => 'var(--lb-card-border)',
+				'--lb-role-card-shadow'         => 'var(--lb-card-shadow)'
 			]
 		];
 	}
@@ -341,7 +392,7 @@ if (!function_exists('landingbuilder_sanitize_theme_token')) {
 		$vars = array_merge($catalog['base_vars'], [
 			'--lb-page-max-width'       => $catalog['container_presets'][$theme['container_preset']] ?? '1120px',
 			'--lb-section-gap'          => $catalog['section_spacing'][$theme['section_spacing']] ?? '32px'
-		], $catalog['global_style_presets'][$theme['global_style_preset']] ?? [], $catalog['color_presets'][$theme['color_preset']] ?? [], $catalog['typography_presets'][$theme['typography_preset']] ?? [], $catalog['radius_presets'][$theme['radius_preset']] ?? [], $catalog['density_presets'][$theme['density_preset']] ?? [], $catalog['contrast_presets'][$theme['contrast_preset']] ?? [], $catalog['button_presets'][$theme['button_preset']] ?? [], $catalog['card_presets'][$theme['card_preset']] ?? []);
+		], $catalog['global_style_presets'][$theme['global_style_preset']] ?? [], $catalog['color_presets'][$theme['color_preset']] ?? [], $catalog['typography_presets'][$theme['typography_preset']] ?? [], $catalog['radius_presets'][$theme['radius_preset']] ?? [], $catalog['density_presets'][$theme['density_preset']] ?? [], $catalog['contrast_presets'][$theme['contrast_preset']] ?? [], $catalog['button_presets'][$theme['button_preset']] ?? [], $catalog['card_presets'][$theme['card_preset']] ?? [], $catalog['surface_presets'][$theme['surface_preset']] ?? []);
 
 		return [
 			'theme'            => $theme,

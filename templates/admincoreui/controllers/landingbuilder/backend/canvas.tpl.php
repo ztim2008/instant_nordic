@@ -2749,7 +2749,7 @@ $canvas_state = [
             return Object.assign({}, catalog.base_vars || {}, {
                 '--lb-page-max-width': ((catalog.container_presets || {})[theme.container_preset]) || '1120px',
                 '--lb-section-gap': ((catalog.section_spacing || {})[theme.section_spacing]) || '32px'
-            }, ((catalog.global_style_presets || {})[theme.global_style_preset]) || {}, ((catalog.color_presets || {})[theme.color_preset]) || {}, ((catalog.typography_presets || {})[theme.typography_preset]) || {}, ((catalog.button_presets || {})[theme.button_preset]) || {}, ((catalog.card_presets || {})[theme.card_preset]) || {});
+            }, ((catalog.global_style_presets || {})[theme.global_style_preset]) || {}, ((catalog.color_presets || {})[theme.color_preset]) || {}, ((catalog.typography_presets || {})[theme.typography_preset]) || {}, ((catalog.radius_presets || {})[theme.radius_preset]) || {}, ((catalog.density_presets || {})[theme.density_preset]) || {}, ((catalog.contrast_presets || {})[theme.contrast_preset]) || {}, ((catalog.button_presets || {})[theme.button_preset]) || {}, ((catalog.card_presets || {})[theme.card_preset]) || {}, ((catalog.surface_presets || {})[theme.surface_preset]) || {});
         }
 
         function renderThemeVars(vars) {
