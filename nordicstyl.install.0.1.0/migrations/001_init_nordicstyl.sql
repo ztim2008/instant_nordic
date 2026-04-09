@@ -1,6 +1,11 @@
+-- NordicStyl migrations
+-- 001_init_nordicstyl
+
+-- Baseline safety: ensure controller exists (no-op if already present)
 INSERT IGNORE INTO `{#}controllers` (`title`, `name`, `is_enabled`, `options`, `author`, `url`, `version`, `is_backend`)
 VALUES ('NordicStyl', 'nordicstyl', 1, '', 'Nordic Builder', 'https://nordic-builder.store', '0.1.0', 1);
 
+-- Baseline schema (no-op if already present)
 CREATE TABLE IF NOT EXISTS `{#}nordicstyl_styles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(100) DEFAULT NULL,
