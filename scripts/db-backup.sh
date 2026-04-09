@@ -67,15 +67,20 @@ if ! command -v mysqldump >/dev/null 2>&1; then
     die "mysqldump command is not available in PATH"
 fi
 
+mysql_auth_args=()
+if [[ -n "$db_pass" ]]; then
+    mysql_auth_args+=("--password=$db_pass")
+fi
+
 timestamp="$(date +%Y%m%d-%H%M%S)"
 outfile="$backup_dir/${db_base}-${timestamp}.sql.gz"
 tmpfile="$outfile.tmp"
 
 if command -v mysql >/dev/null 2>&1; then
     preflight_ok=0
-    if MYSQL_PWD="$db_pass" mysql -h "$db_host" -u "$db_user" -D "$db_base" -Nse 'SELECT 1' >/dev/null 2>&1; then
+    if mysql -h "$db_host" -u "$db_user" "${mysql_auth_args[@]}" -D "$db_base" -Nse 'SELECT 1' >/dev/null 2>&1; then
         preflight_ok=1
-    elif MYSQL_PWD="$db_pass" mysql --protocol=TCP -h "$db_host" -u "$db_user" -D "$db_base" -Nse 'SELECT 1' >/dev/null 2>&1; then
+    elif mysql --protocol=TCP -h "$db_host" -u "$db_user" "${mysql_auth_args[@]}" -D "$db_base" -Nse 'SELECT 1' >/dev/null 2>&1; then
         preflight_ok=1
     fi
 
@@ -85,7 +90,7 @@ if command -v mysql >/dev/null 2>&1; then
 fi
 
 rm -f "$tmpfile"
-if ! MYSQL_PWD="$db_pass" mysqldump -h "$db_host" -u "$db_user" --single-transaction --routines --triggers --no-tablespaces "$db_base" | gzip > "$tmpfile"; then
+if ! mysqldump -h "$db_host" -u "$db_user" "${mysql_auth_args[@]}" --single-transaction --routines --triggers --no-tablespaces "$db_base" | gzip > "$tmpfile"; then
     rm -f "$tmpfile"
     die "mysqldump failed (host='$db_host', base='$db_base', user='$db_user')."
 fi

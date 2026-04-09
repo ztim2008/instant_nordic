@@ -173,8 +173,9 @@
 	- выполнен P1 pass 3: упрощены редакторские подписи `title/label` (`Имя секции`, `Имя колонки`, `Имя элемента`), а подробные подсказки для них показываются только в advanced mode.
 	- выполнен короткий авторизованный canvas-smoke: `homepage` на desktop/tablet/mobile и page keys `home`, `ver`, `glav` на desktop отдают `HTTP 200` и содержат ожидаемые маркеры (`Имя секции`, quick-actions дублирования/видимости, `lb_inspector_advanced`).
 	- выполнен интерактивный admin-smoke quick-actions на `homepage`: клики `duplicate/toggle visibility` для section и node, затем `Сохранить` и `reload`; изменения persisted (дубликаты и состояния видимости сохранились).
-	- закрыт ops-хвост по backup: создана отдельная dump-учетка `lb_dump` (auth_socket), добавлен локальный env-файл `backups/db/.db-dump.env`, и `db-backup/checkpoint` теперь проходят без `DB_DUMP_USER=root` override.
-	- `scripts/db-backup.sh` обновлен для локального env-файла dump-учетки и режима пустого `DB_DUMP_PASS` (auth_socket), а также для `mysqldump --no-tablespaces` без расширения прав до `PROCESS`.
+	- закрыт шаг 1 по backup для non-root: создан тех-пользователь `lbops` и отдельная password dump-учетка `lb_dump_ops`, backup успешно выполняется от `lbops` без root override.
+	- `scripts/db-backup.sh` обновлен: поддержка локального env (`backups/db/.db-dump.env`), корректная передача пароля в `mysql/mysqldump` через аргументы, поддержка пустого `DB_DUMP_PASS`, и `mysqldump --no-tablespaces`.
+	- выполнен P1 pass 4 (cleanup remaining review-полей): в колонке `align` переименован в понятный `Расположение внутри колонки`, у блока `source_key` переименован в `Тип элемента`, а техполе `source_key` для non-block скрыто в базовом режиме и оставлено только в advanced.
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -228,13 +229,15 @@
 	- `cmp -s` подтверждает parity между live `canvas.tpl.php` и package mirrors после P1 pass 3.
 	- авторизованный admin-smoke по canvas подтверждает `HTTP 200` на `homepage` (desktop/tablet/mobile) и `home`/`ver`/`glav` (desktop), с наличием ожидаемых P1-маркеров в HTML.
 	- интерактивный smoke quick-actions подтвержден в браузере на `homepage`: `duplicate-section`, `toggle-section-device-visibility`, `duplicate-node`, `toggle-node-device-visibility` отрабатывают и сохраняются после `Сохранить` + `reload`.
-	- `scripts/db-backup.sh` успешно выполняется без `DB_DUMP_*` override (через `lb_dump` + локальный env), strict checkpoint в режиме `required` проходит без root override.
+	- backup успешно выполняется от `lbops` через `./scripts/db-backup.sh` (non-root сценарий подтвержден).
+	- `php -l` и `cmp -s` подтверждают корректность и parity `canvas.tpl.php` (live + package mirrors) после pass 4.
+	- runtime HTML `canvas/homepage` содержит новые маркеры cleanup (`Расположение внутри колонки`, `Тип элемента`, `Ключ источника (тех.)` в advanced-ветке).
 - Какие риски остались:
-	- dump-учетка `lb_dump` опирается на `auth_socket` и запуск backup-скриптов от системного root; при запуске от другого OS-пользователя понадобится отдельная password-учетка или обновление auth-схемы;
-	- локальный файл `backups/db/.db-dump.env` хранится вне git (что правильно для секрета/локальной настройки), но его наличие нужно контролировать в операционном runbook.
+	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
+	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
 - Следующий шаг:
-	- при необходимости оформить password-вариант dump-учетки для запуска checkpoint не только от root (без потери принципа отдельной dump-role).
-	- продолжить P1 cleanup remaining `review` controls (alignment/source_key) с коротким runtime-smoke.
+	- выполнить короткий визуальный smoke в админке по колонке/элементу на tablet/mobile после pass 4.
+	- запланировать ротацию пароля `lb_dump_ops` и отдельный runbook-пункт по обслуживанию `backups/db/.db-dump.env`.
 
 ## 2026-04-07
 

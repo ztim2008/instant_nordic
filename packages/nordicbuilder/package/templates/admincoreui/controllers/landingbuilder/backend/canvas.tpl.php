@@ -5450,7 +5450,7 @@ $canvas_state = [
                     '</div>' +
                     renderWidthControls(column.width) +
                     '<div class="lb-field">' +
-                        fieldLabel('Выравнивание содержимого', 'Помогает прижать содержимое колонки к верху, центру или низу.') +
+                        fieldLabel('Расположение внутри колонки', inspectorAdvancedMode ? 'Определяет, где будет стоять содержимое: сверху, по центру или снизу.' : '') +
                         '<select class="lb-control" data-field="settings.align">' +
                             alignOptions.map(function (option) {
                                 return '<option value="' + option.value + '"' + (column.settings.align === option.value ? ' selected' : '') + '>' + option.title + '</option>';
@@ -5496,12 +5496,14 @@ $canvas_state = [
                       '</div>'
                     : '') +
                 (node.type === 'block'
-                    ? renderSelectField('Semantic-пресет блока', 'Определяет смысловой сценарий блока и набор его базовых полей.', 'source_key', getBlockPresetOptions(node.source_key || ''), node.source_key || '')
+                    ? renderSelectField('Тип элемента', inspectorAdvancedMode ? 'Определяет сценарий блока и набор его полей.' : '', 'source_key', getBlockPresetOptions(node.source_key || ''), node.source_key || '')
                         + renderBlockSemanticInspector(node)
-                    : '<div class="lb-field">' +
-                        fieldLabel('Источник данных блока', 'Нужен только если блок должен брать данные из заранее заданного сценария или источника.') +
-                        '<input type="text" class="lb-control" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
-                      '</div>') +
+                    : (inspectorAdvancedMode
+                        ? '<div class="lb-field">' +
+                            fieldLabel('Ключ источника (тех.)', 'Нужно только для специальных сценариев данных.') +
+                            '<input type="text" class="lb-control" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
+                          '</div>'
+                        : '')) +
                 '<div class="lb-field">' +
                     fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть этот элемент на нужных типах устройств.') +
                     renderVisibilityControls('device_visibility', node.device_visibility) +

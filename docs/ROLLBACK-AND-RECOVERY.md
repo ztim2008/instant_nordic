@@ -44,15 +44,15 @@
 
 `DB_DUMP_HOST=localhost`
 `DB_DUMP_BASE=builders`
-`DB_DUMP_USER=lb_dump`
-`DB_DUMP_PASS=`
+`DB_DUMP_USER=<dump_user>`
+`DB_DUMP_PASS=<dump_pass_or_empty>`
 
-На текущем сервере для этой схемы используется отдельная MySQL-учетка `lb_dump` с `auth_socket` и правами dump на `builders`.
+На текущем сервере активен password-вариант отдельной dump-учетки (`lb_dump_ops`), и backup проверен в non-root запуске от тех-пользователя `lbops`.
 
 Важно:
 1. Файл `backups/db/.db-dump.env` не коммитится (каталог `backups/` в `.gitignore`).
-2. Права файла: `chmod 600 backups/db/.db-dump.env`.
-3. Такой вариант работает при запуске backup/checkpoint от системного root; для других OS-пользователей нужен password-вариант dump-учетки.
+2. Права файла: `chmod 640 backups/db/.db-dump.env` и ограниченный доступ только для нужной тех-группы.
+3. Для non-root запуска убедиться, что тех-пользователь имеет права записи в `backups/db/`.
 
 ## Безопасный rollback для проверки
 
