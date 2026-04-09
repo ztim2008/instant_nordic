@@ -772,6 +772,22 @@ $canvas_state = [
         gap: 0.65rem;
     }
 
+    .lb-zone-workspace__middle.lb-zone-workspace__middle--1 {
+        grid-template-columns: minmax(360px, 1fr);
+    }
+
+    .lb-zone-workspace__middle.lb-zone-workspace__middle--2-left {
+        grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.4fr);
+    }
+
+    .lb-zone-workspace__middle.lb-zone-workspace__middle--2-right {
+        grid-template-columns: minmax(360px, 1.4fr) minmax(220px, 1fr);
+    }
+
+    .lb-zone-workspace__middle.lb-zone-workspace__middle--3 {
+        grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.4fr) minmax(220px, 1fr);
+    }
+
     .lb-zone-workspace__column {
         border: 1px dashed #d4dee7;
         border-radius: 10px;
@@ -4854,6 +4870,7 @@ $canvas_state = [
             const allSectionsAutoscale = areAllSectionsAutoscaleEnabled();
             const hasMultipleSections = getAutoscaleEligibleSections().length > 1;
             const isSidebarSection = isSectionSidebarZone(section);
+            const hasMultipleColumns = !!(section && Array.isArray(section.columns) && section.columns.length > 1);
 
             return '' +
                 '<div class="lb-field">' +
@@ -4867,6 +4884,9 @@ $canvas_state = [
                           (hasMultipleSections
                               ? '<button type="button" class="lb-btn lb-btn--ghost mt-2" data-action="toggle-all-sections-autoscale-base-blocks">' + (allSectionsAutoscale ? 'Выключить автоскейл во всех секциях' : 'Включить автоскейл во всех секциях') + '</button>'
                               : '')) +
+                    (hasMultipleColumns
+                        ? ''
+                        : '<div class="small text-muted mt-2">Сейчас в секции одна колонка, поэтому сетка визуально почти не меняется. Для проверки включите 2-3 колонки в поле «Строка: колонки».</div>') +
                     '<div class="small text-muted mt-2">Активный предпросмотр: ' + escapeHtml(getDeviceTitle(state.activeDevice)) + '</div>' +
                 '</div>';
         }
@@ -5287,6 +5307,7 @@ $canvas_state = [
             let sectionsMarkup = '';
 
             if (showNativeBodyScaffold) {
+                const bodyColumns = resolveBodyColumnsState();
                 const beforeSections = sectionCards.filter(function (item) {
                     return item.zoneKey === 'before_content' || item.zoneKey === 'hero' || item.zoneKey === '';
                 }).map(function (item) { return item.html; }).join('');
@@ -5309,18 +5330,22 @@ $canvas_state = [
                             '<p class="lb-zone-workspace__lane-title">Зона: перед body</p>' +
                             (beforeSections || renderZoneEmpty('before_content', 'Зона над body пока пустая.', 'Блок над body')) +
                         '</div>' +
-                        '<div class="lb-zone-workspace__middle">' +
-                            '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_left">' +
-                                '<p class="lb-zone-workspace__lane-title">Левый sidebar</p>' +
-                                (leftSections || renderZoneEmpty('content_sidebar_left', 'Левый sidebar пока пустой.', 'Блок в левый sidebar')) +
-                            '</div>' +
+                        '<div class="lb-zone-workspace__middle lb-zone-workspace__middle--' + escapeHtml(bodyColumns.mode) + '">' +
+                            (bodyColumns.hasLeft
+                                ? '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_left">' +
+                                    '<p class="lb-zone-workspace__lane-title">Левый sidebar</p>' +
+                                    (leftSections || renderZoneEmpty('content_sidebar_left', 'Левый sidebar пока пустой.', 'Блок в левый sidebar')) +
+                                  '</div>'
+                                : '') +
                             '<div class="lb-zone-workspace__column lb-zone-workspace__column--center" data-zone-key="content_body">' +
                                 nativeBodyScaffoldMarkup +
                             '</div>' +
-                            '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_right">' +
-                                '<p class="lb-zone-workspace__lane-title">Правый sidebar</p>' +
-                                (rightSections || renderZoneEmpty('content_sidebar_right', 'Правый sidebar пока пустой.', 'Блок в правый sidebar')) +
-                            '</div>' +
+                            (bodyColumns.hasRight
+                                ? '<div class="lb-zone-workspace__column" data-zone-key="content_sidebar_right">' +
+                                    '<p class="lb-zone-workspace__lane-title">Правый sidebar</p>' +
+                                    (rightSections || renderZoneEmpty('content_sidebar_right', 'Правый sidebar пока пустой.', 'Блок в правый sidebar')) +
+                                  '</div>'
+                                : '') +
                         '</div>' +
                         '<div class="lb-zone-workspace__lane" data-zone-key="after_content">' +
                             '<p class="lb-zone-workspace__lane-title">Зона: после body</p>' +
