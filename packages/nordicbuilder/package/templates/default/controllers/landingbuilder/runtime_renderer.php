@@ -20,6 +20,121 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		];
 	}
 
+	function landingbuilder_runtime_normalize_ctype_name($value) {
+		$name = trim((string) $value);
+		if ($name === '') {
+			return '';
+		}
+
+		return preg_match('/^[a-z0-9_{}\-]+$/i', $name) ? $name : '';
+	}
+
+	function landingbuilder_runtime_get_context_ctype_name() {
+		try {
+			$current_ctype = cmsModel::getCachedResult('current_ctype');
+			if (is_array($current_ctype)) {
+				return landingbuilder_runtime_normalize_ctype_name($current_ctype['name'] ?? '');
+			}
+		} catch (Throwable $exception) {
+			// noop
+		}
+
+		return '';
+	}
+
+	function landingbuilder_runtime_resolve_ctype_name($preferred_ctype = '') {
+		$preferred = landingbuilder_runtime_normalize_ctype_name($preferred_ctype);
+		if ($preferred !== '') {
+			return $preferred;
+		}
+
+		return landingbuilder_runtime_get_context_ctype_name();
+	}
+
+	function landingbuilder_runtime_resolve_content_sort($sort_key) {
+		$map = [
+			'date_desc'  => ['date_pub', 'desc'],
+			'date_asc'   => ['date_pub', 'asc'],
+			'id_desc'    => ['id', 'desc'],
+			'id_asc'     => ['id', 'asc'],
+			'title_asc'  => ['title', 'asc'],
+			'title_desc' => ['title', 'desc']
+		];
+
+		$key = trim((string) $sort_key);
+		return $map[$key] ?? $map['date_desc'];
+	}
+
+	function landingbuilder_runtime_fetch_ctype_items($ctype_name = '', $limit = 6, $sort_key = 'date_desc') {
+		$resolved_ctype = landingbuilder_runtime_resolve_ctype_name($ctype_name);
+		if ($resolved_ctype === '') {
+			return [];
+		}
+
+		$safe_limit = (int) round((float) $limit);
+		if ($safe_limit < 1) {
+			$safe_limit = 1;
+		}
+		if ($safe_limit > 24) {
+			$safe_limit = 24;
+		}
+
+		try {
+			$content_model = cmsCore::getModel('content');
+			$ctype = $content_model->getContentTypeByName($resolved_ctype);
+			if (!$ctype) {
+				return [];
+			}
+
+			list($order_by, $order_to) = landingbuilder_runtime_resolve_content_sort($sort_key);
+			$content_model
+				->orderBy($order_by, $order_to)
+				->limit(0, $safe_limit);
+
+			$items = $content_model->getContentItems($resolved_ctype);
+			return is_array($items) ? array_values($items) : [];
+		} catch (Throwable $exception) {
+			return [];
+		}
+	}
+
+	function landingbuilder_runtime_extract_item_value(array $item, $field_path, $fallback = '') {
+		$path = trim((string) $field_path);
+		if ($path === '') {
+			return trim((string) $fallback);
+		}
+
+		$cursor = $item;
+		foreach (explode('.', $path) as $chunk) {
+			$key = trim((string) $chunk);
+			if ($key === '' || !is_array($cursor) || !array_key_exists($key, $cursor)) {
+				return trim((string) $fallback);
+			}
+
+			$cursor = $cursor[$key];
+		}
+
+		if (is_array($cursor)) {
+			foreach (['title', 'name', 'label', 'value'] as $candidate) {
+				if (array_key_exists($candidate, $cursor) && is_scalar($cursor[$candidate])) {
+					return trim((string) $cursor[$candidate]);
+				}
+			}
+
+			return trim((string) $fallback);
+		}
+
+		if (is_bool($cursor)) {
+			return $cursor ? '1' : '0';
+		}
+
+		if (is_scalar($cursor)) {
+			return trim((string) $cursor);
+		}
+
+		return trim((string) $fallback);
+	}
+
 	function landingbuilder_runtime_is_visible($visibility, $device_type) {
 		if (!is_array($visibility)) {
 			return true;
@@ -646,6 +761,7 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		} elseif ($key === 'pro.metrics-grid-pro') {
 			$columns = $normalize_enum($options['columns'] ?? '', ['2', '3', '4'], '3');
 			$card_style = $normalize_enum($options['card_style'] ?? '', ['soft', 'outline', 'solid', 'glass'], 'soft');
+			$data_source_mode = $normalize_enum($options['data_source_mode'] ?? '', ['manual', 'ctype.list'], 'manual');
 			$section_bg = $normalize_color($options['section_bg'] ?? '#f8fafc', '#f8fafc');
 			$card_bg = $normalize_color($options['card_bg'] ?? '#ffffff', '#ffffff');
 			$value_color = $normalize_color($options['value_color'] ?? '#0f172a', '#0f172a');
@@ -657,7 +773,38 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			$padding_y = $normalize_number($options['padding_y'] ?? 44, 44, 16, 140);
 			$gap = $normalize_number($options['gap'] ?? 18, 18, 8, 56);
 
-			$items_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			$items_rows = [];
+			if ($data_source_mode === 'ctype.list') {
+				$data_items = landingbuilder_runtime_fetch_ctype_items(
+					$options['data_ctype_name'] ?? '',
+					$options['data_limit'] ?? 6,
+					$options['data_sort'] ?? 'date_desc'
+				);
+
+				$value_field = trim((string) ($options['data_value_field'] ?? 'id'));
+				$label_field = trim((string) ($options['data_label_field'] ?? 'title'));
+				$note_field = trim((string) ($options['data_note_field'] ?? 'date_pub'));
+
+				foreach ($data_items as $item) {
+					if (!is_array($item)) {
+						continue;
+					}
+
+					$value = landingbuilder_runtime_extract_item_value($item, $value_field, (string) ($item['id'] ?? ''));
+					$label = landingbuilder_runtime_extract_item_value($item, $label_field, (string) ($item['title'] ?? $value));
+					$note = landingbuilder_runtime_extract_item_value($item, $note_field, (string) ($item['date_pub'] ?? ''));
+
+					if ($value === '' && $label === '' && $note === '') {
+						continue;
+					}
+
+					$items_rows[] = $value . '|' . $label . '|' . $note;
+				}
+			}
+
+			if (!$items_rows) {
+				$items_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			}
 			if (!$items_rows) {
 				$items_rows = ['1200|Лидов в месяц|Среднее за квартал', '4.9|Рейтинг|На основании 840 отзывов', '18 мин|Ответ менеджера|Средний SLA'];
 			}
@@ -703,6 +850,7 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 		} elseif ($key === 'pro.faq-adaptive-pro') {
 			$layout_mode = $normalize_enum($options['layout_mode'] ?? '', ['single', 'two'], 'single');
 			$open_first = !empty($options['open_first']);
+			$data_source_mode = $normalize_enum($options['data_source_mode'] ?? '', ['manual', 'ctype.list'], 'manual');
 			$section_bg = $normalize_color($options['section_bg'] ?? '#ffffff', '#ffffff');
 			$question_bg = $normalize_color($options['question_bg'] ?? '#f8fafc', '#f8fafc');
 			$question_color = $normalize_color($options['question_color'] ?? '#0f172a', '#0f172a');
@@ -713,7 +861,50 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 			$padding_y = $normalize_number($options['padding_y'] ?? 40, 40, 16, 120);
 			$gap = $normalize_number($options['gap'] ?? 12, 12, 6, 40);
 
-			$faq_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			$faq_rows = [];
+			if ($data_source_mode === 'ctype.list') {
+				$data_items = landingbuilder_runtime_fetch_ctype_items(
+					$options['data_ctype_name'] ?? '',
+					$options['data_limit'] ?? 6,
+					$options['data_sort'] ?? 'date_desc'
+				);
+				$question_field = trim((string) ($options['data_question_field'] ?? 'title'));
+				$answer_field = trim((string) ($options['data_answer_field'] ?? 'teaser'));
+
+				foreach ($data_items as $item) {
+					if (!is_array($item)) {
+						continue;
+					}
+
+					$question = landingbuilder_runtime_extract_item_value($item, $question_field, (string) ($item['title'] ?? ''));
+					$answer = landingbuilder_runtime_extract_item_value($item, $answer_field, '');
+
+					if ($answer === '') {
+						foreach (['teaser', 'description', 'content', 'seo_desc', 'seo_description'] as $fallback_field) {
+							$answer = landingbuilder_runtime_extract_item_value($item, $fallback_field, '');
+							if ($answer !== '') {
+								break;
+							}
+						}
+					}
+
+					$question = trim(strip_tags($question));
+					$answer = trim(strip_tags($answer));
+					if (mb_strlen($answer) > 320) {
+						$answer = mb_substr($answer, 0, 317) . '...';
+					}
+
+					if ($question === '' && $answer === '') {
+						continue;
+					}
+
+					$faq_rows[] = $question . '|' . $answer;
+				}
+			}
+
+			if (!$faq_rows) {
+				$faq_rows = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', (string) ($options['items_text'] ?? $items_text)))));
+			}
 			if (!$faq_rows) {
 				$faq_rows = [
 					'Сколько длится запуск?|Обычно 5-10 рабочих дней.',

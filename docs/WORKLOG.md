@@ -1795,3 +1795,38 @@
 	- не выполнен целевой publish-check для подтверждения SSR parity в production flow.
 - Следующий шаг:
 	- пройти короткий smoke по 3 блокам (создание на canvas -> сохранение -> preview/live), затем зафиксировать результат отдельным checkpoint-коммитом.
+
+## 2026-04-09 / Dynamic data source для кастомных блоков (MVP)
+
+- Что планировалось:
+	- сделать еще один «взрослый» шаг: подключить к кастомным блокам данные из типов контента InstantCMS, чтобы блоки работали не только от ручного ввода.
+- Что сделано:
+	- в block catalog для `pro.metrics-grid-pro` и `pro.faq-adaptive-pro` добавлены inspector-поля data source:
+		- `data_source_mode` (`manual` / `ctype.list`),
+		- `data_ctype_name`, `data_limit`, `data_sort`,
+		- field mapping (`data_value_field`/`data_label_field`/`data_note_field` и `data_question_field`/`data_answer_field`);
+	- в runtime renderer добавлен безопасный fetch данных из InstantCMS:
+		- автонормализация ctype,
+		- fallback на ctype из route context,
+		- выборка через `cmsCore::getModel('content')->getContentItems()`,
+		- fallback на ручной `items_text`, если dynamic источник пустой или недоступен;
+	- в `nordicbuilder` block manifests расширены props schema + defaults под новые поля data source;
+	- live и package mirrors синхронизированы.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [system/controllers/nordicbuilder/data/block_manifests.php](../system/controllers/nordicbuilder/data/block_manifests.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/data/block_manifests.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/data/block_manifests.php)
+	- [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](checklists/NEW_BLOCK_CHECKLIST_STATUS.json)
+- Что проверено:
+	- `php -l` без ошибок для всех измененных live/mirror PHP файлов;
+	- `cmp -s` подтверждает parity между live и package mirrors по model/manifests/runtime_renderer.
+- Какие риски остались:
+	- не пройден авторизованный визуальный smoke в canvas/preview/live по кейсам `manual -> ctype.list`;
+	- не проверены edge-cases для ctype с нетиповой структурой полей (например, пустой `teaser`/`description`).
+- Следующий шаг:
+	- пройти быстрый smoke на 2 сценариях (`pro.metrics-grid-pro`, `pro.faq-adaptive-pro`) с реальным ctype и проверить fallback на `items_text`.

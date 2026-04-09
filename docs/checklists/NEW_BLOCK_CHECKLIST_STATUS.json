@@ -1,6 +1,6 @@
 {
   "updated_at": "2026-04-09",
-  "current_block": "pro.flex-composer",
+  "current_block": "pro.metrics-grid-pro",
   "status": {
     "spec_reviewed": true,
     "data_model_checked": true,
@@ -11,5 +11,5 @@
     "git_snapshot_created": true,
     "deployed_to_prod": false
   },
-  "notes": "Сделан взрослый pivot к компактному набору: добавлены pro.flex-composer, pro.metrics-grid-pro и pro.faq-adaptive-pro с расширенными inspector controls. Синхронизированы block catalog, manifest registry и runtime renderer (live + package mirrors). Создан pre-change checkpoint snapshot/20260409-131648 с backup БД; остается ручной визуальный smoke canvas/preview/live и финальный publish-check."
+  "notes": "После взрослого pivot на 3 PRO-блока добавлен MVP dynamic data source: для pro.metrics-grid-pro и pro.faq-adaptive-pro реализованы режимы manual/ctype.list, выбор ctype, лимит, сортировка и field mapping (значение/подпись/заметка и вопрос/ответ). Runtime подтягивает записи через model(content)->getContentItems() с fallback на ручный items_text. Синхронизация live + package mirrors выполнена; остается ручной визуальный smoke canvas/preview/live и publish-check."
 }

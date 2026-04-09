@@ -1401,6 +1401,26 @@ class modelLandingbuilder extends cmsModel {
 			];
 		}
 
+		$ctype_choices = [
+			['value' => '', 'title' => 'Автовыбор по текущему маршруту']
+		];
+		try {
+			$content_model = cmsCore::getModel('content');
+			foreach ((array) $content_model->getContentTypes() as $ctype) {
+				$ctype_name = trim((string) ($ctype['name'] ?? ''));
+				if ($ctype_name === '') {
+					continue;
+				}
+
+				$ctype_choices[] = [
+					'value' => $ctype_name,
+					'title' => (string) ($ctype['title'] ?? $ctype_name)
+				];
+			}
+		} catch (Throwable $exception) {
+			// noop
+		}
+
 		return [
 			'core.hero' => [
 				'key'           => 'core.hero',
@@ -1695,6 +1715,23 @@ class modelLandingbuilder extends cmsModel {
 					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Результаты в цифрах'],
 					['key' => 'text', 'title' => 'Пояснение', 'type' => 'textarea', 'placeholder' => 'Коротко объясните, что означают показатели.'],
 					['key' => 'items_text', 'title' => 'Показатели по строкам', 'type' => 'textarea', 'placeholder' => "1200|Лидов в месяц|Среднее за квартал\n4.9|Рейтинг|На основании 840 отзывов\n18 мин|Ответ менеджера|Средний SLA"],
+					['key' => 'data_source_mode', 'title' => 'Источник данных', 'type' => 'select', 'options' => [
+						['value' => 'manual', 'title' => 'Ручной список (items_text)'],
+						['value' => 'ctype.list', 'title' => 'InstantCMS: список типа контента']
+					]],
+					['key' => 'data_ctype_name', 'title' => 'Тип контента (ctype)', 'type' => 'select', 'options' => $ctype_choices],
+					['key' => 'data_limit', 'title' => 'Лимит записей', 'type' => 'number'],
+					['key' => 'data_sort', 'title' => 'Сортировка', 'type' => 'select', 'options' => [
+						['value' => 'date_desc', 'title' => 'Сначала новые (date_pub DESC)'],
+						['value' => 'date_asc', 'title' => 'Сначала старые (date_pub ASC)'],
+						['value' => 'id_desc', 'title' => 'ID по убыванию'],
+						['value' => 'id_asc', 'title' => 'ID по возрастанию'],
+						['value' => 'title_asc', 'title' => 'Title A-Z'],
+						['value' => 'title_desc', 'title' => 'Title Z-A']
+					]],
+					['key' => 'data_value_field', 'title' => 'Поле значения', 'type' => 'text', 'placeholder' => 'id'],
+					['key' => 'data_label_field', 'title' => 'Поле подписи', 'type' => 'text', 'placeholder' => 'title'],
+					['key' => 'data_note_field', 'title' => 'Поле заметки', 'type' => 'text', 'placeholder' => 'date_pub'],
 					['key' => 'columns', 'title' => 'Количество колонок', 'type' => 'select', 'options' => [
 						['value' => '2', 'title' => '2 колонки'],
 						['value' => '3', 'title' => '3 колонки'],
@@ -1721,6 +1758,13 @@ class modelLandingbuilder extends cmsModel {
 					'title'       => 'Результаты в цифрах',
 					'text'        => 'Коротко и наглядно покажите эффективность, сроки и качество работы.',
 					'items_text'  => "1200|Лидов в месяц|Среднее за квартал\n4.9|Рейтинг|На основании 840 отзывов\n18 мин|Ответ менеджера|Средний SLA",
+					'data_source_mode' => 'manual',
+					'data_ctype_name'  => '',
+					'data_limit'       => 6,
+					'data_sort'        => 'date_desc',
+					'data_value_field' => 'id',
+					'data_label_field' => 'title',
+					'data_note_field'  => 'date_pub',
 					'columns'     => '3',
 					'card_style'  => 'soft',
 					'section_bg'  => '#f8fafc',
@@ -1745,6 +1789,22 @@ class modelLandingbuilder extends cmsModel {
 					['key' => 'title', 'title' => 'Заголовок', 'type' => 'text', 'placeholder' => 'Частые вопросы'],
 					['key' => 'text', 'title' => 'Подзаголовок', 'type' => 'textarea', 'placeholder' => 'Коротко объясните, что здесь можно узнать.'],
 					['key' => 'items_text', 'title' => 'Пары вопрос|ответ по строкам', 'type' => 'textarea', 'placeholder' => "Сколько длится запуск?|Обычно 5-10 рабочих дней.\nЕсть ли поддержка?|Да, сопровождение включено.\nМожно ли интегрировать CRM?|Да, подключаем любую популярную CRM."],
+					['key' => 'data_source_mode', 'title' => 'Источник данных', 'type' => 'select', 'options' => [
+						['value' => 'manual', 'title' => 'Ручной список (items_text)'],
+						['value' => 'ctype.list', 'title' => 'InstantCMS: список типа контента']
+					]],
+					['key' => 'data_ctype_name', 'title' => 'Тип контента (ctype)', 'type' => 'select', 'options' => $ctype_choices],
+					['key' => 'data_limit', 'title' => 'Лимит записей', 'type' => 'number'],
+					['key' => 'data_sort', 'title' => 'Сортировка', 'type' => 'select', 'options' => [
+						['value' => 'date_desc', 'title' => 'Сначала новые (date_pub DESC)'],
+						['value' => 'date_asc', 'title' => 'Сначала старые (date_pub ASC)'],
+						['value' => 'id_desc', 'title' => 'ID по убыванию'],
+						['value' => 'id_asc', 'title' => 'ID по возрастанию'],
+						['value' => 'title_asc', 'title' => 'Title A-Z'],
+						['value' => 'title_desc', 'title' => 'Title Z-A']
+					]],
+					['key' => 'data_question_field', 'title' => 'Поле вопроса', 'type' => 'text', 'placeholder' => 'title'],
+					['key' => 'data_answer_field', 'title' => 'Поле ответа', 'type' => 'text', 'placeholder' => 'teaser'],
 					['key' => 'layout_mode', 'title' => 'Раскладка FAQ', 'type' => 'select', 'options' => [
 						['value' => 'single', 'title' => 'Одна колонка'],
 						['value' => 'two', 'title' => 'Две колонки']
@@ -1764,6 +1824,12 @@ class modelLandingbuilder extends cmsModel {
 					'title'         => 'Частые вопросы',
 					'text'          => 'Собрали ответы на ключевые вопросы до старта проекта.',
 					'items_text'    => "Сколько длится запуск?|Обычно 5-10 рабочих дней.\nЕсть ли поддержка?|Да, сопровождение включено.\nМожно ли интегрировать CRM?|Да, подключаем любую популярную CRM.",
+					'data_source_mode'   => 'manual',
+					'data_ctype_name'    => '',
+					'data_limit'         => 6,
+					'data_sort'          => 'date_desc',
+					'data_question_field'=> 'title',
+					'data_answer_field'  => 'teaser',
 					'layout_mode'   => 'single',
 					'open_first'    => 1,
 					'section_bg'    => '#ffffff',
