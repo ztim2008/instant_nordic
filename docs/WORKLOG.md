@@ -167,6 +167,8 @@
 	- P0 route-matrix переведен в статус closed (runtime-verified по всем 5 веткам).
 	- подготовлен отдельный ручной чеклист визуального parity-smoke для category/profile после route-classifier cut.
 	- parity-smoke чеклист закрыт автоматическим проходом (admin+guest): все целевые URL вернули `200`, category/profile подтвердили overlay-ветку по trace, статус чеклиста `PASS`.
+	- стартован P1 `Inspector sanity`, первая порция cleanup выполнена: в Node Inspector скрыто поле `notes` как deprecated/no-runtime-effect control.
+	- cleanup сделан безопасно: runtime-контракты не менялись, старые данные `notes` в JSON сохранены для backward compatibility.
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -190,6 +192,9 @@
 	- [templates/nordic/page_context.php](../templates/nordic/page_context.php)
 	- [packages/nordic/package/templates/nordic/page_context.php](../packages/nordic/package/templates/nordic/page_context.php)
 	- [docs/checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
 - Что проверено:
 	- `php -l` без ошибок для всех измененных live/mirror PHP и tpl-файлов;
 	- `cmp -s` подтверждает parity между live и package mirrors;
@@ -208,11 +213,13 @@
 	  - `/board/nedvizhimost` -> `content/category` + `overlay` ветка;
 	  - `/users/1` -> `users/profile` + `overlay` ветка.
 	- авто-smoke (admin+guest) по parity-checklist завершен со статусом `PASS`; результат зафиксирован в [docs/checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-ROUTE-PARITY-SMOKE-2026-04-09.md).
+	- strict checkpoint перед P1 pass 1 выполнен: backup `backups/db/builders-20260409-081238.sql.gz`, git tag `snapshot/20260409-081239`.
+	- `php -l` проходит для обновленных `canvas.tpl.php` (live + package mirrors) после скрытия `notes`.
 - Какие риски остались:
 	- runtime DB-учетка из `system/config/config.php` по-прежнему не проходит dump preflight; для strict checkpoint сейчас используется override dump-учетка, нужно выделить отдельную dump-role вместо `root`;
 	- сценарий сквозных секций требует ручного smoke в админке (создание трех страниц + проверка маршрутов `/`, внутренние страницы, category конкретного ctype).
 - Следующий шаг:
-	- стартовать P1 `Inspector sanity`: убрать/скрыть controls без runtime-эффекта и оставить только предсказуемые поля.
+	- продолжить P1 `Inspector sanity`: следующая порция cleanup для review-полей с низкой продуктовой ценностью (без ломки runtime и контрактов).
 	- после `Inspector sanity` сделать короткий P1 smoke по canvas (desktop/tablet/mobile + quick-actions секций).
 	- выделить отдельную dump-роль для checkpoint/backup, чтобы убрать временную зависимость от `root` override.
 

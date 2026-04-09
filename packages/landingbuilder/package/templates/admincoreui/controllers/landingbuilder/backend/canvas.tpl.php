@@ -5493,10 +5493,6 @@ $canvas_state = [
                         '<input type="text" class="lb-control" data-field="source_key" value="' + escapeHtml(node.source_key || '') + '">' +
                       '</div>') +
                 '<div class="lb-field">' +
-                    fieldLabel('Заметки для редактора', 'Сюда можно записать, зачем нужен блок или что в нем важно не забыть.') +
-                    '<textarea class="lb-control" rows="3" data-field="notes">' + escapeHtml(node.notes || '') + '</textarea>' +
-                '</div>' +
-                '<div class="lb-field">' +
                     fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть этот элемент на нужных типах устройств.') +
                     renderVisibilityControls('device_visibility', node.device_visibility) +
                 '</div>' +
@@ -5509,7 +5505,7 @@ $canvas_state = [
             } else if (node.type === 'system_widget') {
                 widgetForm.innerHTML = 'У этого виджета пока нет связи с системным каталогом. Добавьте его заново из библиотеки.';
             } else {
-	                widgetForm.innerHTML = 'Для этого semantic-блока доступны preset-поля, видимость, заметки и локальное оформление.';
+	                widgetForm.innerHTML = 'Для этого semantic-блока доступны preset-поля, видимость и локальное оформление.';
             }
 
             initTooltips(selectionControls);

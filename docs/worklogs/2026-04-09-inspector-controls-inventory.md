@@ -52,7 +52,7 @@
 | Label | `label` | review | Преимущественно редакторская метка. |
 | Class name | `class_name` | review | Нужно проверить runtime-выход в HTML. |
 | Source key | `source_key` | review | Критичен для data adapters, нужен smoke на live-данных. |
-| Notes | `notes` | candidate-deprecated | По коду не участвует в runtime рендере как функциональный параметр. |
+| Notes | `notes` | deprecated-hidden | Поле скрыто из Node Inspector на P1 pass 1; runtime на него не опирается, данные оставлены для обратной совместимости. |
 | Видимость по устройствам | action `toggle-node-device-visibility` / `device_visibility.*` | active | Влияет на device-level render. |
 | Дублировать элемент | action `duplicate-node` | active | Корректно копирует node с новым uid. |
 
@@ -68,3 +68,9 @@
 2. Проверить responsive controls (`stack`, `width_inherit`) на desktop/tablet/mobile.
 3. Проверить runtime-effect `class_name/css_class/background_class` в preview и live.
 4. Подтвердить судьбу `notes`: либо использовать в runtime/contracts, либо скрыть как deprecated.
+
+## Update 2026-04-09 (P1 pass 1)
+
+1. В Node Inspector поле `notes` скрыто из UI как `deprecated-hidden`.
+2. Техническое поле `notes` сохранено в схеме данных для backward compatibility и безопасного чтения старых документов.
+3. Первый cleanup сделан без изменения runtime-контрактов и без SQL-изменений.
