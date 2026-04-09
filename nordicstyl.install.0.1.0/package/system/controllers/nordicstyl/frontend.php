@@ -63,7 +63,7 @@ class nordicstyl extends cmsFrontend {
             }
 
             if (trim($stateCustom) !== '') {
-                $customLine = str_replace(["\r", "\n"], '', $stateCustom);
+                $customLine = str_replace(["\r", "\n"], ' ', $stateCustom);
                 if ($important) {
                     $customLine = str_replace(';', ' !important;', $customLine);
                 }
