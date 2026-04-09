@@ -252,6 +252,8 @@
 	- реализован Stage 2 UI в экране `Страницы`: добавлен блок `Demo Content` с кнопками `Установить Quick Demo` и `Удалить Demo`, текущим статусом режима и JS-обработчиками с confirm/summary/reload.
 	- выполнен интерактивный browser-smoke по UI-кнопкам: `Удалить Demo` переключает статус в `Demo выключен`, `Установить Quick Demo` возвращает `Quick Demo установлен` и поднимает demo-страницы/правила обратно.
 	- исправлена регрессия в ссылке `Правила применения` на карточках страниц: убран двойной префикс `/admin/controllers/edit`, URL теперь ведет на корректный admin-route `.../nordicbuilder/bindings?page_key=...`.
+	- реализован Stage 3 demo-cycle: добавлен отдельный checklist `NORDICBUILDER-DEMO-QUICK-SMOKE-2026-04-09.md` и automatable smoke script `scripts/nordicbuilder-demo-quick-smoke.sh`.
+	- выполнен автоматический demo quick-smoke (guest+admin trace) по маршрутам `/`, `/board`, `/board/nedvizhimost`, `/board/<item>.html`, `/users/1`; статус прогона `PASS`.
 - Какие файлы затронуты:
 	- [LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md](../LANDING-BUILDER-DEMO-CYCLE-SPEC-2026-04-09.md)
 	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
@@ -265,13 +267,15 @@
 	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
 	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
 	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [scripts/nordicbuilder-demo-quick-smoke.sh](../scripts/nordicbuilder-demo-quick-smoke.sh)
+	- [docs/checklists/NORDICBUILDER-DEMO-QUICK-SMOKE-2026-04-09.md](checklists/NORDICBUILDER-DEMO-QUICK-SMOKE-2026-04-09.md)
 - Какие риски остались:
 	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
 	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
 	- `Full Template` режим пока не реализован в коде (на этапе 1 доступен только `Quick Demo`).
 - Следующий шаг:
-	- реализовать этап 3 demo-cycle: зафиксировать отдельный quick-smoke checklist по маршрутам `/`, `/board`, `/board/<slug>`, `/board/<item>.html`, `/users/1` с установленным demo и добавить автопрогон/инструкцию в docs.
 	- добавить в UI короткий отчет последней demo-операции (время, создано/обновлено/удалено), чтобы админ видел результат без всплывающего окна.
+	- запланировать Stage 4 для режима `Full Template` (install/remove + smoke-матрица) поверх уже закрытого `Quick Demo`.
 
 ## 2026-04-07
 
