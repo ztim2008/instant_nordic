@@ -14,6 +14,13 @@ class backendNordicstyl extends cmsBackend {
                 'options' => [
                     'icon' => 'paint-brush'
                 ]
+            ],
+            [
+                'title' => 'Пикер',
+                'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'picker']),
+                'options' => [
+                    'icon' => 'mouse-pointer'
+                ]
             ]
         ];
     }

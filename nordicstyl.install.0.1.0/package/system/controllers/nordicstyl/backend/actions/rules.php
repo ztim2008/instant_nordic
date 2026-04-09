@@ -15,6 +15,23 @@ class actionNordicstylRules extends cmsAction {
         $editId = (int)$this->request->get('edit', 0);
         $current = $editId ? $this->model->getRule($editId) : null;
 
+        if (!$editId && !$current) {
+            $prefillPath = trim((string)$this->request->get('path', ''));
+            $prefillTitle = trim((string)$this->request->get('title', ''));
+            if ($prefillPath !== '' || $prefillTitle !== '') {
+                $current = [
+                    'id' => 0,
+                    'title' => $prefillTitle,
+                    'path' => $prefillPath,
+                    'ordering' => 0,
+                    'is_enabled' => 1,
+                    'is_important' => 0,
+                    'styles' => '',
+                    'custom' => ''
+                ];
+            }
+        }
+
         if ($this->request->has('delete')) {
             $csrf = (string)$this->request->get('csrf_token', '');
             if (!cmsForm::validateCSRFToken($csrf)) {
