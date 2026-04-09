@@ -170,6 +170,8 @@
 	- стартован P1 `Inspector sanity`, первая порция cleanup выполнена: в Node Inspector скрыто поле `notes` как deprecated/no-runtime-effect control.
 	- cleanup сделан безопасно: runtime-контракты не менялись, старые данные `notes` в JSON сохранены для backward compatibility.
 	- выполнен P1 pass 2: технические поля оформления (`settings.css_class`, `settings.background_class`, `class_name`) скрыты в базовом режиме inspector и доступны только через `lb_inspector_advanced=1`.
+	- выполнен P1 pass 3: упрощены редакторские подписи `title/label` (`Имя секции`, `Имя колонки`, `Имя элемента`), а подробные подсказки для них показываются только в advanced mode.
+	- выполнен короткий авторизованный canvas-smoke: `homepage` на desktop/tablet/mobile и page keys `home`, `ver`, `glav` на desktop отдают `HTTP 200` и содержат ожидаемые маркеры (`Имя секции`, quick-actions дублирования/видимости, `lb_inspector_advanced`).
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -218,12 +220,15 @@
 	- `php -l` проходит для обновленных `canvas.tpl.php` (live + package mirrors) после скрытия `notes`.
 	- strict checkpoint перед P1 pass 2 выполнен: backup `backups/db/builders-20260409-081627.sql.gz`, git tag `snapshot/20260409-081628`.
 	- `php -l` проходит для обновленных `canvas.tpl.php` (live + package mirrors) после ввода `advanced mode` для технических полей.
+	- strict checkpoint перед P1 pass 3 выполнен: backup `backups/db/builders-20260409-082012.sql.gz`, git tag `snapshot/20260409-082013`.
+	- `php -l` проходит для обновленных `canvas.tpl.php` (live + package mirrors) после cleanup `title/label`.
+	- `cmp -s` подтверждает parity между live `canvas.tpl.php` и package mirrors после P1 pass 3.
+	- авторизованный admin-smoke по canvas подтверждает `HTTP 200` на `homepage` (desktop/tablet/mobile) и `home`/`ver`/`glav` (desktop), с наличием ожидаемых P1-маркеров в HTML.
 - Какие риски остались:
 	- runtime DB-учетка из `system/config/config.php` по-прежнему не проходит dump preflight; для strict checkpoint сейчас используется override dump-учетка, нужно выделить отдельную dump-role вместо `root`;
-	- сценарий сквозных секций требует ручного smoke в админке (создание трех страниц + проверка маршрутов `/`, внутренние страницы, category конкретного ctype).
+	- не выполнен интерактивный click-smoke quick-actions (`duplicate/toggle visibility`) в браузере админки; текущая проверка подтверждает только загрузку и наличие action-маркеров в HTML.
 - Следующий шаг:
-	- продолжить P1 `Inspector sanity`: вынести в более понятный UX remaining review-поля (`title/label`) и оставить краткий базовый профиль без редакторского шума.
-	- после `Inspector sanity` сделать короткий P1 smoke по canvas (desktop/tablet/mobile + quick-actions секций).
+	- выполнить интерактивный P1 smoke quick-actions в админке (клики `duplicate/toggle visibility` на section/node + проверка сохранения схемы).
 	- выделить отдельную dump-роль для checkpoint/backup, чтобы убрать временную зависимость от `root` override.
 
 ## 2026-04-07

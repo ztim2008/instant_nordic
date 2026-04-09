@@ -5403,7 +5403,7 @@ $canvas_state = [
                 selectionControls.innerHTML = '' +
                     '<div class="small text-muted mb-2">Базовый режим: задайте расположение секции вокруг body и ширину колонок. Расширенные semantic-настройки доступны ниже.</div>' +
                     '<div class="form-group mb-2">' +
-                        fieldLabel('Название секции', 'Это имя видят редакторы внутри конструктора. На сайте его можно не показывать.') +
+                        fieldLabel('Имя секции', inspectorAdvancedMode ? 'Внутреннее имя для редактора. На сайте обычно не показывается.' : '') +
                         '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(section.title) + '">' +
                     '</div>' +
 	                renderLayoutRangeControls(section.layout) +
@@ -5445,7 +5445,7 @@ $canvas_state = [
                 selectionSummary.innerHTML = '<strong>Колонка</strong><br><span class="text-muted">' + escapeHtml(column ? column.title : 'Колонка') + '</span>';
                 selectionControls.innerHTML = '' +
                     '<div class="form-group mb-2">' +
-                        fieldLabel('Название колонки', 'Служебное имя для редактора. Помогает не путаться в сложных секциях.') +
+                        fieldLabel('Имя колонки', inspectorAdvancedMode ? 'Внутреннее имя для редактора. Помогает не путаться в сложных секциях.' : '') +
                         '<input type="text" class="lb-control" data-field="title" value="' + escapeHtml(column.title) + '">' +
                     '</div>' +
                     renderWidthControls(column.width) +
@@ -5486,7 +5486,7 @@ $canvas_state = [
             const nodeDeviceTitle = getDeviceTitle(state.activeDevice);
             selectionControls.innerHTML = '' +
                 '<div class="form-group mb-2">' +
-                    fieldLabel('Название элемента', 'Короткое понятное имя, по которому редактор узнает блок внутри конструктора.') +
+                    fieldLabel('Имя элемента', inspectorAdvancedMode ? 'Короткое внутреннее имя, чтобы быстро узнавать элемент в редакторе.' : '') +
                     '<input type="text" class="lb-control" data-field="label" value="' + escapeHtml(node.label || '') + '">' +
                 '</div>' +
                 (inspectorAdvancedMode

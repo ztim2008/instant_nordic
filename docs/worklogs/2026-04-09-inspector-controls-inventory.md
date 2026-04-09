@@ -26,7 +26,7 @@
 
 | Control | Field/Action | Статус | Комментарий |
 | --- | --- | --- | --- |
-| Название секции | `title` | review | UI-метка; влияние на runtime визуально ограничено текстом. |
+| Имя секции | `title` | review | UI-метка; влияние на runtime визуально ограничено текстом. |
 | Зона в shell | `settings.zone_key` | active | Определяет render slot секции. |
 | Stack tablet/phone | `settings.stack_tablet/settings.stack_phone` | review | Влияет на адаптив, нужен smoke desktop/tablet/mobile. |
 | Наследование ширин | `settings.width_inherit` | review | Нужна проверка междевайсного поведения. |
@@ -41,7 +41,7 @@
 
 | Control | Field | Статус | Комментарий |
 | --- | --- | --- | --- |
-| Название колонки | `title` | review | UI-метка, runtime влияние ограничено контентом. |
+| Имя колонки | `title` | review | UI-метка, runtime влияние ограничено контентом. |
 | Alignment | `settings.align` | review | Нужна проверка на runtime шаблонах и адаптерах. |
 | CSS class колонки | `settings.css_class` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
 
@@ -49,7 +49,7 @@
 
 | Control | Field/Action | Статус | Комментарий |
 | --- | --- | --- | --- |
-| Label | `label` | review | Преимущественно редакторская метка. |
+| Имя элемента | `label` | review | Преимущественно редакторская метка. |
 | Class name | `class_name` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
 | Source key | `source_key` | review | Критичен для data adapters, нужен smoke на live-данных. |
 | Notes | `notes` | deprecated-hidden | Поле скрыто из Node Inspector на P1 pass 1; runtime на него не опирается, данные оставлены для обратной совместимости. |
@@ -60,7 +60,7 @@
 
 1. Критическая часть controls уже в `active/review`, явных "мертвых" технических блоков осталось меньше.
 2. `notes` переведен в `deprecated-hidden`, а технические CSS/class поля скрыты в базовом режиме и доступны только через advanced mode.
-3. Следующий P1 шаг: cleanup remaining `review` controls по продуктовой ценности и короткий canvas-smoke (desktop/tablet/mobile).
+3. Следующий P1 шаг: интерактивный canvas-smoke quick-actions (desktop/tablet/mobile) с проверкой сохранения схемы.
 
 ## Checklist на закрытие P0
 
@@ -83,3 +83,11 @@
 	- `class_name` (node).
 2. Для опытного режима поля доступны через URL-флаг `lb_inspector_advanced=1`.
 3. Runtime/контракты не изменялись, cleanup затронул только UX-слой inspector.
+
+## Update 2026-04-09 (P1 pass 3)
+
+1. В Inspector упрощены редакторские подписи `title/label`: `Имя секции`, `Имя колонки`, `Имя элемента`.
+2. Подробные подсказки для этих полей показываются только в advanced mode (`lb_inspector_advanced=1`), базовый режим оставлен максимально коротким.
+3. Короткий авторизованный smoke подтверждает загрузку canvas с новыми маркерами:
+	- `homepage` на desktop/tablet/mobile -> `HTTP 200`;
+	- page keys `home`, `ver`, `glav` на desktop -> `HTTP 200`.
