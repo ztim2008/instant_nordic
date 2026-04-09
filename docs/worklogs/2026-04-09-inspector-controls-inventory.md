@@ -91,3 +91,12 @@
 3. Короткий авторизованный smoke подтверждает загрузку canvas с новыми маркерами:
 	- `homepage` на desktop/tablet/mobile -> `HTTP 200`;
 	- page keys `home`, `ver`, `glav` на desktop -> `HTTP 200`.
+
+## Update 2026-04-09 (P1 interactive quick-actions smoke)
+
+1. На `homepage` выполнен интерактивный smoke в браузере админки:
+	- `duplicate-section` + `toggle-section-device-visibility`;
+	- `duplicate-node` + `toggle-node-device-visibility`.
+2. После нажатия `Сохранить` и reload изменения сохранились (persisted):
+	- у секций зафиксирован mixed-state `Скрыть/Показать` для desktop;
+	- количество live-node выросло после дублирования и сохранилось после reload.

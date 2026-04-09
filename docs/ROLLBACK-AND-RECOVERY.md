@@ -34,6 +34,26 @@
 
 Те же переменные работают и через `pre-change-checkpoint.sh`.
 
+### Постоянная локальная dump-учетка (без root override в командах)
+
+`db-backup.sh` теперь поддерживает локальный файл настроек (по умолчанию):
+
+`backups/db/.db-dump.env`
+
+Пример:
+
+`DB_DUMP_HOST=localhost`
+`DB_DUMP_BASE=builders`
+`DB_DUMP_USER=lb_dump`
+`DB_DUMP_PASS=`
+
+На текущем сервере для этой схемы используется отдельная MySQL-учетка `lb_dump` с `auth_socket` и правами dump на `builders`.
+
+Важно:
+1. Файл `backups/db/.db-dump.env` не коммитится (каталог `backups/` в `.gitignore`).
+2. Права файла: `chmod 600 backups/db/.db-dump.env`.
+3. Такой вариант работает при запуске backup/checkpoint от системного root; для других OS-пользователей нужен password-вариант dump-учетки.
+
 ## Безопасный rollback для проверки
 
 Чтобы посмотреть старое состояние, не ломая текущую рабочую ветку:

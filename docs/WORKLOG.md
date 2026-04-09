@@ -172,6 +172,9 @@
 	- выполнен P1 pass 2: технические поля оформления (`settings.css_class`, `settings.background_class`, `class_name`) скрыты в базовом режиме inspector и доступны только через `lb_inspector_advanced=1`.
 	- выполнен P1 pass 3: упрощены редакторские подписи `title/label` (`Имя секции`, `Имя колонки`, `Имя элемента`), а подробные подсказки для них показываются только в advanced mode.
 	- выполнен короткий авторизованный canvas-smoke: `homepage` на desktop/tablet/mobile и page keys `home`, `ver`, `glav` на desktop отдают `HTTP 200` и содержат ожидаемые маркеры (`Имя секции`, quick-actions дублирования/видимости, `lb_inspector_advanced`).
+	- выполнен интерактивный admin-smoke quick-actions на `homepage`: клики `duplicate/toggle visibility` для section и node, затем `Сохранить` и `reload`; изменения persisted (дубликаты и состояния видимости сохранились).
+	- закрыт ops-хвост по backup: создана отдельная dump-учетка `lb_dump` (auth_socket), добавлен локальный env-файл `backups/db/.db-dump.env`, и `db-backup/checkpoint` теперь проходят без `DB_DUMP_USER=root` override.
+	- `scripts/db-backup.sh` обновлен для локального env-файла dump-учетки и режима пустого `DB_DUMP_PASS` (auth_socket), а также для `mysqldump --no-tablespaces` без расширения прав до `PROCESS`.
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -224,12 +227,14 @@
 	- `php -l` проходит для обновленных `canvas.tpl.php` (live + package mirrors) после cleanup `title/label`.
 	- `cmp -s` подтверждает parity между live `canvas.tpl.php` и package mirrors после P1 pass 3.
 	- авторизованный admin-smoke по canvas подтверждает `HTTP 200` на `homepage` (desktop/tablet/mobile) и `home`/`ver`/`glav` (desktop), с наличием ожидаемых P1-маркеров в HTML.
+	- интерактивный smoke quick-actions подтвержден в браузере на `homepage`: `duplicate-section`, `toggle-section-device-visibility`, `duplicate-node`, `toggle-node-device-visibility` отрабатывают и сохраняются после `Сохранить` + `reload`.
+	- `scripts/db-backup.sh` успешно выполняется без `DB_DUMP_*` override (через `lb_dump` + локальный env), strict checkpoint в режиме `required` проходит без root override.
 - Какие риски остались:
-	- runtime DB-учетка из `system/config/config.php` по-прежнему не проходит dump preflight; для strict checkpoint сейчас используется override dump-учетка, нужно выделить отдельную dump-role вместо `root`;
-	- не выполнен интерактивный click-smoke quick-actions (`duplicate/toggle visibility`) в браузере админки; текущая проверка подтверждает только загрузку и наличие action-маркеров в HTML.
+	- dump-учетка `lb_dump` опирается на `auth_socket` и запуск backup-скриптов от системного root; при запуске от другого OS-пользователя понадобится отдельная password-учетка или обновление auth-схемы;
+	- локальный файл `backups/db/.db-dump.env` хранится вне git (что правильно для секрета/локальной настройки), но его наличие нужно контролировать в операционном runbook.
 - Следующий шаг:
-	- выполнить интерактивный P1 smoke quick-actions в админке (клики `duplicate/toggle visibility` на section/node + проверка сохранения схемы).
-	- выделить отдельную dump-роль для checkpoint/backup, чтобы убрать временную зависимость от `root` override.
+	- при необходимости оформить password-вариант dump-учетки для запуска checkpoint не только от root (без потери принципа отдельной dump-role).
+	- продолжить P1 cleanup remaining `review` controls (alignment/source_key) с коротким runtime-smoke.
 
 ## 2026-04-07
 
