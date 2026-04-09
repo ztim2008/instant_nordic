@@ -26,7 +26,12 @@ $lb_front_integration_enabled = true;
 $landingbuilder_takeover = null;
 try {
     $ctrl = (string) ($nordic_context['ctrl'] ?? '');
-    if ($lb_front_integration_enabled && $ctrl !== 'landingbuilder') {
+    $action = (string) ($nordic_context['action'] ?? '');
+    $lb_route_uses_overlay_hooks = ($ctrl === 'content' && $action === 'category') || ($ctrl === 'users' && $action === 'profile');
+
+    // For category/profile routes InstantCMS keeps native body/grid logic,
+    // and builder is injected through dedicated overlay hooks.
+    if ($lb_front_integration_enabled && $ctrl !== 'landingbuilder' && !$lb_route_uses_overlay_hooks) {
         $lb_model = cmsCore::getModel('landingbuilder');
         if ($lb_model && method_exists($lb_model, 'resolveFullTakeoverPageKeyFromBindings')) {
             $route_params = [
@@ -392,6 +397,8 @@ $lb_left_sidebar_html = '';
 $lb_right_sidebar_html = '';
 $content_grid_style = '';
 $lb_native_body_autoscale = false;
+$lb_native_body_fullwidth = false;
+$lb_native_body_full_padding = 20;
 
 if ($lb_takeover_active) {
     $lb_left_sidebar_html = $lbGetBuilderSlotHtml('content_sidebar_left');
@@ -403,6 +410,14 @@ if ($lb_takeover_active) {
 
     $lb_native_body_autoscale = !empty($layout_state['native_body_autoscale']);
     $has_explicit_native_body_autoscale = array_key_exists('native_body_autoscale', $layout_state);
+    $native_body_width_mode = isset($layout_state['native_body_width_mode']) ? (string) $layout_state['native_body_width_mode'] : '';
+    $lb_native_body_full_padding = isset($layout_state['native_body_full_padding']) ? (int) $layout_state['native_body_full_padding'] : 20;
+    if ($lb_native_body_full_padding < 0) {
+        $lb_native_body_full_padding = 0;
+    }
+    if ($lb_native_body_full_padding > 60) {
+        $lb_native_body_full_padding = 60;
+    }
 
     if (!$has_explicit_native_body_autoscale) {
         $autoscale_sections = isset($lb_takeover_page['schema']['sections']) && is_array($lb_takeover_page['schema']['sections'])
@@ -423,6 +438,14 @@ if ($lb_takeover_active) {
                 }
             }
         }
+    }
+
+    if ($native_body_width_mode === 'full') {
+        $lb_native_body_fullwidth = true;
+    } elseif ($native_body_width_mode === 'grid') {
+        $lb_native_body_fullwidth = false;
+    } else {
+        $lb_native_body_fullwidth = $lb_native_body_autoscale;
     }
 
     $body_columns = $lb_takeover_runtime['shell']['body_columns'] ?? ($lb_takeover_page['schema']['layout']['body_columns'] ?? []);
@@ -654,20 +677,27 @@ if ($nordic_use_modern_skin) {
                     if ($lb_hero_html !== '') { echo $lb_hero_html; }
                     $lb_before_html = $lbGetBuilderSlotHtml('before_content');
                     if ($lb_before_html !== '') { echo $lb_before_html; }
-                    $has_content_sidebars = $has_left_content_sidebar || $has_right_content_sidebar;
+                    $has_content_sidebars = ($has_left_content_sidebar || $has_right_content_sidebar);
 
                     if ($has_content_sidebars) {
                         $main_span = max(1, min(12, (int) ($body_main_span ?? 12)));
                         $left_span = max(1, min(11, (int) ($body_left_span ?? 3)));
                         $right_span = max(1, min(11, (int) ($body_right_span ?? 3)));
 
-                        echo '<div class="row g-4 align-items-start">';
-
-                        if ($has_left_content_sidebar && $lb_left_sidebar_html !== '') {
-                            echo '<aside class="col-12 col-lg-' . $left_span . '" data-slot="content_sidebar_left">' . $lb_left_sidebar_html . '</aside>';
+                        $native_body_layout_class = 'lb-native-body-layout';
+                        $native_body_layout_attrs = '';
+                        if ($lb_native_body_fullwidth) {
+                            $native_body_layout_class .= ' lb-native-body-layout--autoscale';
+                            $native_body_layout_attrs = ' style="--lb-native-body-full-padding:' . (int) $lb_native_body_full_padding . 'px;"';
                         }
 
-                        echo '<div class="col-12 col-lg-' . $main_span . '" data-slot="content_body">';
+                        echo '<div class="' . html($native_body_layout_class, false) . '"' . $native_body_layout_attrs . '>';
+
+                        if ($has_left_content_sidebar && $lb_left_sidebar_html !== '') {
+                            echo '<aside class="lb-native-body-col lb-native-body-col--left" data-slot="content_sidebar_left" style="grid-column:span ' . (int) $left_span . ';">' . $lb_left_sidebar_html . '</aside>';
+                        }
+
+                        echo '<div class="lb-native-body-col lb-native-body-col--main" data-slot="content_body" style="grid-column:span ' . (int) $main_span . ';">';
                         if ($lb_content_html !== '') {
                             echo $lb_content_html;
                         } elseif ($lb_can_render_native_body) {
@@ -678,7 +708,7 @@ if ($nordic_use_modern_skin) {
                         echo '</div>';
 
                         if ($has_right_content_sidebar && $lb_right_sidebar_html !== '') {
-                            echo '<aside class="col-12 col-lg-' . $right_span . '" data-slot="content_sidebar_right">' . $lb_right_sidebar_html . '</aside>';
+                            echo '<aside class="lb-native-body-col lb-native-body-col--right" data-slot="content_sidebar_right" style="grid-column:span ' . (int) $right_span . ';">' . $lb_right_sidebar_html . '</aside>';
                         }
 
                         echo '</div>';
@@ -687,10 +717,14 @@ if ($nordic_use_modern_skin) {
                             echo $lb_content_html;
                         } elseif ($lb_can_render_native_body) {
                             $native_body_class = 'lb-native-body-runtime';
-                            if ($lb_native_body_autoscale) {
+                            if ($lb_native_body_fullwidth) {
                                 $native_body_class .= ' lb-native-body-runtime--autoscale';
                             }
-                            echo '<div class="' . html($native_body_class, false) . '">';
+                            $native_body_attrs = '';
+                            if (strpos($native_body_class, 'lb-native-body-runtime--autoscale') !== false) {
+                                $native_body_attrs = ' style="--lb-native-body-full-padding:' . (int) $lb_native_body_full_padding . 'px;"';
+                            }
+                            echo '<div class="' . html($native_body_class, false) . '"' . $native_body_attrs . '>';
                             $this->body();
                             echo '</div>';
                         }
@@ -780,10 +814,14 @@ if ($nordic_use_modern_skin) {
                                             echo $lb_content_html;
                                         } elseif ($lbIsNativeRuntimeSlot($resolved_content_slot_key) || (($lb_takeover_page['adapter_key'] ?? '') !== 'standalone_landing')) {
                                             $native_body_class = 'lb-native-body-runtime';
-                                            if ($lb_native_body_autoscale && !$has_left_content_sidebar && !$has_right_content_sidebar) {
+                                            if ($lb_native_body_fullwidth && !$has_left_content_sidebar && !$has_right_content_sidebar) {
                                                 $native_body_class .= ' lb-native-body-runtime--autoscale';
                                             }
-                                            echo '<div class="' . html($native_body_class, false) . '">';
+                                            $native_body_attrs = '';
+                                            if (strpos($native_body_class, 'lb-native-body-runtime--autoscale') !== false) {
+                                                $native_body_attrs = ' style="--lb-native-body-full-padding:' . (int) $lb_native_body_full_padding . 'px;"';
+                                            }
+                                            echo '<div class="' . html($native_body_class, false) . '"' . $native_body_attrs . '>';
                                             $this->body();
                                             echo '</div>';
                                         }

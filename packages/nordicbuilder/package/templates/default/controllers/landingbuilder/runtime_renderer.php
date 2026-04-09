@@ -255,6 +255,12 @@ if (!function_exists('landingbuilder_get_runtime_block_titles')) {
 	function landingbuilder_runtime_base_autoscale_enabled(array $context = []) {
 		$section_enabled = !empty($context['section_autoscale_base_blocks']);
 		$column_units = isset($context['column_units']) ? (int) $context['column_units'] : 0;
+		$slot_key = (string) ($context['slot_key'] ?? '');
+
+		if (in_array($slot_key, ['content_sidebar_left', 'content_sidebar_right'], true)) {
+			return false;
+		}
+
 		return $section_enabled && $column_units === 12;
 	}
 

@@ -13,6 +13,183 @@
 - Какие риски остались:
 - Следующий шаг:
 
+## 2026-04-08
+
+- Что планировалось:
+	- закрыть регресс native body в режиме `100%`: full width не должен отключать `content_sidebar_left/right`;
+	- стабилизировать UX в canvas для A/A+ и переключения `12/12 <-> 100%`.
+- Что сделано:
+	- подтвержден root-cause визуальной "поломки": autoscale применялся к sidebar-слотам и создавал эффект overlay;
+	- в runtime отключен base-autoscale для `content_sidebar_left/right`, чтобы сайдбар-контент всегда рендерился в своей колонке;
+	- в canvas отключены режимы A/A+ для sidebar-зон (UI + guard в action/input flow);
+	- добавлен явный режим ширины native body (`grid` / `full`) и slider `native_body_full_padding` (0..60, default 20);
+	- устранена связка, из-за которой `full` принудительно переводил body в single-column и скрывал sidebars;
+	- в Nordic runtime шаблоне full width отвязан от условия наличия сайдбаров: `100%` теперь поддерживает 0/1/2 sidebars;
+	- добавлен отдельный CSS-режим `lb-native-body-layout--autoscale` для full-width три-колоночного native body layout с управляемым padding;
+	- синхронизированы package mirrors для `landingbuilder`, `nordicbuilder`, `nordic`.
+	- для page-bindings зафиксирован runtime-resolver: `page.homepage` работает без native body, любые остальные `page.*` автоматически идут через `internal_content_generic` (native body + sidebars).
+	- как канонический вектор зафиксирована модель "надстройка без правки ядра": update-safe интеграция через tokens/contracts/adapters;
+	- составлена карта глобального дизайн-контроля для дизайнера (что уже покрыто и чем можно управлять по всему сайту).
+	- добавлен взрослый roadmap развития глобальной дизайн-системы для журнального курса (этапы, критерии готовности, DoD).
+	- добавлен практический 2-недельный execution-план по коду: приоритеты P0/P1, задачи по дням, конкретные файлы и единая система статусов 🟡/🔵/🟢.
+	- в карточки экрана «Страницы сайта» добавлен быстрый переход «Правила применения» с фильтром по `page_key`, чтобы править ошибочные маски без ручного поиска правила;
+	- backend action `bindings` научен принимать `page_key`: если правило уже есть, оно авто-открывается; если нет — форма предзаполняется этим `page_key` для быстрого создания;
+	- в action `pages` добавлен `bindings_url` для nordicbuilder и синхронизированы package mirrors.
+	- экран `Правила применения` получил простой режим для новичков: выбор «где показывать» через dropdown и исключение типов контента через чекбоксы (без ручного JSON/масок);
+	- в простой режим подгружаются все доступные content types из `content->getContentTypes()`, для overlay category автоматически собирается `matching.route_params` с учетом исключений;
+	- редиректы в `nordicbuilder/bindings` переведены на явный admin URL (`/admin/controllers/edit/nordicbuilder/bindings...`), чтобы исключить 404 после сохранения/удаления.
+	- в модалке «Новый макет страницы» добавлен простой сценарий без ручных URL-масок: новый вариант применения «Категории контента (выбрать типы, без масок)»;
+	- для этого варианта подгружаются все content types и показываются чекбоксы «не показывать», а route_params собирается автоматически;
+	- поле «URL-маски» помечено как экспертное, чтобы новичок не заходил в ручной ввод без необходимости.
+	- для `content_category_generic` в adapter-зонах включена полноценная схема Instant-категории: `content_sidebar_left` + `content_sidebar_right` + `after_content`;
+	- shell variant `category-pages` переведен в режим `two_sidebars` + `show_after_content=1`, чтобы базовая категория повторяла логику «центр + 2 сайдбара + низ»;
+	- preview URL в экране «Страницы» стал контекстным по bindings: для category/profile правил открывается реальный маршрут (например `/news`, `/board`, `/users/1`), а не только `/nordicbuilder/view/{key}`.
+	- зафиксирована граница overlay-first: для маршрутов `content/category` и `users/profile` отключен generic full-takeover `page.*`, чтобы нативный body/grid InstantCMS оставался базой, а builder работал как надстройка;
+	- в publish-пайплайне добавлен guard против пустого SSR HTML: вместо `NULL` пишется безопасный placeholder-комментарий, чтобы исключить 503 при записи в БД;
+	- создание страницы из модалки переведено в truly-empty режим: через флаг `disable_starter_seed` отключено автозаполнение starter-секциями.
+	- отключен synthetic fallback demo-страниц в `landingbuilder`: список страниц после установки теперь действительно пустой, а неудаляемые fallback-карточки больше не появляются в админке.
+	- удаление страницы усилено для legacy-ключей: `deletePageByKey()` теперь ищет запись и по sanitized key, и по исходному raw key.
+	- шаг 1 для homepage-flow: в мастере создания страниц вариант «Главная страница» теперь явно назначает adapter `standalone_landing`, чтобы не попадать в internal/native-body сценарий;
+	- в `nordicbuilder/backend/actions/create_page.php` добавлен прокид `disable_starter_seed`, чтобы поведение «пустого старта» работало одинаково и через nordicbuilder action.
+	- шаг 2 (MVP) для canvas: добавлены быстрые операции для секций и элементов — `Дублировать` и `Скрыть/Показать на текущем устройстве` прямо из inspector, с сохранением текущей схемы и выделения.
+	- устранено перекрытие на canvas: панель `СТЕК/T/M/I/A` больше не закрывает кнопку `+` добавления блока в колонке (зарезервирован верхний отступ внутри секции).
+	- Step 2.1: в самой карточке секции на canvas добавлены контекстные quick-actions (дублирование и скрыть/показать на текущем устройстве) рядом с удалением, без необходимости открывать inspector.
+	- Step 2.2: в topbar canvas добавлены `Импорт схемы` и `Экспорт схемы` (JSON): экспорт выгружает текущую схему страницы в файл, импорт принимает JSON (wrapper `schema` или прямой объект с `sections`) и заменяет текущий canvas после подтверждения.
+- Какие файлы затронуты:
+	- [templates/default/controllers/landingbuilder/runtime_renderer.php](../templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [system/controllers/landingbuilder/helpers/runtime_styles.php](../system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/landingbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php](../packages/nordicbuilder/package/templates/default/controllers/landingbuilder/runtime_renderer.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/canvas.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/helpers/runtime_styles.php](../packages/landingbuilder/package/system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/helpers/runtime_styles.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/helpers/runtime_styles.php)
+	- [docs/worklogs/2026-04-08-native-body-fullwidth-sidebars.md](worklogs/2026-04-08-native-body-fullwidth-sidebars.md)
+	- [docs/NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md](NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md)
+	- [LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md](../LANDING-BUILDER-ACTIVE-PLAN-2026-04-04.md)
+	- [LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md](../LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md)
+	- [system/controllers/nordicbuilder/backend/actions/pages.php](../system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [system/controllers/nordicbuilder/backend/actions/bindings.php](../system/controllers/nordicbuilder/backend/actions/bindings.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/bindings.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/bindings.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php](../templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/nordicbuilder/backend/bindings.tpl.php)
+	- [system/controllers/landingbuilder/backend/actions/pages.php](../system/controllers/landingbuilder/backend/actions/pages.php)
+	- [system/controllers/nordicbuilder/backend/actions/pages.php](../system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/pages.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/pages.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/pages.php)
+	- [system/controllers/nordicbuilder/model.php](../system/controllers/nordicbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+- Что проверено:
+	- `php -l` проходит на измененных live и package mirror файлах (`canvas.tpl.php`, `main.tpl.php`, `runtime_renderer.php`, `runtime_styles.php`, `model.php`);
+	- `php -l` дополнительно проходит на новых изменениях `nordicbuilder/pages.php`, `nordicbuilder/bindings.php` и `pages.tpl.php` (live + mirrors);
+	- editor diagnostics не показывают новых ошибок в затронутых файлах;
+	- ручная проверка подтверждает ожидаемое поведение: `100%` работает вместе с 1/2 sidebars.
+	- `php -l` проходит для обновленных `nordicbuilder/backend/actions/bindings.php` и `nordicbuilder/backend/bindings.tpl.php` (live + mirror).
+	- `php -l` проходит для обновленных `landingbuilder/nordicbuilder backend pages actions` и `pages.tpl.php` (live + mirrors).
+	- `php -l` проходит для обновленных `landingbuilder model.php` и `pages.php` actions (live + mirrors).
+	- `php -l` проходит для обновленных `nordicbuilder/model.php`, `landingbuilder/backend/actions/create_page.php`, `templates/nordic/main.tpl.php` (live + mirrors).
+	- `php -l` проходит для обновленных `landingbuilder/model.php` (live + mirrors) после отключения synthetic fallback demo-страниц.
+	- `php -l` повторно проходит для `landingbuilder/model.php` (live + mirrors) после усиления удаления по legacy/raw key.
+	- `php -l` проходит для обновленных `nordicbuilder/backend/actions/create_page.php` и `landingbuilder/backend/pages.tpl.php` (live + mirrors) после фикса homepage-flow.
+	- `php -l` проходит для обновленных `canvas.tpl.php` (live + mirrors) после добавления операций duplicate/hide на уровне inspector.
+	- `php -l` проходит для обновленных `canvas.tpl.php` (live + mirrors) после CSS-фикса перекрытия `СТЕК/T/M/I/A` и кнопки `+` на canvas.
+	- `php -l` проходит для обновленных `canvas.tpl.php` (live + mirrors) после реализации Step 2.1/2.2 (section quick-actions на canvas + JSON import/export schema).
+- Какие риски остались:
+	- не выполнен отдельный мобильный smoke на длинных страницах с кастомными legacy-виджетами в сайдбарах;
+	- у отдельных старых виджетов с фиксированной шириной возможен локальный overflow в full-width режиме.
+	- если для одного `page_key` существует несколько binding-правил, автопереход по кнопке откроет первое найденное в индексе правило.
+	- визуальный smoke новой формы `Правила применения` не выполнен в встроенном браузере из-за 403 (неавторизованная сессия админа в инструменте).
+	- не выполнен полный авторизованный smoke нового сценария: удаление старого binding -> создание truly-empty страницы -> привязка -> preview/publish в одной сессии.
+- Следующий шаг:
+	- сделать checkpoint-коммит этой итерации и выполнить короткий visual smoke (`/`, `/news`, `/board`, `/users/1`) для desktop/mobile + проверку удаления bindings и truly-empty create flow.
+
+## 2026-04-08 (конец дня, архитектурный стоп)
+
+- Что планировалось:
+	- завершить день без наращивания новых patch-веток и зафиксировать управляемый стоп по текущему тупику.
+- Что сделано:
+	- зафиксирован инженерный deadlock: часть inspector-настроек не влияет на canvas/runtime, а route-binding поведение остается неоднородным;
+	- принято решение о частичном архитектурном повороте: переписать проблемный слой компонента с сохранением основной продуктовой логики visual-first;
+	- зафиксирована стратегия: единый pipeline выбора страницы, временно единый policy для диагностики без усложняющей role-разницы, cleanup inspector-controls по принципу «влияет или удаляем»;
+	- оформлен отдельный документ с антикризисным планом фаз A-D и DoD выхода из тупика.
+- Какие файлы затронуты:
+	- [docs/worklogs/2026-04-08-architecture-deadlock-pivot-strategy.md](worklogs/2026-04-08-architecture-deadlock-pivot-strategy.md)
+	- [docs/WORKLOG.md](WORKLOG.md)
+- Что проверено:
+	- документ стратегии создан и доступен в `docs/worklogs`;
+	- общий журнал обновлен ссылкой на стратегический документ.
+- Какие риски остались:
+	- до архитектурного cut сохраняется риск непредсказуемого поведения route/binding в части внутренних сценариев;
+	- до cleanup inspector возможны ложные ожидания от неэффективных controls.
+- Следующий шаг:
+	- перед кодовым рефактором сделать отдельный checkpoint и стартовать P0-аудит route matrix + инвентаризацию inspector controls по новой стратегии.
+
+## 2026-04-09
+
+- Что планировалось:
+	- закрыть практическую логистику создания страниц в стиле Instant: главная с демо, общесайтовая страница со сквозными секциями, и отдельный сценарий страницы для одного типа контента.
+- Что сделано:
+	- в мастере создания страниц добавлен новый сценарий «Категория одного типа контента» с явным выбором ctype;
+	- создание страницы теперь передает дополнительные флаги в backend: `inherit_global_sections` и `use_as_global_sections_source`;
+	- для `all_except_homepage` включена роль источника сквозных секций, для homepage/overlay-сценариев включено наследование сквозных секций;
+	- для homepage и общесайтовой страницы включен demo starter seed вместо принудительно пустого документа;
+	- в `landingbuilder` добавлен runtime-механизм наследования сквозных секций из одной общесайтовой страницы-источника;
+	- добавлен starter schema для `internal_content_generic` (сквозная навигация сверху и нижний CTA-блок), чтобы быстрее собрать общий каркас сайта;
+	- добавлены layout-флаги в normalize pipeline, чтобы поведение было детерминированным и в live, и после сохранения/чтения схемы;
+	- live-изменения синхронизированы в package mirrors `landingbuilder` и `nordicbuilder`.
+	- утвержден RFC по модели коммерческой надстройки без правок ядра (ADR-0002);
+	- выполнен P0-аудит route matrix и зафиксирован отдельным документом;
+	- выполнена P0-инвентаризация inspector controls (active/review/candidate-deprecated) отдельным документом;
+	- усилен backup/checkpoint flow: `db-backup.sh` получил preflight-диагностику и override dump-учетки через `DB_DUMP_*`, а `pre-change-checkpoint.sh` получил режимы `required|best-effort|skip`.
+- Какие файлы затронуты:
+	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
+	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [system/controllers/nordicbuilder/backend/actions/create_page.php](../system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/model.php](../packages/landingbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/model.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/model.php)
+	- [packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/landingbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/landingbuilder/backend/actions/create_page.php)
+	- [packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php](../packages/nordicbuilder/package/system/controllers/nordicbuilder/backend/actions/create_page.php)
+	- [packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/landingbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php](../packages/nordicbuilder/package/templates/admincoreui/controllers/landingbuilder/backend/pages.tpl.php)
+	- [docs/adr/ADR-0002-COMMERCIAL-OVERLAY-NO-CORE-CHANGES.md](adr/ADR-0002-COMMERCIAL-OVERLAY-NO-CORE-CHANGES.md)
+	- [docs/worklogs/2026-04-09-route-matrix-audit.md](worklogs/2026-04-09-route-matrix-audit.md)
+	- [docs/worklogs/2026-04-09-inspector-controls-inventory.md](worklogs/2026-04-09-inspector-controls-inventory.md)
+	- [scripts/db-backup.sh](../scripts/db-backup.sh)
+	- [scripts/pre-change-checkpoint.sh](../scripts/pre-change-checkpoint.sh)
+	- [docs/ROLLBACK-AND-RECOVERY.md](ROLLBACK-AND-RECOVERY.md)
+- Что проверено:
+	- `php -l` без ошибок для всех измененных live/mirror PHP и tpl-файлов;
+	- `cmp -s` подтверждает parity между live и package mirrors;
+	- editor diagnostics не показывают новых ошибок в измененных файлах.
+	- `bash -n` проходит для `scripts/db-backup.sh` и `scripts/pre-change-checkpoint.sh`.
+	- `scripts/db-backup.sh` в текущем окружении по-прежнему репортит MySQL 1045, но теперь дает явную диагностику и поддерживает override dump-учетки.
+- Какие риски остались:
+	- pre-change checkpoint script не смог сделать backup БД из-за `mysqldump` access denied (1045), нужно починить db credentials/доступ до следующего рискованного шага;
+	- сценарий сквозных секций требует ручного smoke в админке (создание трех страниц + проверка маршрутов `/`, внутренние страницы, category конкретного ctype).
+	- P0-audit артефакты готовы, но до runtime trace и авторизованного smoke route matrix формально остается в статусе static-verified.
+- Следующий шаг:
+	- выполнить авторизованный smoke по трем пользовательским сценариям и при необходимости подправить UX-детали мастера (подсказки и дефолты ключей/названий).
+	- добавить debug trace причины выбора `effective page key` (binding/fallback/overlay), затем закрыть P0 route-matrix smoke на реальных маршрутах.
+
 ## 2026-04-07
 
 - Что планировалось:

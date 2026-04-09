@@ -13,6 +13,27 @@
 3. Для удобства можно сделать оба шага одной командой:
    `./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
 
+### Режимы checkpoint при проблемах доступа к БД
+
+По умолчанию checkpoint работает в строгом режиме и останавливается, если backup БД не удался.
+
+1. Строгий режим (default):
+   `CHECKPOINT_DB_BACKUP_MODE=required ./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
+2. Мягкий режим (для срочной фиксации кода, когда backup временно недоступен):
+   `CHECKPOINT_DB_BACKUP_MODE=best-effort ./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
+3. Пропуск backup (только осознанно):
+   `CHECKPOINT_DB_BACKUP_MODE=skip ./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
+
+Важно: `best-effort` и `skip` не заменяют реальный backup БД перед SQL-рисками.
+
+### Override учетных данных для дампа
+
+Если runtime-учетка из `system/config/config.php` не имеет прав на dump, можно временно задать отдельную dump-учетку:
+
+`DB_DUMP_HOST=localhost DB_DUMP_BASE=builders DB_DUMP_USER=<dump_user> DB_DUMP_PASS=<dump_pass> ./scripts/db-backup.sh`
+
+Те же переменные работают и через `pre-change-checkpoint.sh`.
+
 ## Безопасный rollback для проверки
 
 Чтобы посмотреть старое состояние, не ломая текущую рабочую ветку:

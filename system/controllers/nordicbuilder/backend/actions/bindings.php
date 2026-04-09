@@ -10,10 +10,43 @@ class actionNordicbuilderBindings extends cmsAction {
 
 		$errors = [];
 		$messages = [];
+		$bindings_base_url = href_to('admin', 'controllers', ['edit', $this->controller->root_url, 'bindings']);
+		$buildBindingsUrl = function (array $params = []) use ($bindings_base_url) {
+			if (!$params) {
+				return $bindings_base_url;
+			}
 
+			return $bindings_base_url . '?' . http_build_query($params);
+		};
+
+		$page_key_filter = trim((string) $this->request->get('page_key', ''));
+		if ($page_key_filter === '') {
+			$page_key_filter = trim((string) $this->request->get('page_key_filter', ''));
+		}
 		$selected_key = (string) $this->request->get('key', '');
 		$selected = $selected_key !== '' ? $model->getBindingOptionsByKey($selected_key) : false;
 		$selected_doc = $selected && !empty($selected['document']) && is_array($selected['document']) ? $selected['document'] : [];
+
+		$content_types = [];
+		$content_model = cmsCore::getModel('content');
+		if ($content_model && method_exists($content_model, 'getContentTypes')) {
+			foreach ((array) $content_model->getContentTypes() as $ctype) {
+				$name = trim((string) ($ctype['name'] ?? ''));
+				if ($name === '') {
+					continue;
+				}
+
+				$title = trim((string) ($ctype['title'] ?? ''));
+				if ($title === '' && !empty($ctype['labels']['one'])) {
+					$title = trim((string) $ctype['labels']['one']);
+				}
+
+				$content_types[] = [
+					'name'  => $name,
+					'title' => $title !== '' ? $title : $name,
+				];
+			}
+		}
 
 		if ($this->request->has('seed_examples')) {
 			$csrf_token = (string) $this->request->get('csrf_token', '');
@@ -45,7 +78,7 @@ class actionNordicbuilderBindings extends cmsAction {
 			}
 
 			cmsUser::addSessionMessage('Примеры правил добавлены: ' . $created, 'success');
-			return $this->redirectToAction('bindings');
+			return $this->redirect($buildBindingsUrl($page_key_filter !== '' ? ['page_key' => $page_key_filter] : []));
 		}
 
 		if ($this->request->has('delete')) {
@@ -59,9 +92,11 @@ class actionNordicbuilderBindings extends cmsAction {
 			if ($delete_key !== '') {
 				$ok = $model->deleteBindingOptionsByKey($delete_key);
 				cmsUser::addSessionMessage($ok ? 'Правило удалено.' : 'Не удалось удалить правило.', $ok ? 'success' : 'error');
+			} else {
+				cmsUser::addSessionMessage('Не удалось определить ключ правила для удаления.', 'error');
 			}
 
-			return $this->redirectToAction('bindings');
+			return $this->redirect($buildBindingsUrl($page_key_filter !== '' ? ['page_key' => $page_key_filter] : []));
 		}
 
 		if ($this->request->has('submit')) {
@@ -135,7 +170,11 @@ class actionNordicbuilderBindings extends cmsAction {
 
 				if (!empty($result['is_valid'])) {
 					cmsUser::addSessionMessage(LANG_CP_SAVE_SUCCESS, 'success');
-					return $this->redirectToAction('bindings', ['key' => $binding_key]);
+					$redirect_params = ['key' => $binding_key];
+					if ($page_key_filter !== '') {
+						$redirect_params['page_key'] = $page_key_filter;
+					}
+					return $this->redirect($buildBindingsUrl($redirect_params));
 				}
 
 				$errors = (array) ($result['errors'] ?? ['storage' => 'Не удалось сохранить правило.']);
@@ -160,6 +199,23 @@ class actionNordicbuilderBindings extends cmsAction {
 		}
 
 		$items = $model->getBindingOptionsIndex(200);
+		if ($selected_key === '' && $page_key_filter !== '') {
+			foreach ($items as $item) {
+				if ((string) ($item['page_key'] ?? '') !== $page_key_filter) {
+					continue;
+				}
+
+				$selected_key = (string) ($item['binding_key'] ?? '');
+				break;
+			}
+
+			if ($selected_key !== '') {
+				$selected = $model->getBindingOptionsByKey($selected_key);
+				$selected_doc = $selected && !empty($selected['document']) && is_array($selected['document']) ? $selected['document'] : [];
+			} else {
+				$selected_doc['page_key'] = $page_key_filter;
+			}
+		}
 
 		$base_url = href_to_abs('admin', 'controllers', ['edit', $this->controller->root_url, 'bindings']);
 		foreach ($items as &$item) {
@@ -177,6 +233,9 @@ class actionNordicbuilderBindings extends cmsAction {
 			'doc' => $selected_doc,
 			'errors' => $errors,
 			'examples' => $examples,
+			'content_types' => $content_types,
+			'bindings_base_url' => $bindings_base_url,
+			'page_key_filter' => $page_key_filter,
 		]);
 	}
 

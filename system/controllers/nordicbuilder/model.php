@@ -212,6 +212,9 @@ class modelNordicbuilder extends cmsModel {
 	public function savePublishedPageRender($page_key, array $meta, $html, $user_id = 0) {
 		$page_key = $this->sanitizeDocumentKey($page_key);
 		$html = (string) $html;
+		if (trim($html) === '') {
+			$html = '<!-- nordicbuilder:ssr-empty -->';
+		}
 
 		if ($page_key === '') {
 			return false;

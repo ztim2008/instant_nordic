@@ -23,7 +23,10 @@ class actionNordicbuilderCreatePage extends cmsAction {
 			'mode'     => $this->request->get('mode', 'instant_content_body'),
 			'status'   => $this->request->get('status', 'draft'),
 			'template' => $this->request->get('template', 'nordic'),
-			'adapter_key' => $this->request->get('adapter_key', '')
+			'adapter_key' => $this->request->get('adapter_key', ''),
+			'disable_starter_seed' => (bool) $this->request->get('disable_starter_seed', false),
+			'inherit_global_sections' => (bool) $this->request->get('inherit_global_sections', false),
+			'use_as_global_sections_source' => (bool) $this->request->get('use_as_global_sections_source', false)
 		], $this->cms_user->id);
 
 		if (!$page) {

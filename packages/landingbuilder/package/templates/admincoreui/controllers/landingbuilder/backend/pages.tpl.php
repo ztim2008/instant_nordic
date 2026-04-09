@@ -15,6 +15,8 @@ $page_status_titles = [
     'published' => 'Опубликовано'
 ];
 
+$content_types = isset($content_types) && is_array($content_types) ? $content_types : [];
+
 $this->setPageTitle('Нордик: страницы');
 $this->addBreadcrumb('Нордик');
 $this->addBreadcrumb('Страницы');
@@ -337,6 +339,29 @@ $this->addToolButton([
         border-top: 1px solid #edf2f7;
         background: #ffffff;
     }
+
+    .lb-ctype-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .lb-ctype-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 8px 10px;
+        border: 1px solid #d8e2ea;
+        border-radius: 12px;
+        background: #ffffff;
+        color: #173042;
+        font-size: 13px;
+    }
+
+    .lb-ctype-check input {
+        margin: 0;
+    }
 </style>
 
 <div class="lb-admin-ui">
@@ -386,9 +411,11 @@ $this->addToolButton([
                         <option value="none">Не привязывать сейчас</option>
                         <option value="homepage">Главная страница</option>
                         <option value="all_except_homepage">Все внутренние страницы (кроме главной)</option>
-                        <option value="url">Выборочные страницы (URL-маски)</option>
-                        <option value="overlay_content_category_board">Категория объявлений (board)</option>
+                        <option value="overlay_content_category_single">Категория одного типа контента</option>
+                        <option value="overlay_content_category_all">Категории контента (выбрать типы, без масок)</option>
                         <option value="overlay_user_profile">Профиль пользователя</option>
+                        <option value="url">Выборочные страницы (URL-маски, экспертно)</option>
+                        <option value="overlay_content_category_board">Категория объявлений (board, legacy)</option>
                     </select>
                 </div>
 
@@ -397,9 +424,43 @@ $this->addToolButton([
                     <input class="lb-input" type="text" id="lb-binding-key" placeholder="page.homepage" autocomplete="off">
                 </div>
 
+                <div class="lb-field" id="lb-exclude-ctypes-wrap" style="display:none">
+                    <div class="lb-label">Не показывать в типах контента<span class="lb-help" title="Отметьте типы, где макет НЕ должен применяться. Без ручного ввода масок.">?</span></div>
+                    <?php if ($content_types) { ?>
+                        <div class="lb-ctype-grid">
+                            <?php foreach ($content_types as $ctype) { ?>
+                                <?php $ctype_name = trim((string) ($ctype['name'] ?? '')); if ($ctype_name === '') { continue; } ?>
+                                <label class="lb-ctype-check" for="lb-exclude-ctype-<?php html($ctype_name); ?>">
+                                    <input type="checkbox" id="lb-exclude-ctype-<?php html($ctype_name); ?>" value="<?php html($ctype_name); ?>" data-lb-exclude-ctype="1">
+                                    <span><?php html((string) ($ctype['title'] ?? $ctype_name)); ?></span>
+                                </label>
+                            <?php } ?>
+                        </div>
+                        <div class="lb-note">Если ничего не отмечено, макет будет применяться для всех типов контента.</div>
+                    <?php } else { ?>
+                        <div class="lb-note">Не удалось загрузить типы контента. Используйте режим URL-масок (экспертно).</div>
+                    <?php } ?>
+                </div>
+
+                <div class="lb-field" id="lb-single-ctype-wrap" style="display:none">
+                    <div class="lb-label">Тип контента<span class="lb-help" title="Выберите один тип контента, для которого будет работать страница категории.">?</span></div>
+                    <?php if ($content_types) { ?>
+                        <select class="lb-select" id="lb-single-ctype">
+                            <option value="">Выберите тип контента</option>
+                            <?php foreach ($content_types as $ctype) { ?>
+                                <?php $ctype_name = trim((string) ($ctype['name'] ?? '')); if ($ctype_name === '') { continue; } ?>
+                                <option value="<?php html($ctype_name); ?>"><?php html((string) ($ctype['title'] ?? $ctype_name)); ?></option>
+                            <?php } ?>
+                        </select>
+                    <?php } else { ?>
+                        <div class="lb-note">Не удалось загрузить типы контента. Используйте режим URL-масок (экспертно).</div>
+                    <?php } ?>
+                </div>
+
                 <div class="lb-field" id="lb-url-masks-wrap" style="display:none">
                     <div class="lb-label">URL-маски<span class="lb-help" title="По одной маске на строку. Символ * означает любой хвост. Примеры: promo/*, landing/*">?</span></div>
                     <textarea class="lb-textarea" id="lb-url-masks" placeholder="promo/*\nlanding/*"></textarea>
+                    <div class="lb-note">Это экспертный режим. Для простого сценария лучше выбрать «Категории контента (выбрать типы, без масок)».</div>
                     <div class="lb-note">Важно: правило начнёт работать для посетителей только если страница будет опубликована. Для админа предпросмотр доступен и в черновике.</div>
                 </div>
 
@@ -437,6 +498,10 @@ $this->addToolButton([
             const urlMasksInput = document.getElementById('lb-url-masks');
             const excludeMasksWrap = document.getElementById('lb-exclude-masks-wrap');
             const excludeMasksInput = document.getElementById('lb-exclude-masks');
+            const excludeCtypesWrap = document.getElementById('lb-exclude-ctypes-wrap');
+            const excludeCtypeInputs = Array.from(document.querySelectorAll('[data-lb-exclude-ctype="1"]'));
+            const singleCtypeWrap = document.getElementById('lb-single-ctype-wrap');
+            const singleCtypeSelect = document.getElementById('lb-single-ctype');
             const csrfInput = document.getElementById('lb-csrf');
             const submitBtn = document.getElementById('lb-create-submit');
 
@@ -463,6 +528,15 @@ $this->addToolButton([
                 applySelect.value = 'none';
                 bindingKeyWrap.style.display = 'none';
                 urlMasksWrap.style.display = 'none';
+                excludeMasksWrap.style.display = 'none';
+                excludeCtypesWrap.style.display = 'none';
+                singleCtypeWrap.style.display = 'none';
+                excludeCtypeInputs.forEach(function (input) {
+                    input.checked = false;
+                });
+                if (singleCtypeSelect) {
+                    singleCtypeSelect.value = '';
+                }
                 modal.classList.add('is-open');
                 modal.setAttribute('aria-hidden', 'false');
                 setTimeout(function () {
@@ -482,6 +556,37 @@ $this->addToolButton([
                 }
             }
 
+            function syncPresetDefaults() {
+                const apply = applySelect.value;
+
+                if (apply === 'homepage') {
+                    if (!titleInput.value.trim()) {
+                        titleInput.value = 'Главная страница';
+                    }
+                    if (!keyInput.value.trim()) {
+                        keyInput.value = 'homepage';
+                    }
+                    return;
+                }
+
+                if (apply === 'all_except_homepage') {
+                    if (!titleInput.value.trim()) {
+                        titleInput.value = 'Сквозные секции сайта';
+                    }
+                    if (!keyInput.value.trim()) {
+                        keyInput.value = 'site-all';
+                    }
+                    return;
+                }
+
+                if (apply === 'overlay_content_category_single' && singleCtypeSelect) {
+                    const ctype = String(singleCtypeSelect.value || '').trim();
+                    if (ctype && !keyInput.value.trim()) {
+                        keyInput.value = 'category-' + slugify(ctype);
+                    }
+                }
+            }
+
             function syncBindingDefaults() {
                 const pageKey = keyInput.value.trim();
                 const apply = applySelect.value;
@@ -490,6 +595,8 @@ $this->addToolButton([
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = 'page.homepage';
                     }
@@ -497,6 +604,8 @@ $this->addToolButton([
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = 'page.all_internal';
                     }
@@ -504,13 +613,35 @@ $this->addToolButton([
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = '';
                     excludeMasksWrap.style.display = '';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = pageKey ? ('page.' + pageKey) : 'page.marketing';
+                    }
+                } else if (apply === 'overlay_content_category_single') {
+                    bindingKeyWrap.style.display = '';
+                    urlMasksWrap.style.display = 'none';
+                    excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = '';
+                    if (!bindingKeyInput.value.trim()) {
+                        bindingKeyInput.value = 'overlay.content_category.single';
+                    }
+                } else if (apply === 'overlay_content_category_all') {
+                    bindingKeyWrap.style.display = '';
+                    urlMasksWrap.style.display = 'none';
+                    excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = '';
+                    singleCtypeWrap.style.display = 'none';
+                    if (!bindingKeyInput.value.trim()) {
+                        bindingKeyInput.value = 'overlay.content_category.default';
                     }
                 } else if (apply === 'overlay_content_category_board') {
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = 'overlay.content_category.board';
                     }
@@ -518,6 +649,8 @@ $this->addToolButton([
                     bindingKeyWrap.style.display = '';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                     if (!bindingKeyInput.value.trim()) {
                         bindingKeyInput.value = 'overlay.user_profile.default';
                     }
@@ -525,15 +658,29 @@ $this->addToolButton([
                     bindingKeyWrap.style.display = 'none';
                     urlMasksWrap.style.display = 'none';
                     excludeMasksWrap.style.display = 'none';
+                    excludeCtypesWrap.style.display = 'none';
+                    singleCtypeWrap.style.display = 'none';
                 }
             }
 
             function resolveAdapterKeyForApply(apply) {
+                if (apply === 'homepage') {
+                    return 'standalone_landing';
+                }
+
                 if (apply === 'all_except_homepage') {
                     return 'internal_content_generic';
                 }
 
                 if (apply === 'overlay_content_category_board') {
+                    return 'content_category_generic';
+                }
+
+                if (apply === 'overlay_content_category_single') {
+                    return 'content_category_generic';
+                }
+
+                if (apply === 'overlay_content_category_all') {
                     return 'content_category_generic';
                 }
 
@@ -591,6 +738,10 @@ $this->addToolButton([
                 body.set('mode', 'instant_content_body');
                 body.set('status', 'draft');
                 body.set('template', 'nordic');
+                const shouldUseStarterSeed = (apply === 'homepage' || apply === 'all_except_homepage');
+                body.set('disable_starter_seed', shouldUseStarterSeed ? '0' : '1');
+                body.set('inherit_global_sections', (apply === 'homepage' || apply === 'overlay_content_category_single' || apply === 'overlay_content_category_all' || apply === 'overlay_content_category_board' || apply === 'overlay_user_profile') ? '1' : '0');
+                body.set('use_as_global_sections_source', apply === 'all_except_homepage' ? '1' : '0');
                 body.set('csrf_token', (csrfInput && csrfInput.value) ? csrfInput.value : '');
 
                 const adapterKey = resolveAdapterKeyForApply(apply);
@@ -655,6 +806,47 @@ $this->addToolButton([
 
                     if (apply === 'overlay_content_category_board') {
                         bindingBody.set('route_params_json', JSON.stringify({ overlay: 'content_category', ctype: 'board' }));
+                    }
+
+                    if (apply === 'overlay_content_category_single') {
+                        const selectedCtype = singleCtypeSelect ? String(singleCtypeSelect.value || '').trim() : '';
+                        if (!selectedCtype) {
+                            setError('Выберите тип контента для страницы категории.');
+                            return;
+                        }
+                        bindingBody.set('route_params_json', JSON.stringify({ overlay: 'content_category', ctype: selectedCtype }));
+                    }
+
+                    if (apply === 'overlay_content_category_all') {
+                        const allCtypes = [];
+                        const excludedCtypes = [];
+
+                        excludeCtypeInputs.forEach(function (input) {
+                            const value = String((input && input.value) ? input.value : '').trim();
+                            if (!value) {
+                                return;
+                            }
+                            allCtypes.push(value);
+                            if (input.checked) {
+                                excludedCtypes.push(value);
+                            }
+                        });
+
+                        const allowedCtypes = allCtypes.filter(function (value) {
+                            return excludedCtypes.indexOf(value) === -1;
+                        });
+
+                        if (allCtypes.length > 0 && allowedCtypes.length === 0) {
+                            setError('Нельзя исключить все типы контента. Оставьте хотя бы один тип, где макет должен показываться.');
+                            return;
+                        }
+
+                        const routeParams = { overlay: 'content_category' };
+                        if (allCtypes.length > 0 && allowedCtypes.length < allCtypes.length) {
+                            routeParams.ctype = allowedCtypes;
+                        }
+
+                        bindingBody.set('route_params_json', JSON.stringify(routeParams));
                     }
 
                     if (apply === 'overlay_user_profile') {
@@ -863,8 +1055,16 @@ $this->addToolButton([
             });
 
             applySelect.addEventListener('change', function () {
+                syncPresetDefaults();
                 syncBindingDefaults();
             });
+
+            if (singleCtypeSelect) {
+                singleCtypeSelect.addEventListener('change', function () {
+                    syncPresetDefaults();
+                    syncBindingDefaults();
+                });
+            }
 
             submitBtn.addEventListener('click', function () {
                 setError('');
@@ -981,6 +1181,9 @@ $this->addToolButton([
                 <div class="lb-page-card__actions">
                     <a class="lb-admin-btn lb-admin-btn--ghost" href="<?php html($page['view_url']); ?>" target="_blank" rel="noopener">Предпросмотр</a>
                     <a class="lb-admin-btn lb-admin-btn--primary" href="<?php html($page['canvas_url']); ?>">Открыть редактор</a>
+                    <?php if (!empty($bindings_url)) { ?>
+                        <a class="lb-admin-btn lb-admin-btn--ghost" href="<?php html($bindings_url . '?page_key=' . urlencode((string) ($page['key'] ?? ''))); ?>">Правила применения</a>
+                    <?php } ?>
                     <?php if (!empty($publish_page_url) && !empty($is_schema_installed)) { ?>
                         <button class="lb-admin-btn lb-admin-btn--ghost" type="button" data-nb-publish-page="1" data-page-key="<?php html($page['key']); ?>" data-page-title="<?php html($page['title']); ?>">Опубликовать SSR</button>
                     <?php } ?>

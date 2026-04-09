@@ -23,6 +23,24 @@
 
 `InstantCMS 2 backend -> nordic runtime template -> design system / global defaults -> visual builder workspace -> component library -> widget/data adapter layer`
 
+## Канон: модель интеграции (надстройка без правки ядра)
+
+Основной вектор Нордик: строить **надстройку** над InstantCMS, а не переписывать ядро и не хард-форкать шаблон.
+
+Что это означает на практике:
+
+1. Не менять core-логику InstantCMS ради builder-сценариев.
+2. Не делать зависимость продукта от прямых patch-правок в `system/` и базовых шаблонах.
+3. Подключаться только через контролируемые точки расширения: виджеты, шаблонные слоты, options, contracts, adapters.
+4. Канонический пользовательский результат: дизайнер управляет глобальным стилем и блоками, а движок продолжает обновляться независимо.
+5. Любая новая функция должна сначала проверяться по критерию "переживет ли update движка/шаблона без ручного ремонта".
+
+Что запрещено как основной путь:
+
+1. Лечить продуктовые задачи прямыми вмешательствами в core-механику движка.
+2. Встраивать runtime через takeover/hybrid-магии, ломающие boundary между Instant-зонами и builder-зоной.
+3. Проектировать дизайн-систему как набор разрозненных ad hoc CSS-правок без контрактов и токенов.
+
 ## Канон: правило зон (Variant B, без takeover)
 
 В runtime действует жесткое правило владения зонами: **builder управляет только зоной `content_body`**, а весь остальной каркас сайта (header/footer/sidebar и любые shell‑позиции темы) всегда остается обычным InstantCMS‑рендером. Это убирает конфликты, “магические” ветки в шаблоне и гарантирует parity preview/live, потому что на live вставляется один опубликованный SSR‑рендер.
@@ -246,6 +264,7 @@ Bridge-прототипы canvas уже существуют, но взросл�
 - [LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md](LANDING-BUILDER-VISUAL-FIRST-PIVOT-2026-04-05.md)
 - [LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md](LANDING-BUILDER-VISUAL-BUILDER-BLUEPRINT-2026-04-04.md)
 - [LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md](LANDING-BUILDER-DESIGN-SYSTEM-SPEC-2026-04-04.md)
+- [docs/NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md](docs/NORDICBUILDER-DESIGN-SYSTEM-GLOBAL-CONTROL-MAP.md)
 - [LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md](LANDING-BUILDER-SHELL-BUILDER-SPEC-2026-04-04.md)
 - [LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md](LANDING-BUILDER-JSON-CONTRACTS-SPEC-2026-04-03.md)
 - [LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md](LANDING-BUILDER-PRODUCT-MAP-2026-04-04.md)
@@ -419,3 +438,25 @@ CSS-first foundation layer завершён. page_context определяет �
 - Пользователь без техподготовки понимает, куда добавляется секция и почему.
 - Preview/live не расходятся в ключевых сценариях.
 - Результаты smoke подтверждены в `docs/WORKLOG.md`.
+
+---
+
+## Закрытие этапа — 8 апреля 2026 (native body width + sidebars)
+
+### Что закрыто
+
+1. Full width (`100%`) больше не отключает sidebars в runtime.
+2. Режим ширины native body развязан от режима колонок body.
+3. Для sidebar-зон отключены A/A+ (в UI и в action guards).
+4. Добавлен управляемый full-width padding (`native_body_full_padding`).
+5. Runtime получил отдельный full-width layout-класс для случая `100% + sidebars`.
+
+### Продуктовый эффект
+
+- Пользователь может работать в `100%` и при этом сохранять 0/1/2 sidebars.
+- Переключение `12/12 <-> 100%` перестало ломать структуру колонок и вызывать визуальные артефакты в боковых слотах.
+
+### Где зафиксировано подробно
+
+- `docs/WORKLOG.md` (запись за 2026-04-08)
+- `docs/worklogs/2026-04-08-native-body-fullwidth-sidebars.md`

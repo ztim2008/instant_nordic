@@ -13,14 +13,14 @@ class modelLandingbuilder extends cmsModel {
 	public function getPagesForAdmin() {
 
 		if (!$this->hasInstalledSchema()) {
-			return $this->getDefaultPages();
+			return [];
 		}
 
 		$pages = $this->orderBy('updated_at', 'desc')->get(self::PAGE_TABLE, function ($item) {
 			return $this->normalizePage($item);
 		});
 
-		return $pages ? array_values($pages) : $this->getDefaultPages();
+		return $pages ? array_values($pages) : [];
 	}
 
 	public function migrateLegacyPageModesToInstantContentBody($user_id = 0) {
@@ -267,7 +267,7 @@ class modelLandingbuilder extends cmsModel {
 	protected function getLegacyPageByKey($page_key) {
 
 		if (!$this->hasInstalledSchema()) {
-			return $this->getDefaultPageByKey($page_key);
+			return false;
 		}
 
 		$page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key, function ($item) {
@@ -275,7 +275,7 @@ class modelLandingbuilder extends cmsModel {
 		});
 
 		if (!$page) {
-			return $this->getDefaultPageByKey($page_key);
+			return false;
 		}
 
 		$page['widget_nodes'] = $this->getPageWidgetNodes($page['id'], $page['schema']);
@@ -327,13 +327,36 @@ class modelLandingbuilder extends cmsModel {
 		$status = !empty($data['status']) ? $data['status'] : 'draft';
 		$template = !empty($data['template']) ? $data['template'] : 'nordic';
 		$schema = isset($data['schema']) && is_array($data['schema']) ? $data['schema'] : [];
+		$disable_starter_seed = !empty($data['disable_starter_seed']);
+		$inherit_global_sections = !empty($data['inherit_global_sections']);
+		$use_as_global_sections_source = !empty($data['use_as_global_sections_source']);
 		$adapter_key = trim((string) ($data['adapter_key'] ?? ''));
 		$adapter_definitions = $this->getAdapterDefinitions();
-		if (empty($schema['sections']) && empty($schema['zones'])) {
+		if (
+			empty($schema['sections']) &&
+			empty($schema['zones']) &&
+			!$disable_starter_seed &&
+			$adapter_key === 'internal_content_generic'
+		) {
+			$schema = $this->getInternalContentStarterSchema($key, $title, $template, $page_mode);
+		}
+
+		if (empty($schema['sections']) && empty($schema['zones']) && !$disable_starter_seed) {
 			$schema = $this->getStarterSchemaForNewPage($key, $title, $template, $page_mode);
 		}
 		if ($adapter_key !== '' && isset($adapter_definitions[$adapter_key])) {
 			$schema['adapter_key'] = $adapter_key;
+		}
+
+		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+			$schema['layout'] = [];
+		}
+
+		$schema['layout']['inherit_global_sections'] = $inherit_global_sections;
+		$schema['layout']['use_as_global_sections_source'] = $use_as_global_sections_source;
+
+		if ($use_as_global_sections_source) {
+			$schema['layout']['inherit_global_sections'] = false;
 		}
 		$now = date('Y-m-d H:i:s');
 
@@ -361,8 +384,9 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
+		$raw_page_key = trim((string) $page_key);
 		$page_key = $this->sanitizePageKey($page_key);
-		if (!$page_key) {
+		if (!$page_key && $raw_page_key === '') {
 			return false;
 		}
 
@@ -370,7 +394,18 @@ class modelLandingbuilder extends cmsModel {
 			return false;
 		}
 
-		$page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
+		$lookup_keys = array_values(array_unique(array_filter([$page_key, $raw_page_key], function ($key) {
+			return $key !== '';
+		})));
+
+		$page = false;
+		foreach ($lookup_keys as $lookup_key) {
+			$page = $this->getItemByField(self::PAGE_TABLE, 'name', $lookup_key);
+			if ($page) {
+				break;
+			}
+		}
+
 		if (!$page) {
 			return false;
 		}
@@ -457,6 +492,77 @@ class modelLandingbuilder extends cmsModel {
 		if (empty($schema['layout']['page_mode'])) {
 			$schema['layout']['page_mode'] = $page_mode ?: 'instant_content_body';
 		}
+
+		return $schema;
+	}
+
+	protected function getInternalContentStarterSchema($page_key, $title = '', $template = 'nordic', $page_mode = 'instant_content_body') {
+
+		$schema = [
+			'sections' => [
+				[
+					'uid' => 'global-nav',
+					'title' => 'Сквозная навигация',
+					'layout' => '1col',
+					'section_type' => 'content',
+					'settings' => [
+						'zone_key' => 'before_content',
+						'style_preset' => 'content',
+						'container_preset' => 'wide',
+						'spacing_preset' => 'sm',
+						'background_tone' => 'base'
+					],
+					'columns' => [
+						[
+							'uid' => 'global-nav-column',
+							'title' => 'Навигация',
+							'nodes' => [
+								[
+									'uid' => 'global-nav-node',
+									'type' => 'block',
+									'label' => 'Навигация',
+									'source_key' => 'core.navigation'
+								]
+							]
+						]
+					]
+				],
+				[
+					'uid' => 'global-after',
+					'title' => 'Сквозной нижний блок',
+					'layout' => '1col',
+					'section_type' => 'content',
+					'settings' => [
+						'zone_key' => 'after_content',
+						'style_preset' => 'content',
+						'container_preset' => 'wide',
+						'spacing_preset' => 'md',
+						'background_tone' => 'base'
+					],
+					'columns' => [
+						[
+							'uid' => 'global-after-column',
+							'title' => 'CTA',
+							'nodes' => [
+								[
+									'uid' => 'global-after-node',
+									'type' => 'block',
+									'label' => 'Действия',
+									'source_key' => 'core.hero-actions'
+								]
+							]
+						]
+					]
+				]
+			]
+		];
+
+		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
+			$schema['layout'] = [];
+		}
+
+		$schema['layout']['template'] = $template ?: 'nordic';
+		$schema['layout']['page_mode'] = $page_mode ?: 'instant_content_body';
 
 		return $schema;
 	}
@@ -1582,6 +1688,8 @@ class modelLandingbuilder extends cmsModel {
 
 	public function getRuntimePage(array $page) {
 
+		$page = $this->applyGlobalSectionsToPage($page);
+
 		$page['adapter_key'] = $this->resolveAdapterKey($page);
 		$page['page_type'] = $this->resolvePageType($page);
 		$page['schema'] = $this->enrichSchemaForRuntime($page);
@@ -1600,6 +1708,157 @@ class modelLandingbuilder extends cmsModel {
 			'slot_map'    => $this->buildRuntimeSlotMap($shell, $zones, $adapter),
 			'widget_map'  => $this->getPageWidgetMap($page)
 		];
+	}
+
+	protected function applyGlobalSectionsToPage(array $page) {
+
+		if (empty($page['schema']) || !is_array($page['schema'])) {
+			return $page;
+		}
+
+		if (empty($page['schema']['layout']) || !is_array($page['schema']['layout'])) {
+			$page['schema']['layout'] = [];
+		}
+
+		$layout = $page['schema']['layout'];
+		if (empty($layout['inherit_global_sections'])) {
+			return $page;
+		}
+
+		if (!empty($layout['use_as_global_sections_source'])) {
+			return $page;
+		}
+
+		$current_page_key = (string) ($page['key'] ?? $page['name'] ?? '');
+		$global_page_key = $this->resolveGlobalSectionsSourcePageKey($current_page_key);
+		if ($global_page_key === '' || $global_page_key === $current_page_key) {
+			return $page;
+		}
+
+		$global_page = $this->getPageByKey($global_page_key);
+		if (!$global_page || empty($global_page['schema']) || !is_array($global_page['schema'])) {
+			return $page;
+		}
+
+		$global_sections = isset($global_page['schema']['sections']) && is_array($global_page['schema']['sections'])
+			? array_values($global_page['schema']['sections'])
+			: [];
+		if (!$global_sections) {
+			return $page;
+		}
+
+		$prepared_global_sections = [];
+		foreach ($global_sections as $global_index => $global_section) {
+			if (!is_array($global_section)) {
+				continue;
+			}
+
+			$section = $global_section;
+			$original_uid = trim((string) ($section['uid'] ?? ''));
+			if ($original_uid === '') {
+				$original_uid = 'global-section-' . ($global_index + 1);
+			}
+
+			$section['uid'] = 'global-' . $global_page_key . '-' . $original_uid;
+			$section['title'] = !empty($section['title']) ? (string) $section['title'] : 'Сквозная секция';
+
+			if (empty($section['settings']) || !is_array($section['settings'])) {
+				$section['settings'] = [];
+			}
+
+			$section['settings']['is_global_section'] = true;
+			$section['settings']['global_source_page_key'] = $global_page_key;
+
+			$columns = isset($section['columns']) && is_array($section['columns']) ? array_values($section['columns']) : [];
+			foreach ($columns as $column_index => $column) {
+				if (!is_array($column)) {
+					$columns[$column_index] = [];
+					$column = [];
+				}
+
+				$column_uid = trim((string) ($column['uid'] ?? ''));
+				if ($column_uid === '') {
+					$column_uid = 'column-' . ($column_index + 1);
+				}
+
+				$columns[$column_index]['uid'] = $section['uid'] . '-' . $column_uid;
+
+				$nodes = isset($column['nodes']) && is_array($column['nodes']) ? array_values($column['nodes']) : [];
+				foreach ($nodes as $node_index => $node) {
+					if (!is_array($node)) {
+						$nodes[$node_index] = [];
+						$node = [];
+					}
+
+					$node_uid = trim((string) ($node['uid'] ?? ''));
+					if ($node_uid === '') {
+						$node_uid = 'node-' . ($node_index + 1);
+					}
+
+					$nodes[$node_index]['uid'] = $columns[$column_index]['uid'] . '-' . $node_uid;
+				}
+
+				$columns[$column_index]['nodes'] = $nodes;
+			}
+			$section['columns'] = $columns;
+
+			$prepared_global_sections[] = $section;
+		}
+
+		if (!$prepared_global_sections) {
+			return $page;
+		}
+
+		$local_sections = isset($page['schema']['sections']) && is_array($page['schema']['sections'])
+			? array_values($page['schema']['sections'])
+			: [];
+
+		$page['schema']['sections'] = array_merge($prepared_global_sections, $local_sections);
+
+		return $page;
+	}
+
+	protected function resolveGlobalSectionsSourcePageKey($current_page_key = '') {
+
+		$current_page_key = trim((string) $current_page_key);
+
+		static $cached_global_source_key = null;
+		if ($cached_global_source_key !== null) {
+			return $cached_global_source_key !== $current_page_key ? $cached_global_source_key : '';
+		}
+
+		$cached_global_source_key = '';
+
+		foreach ((array) $this->getPagesForAdmin() as $candidate_page) {
+			$candidate_key = trim((string) ($candidate_page['key'] ?? ''));
+			if ($candidate_key === '' || $candidate_key === $current_page_key) {
+				continue;
+			}
+
+			$layout = isset($candidate_page['schema']['layout']) && is_array($candidate_page['schema']['layout'])
+				? $candidate_page['schema']['layout']
+				: [];
+			if (!empty($layout['use_as_global_sections_source'])) {
+				$cached_global_source_key = $candidate_key;
+				break;
+			}
+		}
+
+		if ($cached_global_source_key === '') {
+			foreach (['site-all', 'site-frame', 'all-site'] as $fallback_key) {
+				if ($fallback_key === $current_page_key) {
+					continue;
+				}
+
+				$candidate_page = $this->getPageByKey($fallback_key);
+				if ($candidate_page) {
+					$cached_global_source_key = $fallback_key;
+					break;
+				}
+			}
+		}
+
+		return $cached_global_source_key;
 	}
 
 	public function getAdapterDefinitions() {
@@ -1666,9 +1925,16 @@ class modelLandingbuilder extends cmsModel {
 						'description' => 'Эта зона занимает slot content_body и остается под управлением стандартной страницы InstantCMS.'
 					],
 					[
+						'key'         => 'content_sidebar_left',
+						'slot_key'    => 'content_sidebar_left',
+						'title'       => 'Левая боковая колонка',
+						'kind'        => 'builder',
+						'description' => 'Левая колонка для меню, промо-баннеров и поддерживающих виджетов.'
+					],
+					[
 						'key'         => 'content_sidebar_right',
 						'slot_key'    => 'content_sidebar_right',
-						'title'       => 'Боковая колонка',
+						'title'       => 'Правая боковая колонка',
 						'kind'        => 'builder',
 						'description' => 'Сюда удобно выводить дополнительные виджеты и короткие блоки рядом с основным content_body.'
 					],
@@ -2097,7 +2363,13 @@ class modelLandingbuilder extends cmsModel {
 				if (strpos($binding_key, 'overlay.content_category') === 0) {
 					return 'content_category_generic';
 				}
+				if (strpos($binding_key, 'page.homepage') === 0) {
+					return '';
+				}
 				if (strpos($binding_key, 'page.all_internal') === 0) {
+					return 'internal_content_generic';
+				}
+				if (strpos($binding_key, 'page.') === 0) {
 					return 'internal_content_generic';
 				}
 
@@ -2775,10 +3047,14 @@ class modelLandingbuilder extends cmsModel {
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'shell_variant'=> '',
+			'inherit_global_sections' => false,
+			'use_as_global_sections_source' => false,
 			'content_slot' => 'content_body',
 			'body_columns_mode' => '',
 			'body_left_span' => 3,
-			'body_right_span' => 3
+			'body_right_span' => 3,
+			'native_body_width_mode' => '',
+			'native_body_full_padding' => 20
 		], $schema['layout']) : [
 			'template'     => 'nordic',
 			'scheme'       => $this->getNordicShellSchemeKey(),
@@ -2786,10 +3062,14 @@ class modelLandingbuilder extends cmsModel {
 			'header_mode'  => 'theme',
 			'footer_mode'  => 'theme',
 			'shell_variant'=> '',
+			'inherit_global_sections' => false,
+			'use_as_global_sections_source' => false,
 			'content_slot' => 'content_body',
 			'body_columns_mode' => '',
 			'body_left_span' => 3,
-			'body_right_span' => 3
+			'body_right_span' => 3,
+			'native_body_width_mode' => '',
+			'native_body_full_padding' => 20
 		];
 		$template_preset = (string) ($schema['theme']['template_preset'] ?? 'nordic_classic');
 		$template_config = $this->getTemplatePresetByKey($template_preset);
@@ -2800,6 +3080,21 @@ class modelLandingbuilder extends cmsModel {
 		$schema['layout']['body_columns_mode'] = $this->normalizeBodyColumnsMode($schema['layout']['body_columns_mode'] ?? '');
 		$schema['layout']['body_left_span'] = $this->normalizeBodyColumnSpan($schema['layout']['body_left_span'] ?? 3, 3);
 		$schema['layout']['body_right_span'] = $this->normalizeBodyColumnSpan($schema['layout']['body_right_span'] ?? 3, 3);
+		$schema['layout']['inherit_global_sections'] = !empty($schema['layout']['inherit_global_sections']);
+		$schema['layout']['use_as_global_sections_source'] = !empty($schema['layout']['use_as_global_sections_source']);
+		if ($schema['layout']['use_as_global_sections_source']) {
+			$schema['layout']['inherit_global_sections'] = false;
+		}
+		$native_body_width_mode = isset($schema['layout']['native_body_width_mode']) ? (string) $schema['layout']['native_body_width_mode'] : '';
+		$schema['layout']['native_body_width_mode'] = in_array($native_body_width_mode, ['grid', 'full'], true) ? $native_body_width_mode : '';
+		$native_body_full_padding = isset($schema['layout']['native_body_full_padding']) ? (int) $schema['layout']['native_body_full_padding'] : 20;
+		if ($native_body_full_padding < 0) {
+			$native_body_full_padding = 0;
+		}
+		if ($native_body_full_padding > 60) {
+			$native_body_full_padding = 60;
+		}
+		$schema['layout']['native_body_full_padding'] = $native_body_full_padding;
 		$schema['shell_slots'] = $this->normalizeShellSlots(isset($schema['shell_slots']) && is_array($schema['shell_slots']) ? $schema['shell_slots'] : []);
 
 		$schema['sections'] = isset($schema['sections']) && is_array($schema['sections']) ? array_values($schema['sections']) : [];
@@ -2992,8 +3287,8 @@ class modelLandingbuilder extends cmsModel {
 				'show_site_top'       => 1,
 				'show_hero'           => 0,
 				'show_before_content' => 1,
-				'show_after_content'  => 0,
-				'body_layout'         => 'right_sidebar',
+				'show_after_content'  => 1,
+				'body_layout'         => 'two_sidebars',
 				'homepage_shell_mode' => 'inherit',
 				'sticky_header'       => 'smart',
 				'mobile_menu_mode'    => 'drawer'
