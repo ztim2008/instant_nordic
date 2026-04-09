@@ -158,6 +158,10 @@
 	- выполнен P0-аудит route matrix и зафиксирован отдельным документом;
 	- выполнена P0-инвентаризация inspector controls (active/review/candidate-deprecated) отдельным документом;
 	- усилен backup/checkpoint flow: `db-backup.sh` получил preflight-диагностику и override dump-учетки через `DB_DUMP_*`, а `pre-change-checkpoint.sh` получил режимы `required|best-effort|skip`.
+	- восстановлен строгий checkpoint перед runtime-рефактором: backup БД прошел через dump override (`DB_DUMP_USER=root`, `DB_DUMP_HOST=localhost`), затем создан snapshot tag `snapshot/20260409-073048`;
+	- в runtime добавлен debug trace выбора `effective page key` на двух уровнях: resolver (`landingbuilder/model.php`) и шаблонные ветки (`templates/nordic/main.tpl.php`);
+	- для admin-debug добавлен HTML trace marker `lb-effective-page-trace` при `lb_trace=1`, чтобы подтверждать ветку выбора напрямую через HTTP smoke;
+	- выполнен авторизованный smoke по 5 маршрутам (`/`, `/board`, `/board/7-prodam-kvartiru-v-novostroike.html`, `/board/nedvizhimost`, `/users/1`) с фиксацией route-context/effective key.
 - Какие файлы затронуты:
 	- [system/controllers/landingbuilder/model.php](../system/controllers/landingbuilder/model.php)
 	- [system/controllers/landingbuilder/backend/actions/create_page.php](../system/controllers/landingbuilder/backend/actions/create_page.php)
@@ -176,19 +180,25 @@
 	- [scripts/db-backup.sh](../scripts/db-backup.sh)
 	- [scripts/pre-change-checkpoint.sh](../scripts/pre-change-checkpoint.sh)
 	- [docs/ROLLBACK-AND-RECOVERY.md](ROLLBACK-AND-RECOVERY.md)
+	- [templates/nordic/main.tpl.php](../templates/nordic/main.tpl.php)
+	- [packages/nordic/package/templates/nordic/main.tpl.php](../packages/nordic/package/templates/nordic/main.tpl.php)
 - Что проверено:
 	- `php -l` без ошибок для всех измененных live/mirror PHP и tpl-файлов;
 	- `cmp -s` подтверждает parity между live и package mirrors;
 	- editor diagnostics не показывают новых ошибок в измененных файлах.
 	- `bash -n` проходит для `scripts/db-backup.sh` и `scripts/pre-change-checkpoint.sh`.
 	- `scripts/db-backup.sh` в текущем окружении по-прежнему репортит MySQL 1045, но теперь дает явную диагностику и поддерживает override dump-учетки.
+	- strict checkpoint успешно выполнен через `pre-change-checkpoint.sh` (режим `required`): создан backup `backups/db/builders-20260409-073048.sql.gz` и git tag `snapshot/20260409-073048`.
+	- `php -l` проходит для обновленных `landingbuilder/model.php` и `templates/nordic/main.tpl.php` (live + package mirrors).
+	- авторизованный smoke (`icms[auth]` + `lb_trace=1`) по 5 маршрутам возвращает `HTTP 200` и отдает trace marker `lb-effective-page-trace` на каждом маршруте.
+	- в trace зафиксированы фактические route-context и итог выбора: homepage -> `template.takeover-applied`, остальные 4 маршрута -> `template.takeover-skip (empty-effective-page-key)`.
 - Какие риски остались:
-	- pre-change checkpoint script не смог сделать backup БД из-за `mysqldump` access denied (1045), нужно починить db credentials/доступ до следующего рискованного шага;
+	- runtime DB-учетка из `system/config/config.php` по-прежнему не проходит dump preflight; для strict checkpoint сейчас используется override dump-учетка, нужно выделить отдельную dump-role вместо `root`;
 	- сценарий сквозных секций требует ручного smoke в админке (создание трех страниц + проверка маршрутов `/`, внутренние страницы, category конкретного ctype).
-	- P0-audit артефакты готовы, но до runtime trace и авторизованного smoke route matrix формально остается в статусе static-verified.
+	- на текущем инстансе category/profile URL дают route-context `content/board` и `users/1`, поэтому overlay-ветка (`content/category`, `users/profile`) не активируется; нужен отдельный route-classifier cut.
 - Следующий шаг:
-	- выполнить авторизованный smoke по трем пользовательским сценариям и при необходимости подправить UX-детали мастера (подсказки и дефолты ключей/названий).
-	- добавить debug trace причины выбора `effective page key` (binding/fallback/overlay), затем закрыть P0 route-matrix smoke на реальных маршрутах.
+	- сделать targeted cut route-classifier в `page_context`/template условиях, чтобы category/profile детерминированно попадали в overlay branch.
+	- после route-classifier cut повторить авторизованный smoke по 5 маршрутам и обновить `docs/worklogs/2026-04-09-route-matrix-audit.md` до полного runtime-verified статуса по всем веткам.
 
 ## 2026-04-07
 

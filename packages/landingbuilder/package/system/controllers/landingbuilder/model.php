@@ -6,6 +6,8 @@ class modelLandingbuilder extends cmsModel {
 	const VERSION_TABLE = 'landingbuilder_page_versions';
 	const PAGE_WIDGET_TABLE = 'landingbuilder_page_widgets';
 
+	protected $last_effective_page_key_trace = [];
+
 	public function hasInstalledSchema() {
 		return $this->db->isTableExists(self::PAGE_TABLE);
 	}
@@ -2059,7 +2061,21 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	public function resolveFullTakeoverPageKeyFromBindings(array $route_params, $fallback_page_key = '') {
-		return $this->resolvePageKeyFromBindingsByPrefix('page.', $route_params, $fallback_page_key);
+		$this->resetEffectivePageKeyTrace();
+		$resolved_page_key = $this->resolvePageKeyFromBindingsByPrefix('page.', $route_params, $fallback_page_key);
+
+		$this->appendEffectivePageKeyTrace([
+			'scope'            => 'full-takeover',
+			'route_params'      => $route_params,
+			'fallback_page_key' => (string) $fallback_page_key,
+			'effective_page_key'=> (string) $resolved_page_key
+		]);
+
+		return $resolved_page_key;
+	}
+
+	public function getLastEffectivePageKeyTrace() {
+		return $this->last_effective_page_key_trace;
 	}
 
 	protected function resolveOverlayPageKeyFromBindings($overlay_kind, array $route_params, $fallback_page_key) {
@@ -2076,56 +2092,170 @@ class modelLandingbuilder extends cmsModel {
 	protected function resolvePageKeyFromBindingsByPrefix($binding_prefix, array $route_params, $fallback_page_key = '') {
 		$fallback_page_key = (string) $fallback_page_key;
 		$binding_prefix = trim((string) $binding_prefix);
+		$trace_enabled = $this->isEffectivePageKeyTraceEnabled();
+		$trace_entry = [
+			'scope'             => 'bindings-prefix',
+			'binding_prefix'    => $binding_prefix,
+			'route_params'      => $route_params,
+			'fallback_page_key' => $fallback_page_key
+		];
 
 		if ($binding_prefix === '') {
+			$trace_entry['result'] = $fallback_page_key;
+			$trace_entry['result_reason'] = 'empty-binding-prefix';
+			$this->appendEffectivePageKeyTrace($trace_entry);
 			return $fallback_page_key;
 		}
 
 		$bridge_model = $this->getNordicbuilderBridgeModel();
 		if (!$bridge_model || !method_exists($bridge_model, 'getBindingOptionsCandidatesByPrefix')) {
+			$trace_entry['result'] = $fallback_page_key;
+			$trace_entry['result_reason'] = 'bridge-model-unavailable';
+			$this->appendEffectivePageKeyTrace($trace_entry);
 			return $fallback_page_key;
 		}
 
 		$core = cmsCore::getInstance();
 		$uri = trim((string) ($core->uri ?? ''), '/');
 		$is_secure = !empty($core->request) && method_exists($core->request, 'isSecure') ? (bool) $core->request->isSecure() : false;
+		$trace_entry['uri'] = $uri;
+		$trace_entry['is_secure'] = $is_secure;
 
 		$candidates = $bridge_model->getBindingOptionsCandidatesByPrefix($binding_prefix, 50);
+		$trace_entry['candidate_count'] = is_array($candidates) ? count($candidates) : 0;
 		if (!$candidates) {
+			$trace_entry['result'] = $fallback_page_key;
+			$trace_entry['result_reason'] = 'no-binding-candidates';
+			$this->appendEffectivePageKeyTrace($trace_entry);
 			return $fallback_page_key;
 		}
 
 		$best_key = '';
 		$best_score = -1;
+		$trace_candidates = [];
 
 		foreach ($candidates as $candidate) {
 			$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
+			$binding_key = (string) (($candidate['binding_key'] ?? '') ?: ($document['key'] ?? ''));
 			$page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
 			if ($page_key === '') {
+				if ($trace_enabled && count($trace_candidates) < 20) {
+					$trace_candidates[] = [
+						'binding_key' => $binding_key,
+						'page_key'    => '',
+						'matched'     => false,
+						'reason'      => 'empty-page-key'
+					];
+				}
 				continue;
 			}
 
-			if (!$this->matchesBindingOptionsDocument($document, $uri, $route_params, $is_secure)) {
+			$is_match = $this->matchesBindingOptionsDocument($document, $uri, $route_params, $is_secure);
+			if (!$is_match) {
+				if ($trace_enabled && count($trace_candidates) < 20) {
+					$trace_candidates[] = [
+						'binding_key' => $binding_key,
+						'page_key'    => $page_key,
+						'matched'     => false,
+						'reason'      => 'document-mismatch'
+					];
+				}
 				continue;
 			}
 
 			$score = $this->scoreBindingOptionsDocument($document);
+			$candidate_trace = [
+				'binding_key' => $binding_key,
+				'page_key'    => $page_key,
+				'matched'     => true,
+				'score'       => $score
+			];
 			if ($score > $best_score) {
 				$best_score = $score;
 				$best_key = $page_key;
+				$candidate_trace['became_best'] = true;
 			}
+
+			if ($trace_enabled && count($trace_candidates) < 20) {
+				$trace_candidates[] = $candidate_trace;
+			}
+		}
+
+		if ($trace_enabled) {
+			$trace_entry['candidates'] = $trace_candidates;
 		}
 
 		if ($best_key !== '') {
 			if ($fallback_page_key === '' || $best_key !== $fallback_page_key) {
 				$page = $this->getPageByKey($best_key);
 				if (!$page) {
+					$trace_entry['best_key'] = $best_key;
+					$trace_entry['best_score'] = $best_score;
+					$trace_entry['result'] = $fallback_page_key;
+					$trace_entry['result_reason'] = 'best-key-not-found';
+					$this->appendEffectivePageKeyTrace($trace_entry);
 					return $fallback_page_key;
 				}
 			}
 		}
 
-		return $best_key !== '' ? $best_key : $fallback_page_key;
+		$result_page_key = $best_key !== '' ? $best_key : $fallback_page_key;
+		$trace_entry['best_key'] = $best_key;
+		$trace_entry['best_score'] = $best_score;
+		$trace_entry['result'] = $result_page_key;
+		$trace_entry['result_reason'] = $best_key !== '' ? 'best-binding-match' : 'fallback-page-key';
+		$this->appendEffectivePageKeyTrace($trace_entry);
+
+		return $result_page_key;
+	}
+
+	protected function resetEffectivePageKeyTrace() {
+		$this->last_effective_page_key_trace = [];
+	}
+
+	protected function appendEffectivePageKeyTrace(array $event) {
+
+		if (!$this->isEffectivePageKeyTraceEnabled()) {
+			return;
+		}
+
+		$event['timestamp'] = date('c');
+		$this->last_effective_page_key_trace[] = $event;
+
+		if (count($this->last_effective_page_key_trace) > 50) {
+			$this->last_effective_page_key_trace = array_slice($this->last_effective_page_key_trace, -50);
+		}
+
+		$encoded = json_encode($event, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		if (is_string($encoded) && $encoded !== '') {
+			error_log('[landingbuilder][effective-page-key] ' . $encoded);
+		}
+	}
+
+	protected function isEffectivePageKeyTraceEnabled() {
+
+		static $is_enabled = null;
+
+		if ($is_enabled !== null) {
+			return $is_enabled;
+		}
+
+		if (!cmsUser::isAdmin()) {
+			$is_enabled = false;
+			return false;
+		}
+
+		$trace_flag = '';
+		if (isset($_GET['lb_effective_trace'])) {
+			$trace_flag = (string) $_GET['lb_effective_trace'];
+		} elseif (isset($_GET['lb_trace'])) {
+			$trace_flag = (string) $_GET['lb_trace'];
+		}
+
+		$trace_flag = strtolower(trim($trace_flag));
+		$is_enabled = in_array($trace_flag, ['1', 'true', 'yes', 'on'], true);
+
+		return $is_enabled;
 	}
 
 	protected function matchesBindingOptionsDocument(array $document, $uri, array $route_params, $is_secure) {

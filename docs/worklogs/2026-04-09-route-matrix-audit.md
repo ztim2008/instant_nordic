@@ -50,3 +50,34 @@
    - категория контента
    - профиль пользователя
 3. Зафиксировать результат smoke в `docs/WORKLOG.md`.
+
+## Update 2026-04-09 (runtime trace + авторизованный smoke)
+
+### Что добавлено в runtime
+
+1. В `system/controllers/landingbuilder/model.php` добавлен debug trace для резолвера `effective page key`:
+   - trace по префиксу bindings (`page.*` / `overlay.*`),
+   - фиксация кандидатов, причины fallback и итогового ключа,
+   - доступ к событиям через `getLastEffectivePageKeyTrace()`.
+2. В `templates/nordic/main.tpl.php` добавлен trace шаблонных веток:
+   - route-context,
+   - binding-resolution,
+   - page_type/homepage fallback,
+   - финальная ветка takeover/skip.
+3. Для dev-диагностики trace отдается администратору по флагу `lb_trace=1` (или `lb_effective_trace=1`) через HTML-комментарий `lb-effective-page-trace`.
+
+### Авторизованный smoke (admin cookie, `lb_trace=1`)
+
+| URL | HTTP | Runtime route-context | Effective key | Итог ветки |
+| --- | --- | --- | --- | --- |
+| `/` | `200` | `ctrl='' action='index' page_type='homepage'` | `glav` | `template.takeover-applied` |
+| `/board` | `200` | `ctrl='content' action='board' page_type='generic'` | `''` | `template.takeover-skip (empty-effective-page-key)` |
+| `/board/7-prodam-kvartiru-v-novostroike.html` | `200` | `ctrl='content' action='board' page_type='generic'` | `''` | `template.takeover-skip (empty-effective-page-key)` |
+| `/board/nedvizhimost` | `200` | `ctrl='content' action='board' page_type='generic'` | `''` | `template.takeover-skip (empty-effective-page-key)` |
+| `/users/1` | `200` | `ctrl='users' action='1' page_type='generic'` | `''` | `template.takeover-skip (empty-effective-page-key)` |
+
+### Вывод по P0
+
+1. Runtime trace и авторизованный smoke выполнены; P0 больше не находится только в статусе `static-verified`.
+2. Подтвержден production-факт: на текущем инстансе route-context для category/profile отличается от ожидаемых в статической матрице (`content/category`, `users/profile`).
+3. Для окончательного закрытия overlay-ветки нужен отдельный cut по route classifier в `page_context`/template условиях, чтобы category/profile попадали в overlay branch детерминированно.

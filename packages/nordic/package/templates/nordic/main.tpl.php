@@ -21,6 +21,27 @@ if (empty($nordic_context) || !is_array($nordic_context)) {
 // Интеграция landingbuilder во фронтовом шаблоне включена по умолчанию,
 // чтобы изменения из конструктора сразу применялись на сайте.
 $lb_front_integration_enabled = true;
+$lb_trace_flag = '';
+if (isset($_GET['lb_effective_trace'])) {
+    $lb_trace_flag = (string) $_GET['lb_effective_trace'];
+} elseif (isset($_GET['lb_trace'])) {
+    $lb_trace_flag = (string) $_GET['lb_trace'];
+}
+$lb_debug_trace_enabled = $lb_front_integration_enabled && cmsUser::isAdmin() && in_array(strtolower(trim($lb_trace_flag)), ['1', 'true', 'yes', 'on'], true);
+$lb_effective_page_trace = [];
+$lb_effective_page_trace_comment = '';
+$lb_push_effective_trace = function($stage, array $payload = []) use (&$lb_effective_page_trace, $lb_debug_trace_enabled) {
+    if (!$lb_debug_trace_enabled) {
+        return;
+    }
+
+    $lb_effective_page_trace[] = [
+        'stage' => (string) $stage,
+        'payload' => $payload,
+        'timestamp' => date('c')
+    ];
+};
+unset($lb_trace_flag);
 
 // Full takeover через bindings (page.*): заменяем контент страницы на Landing Builder page
 $landingbuilder_takeover = null;
@@ -28,6 +49,13 @@ try {
     $ctrl = (string) ($nordic_context['ctrl'] ?? '');
     $action = (string) ($nordic_context['action'] ?? '');
     $lb_route_uses_overlay_hooks = ($ctrl === 'content' && $action === 'category') || ($ctrl === 'users' && $action === 'profile');
+    $lb_push_effective_trace('template.route-context', [
+        'ctrl' => $ctrl,
+        'action' => $action,
+        'page_type' => (string) ($nordic_context['page_type'] ?? ''),
+        'uses_overlay_hooks' => $lb_route_uses_overlay_hooks,
+        'integration_enabled' => $lb_front_integration_enabled
+    ]);
 
     // For category/profile routes InstantCMS keeps native body/grid logic,
     // and builder is injected through dedicated overlay hooks.
@@ -39,8 +67,13 @@ try {
                 'action' => (string) ($nordic_context['action'] ?? ''),
                 'page_type' => (string) ($nordic_context['page_type'] ?? '')
             ];
+            $lb_push_effective_trace('template.route-params', $route_params);
 
             $takeover_page_key = (string) $lb_model->resolveFullTakeoverPageKeyFromBindings($route_params, '');
+            $lb_push_effective_trace('template.binding-resolution', ['takeover_page_key' => $takeover_page_key]);
+            if ($lb_debug_trace_enabled && method_exists($lb_model, 'getLastEffectivePageKeyTrace')) {
+                $lb_push_effective_trace('resolver.trace', ['events' => $lb_model->getLastEffectivePageKeyTrace()]);
+            }
 
             // Авто-takeover по page_type: если есть страница с ключом как у контекста
             // (например homepage/content-list/content-item/generic) — берём её без bindings.
@@ -53,6 +86,7 @@ try {
                 if ($page_type_key !== 'generic') {
                     $candidate_keys[] = 'generic';
                 }
+                $lb_push_effective_trace('template.page-type-fallback.start', ['candidate_keys' => $candidate_keys]);
 
                 foreach ($candidate_keys as $candidate_key) {
                     if ($candidate_key === '') {
@@ -62,11 +96,19 @@ try {
                     $candidate_page = $lb_model->getPageByKey($candidate_key);
                     if ($candidate_page) {
                         $takeover_page_key = $candidate_key;
+                        $lb_push_effective_trace('template.page-type-fallback.match', [
+                            'selected_key' => $candidate_key,
+                            'source' => 'page_type_or_generic'
+                        ]);
                         unset($candidate_page);
                         break;
                     }
 
                     unset($candidate_page);
+                }
+
+                if ($takeover_page_key === '') {
+                    $lb_push_effective_trace('template.page-type-fallback.miss', ['result' => 'no-candidate-page']);
                 }
 
                 unset($candidate_keys, $page_type_key, $candidate_key);
@@ -76,18 +118,33 @@ try {
             // но на сайте есть ровно один созданный макет — считаем его главной.
             // Это даёт UX "нулевой шаблон строится на canvas" без старого шаблона на /.
             if ($takeover_page_key === '' && ($route_params['ctrl'] ?? '') === '' && ($route_params['action'] ?? '') === 'index') {
+                $lb_push_effective_trace('template.homepage-bootstrap.start', ['route' => 'index']);
                 $homepage_page = $lb_model->getPageByKey('homepage');
                 if ($homepage_page) {
                     $takeover_page_key = 'homepage';
+                    $lb_push_effective_trace('template.homepage-bootstrap.match', [
+                        'selected_key' => 'homepage',
+                        'source' => 'homepage-page-exists'
+                    ]);
                     unset($homepage_page);
                 } else if (method_exists($lb_model, 'getPagesForAdmin')) {
                     $all_pages = $lb_model->getPagesForAdmin();
                     if (is_array($all_pages) && count($all_pages) === 1 && !empty($all_pages[0]['key'])) {
                         $takeover_page_key = (string) $all_pages[0]['key'];
+                        $lb_push_effective_trace('template.homepage-bootstrap.match', [
+                            'selected_key' => $takeover_page_key,
+                            'source' => 'single-page-catalog'
+                        ]);
                     }
                     unset($all_pages);
                 }
+
+                if ($takeover_page_key === '') {
+                    $lb_push_effective_trace('template.homepage-bootstrap.miss', ['result' => 'no-homepage-fallback']);
+                }
             }
+
+            $lb_push_effective_trace('template.effective-page-key', ['effective_page_key' => $takeover_page_key]);
             if ($takeover_page_key !== '') {
                 $takeover_page = $lb_model->getPageByKey($takeover_page_key);
                 if ($takeover_page) {
@@ -97,12 +154,39 @@ try {
                     $takeover_runtime['is_preview'] = $is_preview;
                     $landingbuilder_takeover = ['page' => $takeover_page, 'runtime' => $takeover_runtime];
                     $landingbuilder_shell_runtime = $takeover_runtime['shell'];
+                    $lb_push_effective_trace('template.takeover-applied', [
+                        'page_key' => $takeover_page_key,
+                        'page_status' => (string) ($takeover_page['status'] ?? ''),
+                        'is_preview' => $is_preview
+                    ]);
+                } else {
+                    $lb_push_effective_trace('template.takeover-missing-page', ['page_key' => $takeover_page_key]);
                 }
+            } else {
+                $lb_push_effective_trace('template.takeover-skip', ['reason' => 'empty-effective-page-key']);
             }
         }
+    } else {
+        $lb_push_effective_trace('template.takeover-skip', [
+            'reason' => 'overlay-or-landingbuilder-route',
+            'ctrl' => $ctrl,
+            'action' => $action
+        ]);
     }
 } catch (Throwable $exception) {
     $landingbuilder_takeover = null;
+    $lb_push_effective_trace('template.exception', [
+        'type' => get_class($exception),
+        'message' => (string) $exception->getMessage()
+    ]);
+}
+
+if ($lb_debug_trace_enabled && $lb_effective_page_trace) {
+    $lb_trace_payload = json_encode($lb_effective_page_trace, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if (is_string($lb_trace_payload) && $lb_trace_payload !== '') {
+        error_log('[landingbuilder][template-effective-page-key] ' . $lb_trace_payload);
+        $lb_effective_page_trace_comment = '<!-- lb-effective-page-trace: ' . base64_encode($lb_trace_payload) . ' -->';
+    }
 }
 
 // Shell variant из конструктора должен работать глобально,
@@ -580,6 +664,10 @@ if ($nordic_use_modern_skin) {
     } catch (Throwable $exception) {
         $modern_skin_rows = null;
     }
+}
+
+if ($lb_effective_page_trace_comment !== '') {
+    echo $lb_effective_page_trace_comment . "\n";
 }
 ?>
 <!DOCTYPE html>
