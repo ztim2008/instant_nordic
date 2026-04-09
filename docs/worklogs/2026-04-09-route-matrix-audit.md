@@ -107,3 +107,22 @@
 
 1. Все 5 веток route matrix подтверждены в runtime на реальных URL.
 2. P0 по route-matrix (trace + авторизованный smoke) закрыт.
+
+## Update 2026-04-09 (predictable placement policy)
+
+### Что изменено в runtime-resolver
+
+1. В `system/controllers/landingbuilder/model.php` удален неявный fallback global-source (`site-all/site-frame/all-site`), который мог подключать сквозные секции без явной настройки.
+2. Источник глобальных секций теперь выбирается только из explicit сигналов:
+   - `global_sections_source_page_key` в options,
+   - или страница с `layout.use_as_global_sections_source=true`.
+3. Выбор winning binding переведен на deterministic rank:
+   - `priority` + `specificity` документа,
+   - стабильный tie-break по `binding_key`.
+4. Тот же deterministic rank применен в `resolveAdapterKeyFromBindingOptions`, чтобы adapter не зависел от `updated_at` и порядка последних правок.
+
+### Практический эффект
+
+1. Размещение блоков по страницам становится предсказуемым при одинаковых масках и нескольких правилах.
+2. Обновление старого правила больше не "перебивает" выбор только за счет свежего `updated_at`.
+3. Сквозные секции подключаются только при явном включении, без скрытых автоподхватов.

@@ -1824,43 +1824,49 @@ class modelLandingbuilder extends cmsModel {
 
 		$current_page_key = trim((string) $current_page_key);
 
-		static $cached_global_source_key = null;
-		if ($cached_global_source_key !== null) {
-			return $cached_global_source_key !== $current_page_key ? $cached_global_source_key : '';
+		static $cached_global_source_keys = [];
+		if (array_key_exists($current_page_key, $cached_global_source_keys)) {
+			return $cached_global_source_keys[$current_page_key];
 		}
 
-		$cached_global_source_key = '';
+		$global_source_key = '';
+		$options = (array) cmsController::loadOptions('landingbuilder');
+		$explicit_source_key = $this->sanitizePageKey($options['global_sections_source_page_key'] ?? '');
 
-		foreach ((array) $this->getPagesForAdmin() as $candidate_page) {
-			$candidate_key = trim((string) ($candidate_page['key'] ?? ''));
-			if ($candidate_key === '' || $candidate_key === $current_page_key) {
-				continue;
-			}
-
-			$layout = isset($candidate_page['schema']['layout']) && is_array($candidate_page['schema']['layout'])
-				? $candidate_page['schema']['layout']
-				: [];
-			if (!empty($layout['use_as_global_sections_source'])) {
-				$cached_global_source_key = $candidate_key;
-				break;
+		if ($explicit_source_key !== '' && $explicit_source_key !== $current_page_key) {
+			$candidate_page = $this->getPageByKey($explicit_source_key);
+			if ($candidate_page) {
+				$global_source_key = $explicit_source_key;
 			}
 		}
 
-		if ($cached_global_source_key === '') {
-			foreach (['site-all', 'site-frame', 'all-site'] as $fallback_key) {
-				if ($fallback_key === $current_page_key) {
+		if ($global_source_key === '') {
+			$candidate_keys = [];
+
+			foreach ((array) $this->getPagesForAdmin() as $candidate_page) {
+				$candidate_key = trim((string) ($candidate_page['key'] ?? ''));
+				if ($candidate_key === '' || $candidate_key === $current_page_key) {
 					continue;
 				}
 
-				$candidate_page = $this->getPageByKey($fallback_key);
-				if ($candidate_page) {
-					$cached_global_source_key = $fallback_key;
-					break;
+				$layout = isset($candidate_page['schema']['layout']) && is_array($candidate_page['schema']['layout'])
+					? $candidate_page['schema']['layout']
+					: [];
+				if (!empty($layout['use_as_global_sections_source'])) {
+					$candidate_keys[$candidate_key] = true;
 				}
+			}
+
+			if ($candidate_keys) {
+				$keys = array_keys($candidate_keys);
+				sort($keys, SORT_STRING);
+				$global_source_key = (string) $keys[0];
 			}
 		}
 
-		return $cached_global_source_key;
+		$cached_global_source_keys[$current_page_key] = $global_source_key;
+
+		return $global_source_key;
 	}
 
 	public function getAdapterDefinitions() {
@@ -2131,7 +2137,7 @@ class modelLandingbuilder extends cmsModel {
 		}
 
 		$best_key = '';
-		$best_score = -1;
+		$best_rank = null;
 		$trace_candidates = [];
 
 		foreach ($candidates as $candidate) {
@@ -2163,15 +2169,17 @@ class modelLandingbuilder extends cmsModel {
 				continue;
 			}
 
+			$rank = $this->buildBindingOptionsRank($document, $binding_key);
 			$score = $this->scoreBindingOptionsDocument($document);
 			$candidate_trace = [
 				'binding_key' => $binding_key,
 				'page_key'    => $page_key,
 				'matched'     => true,
-				'score'       => $score
+				'score'       => $score,
+				'priority'    => $rank['priority']
 			];
-			if ($score > $best_score) {
-				$best_score = $score;
+			if ($best_rank === null || $this->isBindingOptionsRankBetter($rank, $best_rank)) {
+				$best_rank = $rank;
 				$best_key = $page_key;
 				$candidate_trace['became_best'] = true;
 			}
@@ -2190,7 +2198,7 @@ class modelLandingbuilder extends cmsModel {
 				$page = $this->getPageByKey($best_key);
 				if (!$page) {
 					$trace_entry['best_key'] = $best_key;
-					$trace_entry['best_score'] = $best_score;
+					$trace_entry['best_rank'] = $best_rank;
 					$trace_entry['result'] = $fallback_page_key;
 					$trace_entry['result_reason'] = 'best-key-not-found';
 					$this->appendEffectivePageKeyTrace($trace_entry);
@@ -2201,7 +2209,7 @@ class modelLandingbuilder extends cmsModel {
 
 		$result_page_key = $best_key !== '' ? $best_key : $fallback_page_key;
 		$trace_entry['best_key'] = $best_key;
-		$trace_entry['best_score'] = $best_score;
+		$trace_entry['best_rank'] = $best_rank;
 		$trace_entry['result'] = $result_page_key;
 		$trace_entry['result_reason'] = $best_key !== '' ? 'best-binding-match' : 'fallback-page-key';
 		$this->appendEffectivePageKeyTrace($trace_entry);
@@ -2340,11 +2348,85 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	protected function scoreBindingOptionsDocument(array $document) {
+		$rank = $this->buildBindingOptionsRank($document);
+
+		return ($rank['priority'] * 100000) + $rank['specificity'];
+	}
+
+	protected function buildBindingOptionsRank(array $document, $binding_key = '') {
 		$matching = isset($document['matching']) && is_array($document['matching']) ? $document['matching'] : [];
 		$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
 		$url_masks = isset($matching['url_masks']) && is_array($matching['url_masks']) ? $matching['url_masks'] : [];
+		$exclude_masks = isset($matching['exclude_masks']) && is_array($matching['exclude_masks']) ? $matching['exclude_masks'] : [];
 
-		return (count($route_params) * 100) + (count($url_masks) * 10);
+		$priority = (int) ($document['priority'] ?? ($matching['priority'] ?? 0));
+		$specificity = (count($route_params) * 200) + (count($url_masks) * 50);
+
+		foreach ($route_params as $expected) {
+			if (is_array($expected)) {
+				$specificity += 25;
+				$specificity += min(80, count($expected) * 10);
+				continue;
+			}
+
+			$expected = trim((string) $expected);
+			if ($expected !== '' && strpos($expected, '!') === 0) {
+				$specificity += 40;
+				continue;
+			}
+
+			$specificity += ($expected === '') ? 10 : 80;
+		}
+
+		foreach ($url_masks as $mask) {
+			$mask = trim((string) $mask);
+			if ($mask === '') {
+				continue;
+			}
+
+			$is_wildcard = strpos($mask, '*') !== false;
+			$specificity += $is_wildcard ? 15 : 40;
+			$specificity += min(20, strlen(trim(str_replace('*', '', $mask), '/')));
+		}
+
+		$specificity += count($exclude_masks) * 10;
+		if (!empty($matching['require_https'])) {
+			$specificity += 25;
+		}
+
+		$binding_key = trim((string) ($binding_key ?: ($document['key'] ?? '')));
+
+		return [
+			'priority' => $priority,
+			'specificity' => $specificity,
+			'binding_key' => $binding_key
+		];
+	}
+
+	protected function isBindingOptionsRankBetter(array $left_rank, array $right_rank) {
+
+		$left_priority = (int) ($left_rank['priority'] ?? 0);
+		$right_priority = (int) ($right_rank['priority'] ?? 0);
+		if ($left_priority !== $right_priority) {
+			return $left_priority > $right_priority;
+		}
+
+		$left_specificity = (int) ($left_rank['specificity'] ?? 0);
+		$right_specificity = (int) ($right_rank['specificity'] ?? 0);
+		if ($left_specificity !== $right_specificity) {
+			return $left_specificity > $right_specificity;
+		}
+
+		$left_key = (string) ($left_rank['binding_key'] ?? '');
+		$right_key = (string) ($right_rank['binding_key'] ?? '');
+		if ($left_key === '' && $right_key !== '') {
+			return false;
+		}
+		if ($left_key !== '' && $right_key === '') {
+			return true;
+		}
+
+		return strcmp($left_key, $right_key) < 0;
 	}
 
 	protected function matchesSimpleUrlMask($mask, $uri) {
@@ -2479,6 +2561,9 @@ class modelLandingbuilder extends cmsModel {
 				continue;
 			}
 
+			$best_candidate = null;
+			$best_rank = null;
+
 			foreach ($candidates as $candidate) {
 				$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
 				$candidate_page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
@@ -2487,29 +2572,42 @@ class modelLandingbuilder extends cmsModel {
 				}
 
 				$binding_key = (string) (($candidate['binding_key'] ?? '') ?: ($document['key'] ?? ''));
-				if (strpos($binding_key, 'overlay.user_profile') === 0) {
-					return 'user_profile';
+				$rank = $this->buildBindingOptionsRank($document, $binding_key);
+				if ($best_rank === null || $this->isBindingOptionsRankBetter($rank, $best_rank)) {
+					$best_candidate = $candidate;
+					$best_rank = $rank;
 				}
-				if (strpos($binding_key, 'overlay.content_category') === 0) {
-					return 'content_category_generic';
-				}
-				if (strpos($binding_key, 'page.homepage') === 0) {
-					return '';
-				}
-				if (strpos($binding_key, 'page.all_internal') === 0) {
-					return 'internal_content_generic';
-				}
-				if (strpos($binding_key, 'page.') === 0) {
-					return 'internal_content_generic';
-				}
+			}
 
-				$matching = isset($document['matching']) && is_array($document['matching']) ? $document['matching'] : [];
-				$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
-				$page_type_rule = trim((string) ($route_params['page_type'] ?? ''));
+			if (!$best_candidate) {
+				continue;
+			}
 
-				if ($page_type_rule === '!homepage') {
-					return 'internal_content_generic';
-				}
+			$best_document = isset($best_candidate['document']) && is_array($best_candidate['document']) ? $best_candidate['document'] : [];
+			$binding_key = (string) (($best_candidate['binding_key'] ?? '') ?: ($best_document['key'] ?? ''));
+
+			if (strpos($binding_key, 'overlay.user_profile') === 0) {
+				return 'user_profile';
+			}
+			if (strpos($binding_key, 'overlay.content_category') === 0) {
+				return 'content_category_generic';
+			}
+			if (strpos($binding_key, 'page.homepage') === 0) {
+				return '';
+			}
+			if (strpos($binding_key, 'page.all_internal') === 0) {
+				return 'internal_content_generic';
+			}
+			if (strpos($binding_key, 'page.') === 0) {
+				return 'internal_content_generic';
+			}
+
+			$matching = isset($best_document['matching']) && is_array($best_document['matching']) ? $best_document['matching'] : [];
+			$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
+			$page_type_rule = trim((string) ($route_params['page_type'] ?? ''));
+
+			if ($page_type_rule === '!homepage') {
+				return 'internal_content_generic';
 			}
 		}
 

@@ -238,6 +238,10 @@
 	- в inspector секции добавлена понятная подсказка для кейса с одной колонкой (почему сетка может визуально не меняться).
 	- browser-check подтверждает реакцию канвы в `Телефон`: `Body Layout` переключается между `1`, `3`, `2-right`, и CSS grid `lb-zone-workspace__middle` меняет фактические колонки (`1`, `3`, `2`).
 	- `php -l` и `cmp -s` повторно проходят для `canvas.tpl.php` (live + package mirrors) после phone-grid fix.
+	- для предсказуемого размещения блоков по страницам в resolver удален неявный fallback global source (`site-all/site-frame/all-site`): источник сквозных секций теперь только explicit (`global_sections_source_page_key`) или явно отмеченная страница `use_as_global_sections_source`.
+	- при наличии нескольких подходящих binding-правил выбор теперь детерминирован: используется rank (priority + specificity) и стабильный tie-break по `binding_key`, вместо зависимости от `updated_at`.
+	- для `resolveAdapterKeyFromBindingOptions` добавлен тот же deterministic rank, чтобы adapter не "прыгал" при одинаковых масках и частых правках правил.
+	- `php -l` проходит для обновленного `landingbuilder/model.php` (live + package mirrors) после deterministic update в `global sections source` и `binding resolver`.
 - Какие риски остались:
 	- пароль dump-учетки хранится в локальном `backups/db/.db-dump.env` (вне git), поэтому нужно следить за правами файла и периодически ротировать пароль.
 	- при запуске через CLI видно стандартное предупреждение MySQL про пароль в аргументах; на работоспособность backup это не влияет.
