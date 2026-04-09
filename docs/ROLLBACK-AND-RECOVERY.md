@@ -54,6 +54,24 @@
 2. Права файла: `chmod 640 backups/db/.db-dump.env` и ограниченный доступ только для нужной тех-группы.
 3. Для non-root запуска убедиться, что тех-пользователь имеет права записи в `backups/db/`.
 
+### Ротация пароля dump-учетки (runbook)
+
+Простой рабочий порядок:
+
+1. Сгенерировать новый пароль:
+`NEW_PASS=$(openssl rand -hex 20)`
+2. Обновить пароль в MySQL для dump-учетки:
+`mysql -Nse "ALTER USER 'lb_dump_ops'@'localhost' IDENTIFIED BY '${NEW_PASS}'; FLUSH PRIVILEGES;"`
+3. Обновить локальный файл `backups/db/.db-dump.env` (поле `DB_DUMP_PASS`).
+4. Проверить права файла:
+`chown root:lbops backups/db/.db-dump.env && chmod 640 backups/db/.db-dump.env`
+5. Проверить backup от non-root пользователя:
+`runuser -u lbops -- ./scripts/db-backup.sh`
+6. Проверить строгий checkpoint:
+`CHECKPOINT_DB_BACKUP_MODE=required ./scripts/pre-change-checkpoint.sh "checkpoint: verify dump password rotation"`
+
+Если шаги 5-6 проходят без ошибок, ротация завершена.
+
 ## Безопасный rollback для проверки
 
 Чтобы посмотреть старое состояние, не ломая текущую рабочую ветку:
