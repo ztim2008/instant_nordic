@@ -1,0 +1,20 @@
+{
+  "kind": "nordicbuilder.contract",
+  "schema_version": "1.0",
+  "key": "runtime-ssr-render",
+  "title": "Published SSR Render",
+  "contract_kind": "nordicbuilder.runtime-ssr-render",
+  "storage_target": "runtime.page_renders",
+  "description": "Опубликованный SSR HTML для standalone page_key (быстрый фронтенд).",
+  "required_fields": [
+    "schema_version",
+    "meta_json",
+    "html",
+    "content_hash"
+  ],
+  "notes": [
+    "Used by widget nordicbuilder_render for standalone pages",
+    "Not context-aware; for SEO-first per content use runtime-context-ssr-render",
+    "HTML must be safe to output inside .nb-runtime"
+  ]
+}

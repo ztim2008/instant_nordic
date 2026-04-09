@@ -6,6 +6,7 @@ class modelNordicbuilder extends cmsModel {
 	const PRESET_TOKEN_TABLE = 'nordicbuilder_preset_tokens';
 	const BINDING_OPTIONS_TABLE = 'nordicbuilder_binding_options';
 	const PAGE_RENDER_TABLE = 'nordicbuilder_page_renders';
+	const RUNTIME_RENDER_TABLE = 'nordicbuilder_runtime_renders';
 
 	public function hasInstalledSchema() {
 		return $this->hasPersistenceTables();
@@ -187,6 +188,289 @@ class modelNordicbuilder extends cmsModel {
 
 	public function sanitizePageKey($key) {
 		return $this->sanitizeDocumentKey($key);
+	}
+
+	public function getPublishedRuntimeRender($binding_key, $context_key, $theme_signature = '') {
+		$binding_key = $this->sanitizeDocumentKey($binding_key);
+		$context_key = trim((string) $context_key);
+		$theme_signature = trim((string) $theme_signature);
+
+		if ($binding_key === '' || $context_key === '') {
+			return false;
+		}
+
+		if (!$this->db->isTableExists(self::RUNTIME_RENDER_TABLE)) {
+			return false;
+		}
+
+		$this->filterEqual('binding_key', $binding_key);
+		$this->filterEqual('context_key', $context_key);
+		$this->filterEqual('theme_signature', $theme_signature);
+		$item = $this->getItem(self::RUNTIME_RENDER_TABLE);
+		if (!$item) {
+			return false;
+		}
+
+		$item['meta'] = $this->decodeStoredJson($item['meta_json'] ?? '');
+		return $item;
+	}
+
+	public function savePublishedRuntimeRender($binding_key, $context_key, $theme_signature, array $meta, $html, $user_id = 0) {
+		$binding_key = $this->sanitizeDocumentKey($binding_key);
+		$context_key = trim((string) $context_key);
+		$theme_signature = trim((string) $theme_signature);
+		$html = (string) $html;
+		if (trim($html) === '') {
+			$html = '<!-- nordicbuilder:ssr-empty -->';
+		}
+
+		if ($binding_key === '' || $context_key === '') {
+			return false;
+		}
+
+		if (!$this->ensureRuntimeRenderTable()) {
+			return false;
+		}
+
+		$now = date('Y-m-d H:i:s');
+		$meta_json = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		if (!is_string($meta_json)) {
+			$meta_json = '{}';
+		}
+
+		$data = [
+			'binding_key'     => $binding_key,
+			'context_key'     => $context_key,
+			'theme_signature' => $theme_signature,
+			'title'           => (string) ($meta['title'] ?? ''),
+			'schema_version'  => (string) ($meta['schema_version'] ?? '1.0'),
+			'meta_json'       => $meta_json,
+			'html'            => $html,
+			'content_hash'    => hash('sha256', $binding_key . "\n" . $context_key . "\n" . $theme_signature . "\n" . $meta_json . "\n" . $html),
+			'published_by'    => (int) $user_id,
+			'published_at'    => $now,
+			'updated_at'      => $now
+		];
+
+		$this->filterEqual('binding_key', $binding_key);
+		$this->filterEqual('context_key', $context_key);
+		$this->filterEqual('theme_signature', $theme_signature);
+		$existing = $this->getItem(self::RUNTIME_RENDER_TABLE);
+
+		if ($existing) {
+			$this->update(self::RUNTIME_RENDER_TABLE, (int) $existing['id'], $data);
+			$data['id'] = (int) $existing['id'];
+			return $data;
+		}
+
+		$id = $this->insert(self::RUNTIME_RENDER_TABLE, $data);
+		if (!$id) {
+			return false;
+		}
+
+		$data['id'] = (int) $id;
+		return $data;
+	}
+
+	public function buildRuntimeContextFromGlobals() {
+		$core = cmsCore::getInstance();
+		$controller = (string) ($core->controller ?? '');
+		$action = (string) ($core->action ?? '');
+		$uri = '/' . trim((string) ($core->uri ?? ''), '/');
+		if ($uri === '/') {
+			$uri = '/';
+		}
+
+		$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
+
+		$params = [];
+		foreach ((array) $_REQUEST as $key => $value) {
+			if (!is_string($key) || $key === '') {
+				continue;
+			}
+			if (is_scalar($value) || $value === null) {
+				$params[$key] = (string) $value;
+			}
+		}
+
+		return [
+			'route' => [
+				'controller' => $controller,
+				'action' => $action,
+			],
+			'uri' => $uri,
+			'is_https' => (bool) $is_https,
+			'params' => $params
+		];
+	}
+
+	public function buildRuntimeContextKey(array $runtime_context) {
+		$route = isset($runtime_context['route']) && is_array($runtime_context['route']) ? $runtime_context['route'] : [];
+		$params = isset($runtime_context['params']) && is_array($runtime_context['params']) ? $runtime_context['params'] : [];
+		$uri = (string) ($runtime_context['uri'] ?? '/');
+
+		$controller = (string) ($route['controller'] ?? '');
+		$action = (string) ($route['action'] ?? '');
+		$controller = trim($controller);
+		$action = trim($action);
+
+		$uri_trimmed = trim($uri, '/');
+		$segments = $uri_trimmed !== '' ? explode('/', $uri_trimmed) : [];
+		$ctype = trim((string) ($params['ctype'] ?? $params['ctype_name'] ?? $params['content_type'] ?? ($segments[0] ?? '')));
+
+		$page = (int) ($params['page'] ?? 1);
+		$page = max(1, $page);
+
+		$item_id = (int) ($params['id'] ?? 0);
+		if (!$item_id && !empty($segments[1]) && ctype_digit((string) $segments[1])) {
+			$item_id = (int) $segments[1];
+		}
+
+		$category_id = (int) ($params['cat_id'] ?? $params['category_id'] ?? 0);
+		if (!$category_id && !empty($params['id']) && $controller === 'content' && $action === 'category') {
+			$category_id = (int) $params['id'];
+		}
+
+		if ($controller === 'content' && $action === 'view' && $ctype !== '' && $item_id > 0) {
+			return 'content:view:' . $ctype . ':' . $item_id;
+		}
+
+		if ($controller === 'content' && $action === 'category' && $ctype !== '' && $category_id > 0) {
+			return 'content:category:' . $ctype . ':' . $category_id . ':p' . $page;
+		}
+
+		$uri_hash = hash('sha256', $uri);
+		return 'route:' . ($controller !== '' ? $controller : 'unknown') . ':' . ($action !== '' ? $action : 'index') . ':u' . substr($uri_hash, 0, 16);
+	}
+
+	public function resolveBindingForRuntimeContext(array $runtime_context, $limit = 500) {
+		$uri = (string) ($runtime_context['uri'] ?? '/');
+		$is_https = !empty($runtime_context['is_https']);
+		$route = isset($runtime_context['route']) && is_array($runtime_context['route']) ? $runtime_context['route'] : [];
+		$params = isset($runtime_context['params']) && is_array($runtime_context['params']) ? $runtime_context['params'] : [];
+
+		$context_values = array_merge(
+			[
+				'controller' => (string) ($route['controller'] ?? ''),
+				'action' => (string) ($route['action'] ?? ''),
+				'uri' => $uri
+			],
+			$params
+		);
+
+		$items = $this->getBindingOptionsIndex((int) $limit);
+		if (!$items) {
+			return false;
+		}
+
+		$best = null;
+		$best_score = null;
+
+		foreach ($items as $item) {
+			$binding_key = (string) ($item['binding_key'] ?? '');
+			if ($binding_key === '') {
+				continue;
+			}
+
+			$stored = $this->getBindingOptionsByKey($binding_key);
+			$doc = $stored && !empty($stored['document']) && is_array($stored['document']) ? $stored['document'] : [];
+			$page_key = $this->sanitizeDocumentKey($doc['page_key'] ?? $item['page_key'] ?? '');
+			if ($page_key === '') {
+				continue;
+			}
+
+			$matching = isset($doc['matching']) && is_array($doc['matching']) ? $doc['matching'] : [];
+			$require_https = !empty($matching['require_https']);
+			if ($require_https && !$is_https) {
+				continue;
+			}
+
+			$exclude_masks = isset($matching['exclude_masks']) && is_array($matching['exclude_masks']) ? $matching['exclude_masks'] : [];
+			if ($this->matchesAnyUrlMask($uri, $exclude_masks)) {
+				continue;
+			}
+
+			$url_masks = isset($matching['url_masks']) && is_array($matching['url_masks']) ? $matching['url_masks'] : [];
+			if ($url_masks && !$this->matchesAnyUrlMask($uri, $url_masks)) {
+				continue;
+			}
+
+			$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
+			$matched_params = 0;
+			if ($route_params) {
+				if (!$this->matchesRouteParams($context_values, $route_params, $matched_params)) {
+					continue;
+				}
+			}
+
+			$priority = (int) ($doc['priority'] ?? $item['priority'] ?? 0);
+			$score = [
+				$priority,
+				$matched_params,
+				strlen((string) ($url_masks[0] ?? '')),
+				(string) ($item['updated_at'] ?? '')
+			];
+
+			if ($best_score === null || $score > $best_score) {
+				$best_score = $score;
+				$best = [
+					'binding_key' => $binding_key,
+					'page_key' => $page_key,
+					'document' => $doc,
+					'priority' => $priority
+				];
+			}
+		}
+
+		return $best;
+	}
+
+	protected function matchesAnyUrlMask($uri, array $masks) {
+		$uri = (string) $uri;
+		if ($uri === '') {
+			$uri = '/';
+		}
+
+		$path = $uri[0] === '/' ? $uri : '/' . $uri;
+		foreach ($masks as $mask) {
+			$mask = trim((string) $mask);
+			if ($mask === '') {
+				continue;
+			}
+			$pattern = $mask[0] === '/' ? $mask : '/' . $mask;
+			if (function_exists('fnmatch') && fnmatch($pattern, $path, FNM_CASEFOLD)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	protected function matchesRouteParams(array $context_values, array $route_params, &$matched_count = 0) {
+		$matched_count = 0;
+		foreach ($route_params as $key => $expected) {
+			$key = trim((string) $key);
+			if ($key === '') {
+				continue;
+			}
+
+			$actual = $context_values[$key] ?? null;
+			if (is_array($expected)) {
+				$expected_values = array_map('strval', $expected);
+				if (!in_array((string) $actual, $expected_values, true)) {
+					return false;
+				}
+				$matched_count++;
+				continue;
+			}
+
+			if ((string) $actual !== (string) $expected) {
+				return false;
+			}
+			$matched_count++;
+		}
+
+		return true;
 	}
 
 	public function getPublishedPageRenderByKey($page_key) {
@@ -1562,6 +1846,12 @@ class modelNordicbuilder extends cmsModel {
 				'table_name'     => self::PAGE_RENDER_TABLE,
 				'contract_key'   => 'runtime-ssr-render',
 				'storage_target' => 'runtime.page_renders'
+			],
+			[
+				'title'          => 'Runtime Context Renders',
+				'table_name'     => self::RUNTIME_RENDER_TABLE,
+				'contract_key'   => 'runtime-context-ssr-render',
+				'storage_target' => 'runtime.context_renders'
 			]
 		];
 	}
@@ -1581,6 +1871,10 @@ class modelNordicbuilder extends cmsModel {
 
 		if ($table_name === self::PAGE_RENDER_TABLE) {
 			return $this->ensurePageRenderTable();
+		}
+
+		if ($table_name === self::RUNTIME_RENDER_TABLE) {
+			return $this->ensureRuntimeRenderTable();
 		}
 
 		return false;
@@ -1690,6 +1984,34 @@ class modelNordicbuilder extends cmsModel {
 		$this->db->query($sql);
 
 		return $this->db->isTableExists(self::PAGE_RENDER_TABLE);
+	}
+
+	protected function ensureRuntimeRenderTable() {
+		if ($this->db->isTableExists(self::RUNTIME_RENDER_TABLE)) {
+			return true;
+		}
+
+		$sql = "CREATE TABLE IF NOT EXISTS `{#}" . self::RUNTIME_RENDER_TABLE . "` (
+			`id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			`binding_key` varchar(190) NOT NULL,
+			`context_key` varchar(255) NOT NULL,
+			`theme_signature` char(64) NOT NULL DEFAULT '',
+			`title` varchar(255) NOT NULL DEFAULT '',
+			`schema_version` varchar(16) NOT NULL DEFAULT '1.0',
+			`meta_json` mediumtext NOT NULL,
+			`html` mediumtext NOT NULL,
+			`content_hash` char(64) NOT NULL DEFAULT '',
+			`published_by` int(10) unsigned NOT NULL DEFAULT '0',
+			`published_at` datetime NOT NULL,
+			`updated_at` datetime NOT NULL,
+			PRIMARY KEY (`id`),
+			UNIQUE KEY `binding_context_theme` (`binding_key`,`context_key`,`theme_signature`),
+			KEY `binding_key` (`binding_key`),
+			KEY `updated_at` (`updated_at`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8";
+
+		$this->db->query($sql);
+		return $this->db->isTableExists(self::RUNTIME_RENDER_TABLE);
 	}
 
 	protected function normalizePageDocument(array $document) {

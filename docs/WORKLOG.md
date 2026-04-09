@@ -118,6 +118,29 @@
 	- визуальный smoke новой формы `Правила применения` не выполнен в встроенном браузере из-за 403 (неавторизованная сессия админа в инструменте).
 	- не выполнен полный авторизованный smoke нового сценария: удаление старого binding -> создание truly-empty страницы -> привязка -> preview/publish в одной сессии.
 - Следующий шаг:
+
+## 2026-04-09
+
+- Что планировалось:
+	- зафиксировать причины инженерного тупика вокруг bridge-слоя и согласовать стратегию дальнейшего развития.
+- Что сделано:
+	- проведен аудит текущего bridge data-flow (canvas save, view/runtime, publish SSR) и сопоставление с каноном Variant B;
+	- сформулированы сильные/слабые стороны и корневые причины «тупика» (две runtime-правды, takeover как база, dual-source-of-truth);
+	- предложена стратегия: закрепить SSR publish-loop как гарантию parity и сузить bridge до совместимости.
+- Какие файлы затронуты:
+	- [docs/NORDICBUILDER-BRIDGE-AUDIT-2026-04-09.md](NORDICBUILDER-BRIDGE-AUDIT-2026-04-09.md)
+- Что проверено:
+	- обзор ключевых точек входа в коде: `nordicbuilder canvas_save`, `landingbuilder savePageSchema`, `nordicbuilder publish_page`, `nordicbuilder_render widget`.
+- Какие риски остались:
+	- пока одновременно существуют bridge-runtime (`nordicbuilder/view` -> `landingbuilder/view`) и SSR-runtime через `nordicbuilder_page_renders`, возможны расхождения preview/live.
+- Следующий шаг:
+	- утвердить единственный live runtime-канон (Variant B: `content_body` + опубликованный SSR через `nordicbuilder_render`) и от него спланировать ближайшие P0 правки.
+
+- Дополнение (решение по publish модели):
+	- выбран SEO-first подход: кешировать SSR HTML по контексту (per item / per category / pagination), а не только по `page_key`.
+	- добавлена спецификация publish/cache/bindings: [docs/NORDICBUILDER-PUBLISH-CACHE-BINDINGS-SPEC-2026-04-09.md](NORDICBUILDER-PUBLISH-CACHE-BINDINGS-SPEC-2026-04-09.md)
+	- принято решение по устройствам: один SSR HTML на все устройства, адаптивность через CSS.
+	- MVP контексты (P0): `content/view` + `content/category`.
 	- сделать checkpoint-коммит этой итерации и выполнить короткий visual smoke (`/`, `/news`, `/board`, `/users/1`) для desktop/mobile + проверку удаления bindings и truly-empty create flow.
 
 ## 2026-04-08 (конец дня, архитектурный стоп)

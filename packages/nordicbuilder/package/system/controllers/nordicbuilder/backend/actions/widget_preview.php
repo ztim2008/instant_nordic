@@ -22,6 +22,9 @@ class actionNordicbuilderWidgetPreview extends cmsAction {
             $template_name = !empty($bridge_options['preview_template']) ? $bridge_options['preview_template'] : cmsConfig::get('template');
         }
 
+        $template = cmsTemplate::getInstance();
+        $original_template_name = method_exists($template, 'getName') ? $template->getName() : '';
+
         $widget = $bridge_model->getSystemWidgetById($widget_id);
         if (!$widget) {
             return $this->cms_template->renderJSON(['error' => true, 'message' => 'Widget not found']);
@@ -40,66 +43,76 @@ class actionNordicbuilderWidgetPreview extends cmsAction {
             'options'    => $options
         ];
 
-        if ((($widget['controller'] ?? '') === '' || ($widget['controller'] ?? '') === 'core') && ($widget['name'] ?? '') === 'menu' && empty($options['menu'])) {
+        try {
+            if ($template_name && $original_template_name && $template_name !== $original_template_name) {
+                $template->setBaseTemplate($template_name);
+            }
+
+            if ((($widget['controller'] ?? '') === '' || ($widget['controller'] ?? '') === 'core') && ($widget['name'] ?? '') === 'menu' && empty($options['menu'])) {
+                return $this->cms_template->renderJSON([
+                    'error'    => false,
+                    'widget'   => $widget,
+                    'html'     => '<div class="text-muted small">Для предпросмотра виджета меню выберите меню в его настройках справа.</div>',
+                    'template' => $template_name
+                ]);
+            }
+
+            try {
+                $widget_object = cmsCore::getWidgetObject($widget_data);
+            } catch (Throwable $exception) {
+                return $this->cms_template->renderJSON([
+                    'error'   => true,
+                    'message' => 'Не удалось инициализировать виджет для предпросмотра.'
+                ]);
+            }
+
+            $result = false;
+
+            try {
+                $result = call_user_func_array([$widget_object, 'run'], []);
+            } catch (Throwable $exception) {
+                return $this->cms_template->renderJSON([
+                    'error'   => true,
+                    'message' => 'Ошибка выполнения виджета: ' . $exception->getMessage()
+                ]);
+            }
+
+            if ($result === false || !is_array($result)) {
+                return $this->cms_template->renderJSON([
+                    'error'   => false,
+                    'widget'  => $widget,
+                    'html'    => '',
+                    'template'=> $template_name
+                ]);
+            }
+
+            $tpl_path = cmsCore::getWidgetPath($widget_object->name, $widget_object->controller);
+            $tpl_file = cmsTemplate::getInstance()->getTemplateFileName($tpl_path . '/' . $widget_object->getTemplate(), true);
+
+            if (!$tpl_file) {
+                return $this->cms_template->renderJSON([
+                    'error'   => true,
+                    'message' => 'Шаблон виджета не найден.'
+                ]);
+            }
+
+            $device_type = cmsRequest::getDeviceType();
+            extract($result);
+
+            ob_start();
+            include($tpl_file);
+            $html = ob_get_clean();
+
             return $this->cms_template->renderJSON([
                 'error'    => false,
                 'widget'   => $widget,
-                'html'     => '<div class="text-muted small">Для предпросмотра виджета меню выберите меню в его настройках справа.</div>',
+                'html'     => $html,
                 'template' => $template_name
             ]);
+        } finally {
+            if ($original_template_name && $template->getName() !== $original_template_name) {
+                $template->setBaseTemplate($original_template_name);
+            }
         }
-
-        try {
-            $widget_object = cmsCore::getWidgetObject($widget_data);
-        } catch (Throwable $exception) {
-            return $this->cms_template->renderJSON([
-                'error'   => true,
-                'message' => 'Не удалось инициализировать виджет для предпросмотра.'
-            ]);
-        }
-
-        $result = false;
-
-        try {
-            $result = call_user_func_array([$widget_object, 'run'], []);
-        } catch (Throwable $exception) {
-            return $this->cms_template->renderJSON([
-                'error'   => true,
-                'message' => 'Ошибка выполнения виджета: ' . $exception->getMessage()
-            ]);
-        }
-
-        if ($result === false || !is_array($result)) {
-            return $this->cms_template->renderJSON([
-                'error'   => false,
-                'widget'  => $widget,
-                'html'    => '',
-                'template'=> $template_name
-            ]);
-        }
-
-        $tpl_path = cmsCore::getWidgetPath($widget_object->name, $widget_object->controller);
-        $tpl_file = cmsTemplate::getInstance()->getTemplateFileName($tpl_path . '/' . $widget_object->getTemplate(), true);
-
-        if (!$tpl_file) {
-            return $this->cms_template->renderJSON([
-                'error'   => true,
-                'message' => 'Шаблон виджета не найден.'
-            ]);
-        }
-
-        $device_type = cmsRequest::getDeviceType();
-        extract($result);
-
-        ob_start();
-        include($tpl_file);
-        $html = ob_get_clean();
-
-        return $this->cms_template->renderJSON([
-            'error'    => false,
-            'widget'   => $widget,
-            'html'     => $html,
-            'template' => $template_name
-        ]);
     }
 }

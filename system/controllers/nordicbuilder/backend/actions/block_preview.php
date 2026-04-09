@@ -18,6 +18,7 @@ class actionNordicbuilderBlockPreview extends cmsAction {
             $decoded = json_decode((string) $options, true);
             $options = is_array($decoded) ? $decoded : [];
         }
+        $template_name = $this->request->get('template', '');
 
         $runtime_renderer = cmsConfig::get('root_path') . 'templates/default/controllers/landingbuilder/runtime_renderer.php';
         if (is_file($runtime_renderer)) {
@@ -31,6 +32,14 @@ class actionNordicbuilderBlockPreview extends cmsAction {
             ]);
         }
 
+        $available_templates = cmsCore::getTemplates();
+        if (!$template_name || !in_array($template_name, $available_templates, true)) {
+            $template_name = cmsConfig::get('template');
+        }
+
+        $template = cmsTemplate::getInstance();
+        $original_template_name = method_exists($template, 'getName') ? $template->getName() : '';
+
         $node = [
             'type' => 'block',
             'label' => $source_key,
@@ -39,17 +48,26 @@ class actionNordicbuilderBlockPreview extends cmsAction {
         ];
 
         try {
+            if ($template_name && $original_template_name && $template_name !== $original_template_name) {
+                $template->setBaseTemplate($template_name);
+            }
+
             $html = (string) landingbuilder_render_runtime_block($node, ['surface' => 'runtime']);
         } catch (Throwable $exception) {
             return $this->cms_template->renderJSON([
                 'error' => true,
                 'message' => 'Ошибка рендера блока: ' . $exception->getMessage()
             ]);
+        } finally {
+            if ($original_template_name && $template->getName() !== $original_template_name) {
+                $template->setBaseTemplate($original_template_name);
+            }
         }
 
         return $this->cms_template->renderJSON([
             'error' => false,
-            'html' => $html
+            'html' => $html,
+            'template' => $template_name
         ]);
     }
 }

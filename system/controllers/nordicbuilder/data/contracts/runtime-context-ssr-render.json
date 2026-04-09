@@ -1,0 +1,23 @@
+{
+  "kind": "nordicbuilder.contract",
+  "schema_version": "1.0",
+  "key": "runtime-context-ssr-render",
+  "title": "Runtime Context SSR Render",
+  "contract_kind": "nordicbuilder.runtime-context-ssr-render",
+  "storage_target": "runtime.context_renders",
+  "description": "SSR HTML кеш по binding_key + context_key (+ theme_signature) для SEO-first рендера страниц InstantCMS (content/view, content/category и т.д.).",
+  "required_fields": [
+    "schema_version",
+    "binding_key",
+    "context_key",
+    "theme_signature",
+    "meta_json",
+    "html",
+    "content_hash"
+  ],
+  "notes": [
+    "Context key is derived from current route + content identifiers",
+    "Cache entries should be guest-only by default",
+    "One HTML for all devices (device_type not part of key in MVP)"
+  ]
+}

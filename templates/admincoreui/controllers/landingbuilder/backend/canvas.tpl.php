@@ -33,6 +33,9 @@ if (is_readable($theme_helper)) {
     }
 }
 
+// Runtime preview styles for semantic blocks/widgets in canvas.
+$this->addCSS('templates/default/css/nordicbuilder_runtime.css', false);
+
 $this->setPageTitle('Редактор страницы: ' . $page['title']);
 $this->addBreadcrumb('Нордик');
 $this->addBreadcrumb('Страницы', $screen['api']['pages_url'] ?? $this->href_to('pages'));
@@ -3045,6 +3048,48 @@ $canvas_state = [
             const inputField = 'options.' + field.key;
             const hint = field.hint || '';
 
+            function normalizeHexColor(rawValue) {
+                const prepared = String(rawValue || '').trim();
+                if (/^#([0-9a-f]{6})$/i.test(prepared)) {
+                    return prepared;
+                }
+                if (/^#([0-9a-f]{3})$/i.test(prepared)) {
+                    return prepared;
+                }
+                if (/^([0-9a-f]{6})$/i.test(prepared)) {
+                    return '#' + prepared;
+                }
+                return '';
+            }
+
+            function isLikelyHexColorField(blockField) {
+                if (!blockField || typeof blockField !== 'object') {
+                    return false;
+                }
+
+                if (String(blockField.type || '') === 'color') {
+                    return true;
+                }
+
+                const title = String(blockField.title || '');
+                const placeholder = String(blockField.placeholder || '');
+                const key = String(blockField.key || '');
+                return /\bHEX\b/i.test(title) || /\bHEX\b/i.test(String(blockField.hint || '')) || normalizeHexColor(placeholder) !== '' || /color/i.test(key);
+            }
+
+            if (isLikelyHexColorField(field) && (field.type === 'text' || field.type === 'color')) {
+                const normalized = normalizeHexColor(value) || normalizeHexColor(field.placeholder || '') || '#000000';
+
+                return '' +
+                    '<div class="lb-field">' +
+                        fieldLabel(field.title, hint) +
+                        '<div class="d-flex align-items-center" style="gap: 10px;">' +
+                            '<input type="color" class="lb-control" data-color-field="' + escapeHtml(inputField) + '" value="' + escapeHtml(normalized) + '" style="width: 46px; height: 36px; padding: 0;">' +
+                            '<input type="text" class="lb-control" data-field="' + inputField + '" value="' + escapeHtml(value || '') + '" placeholder="' + escapeHtml(field.placeholder || '#RRGGBB') + '">' +
+                        '</div>' +
+                    '</div>';
+            }
+
             if (field.type === 'textarea') {
                 return '' +
                     '<div class="lb-field">' +
@@ -3171,6 +3216,19 @@ $canvas_state = [
         const blockPreviewCache = {};
         const blockPreviewInFlight = {};
         const blockPreviewLastHtml = {};
+
+        let inspectorLiveUpdateTimer = null;
+
+        function scheduleInspectorLiveRender() {
+            if (inspectorLiveUpdateTimer) {
+                clearTimeout(inspectorLiveUpdateTimer);
+            }
+
+            inspectorLiveUpdateTimer = setTimeout(function () {
+                inspectorLiveUpdateTimer = null;
+                renderCanvas();
+            }, 150);
+        }
 
         function normalizePreviewPayload(data) {
             const payload = (data && typeof data === 'object') ? data : {};
@@ -3304,7 +3362,7 @@ $canvas_state = [
             const previewHtml = payloadHtml || String(blockPreviewLastHtml[fallbackKey] || '');
 
             return previewHtml
-                ? '<div class="lb-live-node__preview">' + previewHtml + '</div>'
+                ? '<div class="nb-runtime" style="max-width:none;margin:0;padding:0"><div class="lb-live-node__preview">' + previewHtml + '</div></div>'
                 : '';
         }
 
@@ -3328,7 +3386,7 @@ $canvas_state = [
             const previewHtml = payloadHtml || String(widgetPreviewLastHtml[fallbackKey] || '');
 
             return previewHtml
-                ? '<div class="lb-live-node__preview">' + previewHtml + '</div>'
+                ? '<div class="nb-runtime" style="max-width:none;margin:0;padding:0"><div class="lb-live-node__preview">' + previewHtml + '</div></div>'
                 : '';
         }
 
@@ -6497,31 +6555,89 @@ $canvas_state = [
 
         selectionControls.addEventListener('input', function (event) {
             const range = event.target.closest('[data-role="layout-range"]');
-            if (!range) {
+            if (range) {
+                const target = getSelectionTarget();
+                if (!target || !state.selection || state.selection.type !== 'section') {
+                    return;
+                }
+
+                syncSelectedWidgetFormIntoState();
+
+                const value = Number(range.value || 1);
+                if (value === 1) {
+                    target.layout = '1col';
+                } else if (value === 2) {
+                    if (String(target.layout || '').indexOf('2col') !== 0) {
+                        target.layout = '2col_equal';
+                    }
+                } else {
+                    target.layout = '3col_equal';
+                }
+
+                syncSectionColumnsWithLayout(target);
+                setCanvasDirty(true);
+                renderCanvas();
+                return;
+            }
+
+            // Live preview on typing + color picker sync.
+            const colorPicker = event.target.closest('[data-color-field]');
+            if (colorPicker) {
+                const target = getSelectionTarget();
+                if (!target) {
+                    return;
+                }
+
+                syncSelectedWidgetFormIntoState();
+
+                const fieldPath = String(colorPicker.dataset.colorField || '');
+                const picked = String(colorPicker.value || '').trim();
+                if (!fieldPath) {
+                    return;
+                }
+
+                setDeepValue(target, fieldPath, picked);
+
+                const textInput = selectionControls.querySelector('[data-field="' + fieldPath + '"]');
+                if (textInput) {
+                    textInput.value = picked;
+                }
+
+                setCanvasDirty(true);
+                scheduleInspectorLiveRender();
+                return;
+            }
+
+            const field = event.target.closest('[data-field]');
+            if (!field) {
+                return;
+            }
+
+            if (field.tagName === 'SELECT' || field.type === 'checkbox') {
                 return;
             }
 
             const target = getSelectionTarget();
-            if (!target || !state.selection || state.selection.type !== 'section') {
+            if (!target) {
                 return;
             }
 
             syncSelectedWidgetFormIntoState();
 
-            const value = Number(range.value || 1);
-            if (value === 1) {
-                target.layout = '1col';
-            } else if (value === 2) {
-                if (String(target.layout || '').indexOf('2col') !== 0) {
-                    target.layout = '2col_equal';
+            const value = field.value;
+            setDeepValue(target, field.dataset.field, value);
+
+            // If this looks like a HEX field, sync the paired color input (if any).
+            const prepared = String(value || '').trim();
+            if (/^#([0-9a-f]{6})$/i.test(prepared) || /^#([0-9a-f]{3})$/i.test(prepared)) {
+                const picker = selectionControls.querySelector('[data-color-field="' + field.dataset.field + '"]');
+                if (picker) {
+                    picker.value = prepared.length === 4 ? prepared : prepared.toLowerCase();
                 }
-            } else {
-                target.layout = '3col_equal';
             }
 
-            syncSectionColumnsWithLayout(target);
             setCanvasDirty(true);
-            renderCanvas();
+            scheduleInspectorLiveRender();
         });
 
         canvasRoot.addEventListener('dragstart', function (event) {
