@@ -2662,6 +2662,10 @@ $canvas_state = [
         const importSchemaButton = document.getElementById('lb-import-schema');
         const exportSchemaButton = document.getElementById('lb-export-schema');
         const importSchemaFileInput = document.getElementById('lb-import-schema-file');
+        const inspectorAdvancedMode = (function () {
+            const value = String(new URLSearchParams(window.location.search).get('lb_inspector_advanced') || '').toLowerCase();
+            return ['1', 'true', 'yes', 'on'].indexOf(value) !== -1;
+        })();
 
         const baseCanvasStatusText = canvasStatus ? String(canvasStatus.textContent || '') : '';
         let isCanvasDirty = false;
@@ -5411,14 +5415,16 @@ $canvas_state = [
                         renderSelectField('Тип секции', 'Смысл секции на странице: первый экран, контент, действие, каталог и так далее.', 'section_type', sectionTypeOptions, section.section_type) +
                         renderSelectField('Стилевой пресет', 'Готовый пресет оформления секции.', 'style_preset', sectionStyleOptions, section.style_preset) +
                         renderSelectField('Тон фона', 'Быстрый выбор общего тона секции без ручной CSS-настройки.', 'background_tone', backgroundToneOptions, section.background_tone) +
-                        '<div class="lb-field">' +
-                            fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
-                            '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
-                        '</div>' +
-                        '<div class="lb-field">' +
-                            fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
-                            '<input type="text" class="lb-control" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
-                        '</div>' +
+                                                (inspectorAdvancedMode
+                                                        ? '<div class="lb-field">' +
+                                                                fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления секции. Если оно не нужно, оставьте поле пустым.') +
+                                                                '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(section.settings.css_class || '') + '">' +
+                                                            '</div>' +
+                                                            '<div class="lb-field">' +
+                                                                fieldLabel('Служебный CSS-класс фона', 'Нужно только если для секции уже подготовлен отдельный backend/frontend класс.') +
+                                                                '<input type="text" class="lb-control" data-field="settings.background_class" value="' + escapeHtml(section.settings.background_class || '') + '">' +
+                                                            '</div>'
+                                                        : '<div class="small text-muted mt-2">Технические CSS-поля скрыты в базовом режиме.</div>') +
                     '</details>' +
                     '<div class="lb-field">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть секцию на компьютере, планшете или телефоне.') +
@@ -5451,10 +5457,12 @@ $canvas_state = [
                             }).join('') +
                         '</select>' +
                     '</div>' +
-                    '<div class="lb-field">' +
-                        fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления колонки. Если оно не нужно, оставьте поле пустым.') +
-                        '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
-                    '</div>' +
+                    (inspectorAdvancedMode
+                        ? '<div class="lb-field">' +
+                            fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления колонки. Если оно не нужно, оставьте поле пустым.') +
+                            '<input type="text" class="lb-control" data-field="settings.css_class" value="' + escapeHtml(column.settings.css_class || '') + '">' +
+                          '</div>'
+                        : '') +
                     '<div class="lb-field">' +
                         fieldLabel('Показывать на устройствах', 'Можно отдельно скрыть колонку на нужных типах устройств.') +
                         renderVisibilityControls('visibility', column.visibility) +
@@ -5481,10 +5489,12 @@ $canvas_state = [
                     fieldLabel('Название элемента', 'Короткое понятное имя, по которому редактор узнает блок внутри конструктора.') +
                     '<input type="text" class="lb-control" data-field="label" value="' + escapeHtml(node.label || '') + '">' +
                 '</div>' +
-                '<div class="lb-field">' +
-                    fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления конкретного элемента.') +
-                    '<input type="text" class="lb-control" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
-                '</div>' +
+                (inspectorAdvancedMode
+                    ? '<div class="lb-field">' +
+                        fieldLabel('Дополнительное оформление', 'Служебное поле для особого оформления конкретного элемента.') +
+                        '<input type="text" class="lb-control" data-field="class_name" value="' + escapeHtml(node.class_name || '') + '">' +
+                      '</div>'
+                    : '') +
                 (node.type === 'block'
                     ? renderSelectField('Semantic-пресет блока', 'Определяет смысловой сценарий блока и набор его базовых полей.', 'source_key', getBlockPresetOptions(node.source_key || ''), node.source_key || '')
                         + renderBlockSemanticInspector(node)

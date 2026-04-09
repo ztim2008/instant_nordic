@@ -32,8 +32,8 @@
 | Наследование ширин | `settings.width_inherit` | review | Нужна проверка междевайсного поведения. |
 | Автоскейл A | `settings.autoscale_base_blocks` / action toggle | active | Работает с guard для sidebar-зон. |
 | Автоскейл A+ | action `toggle-all-sections-autoscale-base-blocks` | active | Работает только на eligible секциях. |
-| CSS class секции | `settings.css_class` | review | Нужна проверка parity preview/live. |
-| Background class секции | `settings.background_class` | review | Нужна проверка parity preview/live. |
+| CSS class секции | `settings.css_class` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
+| Background class секции | `settings.background_class` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
 | Видимость по устройствам | action `toggle-section-device-visibility` / `visibility.*` | active | Влияет на device-level render. |
 | Дублировать секцию | action `duplicate-section` | active | Корректно копирует структуру и генерирует новые uid. |
 
@@ -43,14 +43,14 @@
 | --- | --- | --- | --- |
 | Название колонки | `title` | review | UI-метка, runtime влияние ограничено контентом. |
 | Alignment | `settings.align` | review | Нужна проверка на runtime шаблонах и адаптерах. |
-| CSS class колонки | `settings.css_class` | review | Требуется parity smoke. |
+| CSS class колонки | `settings.css_class` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
 
 ## Node-level controls
 
 | Control | Field/Action | Статус | Комментарий |
 | --- | --- | --- | --- |
 | Label | `label` | review | Преимущественно редакторская метка. |
-| Class name | `class_name` | review | Нужно проверить runtime-выход в HTML. |
+| Class name | `class_name` | review | На P1 pass 2 скрыт в базовом режиме, доступен только в advanced mode (`lb_inspector_advanced=1`). |
 | Source key | `source_key` | review | Критичен для data adapters, нужен smoke на live-данных. |
 | Notes | `notes` | deprecated-hidden | Поле скрыто из Node Inspector на P1 pass 1; runtime на него не опирается, данные оставлены для обратной совместимости. |
 | Видимость по устройствам | action `toggle-node-device-visibility` / `device_visibility.*` | active | Влияет на device-level render. |
@@ -59,8 +59,8 @@
 ## Вывод по audit
 
 1. Критическая часть controls уже в `active/review`, явных "мертвых" технических блоков осталось меньше.
-2. Главный кандидат на cleanup/deprecation на текущем срезе: `notes`, если не подтверждена продуктовая ценность.
-3. Для закрытия P0 необходим ручной smoke с фиксацией по каждому `review` control.
+2. `notes` переведен в `deprecated-hidden`, а технические CSS/class поля скрыты в базовом режиме и доступны только через advanced mode.
+3. Следующий P1 шаг: cleanup remaining `review` controls по продуктовой ценности и короткий canvas-smoke (desktop/tablet/mobile).
 
 ## Checklist на закрытие P0
 
@@ -74,3 +74,12 @@
 1. В Node Inspector поле `notes` скрыто из UI как `deprecated-hidden`.
 2. Техническое поле `notes` сохранено в схеме данных для backward compatibility и безопасного чтения старых документов.
 3. Первый cleanup сделан без изменения runtime-контрактов и без SQL-изменений.
+
+## Update 2026-04-09 (P1 pass 2)
+
+1. В базовом Inspector-режиме скрыты технические поля оформления:
+	- `settings.css_class` (section/column),
+	- `settings.background_class` (section),
+	- `class_name` (node).
+2. Для опытного режима поля доступны через URL-флаг `lb_inspector_advanced=1`.
+3. Runtime/контракты не изменялись, cleanup затронул только UX-слой inspector.
