@@ -31,10 +31,20 @@
     var deviceButtons = root.querySelectorAll('[data-device-button]');
     var saveStateUrl = String(builderState.state_url || '');
     var publishStateUrl = String(builderState.publish_url || '');
+    var widgetOptionsUrl = String(builderState.widget_options_url || '');
     var resetStateUrl = String(builderState.reset_url || '');
     var csrfToken = readCSRFToken();
     var publishButton = root.querySelector('[data-builder-publish]');
     var resetButton = root.querySelector('[data-builder-reset]');
+    var columnInsertPanel = root.querySelector('[data-column-insert-panel]');
+    var insertSelectedWidgetButton = root.querySelector('[data-insert-selected-widget]');
+    var insertSectionButton = root.querySelector('[data-insert-section]');
+    var selectedLibraryTitle = root.querySelector('[data-selected-library-title]');
+    var selectedLibraryHint = root.querySelector('[data-selected-library-hint]');
+    var widgetOptionsBlock = root.querySelector('[data-widget-options-block]');
+    var widgetOptionsEmpty = root.querySelector('[data-widget-options-empty]');
+    var widgetOptionsLock = root.querySelector('[data-widget-options-lock]');
+    var widgetOptionsBody = root.querySelector('[data-widget-options-body]');
     var deviceLabels = {
         desktop: 'Desktop',
         tablet: 'Tablet',
@@ -46,6 +56,8 @@
     var currentWidgetFilter = 'all';
     var uidCounter = 1;
     var saveTimer = null;
+    var loadedWidgetOptionsUid = '';
+    var widgetOptionsRequestToken = 0;
     var storageKey = buildStorageKey(page);
     var layoutState = normalizeLayoutState(builderState.layout_state || loadStoredLayoutState() || {}, builderState.rows || []);
     var activeDevice = normalizeDeviceKey(page.device || 'desktop');
@@ -261,6 +273,9 @@
             source_page_id: parseInt(widget.source_page_id || 0, 10) || 0,
             position_name: String(widget.position_name || ''),
             library_uid: String(widget.library_uid || ''),
+            has_options: Boolean(widget.has_options || (parseInt(widget.widget_id || 0, 10) || 0) > 0),
+            can_edit_options: typeof widget.can_edit_options === 'boolean' ? widget.can_edit_options : ((parseInt(widget.bind_id || 0, 10) || 0) < 1 || (parseInt(widget.source_page_id || 0, 10) || 0) === 1),
+            bind_config: normalizeWidgetBindConfig(widget.bind_config, widget),
             hidden: Boolean(widget.hidden)
         };
     }
@@ -289,8 +304,70 @@
             widget_id: parseInt(card.getAttribute('data-widget-id') || '0', 10) || 0,
             widget_name: String(card.getAttribute('data-widget-name') || ''),
             widget_controller: String(card.getAttribute('data-widget-controller') || ''),
+            has_options: String(card.getAttribute('data-widget-has-options') || '') === '1',
             library_uid: String(card.getAttribute('data-widget-category') || '') + ':' + String(card.getAttribute('data-widget-name') || '')
         });
+    }
+
+    function buildDefaultWidgetBindConfig(widget) {
+        return {
+            title: String(widget && widget.title ? widget.title : defaultTitle('widget')),
+            template: String(page.template || ''),
+            is_title: true,
+            is_tab_prev: false,
+            is_cacheable: false,
+            links: '',
+            tpl_wrap: 'wrapper',
+            tpl_wrap_style: '',
+            tpl_wrap_custom: '',
+            tpl_body: String(widget && widget.widget_name ? widget.widget_name : ''),
+            class_wrap: '',
+            class_title: '',
+            class: '',
+            groups_view: [],
+            groups_hide: [],
+            languages: [],
+            device_types: [],
+            template_layouts: [],
+            url_mask_not: '',
+            options: {}
+        };
+    }
+
+    function normalizeWidgetBindConfig(config, widget) {
+        var normalized = buildDefaultWidgetBindConfig(widget || {});
+
+        if (config && typeof config === 'object' && !Array.isArray(config)) {
+            Object.keys(normalized).forEach(function (key) {
+                if (typeof config[key] !== 'undefined') {
+                    normalized[key] = deepClone(config[key]);
+                }
+            });
+        }
+
+        ['groups_view', 'groups_hide', 'languages', 'device_types', 'template_layouts'].forEach(function (key) {
+            if (!Array.isArray(normalized[key])) {
+                normalized[key] = [];
+            }
+        });
+
+        if (!normalized.options || typeof normalized.options !== 'object' || Array.isArray(normalized.options)) {
+            normalized.options = {};
+        }
+
+        normalized.title = String(normalized.title || (widget && widget.title) || defaultTitle('widget')).trim() || defaultTitle('widget');
+        normalized.template = String(normalized.template || page.template || '');
+        normalized.tpl_body = String(normalized.tpl_body || (widget && widget.widget_name) || '');
+        normalized.links = String(normalized.links || '');
+        normalized.tpl_wrap = String(normalized.tpl_wrap || 'wrapper');
+        normalized.tpl_wrap_style = String(normalized.tpl_wrap_style || '');
+        normalized.tpl_wrap_custom = String(normalized.tpl_wrap_custom || '');
+        normalized.class_wrap = String(normalized.class_wrap || '');
+        normalized.class_title = String(normalized.class_title || '');
+        normalized.class = String(normalized.class || '');
+        normalized.url_mask_not = String(normalized.url_mask_not || '');
+
+        return normalized;
     }
 
     function getParentDevice(deviceKey) {
@@ -643,6 +720,321 @@
         }
     }
 
+    function syncWidgetTitleIntoBindConfig(widget) {
+        if (!widget || widget.kind !== 'widget') {
+            return;
+        }
+
+        widget.bind_config = normalizeWidgetBindConfig(widget.bind_config, widget);
+        widget.bind_config.title = String(widget.title || defaultTitle('widget')).trim() || defaultTitle('widget');
+    }
+
+    function updateSelectedLibrarySummary() {
+        var libraryTitle = selectedLibraryCard ? String(selectedLibraryCard.getAttribute('data-widget-title') || 'Виджет') : 'Ничего не выбрано';
+        var record = getSelectedRecord();
+
+        if (selectedLibraryTitle) {
+            selectedLibraryTitle.textContent = libraryTitle;
+        }
+
+        if (selectedLibraryHint) {
+            selectedLibraryHint.textContent = selectedLibraryCard
+                ? 'Этот виджет вставится в текущую колонку без перехода на другой экран.'
+                : 'Выберите карточку в библиотеке слева, чтобы вставить ее в текущую колонку.';
+        }
+
+        if (insertSelectedWidgetButton) {
+            insertSelectedWidgetButton.disabled = !selectedLibraryCard || !record || record.type !== 'column';
+        }
+        if (insertSectionButton) {
+            insertSectionButton.disabled = !record || record.type !== 'column';
+        }
+    }
+
+    function syncWidgetOptionsFormTitle(value) {
+        var titleField = widgetOptionsBody ? widgetOptionsBody.querySelector('[name="title"]') : null;
+
+        if (titleField && titleField.value !== value) {
+            titleField.value = value;
+        }
+    }
+
+    function showWidgetOptionsMessage(message, isLock) {
+        if (!widgetOptionsBlock) {
+            return;
+        }
+
+        if (widgetOptionsEmpty) {
+            widgetOptionsEmpty.hidden = Boolean(isLock);
+            widgetOptionsEmpty.textContent = message || 'Выберите виджет, чтобы открыть его настройки.';
+        }
+
+        if (widgetOptionsLock) {
+            widgetOptionsLock.hidden = !isLock;
+            if (isLock) {
+                widgetOptionsLock.textContent = message || 'Этот виджет пришел из default-схемы. Чтобы менять его настройки безопасно, продублируйте виджет и настройте копию.';
+            }
+        }
+
+        if (widgetOptionsBody) {
+            widgetOptionsBody.hidden = true;
+            widgetOptionsBody.innerHTML = '';
+        }
+
+        loadedWidgetOptionsUid = '';
+    }
+
+    function renderWidgetOptionsForm(html) {
+        if (!widgetOptionsBody) {
+            return;
+        }
+
+        widgetOptionsBody.innerHTML = '<form class="nb-widget-options-form" data-widget-options-form>' + html + '</form>';
+        widgetOptionsBody.hidden = false;
+
+        if (widgetOptionsEmpty) {
+            widgetOptionsEmpty.hidden = true;
+        }
+        if (widgetOptionsLock) {
+            widgetOptionsLock.hidden = true;
+        }
+    }
+
+    function loadWidgetOptions(record) {
+        var requestToken;
+        var body;
+
+        if (!widgetOptionsBlock || !record || record.type !== 'widget') {
+            return;
+        }
+
+        if (!record.node.can_edit_options) {
+            showWidgetOptionsMessage('Этот виджет пришел из default-схемы. Чтобы менять его настройки безопасно, продублируйте виджет и настройте копию.', true);
+            return;
+        }
+
+        if (!widgetOptionsUrl || !window.fetch || !csrfToken || (parseInt(record.node.widget_id || 0, 10) || 0) < 1) {
+            showWidgetOptionsMessage('Форма настроек для этого виджета сейчас недоступна.', false);
+            return;
+        }
+
+        showWidgetOptionsMessage('Загружаю форму настроек виджета...', false);
+        requestToken = widgetOptionsRequestToken + 1;
+        widgetOptionsRequestToken = requestToken;
+
+        body = serializeRequestBody({
+            csrf_token: csrfToken,
+            widget_id: record.node.widget_id || 0,
+            template: page.template || '',
+            options: JSON.stringify(record.node.bind_config || {})
+        });
+
+        window.fetch(widgetOptionsUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body
+        }).then(function (response) {
+            return response.json();
+        }).then(function (response) {
+            if (widgetOptionsRequestToken !== requestToken) {
+                return;
+            }
+
+            if (!response || response.error || !response.html) {
+                showWidgetOptionsMessage((response && response.message) ? response.message : 'Не удалось загрузить форму настроек виджета.', false);
+                return;
+            }
+
+            loadedWidgetOptionsUid = record.node.uid;
+            renderWidgetOptionsForm(response.html);
+        }).catch(function () {
+            if (widgetOptionsRequestToken !== requestToken) {
+                return;
+            }
+
+            showWidgetOptionsMessage('Не удалось загрузить форму настроек виджета.', false);
+        });
+    }
+
+    function parseFieldNameTokens(name) {
+        var tokens = [];
+
+        if (name.indexOf('[') === -1 && name.indexOf(':') !== -1) {
+            return name.split(':').filter(Boolean);
+        }
+
+        name.replace(/([^\[\]]+)|\[(.*?)\]/g, function (_, direct, bracket) {
+            tokens.push(typeof direct !== 'undefined' && direct !== '' ? direct : String(typeof bracket === 'undefined' ? '' : bracket));
+            return _;
+        });
+
+        return tokens.filter(function (token, index) {
+            return token !== '' || index === tokens.length - 1;
+        });
+    }
+
+    function setNestedValue(target, tokens, value) {
+        var cursor = target;
+        var index;
+        var token;
+        var nextToken;
+
+        if (!tokens.length) {
+            return;
+        }
+
+        for (index = 0; index < tokens.length; index += 1) {
+            token = tokens[index];
+            nextToken = tokens[index + 1];
+
+            if (index === tokens.length - 1) {
+                cursor[token] = value;
+                return;
+            }
+
+            if (!cursor[token] || typeof cursor[token] !== 'object') {
+                cursor[token] = nextToken === '' ? [] : {};
+            }
+
+            cursor = cursor[token];
+        }
+    }
+
+    function appendNestedValue(target, tokens, value) {
+        var parentTokens = tokens.slice(0, -1);
+        var lastToken = tokens[tokens.length - 1];
+        var parent = target;
+        var index;
+
+        if (!tokens.length) {
+            return;
+        }
+
+        for (index = 0; index < parentTokens.length; index += 1) {
+            if (!parent[parentTokens[index]] || typeof parent[parentTokens[index]] !== 'object') {
+                parent[parentTokens[index]] = {};
+            }
+
+            parent = parent[parentTokens[index]];
+        }
+
+        if (lastToken === '') {
+            if (!Array.isArray(parent)) {
+                return;
+            }
+
+            parent.push(value);
+            return;
+        }
+
+        if (!Array.isArray(parent[lastToken])) {
+            parent[lastToken] = [];
+        }
+
+        parent[lastToken].push(value);
+    }
+
+    function serializeWidgetOptionsForm(form) {
+        var data = {};
+        var elements = Array.prototype.slice.call(form.elements || []).filter(function (element) {
+            return element.name && !element.disabled && element.tagName !== 'BUTTON' && element.type !== 'submit';
+        });
+        var grouped = {};
+
+        elements.forEach(function (element) {
+            if (!grouped[element.name]) {
+                grouped[element.name] = [];
+            }
+
+            grouped[element.name].push(element);
+        });
+
+        Object.keys(grouped).forEach(function (name) {
+            var group = grouped[name];
+            var first = group[0];
+            var tokens = parseFieldNameTokens(name);
+
+            if (first.type === 'checkbox') {
+                if (group.length === 1 && tokens[tokens.length - 1] !== '') {
+                    setNestedValue(data, tokens, first.checked ? (first.value || '1') : false);
+                    return;
+                }
+
+                setNestedValue(data, tokens.slice(0, -1), []);
+                group.forEach(function (element) {
+                    if (element.checked) {
+                        appendNestedValue(data, tokens, element.value || '1');
+                    }
+                });
+                return;
+            }
+
+            if (first.type === 'radio') {
+                setNestedValue(data, tokens, '');
+                group.forEach(function (element) {
+                    if (element.checked) {
+                        setNestedValue(data, tokens, element.value || '');
+                    }
+                });
+                return;
+            }
+
+            if (first.tagName === 'SELECT' && first.multiple) {
+                setNestedValue(data, tokens, Array.prototype.slice.call(first.options).filter(function (option) {
+                    return option.selected;
+                }).map(function (option) {
+                    return option.value;
+                }));
+                return;
+            }
+
+            setNestedValue(data, tokens, first.value);
+        });
+
+        return data;
+    }
+
+    function syncInspectorPanels(record) {
+        updateSelectedLibrarySummary();
+
+        if (columnInsertPanel) {
+            columnInsertPanel.hidden = !record || record.type !== 'column';
+        }
+
+        if (!widgetOptionsBlock) {
+            return;
+        }
+
+        widgetOptionsBlock.hidden = !record || record.type !== 'widget';
+
+        if (!record || record.type !== 'widget') {
+            showWidgetOptionsMessage('Выберите виджет, чтобы открыть его настройки.', false);
+            return;
+        }
+
+        if (!record.node.can_edit_options) {
+            showWidgetOptionsMessage('Этот виджет пришел из default-схемы. Чтобы менять его настройки безопасно, продублируйте виджет и настройте копию.', true);
+            return;
+        }
+
+        if (loadedWidgetOptionsUid === record.node.uid && widgetOptionsBody && widgetOptionsBody.querySelector('[data-widget-options-form]')) {
+            widgetOptionsBody.hidden = false;
+            if (widgetOptionsEmpty) {
+                widgetOptionsEmpty.hidden = true;
+            }
+            if (widgetOptionsLock) {
+                widgetOptionsLock.hidden = true;
+            }
+            return;
+        }
+
+        loadWidgetOptions(record);
+    }
+
     function syncDeviceButtons() {
         deviceButtons.forEach(function (button) {
             button.classList.toggle('is-active', String(button.getAttribute('data-device-key') || 'desktop') === activeDevice);
@@ -763,6 +1155,7 @@
             if (settingsPanel) {
                 settingsPanel.hidden = true;
             }
+            syncInspectorPanels(null);
             return;
         }
 
@@ -823,6 +1216,8 @@
                 deviceOverrideNote.textContent = 'Сейчас используется наследование от ' + (deviceLabels[getParentDevice(activeDevice)] || 'Desktop') + '. Первое изменение создаст override.';
             }
         }
+
+        syncInspectorPanels(record);
     }
 
     function updateColumnDomWidth(uid, width) {
@@ -859,6 +1254,7 @@
         updateInspector();
         syncDeviceButtons();
         updateDeviceLabel();
+        updateSelectedLibrarySummary();
         applyWidgetFilter(currentWidgetFilter);
     }
 
@@ -957,7 +1353,9 @@
         }
 
         if (!selectedLibraryCard) {
-            addSectionToColumn(uid);
+            selectedNodeUid = record.node.uid;
+            rerender();
+            setStatus('Колонка выбрана. Сначала выберите виджет слева и нажмите «Вставить выбранный виджет», либо добавьте секцию.');
             return;
         }
 
@@ -1023,6 +1421,8 @@
     root.addEventListener('click', function (event) {
         var filterButton = event.target.closest('[data-widget-filter]');
         var libraryCard = event.target.closest('[data-widget-library-item]');
+        var insertSelectedWidgetAction = event.target.closest('[data-insert-selected-widget]');
+        var insertSectionAction = event.target.closest('[data-insert-section]');
         var actionButton = event.target.closest('[data-node-action]');
         var addButton = event.target.closest('[data-builder-add]');
         var outlineTarget = event.target.closest('[data-select-target]');
@@ -1043,7 +1443,32 @@
             });
             libraryCard.classList.add('is-selected');
             selectedLibraryCard = libraryCard;
+            updateSelectedLibrarySummary();
             setStatus('Выбран виджет из библиотеки: ' + String(libraryCard.getAttribute('data-widget-title') || 'виджет') + '.');
+            return;
+        }
+
+        if (insertSelectedWidgetAction) {
+            event.preventDefault();
+
+            if (!selectedNodeUid) {
+                setStatus('Сначала выберите колонку, в которую нужно вставить виджет.');
+                return;
+            }
+
+            addWidgetToColumn(selectedNodeUid);
+            return;
+        }
+
+        if (insertSectionAction) {
+            event.preventDefault();
+
+            if (!selectedNodeUid) {
+                setStatus('Сначала выберите колонку, в которую нужно добавить секцию.');
+                return;
+            }
+
+            addSectionToColumn(selectedNodeUid);
             return;
         }
 
@@ -1126,6 +1551,33 @@
         if (node && root.contains(node)) {
             selectNode(String(node.getAttribute('data-node-uid') || ''));
         }
+    });
+
+    root.addEventListener('change', function (event) {
+        var form = event.target.closest('[data-widget-options-form]');
+        var record;
+        var bindConfig;
+
+        if (!form) {
+            return;
+        }
+
+        record = getSelectedRecord();
+        if (!record || record.type !== 'widget') {
+            return;
+        }
+
+        bindConfig = normalizeWidgetBindConfig(serializeWidgetOptionsForm(form), record.node);
+        record.node.bind_config = bindConfig;
+        record.node.title = bindConfig.title;
+
+        if (titleInput) {
+            titleInput.value = record.node.title;
+        }
+
+        persistCurrentRows();
+        rerender();
+        setStatus('Настройки виджета обновлены в draft.');
     });
 
     root.addEventListener('mousedown', function (event) {
@@ -1229,6 +1681,8 @@
             }
 
             record.node.title = String(titleInput.value || '').trim() || defaultTitle(record.type);
+            syncWidgetTitleIntoBindConfig(record.node);
+            syncWidgetOptionsFormTitle(record.node.title);
             persistCurrentRows();
             rerender();
             setStatus('Название узла обновлено.');
@@ -1279,6 +1733,7 @@
 
     rerender();
     applyWidgetFilter('all');
+    updateSelectedLibrarySummary();
     if (currentRows.length) {
         selectNode(currentRows[0].uid);
     }

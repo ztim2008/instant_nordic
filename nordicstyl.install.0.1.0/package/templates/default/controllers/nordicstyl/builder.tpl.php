@@ -188,6 +188,7 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                                 data-widget-id="<?php echo (int)($item['widget_id'] ?? 0); ?>"
                                 data-widget-controller="<?php html((string)($item['widget_controller'] ?? ''), true); ?>"
                                 data-widget-name="<?php html((string)($item['widget_name'] ?? ''), true); ?>"
+                                data-widget-has-options="<?php echo !empty($item['has_options']) ? '1' : '0'; ?>"
                             >
                                 <div class="nb-library-card__head">
                                     <div class="nb-library-card__badge"><?php html((string)($item['category_title'] ?? 'Системные')); ?></div>
@@ -266,6 +267,32 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                             <span class="nb-field__value" data-setting-width-value>12/12</span>
                         </label>
                         <div class="nb-inspector__device-note" data-device-override-state></div>
+
+                        <section class="nb-inspector__section" data-column-insert-panel hidden>
+                            <div class="nb-inspector__section-head">
+                                <h3>Вставка</h3>
+                                <span class="nb-help" title="Колонка может принять выбранный виджет из библиотеки или новую вложенную секцию.">?</span>
+                            </div>
+                            <div class="nb-insert-card">
+                                <div class="nb-insert-card__label">Выбранный виджет</div>
+                                <div class="nb-insert-card__title" data-selected-library-title>Ничего не выбрано</div>
+                                <div class="nb-insert-card__hint" data-selected-library-hint>Выберите карточку в библиотеке слева, чтобы вставить ее в текущую колонку.</div>
+                            </div>
+                            <div class="nb-action-stack">
+                                <button class="nb-button" type="button" data-insert-selected-widget disabled>Вставить выбранный виджет</button>
+                                <button class="nb-button nb-button--secondary" type="button" data-insert-section>Добавить секцию</button>
+                            </div>
+                        </section>
+
+                        <section class="nb-inspector__section" data-widget-options-block hidden>
+                            <div class="nb-inspector__section-head">
+                                <h3>Настройки виджета</h3>
+                                <span class="nb-help" title="Для inherited-виджетов сначала сделайте дубликат, чтобы не трогать общий bind шаблона.">?</span>
+                            </div>
+                            <div class="nb-builder__hint" data-widget-options-empty>Выберите виджет, чтобы открыть его настройки.</div>
+                            <div class="nb-builder__hint" data-widget-options-lock hidden>Этот виджет пришел из default-схемы. Чтобы менять его настройки безопасно, продублируйте виджет и настройте копию.</div>
+                            <div class="nb-widget-options__body" data-widget-options-body hidden></div>
+                        </section>
                     </div>
                 </div>
             </section>

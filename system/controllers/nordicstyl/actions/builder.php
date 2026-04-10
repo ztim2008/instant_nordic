@@ -38,6 +38,7 @@ class actionNordicstylBuilder extends cmsAction {
                 'picker_url' => href_to_abs('admin', 'controllers', ['edit', 'nordicstyl', 'picker']),
                 'state_url' => href_to_abs('nordicstyl', 'builder_state'),
                 'publish_url' => href_to_abs('nordicstyl', 'builder_publish'),
+                'widget_options_url' => href_to_abs('nordicstyl', 'builder_widget_options'),
                 'reset_url' => href_to_abs('nordicstyl', 'builder_reset'),
                 'csrf_token' => cmsForm::getCSRFToken()
             ]
@@ -421,13 +422,13 @@ class actionNordicstylBuilder extends cmsAction {
                     }
 
                     if ($existingPageId === 1 && $bindingPageId === 0) {
-                        $widgetsByPosition[$position][$index] = $this->buildWidgetStateItem($binding, $position);
+                        $widgetsByPosition[$position][$index] = $this->buildWidgetStateItem($binding, $position, $templateName);
                         continue 2;
                     }
                 }
             }
 
-            $widgetsByPosition[$position][] = $this->buildWidgetStateItem($binding, $position);
+            $widgetsByPosition[$position][] = $this->buildWidgetStateItem($binding, $position, $templateName);
         }
 
         return $widgetsByPosition;
@@ -629,7 +630,9 @@ class actionNordicstylBuilder extends cmsAction {
         return $this->humanizeLabel($controller);
     }
 
-    protected function buildWidgetStateItem(array $binding, string $position): array {
+    protected function buildWidgetStateItem(array $binding, string $position, string $templateName): array {
+
+        $sourcePageId = (int)($binding['page_id'] ?? 0);
 
         return [
             'uid' => 'widget-' . ($binding['id'] ?? md5($position . '|' . serialize($binding))),
@@ -641,9 +644,43 @@ class actionNordicstylBuilder extends cmsAction {
             'widget_id' => (int)($binding['widget_id'] ?? 0),
             'bind_id' => (int)($binding['bind_id'] ?? 0),
             'binding_page_id' => (int)($binding['id'] ?? 0),
-            'source_page_id' => (int)($binding['page_id'] ?? 0),
+            'source_page_id' => $sourcePageId,
             'position_name' => $position,
-            'is_enabled' => !empty($binding['is_enabled'])
+            'is_enabled' => !empty($binding['is_enabled']),
+            'has_options' => true,
+            'can_edit_options' => $sourcePageId === 1,
+            'bind_config' => $this->buildWidgetBindConfig($binding, $templateName)
+        ];
+    }
+
+    protected function buildWidgetBindConfig(array $binding, string $templateName): array {
+
+        $urlMaskNot = $binding['url_mask_not'] ?? '';
+        if (is_array($urlMaskNot)) {
+            $urlMaskNot = implode("\n", array_filter(array_map('strval', $urlMaskNot)));
+        }
+
+        return [
+            'title' => $this->buildWidgetTitle($binding),
+            'template' => $templateName,
+            'is_title' => !empty($binding['is_title']),
+            'is_tab_prev' => !empty($binding['is_tab_prev']),
+            'is_cacheable' => !empty($binding['is_cacheable']),
+            'links' => trim((string)($binding['links'] ?? '')),
+            'tpl_wrap' => trim((string)($binding['tpl_wrap'] ?? 'wrapper')),
+            'tpl_wrap_style' => trim((string)($binding['tpl_wrap_style'] ?? '')),
+            'tpl_wrap_custom' => trim((string)($binding['tpl_wrap_custom'] ?? '')),
+            'tpl_body' => trim((string)($binding['tpl_body'] ?? ($binding['name'] ?? ''))),
+            'class_wrap' => trim((string)($binding['class_wrap'] ?? '')),
+            'class_title' => trim((string)($binding['class_title'] ?? '')),
+            'class' => trim((string)($binding['class'] ?? '')),
+            'groups_view' => is_array($binding['groups_view'] ?? null) ? array_values($binding['groups_view']) : [],
+            'groups_hide' => is_array($binding['groups_hide'] ?? null) ? array_values($binding['groups_hide']) : [],
+            'languages' => is_array($binding['languages'] ?? null) ? array_values($binding['languages']) : [],
+            'device_types' => is_array($binding['device_types'] ?? null) ? array_values($binding['device_types']) : [],
+            'template_layouts' => is_array($binding['template_layouts'] ?? null) ? array_values($binding['template_layouts']) : [],
+            'url_mask_not' => trim((string)$urlMaskNot),
+            'options' => is_array($binding['options'] ?? null) ? $binding['options'] : []
         ];
     }
 

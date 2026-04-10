@@ -650,6 +650,10 @@ class modelNordicstyl extends cmsModel {
                         $sourcePosition = trim((string)($widget['position_name'] ?? ''));
                         $processedBindingKeys[$bindingKey] = true;
 
+                        if ($this->canEditExistingWidgetBinding($widget)) {
+                            $this->updatePublishedWidgetBinding($backendWidgetsModel, $bindId, $widget, $templateName);
+                        }
+
                         if ($sourcePageId === 0 && $sourcePosition === $positionName) {
                             $publishedWidgets++;
                             continue;
@@ -678,6 +682,8 @@ class modelNordicstyl extends cmsModel {
                         throw new RuntimeException('Не удалось создать native binding для виджета «' . trim((string)($widget['title'] ?? 'Виджет')) . '».');
                     }
 
+                    $this->updatePublishedWidgetBinding($backendWidgetsModel, (int)$created['id'], $widget, $templateName);
+
                     $publishedWidgets++;
                 }
 
@@ -690,6 +696,64 @@ class modelNordicstyl extends cmsModel {
         }
 
         return ['widgets' => $publishedWidgets];
+    }
+
+    protected function canEditExistingWidgetBinding(array $widget): bool {
+
+        return !empty($widget['can_edit_options']) && (int)($widget['bind_id'] ?? 0) > 0;
+    }
+
+    protected function updatePublishedWidgetBinding(modelBackendWidgets $backendWidgetsModel, int $bindId, array $widget, string $templateName): void {
+
+        if ($bindId < 1) {
+            return;
+        }
+
+        $bindingData = $this->buildPublishedWidgetBindingData($widget, $templateName);
+        if (!$bindingData) {
+            return;
+        }
+
+        $backendWidgetsModel->updateWidgetBinding($bindId, $bindingData);
+    }
+
+    protected function buildPublishedWidgetBindingData(array $widget, string $templateName): array {
+
+        $bindConfig = is_array($widget['bind_config'] ?? null) ? $widget['bind_config'] : [];
+
+        return [
+            'title' => trim((string)($bindConfig['title'] ?? ($widget['title'] ?? 'Виджет'))) ?: 'Виджет',
+            'template' => trim((string)($bindConfig['template'] ?? $templateName)) ?: $templateName,
+            'is_title' => !empty($bindConfig['is_title']),
+            'is_tab_prev' => !empty($bindConfig['is_tab_prev']),
+            'is_cacheable' => !empty($bindConfig['is_cacheable']),
+            'links' => trim((string)($bindConfig['links'] ?? '')),
+            'tpl_wrap' => trim((string)($bindConfig['tpl_wrap'] ?? 'wrapper')),
+            'tpl_wrap_style' => trim((string)($bindConfig['tpl_wrap_style'] ?? '')),
+            'tpl_wrap_custom' => trim((string)($bindConfig['tpl_wrap_custom'] ?? '')),
+            'tpl_body' => trim((string)($bindConfig['tpl_body'] ?? ($widget['widget_name'] ?? ''))),
+            'class_wrap' => trim((string)($bindConfig['class_wrap'] ?? '')),
+            'class_title' => trim((string)($bindConfig['class_title'] ?? '')),
+            'class' => trim((string)($bindConfig['class'] ?? '')),
+            'groups_view' => $this->normalizeWidgetBindingArrayValue($bindConfig['groups_view'] ?? []),
+            'groups_hide' => $this->normalizeWidgetBindingArrayValue($bindConfig['groups_hide'] ?? []),
+            'languages' => $this->normalizeWidgetBindingArrayValue($bindConfig['languages'] ?? []),
+            'device_types' => $this->normalizeWidgetBindingArrayValue($bindConfig['device_types'] ?? []),
+            'template_layouts' => $this->normalizeWidgetBindingArrayValue($bindConfig['template_layouts'] ?? []),
+            'url_mask_not' => trim((string)($bindConfig['url_mask_not'] ?? '')),
+            'options' => is_array($bindConfig['options'] ?? null) ? $bindConfig['options'] : []
+        ];
+    }
+
+    protected function normalizeWidgetBindingArrayValue($value): array {
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter($value, function ($item) {
+            return $item !== '' && $item !== null && $item !== false;
+        }));
     }
 
     protected function syncInheritedTemplateBindings(modelBackendWidgets $backendWidgetsModel, string $templateName, string $sourceTemplate, array $allowedPositions): int {
