@@ -88,6 +88,7 @@ class modelNordicstyl extends cmsModel {
         $where = "source = '{$sourceEsc}'";
         $query = trim($query);
         if ($query !== '') {
+            // Escape for SQL + escape LIKE wildcards
             $qEsc = $this->db->escape($query);
             $qLike = str_replace(['%', '_'], ['\\%', '\\_'], $qEsc);
             $like = "'%{$qLike}%'";

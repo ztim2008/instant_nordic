@@ -1,0 +1,144 @@
+{
+  "Структура": {
+    "Страница": {
+      "Тело": "body",
+      "Ссылка": "a",
+      "Контейнер (Bootstrap)": ".container",
+      "Контейнер fluid (Bootstrap)": ".container-fluid",
+      "Ряд (Bootstrap)": ".row",
+      "Колонка (Bootstrap)": "[class*='col-']",
+      "Заголовки": {
+        "H1": "h1",
+        "H2": "h2",
+        "H3": "h3",
+        "H4": "h4",
+        "H5": "h5",
+        "H6": "h6"
+      },
+      "Навигация (Bootstrap)": {
+        "Navbar": "nav.navbar",
+        "Логотип/бренд": ".navbar-brand",
+        "Бургер-кнопка": ".navbar-toggler",
+        "Иконка бургера": ".navbar-toggler-icon",
+        "Область меню (collapse)": ".navbar-collapse",
+        "Список пунктов": ".navbar-nav",
+        "Пункт": ".navbar-nav .nav-item",
+        "Ссылка": ".navbar-nav .nav-link",
+        "Активная ссылка": ".navbar-nav .nav-link.active, .navbar-nav .active > .nav-link",
+        "Dropdown меню": ".dropdown-menu",
+        "Dropdown пункт": ".dropdown-item",
+        "Dropdown пункт (active)": ".dropdown-item.active, .dropdown-item:active"
+      },
+      "Хлебные крошки": {
+        "Контейнер": "ol.breadcrumb",
+        "Элемент": "ol.breadcrumb .breadcrumb-item",
+        "Ссылка": "ol.breadcrumb .breadcrumb-item a",
+        "Активный элемент": "ol.breadcrumb .breadcrumb-item.active"
+      },
+      "Сообщения": {
+        "Alert": ".alert",
+        "Info": ".alert.alert-info",
+        "Success": ".alert.alert-success",
+        "Warning": ".alert.alert-warning",
+        "Danger": ".alert.alert-danger",
+        "Кнопка закрытия": ".alert .close"
+      },
+      "Кнопки (Bootstrap)": {
+        "Любая кнопка": ".btn",
+        "Primary": ".btn.btn-primary",
+        "Secondary": ".btn.btn-secondary",
+        "Light": ".btn.btn-light",
+        "Outline primary": ".btn.btn-outline-primary",
+        "Outline info": ".btn.btn-outline-info",
+        "Small": ".btn.btn-sm",
+        "Large": ".btn.btn-lg"
+      },
+      "Формы (Bootstrap)": {
+        "Поле ввода": "input.form-control",
+        "Textarea": "textarea.form-control",
+        "Select": "select.form-control",
+        "Label": "label",
+        "Input group": ".input-group",
+        "Input group addon": ".input-group-text",
+        "Кнопка в input-group": ".input-group .btn"
+      },
+      "Карточки (Bootstrap)": {
+        "Карточка": ".card",
+        "Заголовок": ".card-header",
+        "Тело": ".card-body",
+        "Подвал": ".card-footer"
+      },
+      "Модальные окна (Bootstrap)": {
+        "Modal": ".modal",
+        "Dialog": ".modal-dialog",
+        "Content": ".modal-content",
+        "Header": ".modal-header",
+        "Body": ".modal-body",
+        "Footer": ".modal-footer"
+      },
+      "Сервисное": {
+        "Кнопка 'наверх'": "#scroll-top",
+        "Cookie alert": "#icms-cookiealert",
+        "Cookie кнопка": "#icms-cookiealert .acceptcookies"
+      }
+    }
+  },
+  "Виджеты": {
+    "Стандартный виджет (card)": {
+      "Обертка": ".icms-widget",
+      "Заголовок": ".icms-widget .card-header",
+      "Тело": ".icms-widget .card-body",
+      "Ссылки в заголовке": ".icms-widget .card-header .links a",
+      "Кнопки ссылок": ".icms-widget .card-header .links a.btn"
+    },
+    "Табы виджетов": {
+      "Обертка": ".icms-widget__tabbed",
+      "Табы": ".icms-widget__tabbed .nav.nav-tabs",
+      "Ссылка таба": ".icms-widget__tabbed .nav.nav-tabs .nav-link",
+      "Активный таб": ".icms-widget__tabbed .nav.nav-tabs .nav-link.active",
+      "Контент табов": ".icms-widget__tabbed .tab-content",
+      "Панель таба": ".icms-widget__tabbed .tab-content .tab-pane"
+    },
+    "Виджет-меню (navbar)": {
+      "Navbar": "nav.navbar",
+      "Список меню": "nav.navbar .navbar-nav",
+      "Пункт": "nav.navbar .navbar-nav .nav-item",
+      "Ссылка": "nav.navbar .navbar-nav .nav-link",
+      "Поиск (форма)": "nav.navbar form.form-inline",
+      "Поиск (поле)": "nav.navbar form.form-inline input[type='text']",
+      "Поиск (кнопка)": "nav.navbar form.form-inline button"
+    }
+  },
+  "Контент": {
+    "Список контента": {
+      "Весь список": ".content_list",
+      "Запись": ".content_list_item",
+      "Контейнер полей": ".content_list_item .icms-content-fields",
+      "Поле": ".content_list_item .field",
+      "Заголовок поля (left)": ".content_list_item .field .title_left",
+      "Заголовок поля (top)": ".content_list_item .field .title_top",
+      "Значение поля": ".content_list_item .field .value",
+      "Ссылка родителя": ".content_list_item .parent_title",
+      "Панель info_bar": ".content_list_item .info_bar",
+      "Элемент info_bar": ".content_list_item .info_bar .bar_item",
+      "Ссылка в info_bar": ".content_list_item .info_bar .bar_item a"
+    },
+    "Запись (страница)": {
+      "Тело": ".content_item",
+      "Поле": ".content_item .field",
+      "Свойства": ".content_item_props",
+      "Таблица свойств": ".content_item_props table",
+      "Ячейка": ".content_item_props table td"
+    },
+    "Комментарии": {
+      "Виджет": "#comments_widget",
+      "Список": "#comments_list",
+      "Сообщение 'нет комментариев'": "#comments_list .no_comments",
+      "Форма добавления": "#comments_add_form",
+      "Кнопка 'добавить'": "#comments_add_link a.btn",
+      "Кнопки формы": "#comments_add_form .buttons .btn",
+      "Preview box": "#comments_add_form .preview_box",
+      "Табы (если есть)": "#comments_widget.icms-comments__tabs"
+    }
+  }
+}

@@ -20,7 +20,7 @@ return [
         'is_backend'                 => false,
         'is_frontend'                => true,
         'html_attr'                  => [
-            'class' => 'min-vh-100'
+            'class' => 'min-vh-100 nordics-html'
         ]
     ]
 ];
