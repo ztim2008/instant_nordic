@@ -33,13 +33,19 @@ class actionNordicstylBuilder extends cmsAction {
                 'page_targets' => $builderPage['page_targets'],
                 'device_modes' => $builderPage['device_modes'],
                 'widget_library' => $builderPage['widget_library'],
+                'history' => $builderPage['history'],
+                'save_action' => $builderPage['save_action'],
                 'status_message' => $builderPage['status_message'],
                 'rules_url' => href_to_abs('admin', 'controllers', ['edit', 'nordicstyl', 'rules']),
                 'picker_url' => href_to_abs('admin', 'controllers', ['edit', 'nordicstyl', 'picker']),
                 'state_url' => href_to_abs('nordicstyl', 'builder_state'),
                 'publish_url' => href_to_abs('nordicstyl', 'builder_publish'),
+                'restore_url' => href_to_abs('nordicstyl', 'builder_restore'),
+                'style_rule_url' => href_to_abs('nordicstyl', 'builder_style_rule'),
                 'widget_options_url' => href_to_abs('nordicstyl', 'builder_widget_options'),
                 'reset_url' => href_to_abs('nordicstyl', 'builder_reset'),
+                'picker_frame_url' => $this->buildPickerFrameUrl((string) ($builderPage['page']['uri_raw'] ?? '/')),
+                'picker_origin' => $this->getHostOrigin(),
                 'csrf_token' => cmsForm::getCSRFToken()
             ]
         ], $this->request);
@@ -51,6 +57,116 @@ class actionNordicstylBuilder extends cmsAction {
         $version = is_file($fullPath) ? (string) filemtime($fullPath) : (string) time();
 
         return $assetPath . '?v=' . $version;
+    }
+
+    protected function buildPickerFrameUrl(string $targetUri): string {
+
+        $targetUrl = $this->sanitizePickerTarget($targetUri);
+        if ($targetUrl === null) {
+            $targetUrl = $this->sanitizePickerTarget('/');
+        }
+
+        if ($targetUrl === null) {
+            return '';
+        }
+
+        $token = bin2hex(random_bytes(16));
+        cmsUser::sessionSet('nordicstyl:picker_token', $token);
+        cmsUser::sessionSet('nordicstyl:picker_ts', time());
+        cmsUser::setCookie('nordicstyl_picker_token', $token, 10 * 60, '/');
+        cmsUser::setCookie('nordicstyl_picker_ts', (string) time(), 10 * 60, '/');
+
+        $model = cmsCore::getModel('nordicstyl', '_', false);
+        if ($model && method_exists($model, 'savePickerToken')) {
+            $model->savePickerToken($token, 10 * 60);
+        }
+
+        return $this->appendPickerParams($targetUrl, [
+            'nordicstyl_picker' => 1,
+            'nordicstyl_picker_token' => $token
+        ]);
+    }
+
+    protected function sanitizePickerTarget(string $raw): ?string {
+
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+
+        if ($raw[0] === '/') {
+            return rtrim($this->getHostOrigin(), '/') . $raw;
+        }
+
+        $parsed = parse_url($raw);
+        if (!$parsed || empty($parsed['host'])) {
+            return null;
+        }
+
+        $hostParsed = parse_url($this->getHostOrigin());
+        if (!$hostParsed || empty($hostParsed['host'])) {
+            return null;
+        }
+
+        $scheme = strtolower((string) ($parsed['scheme'] ?? ''));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return null;
+        }
+
+        if (strtolower((string) $parsed['host']) !== strtolower((string) $hostParsed['host'])) {
+            return null;
+        }
+
+        return $raw;
+    }
+
+    protected function appendPickerParams(string $url, array $params): string {
+
+        $parts = parse_url($url);
+        $query = [];
+
+        if (!empty($parts['query'])) {
+            parse_str($parts['query'], $query);
+        }
+
+        foreach ($params as $key => $value) {
+            $query[$key] = $value;
+        }
+
+        $base = $url;
+        $hashPos = strpos($base, '#');
+        $hash = '';
+
+        if ($hashPos !== false) {
+            $hash = substr($base, $hashPos);
+            $base = substr($base, 0, $hashPos);
+        }
+
+        $base = preg_replace('/\?.*/', '', $base);
+
+        return $base . '?' . http_build_query($query) . $hash;
+    }
+
+    protected function getHostOrigin(): string {
+
+        $host = rtrim((string) cmsConfig::get('host'), '/');
+        if ($host === '') {
+            $host = rtrim((string) cmsConfig::get('root'), '/');
+        }
+
+        $parsed = $host ? parse_url($host) : false;
+        if ($parsed && !empty($parsed['scheme']) && !empty($parsed['host'])) {
+            return rtrim($host, '/');
+        }
+
+        $httpHost = isset($_SERVER['HTTP_HOST']) ? (string) $_SERVER['HTTP_HOST'] : '';
+        $scheme = $this->request ? $this->request->getScheme() : 'http';
+
+        if ($httpHost !== '') {
+            return $scheme . '://' . $httpHost;
+        }
+
+        return rtrim((string) $host, '/');
     }
 
     protected function getBuilderPage(): array {
@@ -76,6 +192,7 @@ class actionNordicstylBuilder extends cmsAction {
                 'default_source' => $defaultSource,
                 'mode' => 'frontend-editor',
                 'uri' => $this->getCurrentUriLabel($targetUri),
+                'uri_raw' => $targetUri,
                 'device' => $currentDevice,
                 'device_label' => $this->buildDeviceLabel($currentDevice)
             ],
@@ -84,6 +201,8 @@ class actionNordicstylBuilder extends cmsAction {
             'page_targets' => $this->getPageTargets($targetUri, $currentDevice),
             'device_modes' => $this->getDeviceModes($targetUri, $currentDevice),
             'widget_library' => $this->getWidgetLibrary(),
+            'history' => $this->getHistoryState($targetUri, $currentDevice),
+            'save_action' => $this->buildSaveActionState($targetUri, $currentDevice),
             'status_message' => $this->buildStatusMessage($activeTemplate, $layoutSource, $widgetState['template'], count($rows), $pageTitle, $currentDevice)
         ];
     }
@@ -706,9 +825,53 @@ class actionNordicstylBuilder extends cmsAction {
             $message .= ' Текущие widget bindings подтянуты из ' . $widgetsSource . '.';
         }
 
-        $message .= ' Следующий шаг: вставка и сохранение структуры прямо с фронта.';
+        if ($this->isLiveSaveSupported($this->resolveTargetUri(), $device)) {
+            $message .= ' Кнопка «Сохранить» применяет текущую Desktop-схему сразу на сайт.';
+        } else {
+            $message .= ' Для этого режима live-save пока не открыт: сейчас он доступен только на главной в Desktop.';
+        }
 
         return $message;
+    }
+
+    protected function buildSaveActionState(string $targetUri, string $device): array {
+
+        $isSupported = $this->isLiveSaveSupported($targetUri, $device);
+
+        return [
+            'label' => 'Сохранить',
+            'title' => $isSupported
+                ? 'Сохранить изменения и сразу применить их на сайте'
+                : 'Live-save сейчас доступен только для главной страницы в режиме Desktop',
+            'is_enabled' => $isSupported
+        ];
+    }
+
+    protected function getHistoryState(string $targetUri, string $device): array {
+
+        $model = cmsCore::getModel('nordicstyl', '_', false);
+        $templateName = (string)$this->cms_template->getName();
+        $count = 0;
+        $items = [];
+
+        if ($model && method_exists($model, 'getLayoutRevisionCount')) {
+            $count = (int)$model->getLayoutRevisionCount($templateName, $targetUri);
+        }
+
+        if ($model && method_exists($model, 'getLayoutRevisions')) {
+            $items = $model->getLayoutRevisions($templateName, $targetUri, 8);
+        }
+
+        return [
+            'count' => $count,
+            'items' => $items,
+            'is_available' => $this->isLiveSaveSupported($targetUri, $device)
+        ];
+    }
+
+    protected function isLiveSaveSupported(string $targetUri, string $device): bool {
+
+        return $targetUri === '/' && $device === 'desktop';
     }
 
     protected function detectPageTitle(string $targetUri): string {

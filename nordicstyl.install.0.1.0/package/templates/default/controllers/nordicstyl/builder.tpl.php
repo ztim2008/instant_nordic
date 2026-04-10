@@ -9,9 +9,12 @@ $device_modes = is_array($builder_state['device_modes'] ?? null) ? $builder_stat
 $widget_library = $builder_state['widget_library'] ?? ['categories' => [], 'items' => []];
 $library_categories = is_array($widget_library['categories'] ?? null) ? $widget_library['categories'] : [];
 $library_items = is_array($widget_library['items'] ?? null) ? $widget_library['items'] : [];
+$history = is_array($builder_state['history'] ?? null) ? $builder_state['history'] : ['count' => 0, 'items' => [], 'is_available' => false];
+$save_action = is_array($builder_state['save_action'] ?? null) ? $builder_state['save_action'] : ['label' => 'Сохранить', 'title' => '', 'is_enabled' => false];
 $status_message = $builder_state['status_message'] ?? 'Каркас builder-а поднят. Следующий шаг: реальная вставка секций/виджетов и сохранение структуры.';
 $rules_url = $builder_state['rules_url'] ?? '';
 $picker_url = $builder_state['picker_url'] ?? '';
+$picker_frame_url = $builder_state['picker_frame_url'] ?? '';
 $page_title = $page_title ?? ($page['title'] ?? 'Страница');
 $layout_source_label = (string)($page['layout_source_label'] ?? 'стандартная схема шаблона');
 $current_device_label = (string)($page['device_label'] ?? 'Desktop');
@@ -142,7 +145,8 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
         </div>
 
         <div class="nb-builder__topbar-actions">
-            <button class="nb-builder__link" type="button" data-builder-publish title="Опубликовать Desktop в native layout">Publish</button>
+            <button class="nb-builder__link" type="button" data-builder-publish title="<?php html((string)($save_action['title'] ?? '')); ?>" <?php if (empty($save_action['is_enabled'])) { ?>disabled<?php } ?>><?php html((string)($save_action['label'] ?? 'Сохранить')); ?></button>
+            <span class="nb-builder__link" title="Количество серверных ревизий для быстрого отката"><?php echo !empty($history['is_available']) ? ('History ' . (int)($history['count'] ?? 0)) : 'History off'; ?></span>
             <?php if (!empty($builder_state['page']['default_source']) && $builder_state['page']['default_source'] !== ($builder_state['page']['template'] ?? '')) { ?>
                 <button class="nb-builder__link" type="button" data-builder-reset title="Вернуть шаблон к default-схеме <?php html((string)$builder_state['page']['default_source']); ?>">Default</button>
             <?php } ?>
@@ -221,15 +225,30 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
             </section>
         </aside>
 
-        <main class="nb-builder__canvas" data-builder-canvas aria-label="Builder canvas">
-            <?php if ($rows) {
-                nordicBuilderRenderRowsTemplate($rows);
-            } else { ?>
-                <section class="nb-builder__panel nb-canvas-empty">
-                    <h2>Схема пока не найдена</h2>
-                    <div class="nb-builder__hint">Для текущего шаблона нет layout rows.</div>
-                </section>
-            <?php } ?>
+        <main class="nb-builder__canvas" data-builder-canvas data-active-device="<?php html((string)($page['device'] ?? 'desktop')); ?>" data-device-source="base" aria-label="Builder canvas">
+            <div class="nb-builder__viewport-bar">
+                <div>
+                    <div class="nb-builder__viewport-title">Live viewport</div>
+                    <div class="nb-builder__viewport-subtitle" data-viewport-subtitle>Текущий режим показывает live-предпросмотр страницы.</div>
+                </div>
+                <div class="nb-builder__viewport-badges">
+                    <span class="nb-viewport-badge nb-viewport-badge--device" data-viewport-device><?php html($current_device_label); ?></span>
+                    <span class="nb-viewport-badge" data-viewport-source>Base</span>
+                </div>
+            </div>
+
+            <div class="nb-builder__viewport-shell">
+                <div class="nb-builder__viewport" data-builder-stage>
+                    <?php if ($rows) {
+                        nordicBuilderRenderRowsTemplate($rows);
+                    } else { ?>
+                        <section class="nb-builder__panel nb-canvas-empty">
+                            <h2>Схема пока не найдена</h2>
+                            <div class="nb-builder__hint">Для текущего шаблона нет layout rows.</div>
+                        </section>
+                    <?php } ?>
+                </div>
+            </div>
         </main>
 
         <aside class="nb-builder__sidebar nb-builder__sidebar--right">
@@ -293,6 +312,69 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                             <div class="nb-builder__hint" data-widget-options-lock hidden>Этот виджет пришел из default-схемы. Чтобы менять его настройки безопасно, продублируйте виджет и настройте копию.</div>
                             <div class="nb-widget-options__body" data-widget-options-body hidden></div>
                         </section>
+
+                        <section class="nb-inspector__section" data-style-inspector-block>
+                            <div class="nb-inspector__section-head">
+                                <h3>Style</h3>
+                                <span class="nb-help" title="Привязывает выбранный builder-узел к CSS selector и сохраняет rule в текущий runtime nordicstyl.">?</span>
+                            </div>
+                            <label class="nb-field">
+                                <span class="nb-field__label">Selector target</span>
+                                <input class="nb-input" type="text" data-style-selector placeholder=".hero .title" />
+                            </label>
+                            <div class="nb-style-target-meta">
+                                <span class="nb-style-pill" data-style-target-source>manual</span>
+                                <div class="nb-builder__hint" data-style-target-hint>У этого узла пока нет style target. Впишите selector вручную или возьмите его с live-страницы.</div>
+                            </div>
+                            <div class="nb-action-row">
+                                <button class="nb-button nb-button--secondary" type="button" data-style-open-picker>Выбрать на live-странице</button>
+                                <a class="nb-button nb-button--ghost" href="<?php html($picker_url); ?>" target="_blank" rel="noopener">Отдельный picker</a>
+                            </div>
+                            <div class="nb-inspector__device-note" data-style-scope-note>Desktop пишет в base/default. Tablet и Mobile пишут в свои device-ветки.</div>
+                            <div class="nb-style-grid">
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Цвет текста</span>
+                                    <input class="nb-input" type="text" data-style-field="color" placeholder="#173042" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Фон</span>
+                                    <input class="nb-input" type="text" data-style-field="background-color" placeholder="#ffffff" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Размер текста</span>
+                                    <input class="nb-input" type="text" data-style-field="font-size" placeholder="18px" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Внутренний отступ</span>
+                                    <input class="nb-input" type="text" data-style-field="padding" placeholder="24px" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Радиус</span>
+                                    <input class="nb-input" type="text" data-style-field="border-radius" placeholder="16px" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Толщина рамки</span>
+                                    <input class="nb-input" type="text" data-style-field="border-width" placeholder="1px" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Цвет рамки</span>
+                                    <input class="nb-input" type="text" data-style-field="border-color" placeholder="#d5cec0" />
+                                </label>
+                                <label class="nb-field">
+                                    <span class="nb-field__label">Стиль рамки</span>
+                                    <select class="nb-select" data-style-field="border-style">
+                                        <option value="">Не задано</option>
+                                        <option value="solid">Solid</option>
+                                        <option value="dashed">Dashed</option>
+                                        <option value="dotted">Dotted</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="nb-action-row">
+                                <button class="nb-button" type="button" data-style-save>Сохранить style rule</button>
+                                <button class="nb-button nb-button--secondary" type="button" data-style-reset>Очистить поля</button>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </section>
@@ -301,7 +383,50 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                 <h2>Статус</h2>
                 <div class="nb-builder__status" data-builder-status><?php html($status_message); ?></div>
             </section>
+
+            <section class="nb-builder__panel">
+                <div class="nb-panel__title">
+                    <h2>History</h2>
+                    <span class="nb-help" title="Серверные ревизии live-сохранений. Можно быстро откатиться на одну из последних точек.">?</span>
+                </div>
+                <div class="nb-builder__hint" <?php if (!empty($history['items'])) { ?>hidden<?php } ?> data-history-empty>
+                    История появится после первых live-сохранений.
+                </div>
+                <div class="nb-history" data-history-list>
+                    <?php foreach (($history['items'] ?? []) as $revision) { ?>
+                        <div class="nb-history__item">
+                            <div class="nb-history__meta">
+                                <div class="nb-history__title">#<?php echo (int)($revision['id'] ?? 0); ?> · <?php html((string)($revision['revision_type'] ?? 'live_save')); ?></div>
+                                <div class="nb-history__time"><?php html((string)($revision['created_at'] ?? '')); ?></div>
+                            </div>
+                            <button class="nb-button nb-button--secondary" type="button" data-history-restore data-revision-id="<?php echo (int)($revision['id'] ?? 0); ?>" <?php if (empty($history['is_available'])) { ?>disabled<?php } ?>>Restore</button>
+                        </div>
+                    <?php } ?>
+                </div>
+            </section>
         </aside>
+    </div>
+</div>
+
+<div class="nb-style-picker-modal" data-style-picker-modal hidden>
+    <div class="nb-style-picker-modal__backdrop" data-style-picker-close></div>
+    <div class="nb-style-picker-modal__dialog" role="dialog" aria-modal="true" aria-label="Live picker selector">
+        <div class="nb-style-picker-modal__head">
+            <div>
+                <div class="nb-style-picker-modal__title">Live picker</div>
+                <div class="nb-style-picker-modal__subtitle">Кликните по элементу в live-странице, чтобы забрать selector для выбранного builder-узла.</div>
+            </div>
+            <button class="nb-button nb-button--secondary" type="button" data-style-picker-close>Закрыть</button>
+        </div>
+        <div class="nb-style-picker-modal__body">
+            <iframe
+                class="nb-style-picker-modal__frame"
+                data-style-picker-frame
+                src="<?php html($picker_frame_url); ?>"
+                referrerpolicy="no-referrer"
+                title="Nordic builder live picker"
+            ></iframe>
+        </div>
     </div>
 </div>
 

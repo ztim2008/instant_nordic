@@ -13,10 +13,10 @@ $map_stats = $map_stats ?? ['table_exists' => false, 'count' => 0, 'updated_at' 
 $map_source_file = $map_source_file ?? '';
 ?>
 
-<h1>NordicStyl — пикер селектора</h1>
+<h1>NordicStyl — live-редактор стиля</h1>
 
 <p class="hint">
-    Открой страницу в iframe, кликни по элементу — селектор появится справа. Затем нажми «Открыть правила».
+  Открой страницу в preview-окне, кликни по нужному элементу и меняй его стиль прямо там, поверх сайта. Справа остается только вспомогательная панель с selector и картой элементов.
 </p>
 
 <div style="display:flex; gap: 16px; align-items: flex-start;">
@@ -37,29 +37,29 @@ $map_source_file = $map_source_file ?? '';
 
         <div class="form-row">
             <div class="form-group" style="width: 100%;">
-                <label>Выбранный селектор</label>
+                <label>Текущий selector</label>
                 <input id="nordicstyl-picker-selector" class="input" type="text" value="" readonly>
-                <div class="hint">После клика по элементу в iframe тут появится селектор.</div>
+                <div class="hint">После клика по элементу selector появится здесь, а в preview уже откроется live-панель поверх страницы.</div>
             </div>
         </div>
 
         <div class="form-row">
-            <a id="nordicstyl-picker-open-rules" class="button" href="<?php html($rules_url); ?>">Открыть правила</a>
+              <a id="nordicstyl-picker-open-rules" class="button" href="<?php html($rules_url); ?>">Открыть CSS rules</a>
             <button id="nordicstyl-picker-copy" class="button" type="button">Копировать</button>
         </div>
 
         <div class="form-row">
             <div class="form-group" style="width: 100%;">
-                <label>Подсказка</label>
+                <label>Как это работает</label>
                 <div class="hint">
-                    В iframe можно кликать по любым элементам. На время пикера клики не выполняют переходы.
+                  В preview можно кликать по любым элементам. Переходы и submit временно блокируются, чтобы страница работала как live-редактор, а не уводила вас по сайту.
                 </div>
             </div>
         </div>
 
         <div class="form-row">
           <div class="form-group" style="width: 100%;">
-            <label>Карта селекторов (instyler.json)</label>
+            <label>Карта селекторов</label>
 
             <?php if (empty($map_stats['table_exists'])) { ?>
               <div class="hint">Таблица словаря селекторов ещё не создана. Установи миграцию <code>005_selector_map.sql</code> через инсталлер NordicStyl.</div>
@@ -94,13 +94,14 @@ $map_source_file = $map_source_file ?? '';
                   <option value="<?php html($sel, true); ?>" data-title="<?php html($tt, true); ?>"><?php html($label); ?></option>
                 <?php } } ?>
               </select>
-              <div class="hint">Выбери элемент — селектор подставится как будто ты кликнул по нему в iframe.</div>
+              <div class="hint">Выбери элемент из списка, если не хочешь искать его мышкой на странице.</div>
             <?php } ?>
           </div>
         </div>
     </div>
 
     <div style="flex: 1 1 auto; min-width: 360px;">
+        <div class="hint" style="margin-bottom:8px;">Внутри окна уже работает floating live-редактор поверх самой страницы.</div>
         <iframe
             id="nordicstyl-picker-iframe"
             src="<?php html($iframe_url); ?>"

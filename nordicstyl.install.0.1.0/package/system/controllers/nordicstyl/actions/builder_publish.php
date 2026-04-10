@@ -41,18 +41,25 @@ class actionNordicstylBuilderPublish extends cmsAction {
         }
 
         $model = cmsCore::getModel('nordicstyl', '_', false);
-        if (!$model || !method_exists($model, 'publishLayoutState')) {
+        if (!$model || !method_exists($model, 'saveLiveLayoutState')) {
             return $this->cms_template->renderJSON([
                 'error' => true,
-                'message' => 'Model nordicstyl недоступна для native publish.'
+                'message' => 'Model nordicstyl недоступна для live-save.'
             ]);
         }
 
-        $result = $model->publishLayoutState($templateName, $targetUri, $layoutState, $sourceTemplate);
+        $result = $model->saveLiveLayoutState(
+            $templateName,
+            $targetUri,
+            $layoutState,
+            $sourceTemplate,
+            (int)cmsUser::get('id', 0),
+            'live_save'
+        );
 
         return $this->cms_template->renderJSON([
             'error' => empty($result['ok']),
-            'message' => (string)($result['message'] ?? 'Не удалось опубликовать desktop state.'),
+            'message' => (string)($result['message'] ?? 'Не удалось сохранить изменения на сайт.'),
             'rows' => (int)($result['rows'] ?? 0),
             'columns' => (int)($result['columns'] ?? 0),
             'widgets' => (int)($result['widgets'] ?? 0)

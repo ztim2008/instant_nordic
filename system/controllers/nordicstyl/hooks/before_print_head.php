@@ -15,7 +15,18 @@ class onNordicstylBeforePrintHead extends cmsAction {
         $template = cmsTemplate::getInstance();
 
         if ($this->isPickerMode()) {
-            $template->addBottom("<script>\n" . $this->getPickerInjectJs() . "\n</script>");
+            $cssFile = $template->getTplFilePath('controllers/nordicstyl/css/inject.css', false);
+            $jsFile = $template->getTplFilePath('controllers/nordicstyl/js/inject.js', false);
+
+            if ($cssFile) {
+                $template->addCSS($this->appendAssetVersion($cssFile), false);
+            }
+
+            if ($jsFile) {
+                $template->addJS($this->appendAssetVersion($jsFile), '', false);
+            }
+
+            $template->addBottom("<script>\nwindow.NORDICSTYL_INJECT_CONFIG = " . json_encode($this->buildPickerInjectConfig(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n</script>");
         }
 
         if (!empty($_REQUEST['nordicstyl_inject'])) {
@@ -27,6 +38,14 @@ class onNordicstylBeforePrintHead extends cmsAction {
         $template->addCSS(href_to_abs('nordicstyl', 'css') . '?uri=' . $uri);
 
         return $data;
+    }
+
+    protected function appendAssetVersion(string $assetPath): string {
+
+        $fullPath = cmsConfig::get('root_path') . ltrim($assetPath, '/');
+        $version = is_file($fullPath) ? (string)filemtime($fullPath) : (string)time();
+
+        return $assetPath . '?v=' . $version;
     }
 
     protected function isPickerMode(): bool {
@@ -87,6 +106,39 @@ class onNordicstylBeforePrintHead extends cmsAction {
         }
 
         return hash_equals($sessionToken, $requestToken);
+    }
+
+    protected function buildPickerInjectConfig(): array {
+
+        return [
+            'enabled' => true,
+            'origin' => $this->getHostOrigin(),
+            'csrf_token' => cmsForm::getCSRFToken(),
+            'style_rule_url' => href_to_abs('nordicstyl', 'builder_style_rule'),
+            'rules_url' => href_to_abs('admin', 'controllers', ['edit', 'nordicstyl', 'rules'])
+        ];
+    }
+
+    protected function getHostOrigin(): string {
+
+        $host = rtrim((string)cmsConfig::get('host'), '/');
+        if ($host === '') {
+            $host = rtrim((string)cmsConfig::get('root'), '/');
+        }
+
+        $parsed = $host ? parse_url($host) : false;
+        if ($parsed && !empty($parsed['scheme']) && !empty($parsed['host'])) {
+            return rtrim($host, '/');
+        }
+
+        $httpHost = isset($_SERVER['HTTP_HOST']) ? (string)$_SERVER['HTTP_HOST'] : '';
+        $scheme = $this->request ? $this->request->getScheme() : 'http';
+
+        if ($httpHost !== '') {
+            return $scheme . '://' . $httpHost;
+        }
+
+        return rtrim((string)$host, '/');
     }
 
     protected function getPickerInjectJs(): string {

@@ -295,6 +295,28 @@ class modelNordicstyl extends cmsModel {
         return $rule && is_array($rule) ? $rule : null;
     }
 
+    public function findRuleByPath(string $path): ?array {
+
+        $path = trim($path);
+        if ($path === '') {
+            return null;
+        }
+
+        $this->resetFilters();
+        $this->filterEqual('path', $path);
+        $this->orderBy('ordering', 'asc');
+        $this->orderBy('id', 'asc');
+
+        $rules = $this->get('nordicstyl_styles');
+        if (!$rules || !is_array($rules)) {
+            return null;
+        }
+
+        $rule = reset($rules);
+
+        return $rule && is_array($rule) ? $rule : null;
+    }
+
     public function addRule(array $rule) {
 
         if (!isset($rule['ordering']) || (int)$rule['ordering'] < 0) {
@@ -423,6 +445,31 @@ class modelNordicstyl extends cmsModel {
                 'details' => $exception->getMessage()
             ];
         }
+    }
+
+    public function saveLiveLayoutState(string $templateName, string $targetUri, array $layoutState, string $sourceTemplate = '', int $userId = 0, string $revisionType = 'live_save'): array {
+
+        $result = $this->publishLayoutState($templateName, $targetUri, $layoutState, $sourceTemplate);
+
+        if (empty($result['ok'])) {
+            return $result;
+        }
+
+        $warnings = [];
+
+        if (!$this->saveLayoutState($templateName, $targetUri, $layoutState)) {
+            $warnings[] = 'не удалось обновить техническое состояние builder-а';
+        }
+
+        if (!$this->createLayoutRevision($templateName, $targetUri, $layoutState, $revisionType, $userId)) {
+            $warnings[] = 'не удалось записать ревизию истории';
+        }
+
+        if ($warnings) {
+            $result['message'] .= ' Предупреждение: ' . implode('; ', $warnings) . '.';
+        }
+
+        return $result;
     }
 
     protected function extractDesktopRows(array $layoutState): array {
@@ -994,6 +1041,20 @@ class modelNordicstyl extends cmsModel {
         $this->db->query("DELETE FROM {#}nordicstyl_layout_state WHERE template = '{$templateSql}'", false, true);
     }
 
+    protected function deleteLayoutRevisionsByTemplate(string $templateName): void {
+
+        if (!$this->ensureLayoutRevisionTableExists()) {
+            return;
+        }
+
+        $templateSql = $this->db->escape(trim($templateName));
+        if ($templateSql === '') {
+            return;
+        }
+
+        $this->db->query("DELETE FROM {#}nordicstyl_layout_revisions WHERE template = '{$templateSql}'", false, true);
+    }
+
     public function resetTemplateToDefault(string $templateName, string $sourceTemplate): array {
 
         $templateName = trim($templateName);
@@ -1045,6 +1106,9 @@ class modelNordicstyl extends cmsModel {
                 $layoutStats['positions'],
                 true
             );
+
+            $this->deleteLayoutStateByTemplate($templateName);
+            $this->deleteLayoutRevisionsByTemplate($templateName);
 
             $this->db->commit();
 
@@ -1255,6 +1319,206 @@ class modelNordicstyl extends cmsModel {
         );
     }
 
+    public function getLayoutRevisionCount(string $templateName, string $targetUri): int {
+
+        if (!$this->ensureLayoutRevisionTableExists()) {
+            return 0;
+        }
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+
+        if ($templateName === '') {
+            return 0;
+        }
+
+        $templateSql = $this->db->escape($templateName);
+        $uriSql = $this->db->escape($targetUri);
+
+        return (int)$this->db->getRowsCount('nordicstyl_layout_revisions', "template = '{$templateSql}' AND target_uri = '{$uriSql}'");
+    }
+
+    public function getLayoutRevisions(string $templateName, string $targetUri, int $limit = 8): array {
+
+        if (!$this->ensureLayoutRevisionTableExists()) {
+            return [];
+        }
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+        $limit = max(1, min(20, $limit));
+
+        if ($templateName === '') {
+            return [];
+        }
+
+        $templateSql = $this->db->escape($templateName);
+        $uriSql = $this->db->escape($targetUri);
+        $sql = "SELECT id, revision_type, user_id, created_at FROM {#}nordicstyl_layout_revisions
+                WHERE template = '{$templateSql}' AND target_uri = '{$uriSql}'
+                ORDER BY id DESC
+                LIMIT {$limit}";
+
+        $res = $this->db->query($sql, false, true);
+        if (!$res) {
+            return [];
+        }
+
+        $rows = $this->db->fetchAll($res);
+        $this->db->freeResult($res);
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    public function restoreLayoutRevision(string $templateName, string $targetUri, int $revisionId, string $sourceTemplate = '', int $userId = 0): array {
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+
+        if ($templateName === '' || $revisionId < 1) {
+            return [
+                'ok' => false,
+                'message' => 'Не указана ревизия для восстановления.'
+            ];
+        }
+
+        $revision = $this->getLayoutRevisionById($templateName, $targetUri, $revisionId);
+        if (!$revision) {
+            return [
+                'ok' => false,
+                'message' => 'Ревизия не найдена.'
+            ];
+        }
+
+        $payload = trim((string)($revision['layout_state'] ?? ''));
+        $layoutState = json_decode($payload, true);
+        if (!is_array($layoutState)) {
+            return [
+                'ok' => false,
+                'message' => 'Ревизия содержит некорректное состояние layout.'
+            ];
+        }
+
+        $currentState = $this->getLayoutState($templateName, $targetUri);
+        if (is_array($currentState)) {
+            $this->createLayoutRevision($templateName, $targetUri, $currentState, 'before_restore', $userId);
+        }
+
+        $result = $this->saveLiveLayoutState($templateName, $targetUri, $layoutState, $sourceTemplate, $userId, 'restore');
+
+        if (!empty($result['ok'])) {
+            $result['message'] = 'Ревизия #' . $revisionId . ' восстановлена и применена на сайт.';
+        }
+
+        return $result;
+    }
+
+    protected function getLayoutRevisionById(string $templateName, string $targetUri, int $revisionId): ?array {
+
+        if (!$this->ensureLayoutRevisionTableExists() || $revisionId < 1) {
+            return null;
+        }
+
+        $templateSql = $this->db->escape(trim($templateName));
+        $uriSql = $this->db->escape($this->normalizeLayoutStateUri($targetUri));
+        if ($templateSql === '') {
+            return null;
+        }
+
+        $row = $this->db->getRow('nordicstyl_layout_revisions', "id = {$revisionId} AND template = '{$templateSql}' AND target_uri = '{$uriSql}'", '*');
+
+        return $row && is_array($row) ? $row : null;
+    }
+
+    protected function createLayoutRevision(string $templateName, string $targetUri, array $layoutState, string $revisionType, int $userId = 0): bool {
+
+        if (!$this->ensureLayoutRevisionTableExists()) {
+            return false;
+        }
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+        $revisionType = trim($revisionType);
+
+        if ($templateName === '' || $revisionType === '') {
+            return false;
+        }
+
+        $payload = json_encode($layoutState, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($payload) || $payload === '') {
+            return false;
+        }
+
+        $templateSql = $this->db->escape($templateName);
+        $uriSql = $this->db->escape($targetUri);
+        $typeSql = $this->db->escape($revisionType);
+        $payloadSql = $this->db->escape($payload);
+        $userId = max(0, $userId);
+
+        $created = (bool)$this->db->query(
+            "INSERT INTO {#}nordicstyl_layout_revisions (template, target_uri, revision_type, user_id, layout_state, created_at)
+             VALUES ('{$templateSql}', '{$uriSql}', '{$typeSql}', {$userId}, '{$payloadSql}', NOW())",
+            false,
+            true
+        );
+
+        if (!$created) {
+            return false;
+        }
+
+        $this->pruneLayoutRevisions($templateName, $targetUri, 50);
+
+        return true;
+    }
+
+    protected function pruneLayoutRevisions(string $templateName, string $targetUri, int $keepLimit): void {
+
+        if ($keepLimit < 1 || !$this->ensureLayoutRevisionTableExists()) {
+            return;
+        }
+
+        $templateSql = $this->db->escape(trim($templateName));
+        $uriSql = $this->db->escape($this->normalizeLayoutStateUri($targetUri));
+
+        if ($templateSql === '') {
+            return;
+        }
+
+        $offset = max(0, $keepLimit - 1);
+        $sql = "SELECT id FROM {#}nordicstyl_layout_revisions
+                WHERE template = '{$templateSql}' AND target_uri = '{$uriSql}'
+                ORDER BY id DESC
+                LIMIT {$offset}, 1000";
+
+        $res = $this->db->query($sql, false, true);
+        if (!$res) {
+            return;
+        }
+
+        $rows = $this->db->fetchAll($res);
+        $this->db->freeResult($res);
+
+        if (!is_array($rows) || !$rows) {
+            return;
+        }
+
+        $deleteIds = [];
+
+        foreach ($rows as $row) {
+            $id = (int)($row['id'] ?? 0);
+            if ($id > 0) {
+                $deleteIds[] = $id;
+            }
+        }
+
+        if (!$deleteIds) {
+            return;
+        }
+
+        $this->resetFilters();
+        $this->filterIn('id', $deleteIds)->deleteFiltered('nordicstyl_layout_revisions');
+    }
+
     protected function ensureLayoutStateTableExists(): bool {
 
         $res = $this->db->query("SHOW TABLES LIKE '{#}nordicstyl_layout_state'", false, true);
@@ -1276,6 +1540,37 @@ class modelNordicstyl extends cmsModel {
                 updated_at datetime NOT NULL,
                 PRIMARY KEY (id),
                 UNIQUE KEY template_uri (template, target_uri)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
+            false,
+            true
+        );
+
+        return $created !== false;
+    }
+
+    protected function ensureLayoutRevisionTableExists(): bool {
+
+        $res = $this->db->query("SHOW TABLES LIKE '{#}nordicstyl_layout_revisions'", false, true);
+        if ($res) {
+            $exists = (int)$this->db->numRows($res) > 0;
+            $this->db->freeResult($res);
+            if ($exists) {
+                return true;
+            }
+        }
+
+        $created = $this->db->query(
+            "CREATE TABLE IF NOT EXISTS {#}nordicstyl_layout_revisions (
+                id int(10) unsigned NOT NULL AUTO_INCREMENT,
+                template varchar(64) NOT NULL,
+                target_uri varchar(191) NOT NULL DEFAULT '/',
+                revision_type varchar(32) NOT NULL DEFAULT 'live_save',
+                user_id int(10) unsigned NOT NULL DEFAULT 0,
+                layout_state mediumtext NOT NULL,
+                created_at datetime NOT NULL,
+                PRIMARY KEY (id),
+                KEY template_uri (template, target_uri),
+                KEY created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
             false,
             true
