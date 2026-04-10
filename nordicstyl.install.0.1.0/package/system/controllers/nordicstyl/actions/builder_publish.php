@@ -22,6 +22,7 @@ class actionNordicstylBuilderPublish extends cmsAction {
 
         $templateName = trim((string)$this->request->get('template', ''));
         $targetUri = trim((string)$this->request->get('uri', '/'));
+        $sourceTemplate = trim((string)$this->request->get('source_template', ''));
         $payload = trim((string)$this->request->get('layout_state', ''));
 
         if ($templateName === '' || $payload === '') {
@@ -47,7 +48,7 @@ class actionNordicstylBuilderPublish extends cmsAction {
             ]);
         }
 
-        $result = $model->publishLayoutState($templateName, $targetUri, $layoutState);
+        $result = $model->publishLayoutState($templateName, $targetUri, $layoutState, $sourceTemplate);
 
         return $this->cms_template->renderJSON([
             'error' => empty($result['ok']),

@@ -38,6 +38,7 @@ class actionNordicstylBuilder extends cmsAction {
                 'picker_url' => href_to_abs('admin', 'controllers', ['edit', 'nordicstyl', 'picker']),
                 'state_url' => href_to_abs('nordicstyl', 'builder_state'),
                 'publish_url' => href_to_abs('nordicstyl', 'builder_publish'),
+                'reset_url' => href_to_abs('nordicstyl', 'builder_reset'),
                 'csrf_token' => cmsForm::getCSRFToken()
             ]
         ], $this->request);
@@ -57,6 +58,7 @@ class actionNordicstylBuilder extends cmsAction {
         $targetUri = $this->resolveTargetUri();
         $currentDevice = $this->resolveDeviceMode();
         $layoutSource = $this->resolveLayoutSourceTemplate($activeTemplate);
+        $defaultSource = $this->resolveDefaultSourceTemplate($activeTemplate, $targetUri);
         $widgetState = $this->getWidgetState($activeTemplate, $layoutSource, $targetUri);
         $pageTitle = $this->detectPageTitle($targetUri);
         $rows = $this->normalizeRows($this->getLayoutRows($layoutSource), $widgetState['items']);
@@ -70,6 +72,7 @@ class actionNordicstylBuilder extends cmsAction {
                 'layout_source' => $layoutSource,
                 'layout_source_label' => $this->buildLayoutSourceLabel($activeTemplate, $layoutSource),
                 'widgets_source' => $widgetState['template'],
+                'default_source' => $defaultSource,
                 'mode' => 'frontend-editor',
                 'uri' => $this->getCurrentUriLabel($targetUri),
                 'device' => $currentDevice,
@@ -338,6 +341,23 @@ class actionNordicstylBuilder extends cmsAction {
         }
 
         return $activeTemplate;
+    }
+
+    protected function resolveDefaultSourceTemplate(string $activeTemplate, string $targetUri): string {
+
+        $templateNames = $this->cms_template->getInheritNames();
+
+        foreach ($templateNames as $templateName) {
+            if (in_array($templateName, ['default', 'admincoreui', $activeTemplate], true)) {
+                continue;
+            }
+
+            if ($this->getLayoutRows($templateName) || $this->getWidgetsByPosition($templateName, $targetUri)) {
+                return $templateName;
+            }
+        }
+
+        return '';
     }
 
     protected function getWidgetState(string $activeTemplate, string $layoutSource, string $targetUri): array {

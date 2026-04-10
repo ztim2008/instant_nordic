@@ -1,6 +1,6 @@
 <?php
 
-class actionNordicstylBuilderPublish extends cmsAction {
+class actionNordicstylBuilderReset extends cmsAction {
 
     public function run() {
 
@@ -21,38 +21,28 @@ class actionNordicstylBuilderPublish extends cmsAction {
         }
 
         $templateName = trim((string)$this->request->get('template', ''));
-        $targetUri = trim((string)$this->request->get('uri', '/'));
         $sourceTemplate = trim((string)$this->request->get('source_template', ''));
-        $payload = trim((string)$this->request->get('layout_state', ''));
 
-        if ($templateName === '' || $payload === '') {
+        if ($templateName === '' || $sourceTemplate === '') {
             return $this->cms_template->renderJSON([
                 'error' => true,
-                'message' => 'Не хватает данных для публикации builder state.'
-            ]);
-        }
-
-        $layoutState = json_decode($payload, true);
-        if (!is_array($layoutState)) {
-            return $this->cms_template->renderJSON([
-                'error' => true,
-                'message' => 'layout_state должен быть валидным JSON.'
+                'message' => 'Не хватает данных для возврата к default-схеме.'
             ]);
         }
 
         $model = cmsCore::getModel('nordicstyl', '_', false);
-        if (!$model || !method_exists($model, 'publishLayoutState')) {
+        if (!$model || !method_exists($model, 'resetTemplateToDefault')) {
             return $this->cms_template->renderJSON([
                 'error' => true,
-                'message' => 'Model nordicstyl недоступна для native publish.'
+                'message' => 'Model nordicstyl недоступна для reset-to-default.'
             ]);
         }
 
-        $result = $model->publishLayoutState($templateName, $targetUri, $layoutState, $sourceTemplate);
+        $result = $model->resetTemplateToDefault($templateName, $sourceTemplate);
 
         return $this->cms_template->renderJSON([
             'error' => empty($result['ok']),
-            'message' => (string)($result['message'] ?? 'Не удалось опубликовать desktop state.'),
+            'message' => (string)($result['message'] ?? 'Не удалось вернуть шаблон к default-схеме.'),
             'rows' => (int)($result['rows'] ?? 0),
             'columns' => (int)($result['columns'] ?? 0),
             'widgets' => (int)($result['widgets'] ?? 0)

@@ -117,9 +117,9 @@
             <ul>
                 <li id="copyright">
                     <a href="<?php echo $this->options['owner_url'] ? $this->options['owner_url'] : href_to_home(); ?>">
-                        <?php html($this->options['owner_name'] ? $this->options['owner_name'] : cmsConfig::get('sitename')); ?></a>
+                        <?php html(($this->options['owner_name'] ?? '') ? $this->options['owner_name'] : cmsConfig::get('sitename')); ?></a>
                     &copy;
-                    <?php echo $this->options['owner_year'] ? $this->options['owner_year'] : date('Y'); ?>
+                    <?php echo ($this->options['owner_year'] ?? '') ? $this->options['owner_year'] : date('Y'); ?>
                 </li>
                 <li id="info">
                     <span class="item">

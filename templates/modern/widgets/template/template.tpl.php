@@ -18,12 +18,15 @@
     </div>
     <?php } } ?>
 <?php } elseif($widget->options['type'] === 'copyright') { ?>
+    <?php $ownerUrl = $this->options['owner_url'] ?? ''; ?>
+    <?php $ownerName = $this->options['owner_name'] ?? ''; ?>
+    <?php $ownerYear = $this->options['owner_year'] ?? ''; ?>
     <div class="d-flex align-items-center text-muted icms-links-inherit-color">
-        <a href="<?php echo $this->options['owner_url'] ? $this->options['owner_url'] : href_to_home(); ?>">
-            <?php html($this->options['owner_name'] ? $this->options['owner_name'] : cmsConfig::get('sitename')); ?>
+        <a href="<?php echo $ownerUrl ? $ownerUrl : href_to_home(); ?>">
+            <?php html($ownerName ? $ownerName : cmsConfig::get('sitename')); ?>
         </a>
         <span class="mx-2">
-            &copy; <?php echo $this->options['owner_year'] ? $this->options['owner_year'] : date('Y'); ?>
+            &copy; <?php echo $ownerYear ? $ownerYear : date('Y'); ?>
         </span>
         <span class="d-none d-sm-block mr-2">
             <?php echo LANG_POWERED_BY_INSTANTCMS; ?>

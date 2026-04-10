@@ -31,8 +31,10 @@
     var deviceButtons = root.querySelectorAll('[data-device-button]');
     var saveStateUrl = String(builderState.state_url || '');
     var publishStateUrl = String(builderState.publish_url || '');
+    var resetStateUrl = String(builderState.reset_url || '');
     var csrfToken = readCSRFToken();
     var publishButton = root.querySelector('[data-builder-publish]');
+    var resetButton = root.querySelector('[data-builder-reset]');
     var deviceLabels = {
         desktop: 'Desktop',
         tablet: 'Tablet',
@@ -366,6 +368,7 @@
         body = serializeRequestBody({
             csrf_token: csrfToken,
             template: page.template || '',
+            source_template: page.default_source || '',
             uri: page.uri || '/',
             layout_state: JSON.stringify(layoutState)
         });
@@ -392,6 +395,58 @@
         }).finally(function () {
             if (publishButton) {
                 publishButton.disabled = false;
+            }
+        });
+    }
+
+    function resetTemplateToDefault() {
+        var body;
+
+        if (!resetStateUrl || !window.fetch || !csrfToken || !page.default_source) {
+            setStatus('Reset-to-default сейчас недоступен.');
+            return;
+        }
+
+        if (!window.confirm('Вернуть шаблон ' + String(page.template || '') + ' к default-схеме ' + String(page.default_source || '') + '? Это заменит native layout и bindings.')) {
+            return;
+        }
+
+        if (resetButton) {
+            resetButton.disabled = true;
+        }
+
+        body = serializeRequestBody({
+            csrf_token: csrfToken,
+            template: page.template || '',
+            source_template: page.default_source || '',
+            uri: page.uri || '/'
+        });
+
+        window.fetch(resetStateUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: body
+        }).then(function (response) {
+            return response.json();
+        }).then(function (response) {
+            if (!response || response.error) {
+                setStatus((response && response.message) ? response.message : 'Не удалось вернуть default-схему.');
+                return;
+            }
+
+            setStatus((response.message || 'Default-схема восстановлена.') + ' Рядов: ' + String(response.rows || 0) + ', колонок: ' + String(response.columns || 0) + ', виджетов: ' + String(response.widgets || 0) + '.');
+            window.setTimeout(function () {
+                window.location.reload();
+            }, 500);
+        }).catch(function () {
+            setStatus('Reset-to-default сейчас недоступен.');
+        }).finally(function () {
+            if (resetButton) {
+                resetButton.disabled = false;
             }
         });
     }
@@ -796,6 +851,11 @@
                 return row;
             });
         }
+
+        if (type === 'widget') {
+            node.bind_id = 0;
+            node.binding_page_id = 0;
+        }
     }
 
     function duplicateNode(uid) {
@@ -1021,6 +1081,12 @@
         if (publishButton && event.target.closest('[data-builder-publish]')) {
             event.preventDefault();
             publishDesktopLayout();
+            return;
+        }
+
+        if (resetButton && event.target.closest('[data-builder-reset]')) {
+            event.preventDefault();
+            resetTemplateToDefault();
             return;
         }
 

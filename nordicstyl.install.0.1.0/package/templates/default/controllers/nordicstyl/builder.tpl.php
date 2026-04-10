@@ -143,6 +143,9 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
 
         <div class="nb-builder__topbar-actions">
             <button class="nb-builder__link" type="button" data-builder-publish title="Опубликовать Desktop в native layout">Publish</button>
+            <?php if (!empty($builder_state['page']['default_source']) && $builder_state['page']['default_source'] !== ($builder_state['page']['template'] ?? '')) { ?>
+                <button class="nb-builder__link" type="button" data-builder-reset title="Вернуть шаблон к default-схеме <?php html((string)$builder_state['page']['default_source']); ?>">Default</button>
+            <?php } ?>
             <a class="nb-builder__link" href="<?php html($rules_url); ?>" title="Правила CSS">CSS</a>
             <a class="nb-builder__link" href="<?php html($picker_url); ?>" title="Пикер элементов">Pick</a>
         </div>

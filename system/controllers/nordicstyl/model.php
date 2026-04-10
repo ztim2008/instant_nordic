@@ -333,7 +333,7 @@ class modelNordicstyl extends cmsModel {
         return (int)$this->getMaxOrdering('nordicstyl_styles');
     }
 
-    public function publishLayoutState(string $templateName, string $targetUri, array $layoutState): array {
+    public function publishLayoutState(string $templateName, string $targetUri, array $layoutState, string $sourceTemplate = ''): array {
 
         $templateName = trim($templateName);
         $targetUri = $this->normalizeLayoutStateUri($targetUri);
@@ -390,6 +390,12 @@ class modelNordicstyl extends cmsModel {
 
             $this->insertPublishedRows($desktopRows, $templateName, null, $publishContext);
             $bindingsStats = $this->publishHomepageBindings($backendWidgetsModel, $templateName, $desktopRows, $publishContext['column_positions']);
+            $inheritedBindings = $this->syncInheritedTemplateBindings(
+                $backendWidgetsModel,
+                $templateName,
+                $sourceTemplate,
+                array_values($publishContext['column_positions'])
+            );
 
             $this->db->commit();
 
@@ -402,7 +408,7 @@ class modelNordicstyl extends cmsModel {
                 'message' => 'Desktop-схема опубликована в native layout для шаблона ' . $templateName . '.',
                 'rows' => $publishContext['published_rows'],
                 'columns' => $publishContext['published_columns'],
-                'widgets' => $bindingsStats['widgets']
+                'widgets' => $bindingsStats['widgets'] + $inheritedBindings
             ];
         } catch (Throwable $exception) {
             $this->db->rollback();
@@ -642,6 +648,326 @@ class modelNordicstyl extends cmsModel {
         }
 
         return ['widgets' => $publishedWidgets];
+    }
+
+    protected function syncInheritedTemplateBindings(modelBackendWidgets $backendWidgetsModel, string $templateName, string $sourceTemplate, array $allowedPositions): int {
+
+        $sourceTemplate = trim($sourceTemplate);
+        $allowedPositions = array_values(array_unique(array_filter(array_map('strval', $allowedPositions))));
+
+        if ($sourceTemplate === '' || $sourceTemplate === $templateName || !$allowedPositions) {
+            return 0;
+        }
+
+        $this->clearTemplateBindings($backendWidgetsModel, $templateName, function (array $bindingPage): bool {
+            return (int)($bindingPage['page_id'] ?? 0) !== 1;
+        });
+
+        return $this->copyTemplateBindingsFromSource($backendWidgetsModel, $sourceTemplate, $templateName, $allowedPositions, false);
+    }
+
+    protected function clearTemplateBindings(modelBackendWidgets $backendWidgetsModel, string $templateName, ?callable $shouldDelete = null): array {
+
+        $this->resetFilters();
+        $existingBindings = $this->filterEqual('template', $templateName)->get('widgets_bind_pages', false) ?: [];
+
+        $bindIds = [];
+        $deleted = 0;
+
+        foreach ($existingBindings as $bindingPage) {
+            if ($shouldDelete && !$shouldDelete($bindingPage)) {
+                continue;
+            }
+
+            $bindingPageId = (int)($bindingPage['id'] ?? 0);
+            if ($bindingPageId < 1) {
+                continue;
+            }
+
+            $bindId = (int)($bindingPage['bind_id'] ?? 0);
+            if ($bindId > 0) {
+                $bindIds[$bindId] = $bindId;
+            }
+
+            $backendWidgetsModel->deleteWidgetPageBind($bindingPageId);
+            $deleted++;
+        }
+
+        foreach ($bindIds as $bindId) {
+            $this->resetFilters();
+            $bindPagesCount = (int)$this->filterEqual('bind_id', $bindId)->getCount('widgets_bind_pages', 'id', true);
+            if ($bindPagesCount < 1) {
+                $this->delete('widgets_bind', $bindId);
+            }
+        }
+
+        return [
+            'bindings' => $deleted,
+            'bind_ids' => array_values($bindIds)
+        ];
+    }
+
+    protected function copyTemplateBindingsFromSource(modelBackendWidgets $backendWidgetsModel, string $sourceTemplate, string $targetTemplate, array $allowedPositions, bool $includeHomepage): int {
+
+        $allowedPositions = array_values(array_unique(array_filter(array_map('strval', $allowedPositions))));
+        if (!$allowedPositions) {
+            return 0;
+        }
+
+        $this->resetFilters();
+        $sourceBindings = $this->filterEqual('template', $sourceTemplate)->get('widgets_bind_pages', false) ?: [];
+
+        usort($sourceBindings, function (array $left, array $right): int {
+            $leftPageId = (int)($left['page_id'] ?? 0);
+            $rightPageId = (int)($right['page_id'] ?? 0);
+            if ($leftPageId !== $rightPageId) {
+                return $leftPageId <=> $rightPageId;
+            }
+
+            $leftOrdering = (int)($left['ordering'] ?? 0);
+            $rightOrdering = (int)($right['ordering'] ?? 0);
+
+            return $leftOrdering <=> $rightOrdering;
+        });
+
+        $copied = 0;
+
+        foreach ($sourceBindings as $bindingPage) {
+            $pageId = (int)($bindingPage['page_id'] ?? 0);
+            $position = trim((string)($bindingPage['position'] ?? ''));
+            $bindId = (int)($bindingPage['bind_id'] ?? 0);
+
+            if (!$includeHomepage && $pageId === 1) {
+                continue;
+            }
+
+            if ($position === '' || !in_array($position, $allowedPositions, true)) {
+                continue;
+            }
+
+            if ($bindId < 1 || !$this->bindingExists($bindId)) {
+                continue;
+            }
+
+            $backendWidgetsModel->addWidgetBindPage(
+                $bindId,
+                $pageId,
+                $position,
+                $targetTemplate,
+                isset($bindingPage['ordering']) ? (int)$bindingPage['ordering'] : null,
+                (int)($bindingPage['is_enabled'] ?? 1)
+            );
+            $copied++;
+        }
+
+        return $copied;
+    }
+
+    protected function copyTemplateLayoutFromSource(string $sourceTemplate, string $targetTemplate): array {
+
+        $this->resetFilters();
+        $sourceRows = $this->filterEqual('template', $sourceTemplate)->get('layout_rows', false) ?: [];
+        if (!$sourceRows) {
+            return ['rows' => 0, 'columns' => 0, 'positions' => []];
+        }
+
+        $sourceRowIds = [];
+        foreach ($sourceRows as $row) {
+            $rowId = (int)($row['id'] ?? 0);
+            if ($rowId > 0) {
+                $sourceRowIds[] = $rowId;
+            }
+        }
+
+        $this->resetFilters();
+        $sourceCols = $sourceRowIds ? ($this->filterIn('row_id', $sourceRowIds)->get('layout_cols', false) ?: []) : [];
+
+        $rowsByParentColumn = [];
+        foreach ($sourceRows as $row) {
+            $parentColumnId = (int)($row['parent_id'] ?? 0);
+            $rowsByParentColumn[$parentColumnId][] = $row;
+        }
+
+        foreach ($rowsByParentColumn as &$rowsGroup) {
+            usort($rowsGroup, function (array $left, array $right): int {
+                $leftOrdering = (int)($left['ordering'] ?? 0);
+                $rightOrdering = (int)($right['ordering'] ?? 0);
+                if ($leftOrdering !== $rightOrdering) {
+                    return $leftOrdering <=> $rightOrdering;
+                }
+
+                return (int)($left['id'] ?? 0) <=> (int)($right['id'] ?? 0);
+            });
+        }
+        unset($rowsGroup);
+
+        $colsByRowId = [];
+        foreach ($sourceCols as $column) {
+            $rowId = (int)($column['row_id'] ?? 0);
+            $colsByRowId[$rowId][] = $column;
+        }
+
+        foreach ($colsByRowId as &$columnsGroup) {
+            usort($columnsGroup, function (array $left, array $right): int {
+                $leftOrdering = (int)($left['ordering'] ?? 0);
+                $rightOrdering = (int)($right['ordering'] ?? 0);
+                if ($leftOrdering !== $rightOrdering) {
+                    return $leftOrdering <=> $rightOrdering;
+                }
+
+                return (int)($left['id'] ?? 0) <=> (int)($right['id'] ?? 0);
+            });
+        }
+        unset($columnsGroup);
+
+        $copiedRows = 0;
+        $copiedColumns = 0;
+        $positions = [];
+        $newColumnIds = [];
+
+        $copyRows = function (int $sourceParentColumnId, ?int $targetParentColumnId) use (&$copyRows, &$copiedRows, &$copiedColumns, &$positions, &$newColumnIds, $rowsByParentColumn, $colsByRowId, $targetTemplate) {
+            $rows = $rowsByParentColumn[$sourceParentColumnId] ?? [];
+
+            foreach ($rows as $row) {
+                $sourceRowId = (int)($row['id'] ?? 0);
+                $rowData = $row;
+                unset($rowData['id']);
+                $rowData['template'] = $targetTemplate;
+                $rowData['parent_id'] = $targetParentColumnId;
+                if (!$targetParentColumnId) {
+                    $rowData['nested_position'] = null;
+                }
+
+                $newRowId = $this->insert('layout_rows', $rowData, true);
+                $copiedRows++;
+
+                $columns = $colsByRowId[$sourceRowId] ?? [];
+                foreach ($columns as $column) {
+                    $sourceColumnId = (int)($column['id'] ?? 0);
+                    $columnData = $column;
+                    unset($columnData['id']);
+                    $columnData['row_id'] = $newRowId;
+
+                    $newColumnId = $this->insert('layout_cols', $columnData, true);
+                    $newColumnIds[$sourceColumnId] = $newColumnId;
+                    $positions[] = trim((string)($column['name'] ?? ''));
+                    $copiedColumns++;
+                }
+
+                foreach ($columns as $column) {
+                    $sourceColumnId = (int)($column['id'] ?? 0);
+                    if (!isset($rowsByParentColumn[$sourceColumnId])) {
+                        continue;
+                    }
+
+                    $copyRows($sourceColumnId, (int)($newColumnIds[$sourceColumnId] ?? 0));
+                }
+            }
+        };
+
+        $copyRows(0, null);
+
+        return [
+            'rows' => $copiedRows,
+            'columns' => $copiedColumns,
+            'positions' => array_values(array_unique(array_filter($positions)))
+        ];
+    }
+
+    protected function deleteLayoutStateByTemplate(string $templateName): void {
+
+        if (!$this->ensureLayoutStateTableExists()) {
+            return;
+        }
+
+        $templateSql = $this->db->escape(trim($templateName));
+        if ($templateSql === '') {
+            return;
+        }
+
+        $this->db->query("DELETE FROM {#}nordicstyl_layout_state WHERE template = '{$templateSql}'", false, true);
+    }
+
+    public function resetTemplateToDefault(string $templateName, string $sourceTemplate): array {
+
+        $templateName = trim($templateName);
+        $sourceTemplate = trim($sourceTemplate);
+
+        if ($templateName === '' || $sourceTemplate === '') {
+            return [
+                'ok' => false,
+                'message' => 'Не указан шаблон для reset-to-default.'
+            ];
+        }
+
+        if ($templateName === $sourceTemplate) {
+            return [
+                'ok' => false,
+                'message' => 'Текущий шаблон уже является default source.'
+            ];
+        }
+
+        $backendWidgetsModel = cmsCore::getModel('backend_widgets', '_', false);
+        if (!$backendWidgetsModel) {
+            return [
+                'ok' => false,
+                'message' => 'Model backend_widgets недоступна для reset-to-default.'
+            ];
+        }
+
+        $autocommitWasEnabled = $this->db->isAutocommitOn();
+
+        try {
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOff();
+            }
+
+            $this->db->beginTransaction();
+
+            $this->clearTemplateBindings($backendWidgetsModel, $templateName);
+            $this->deleteTemplateLayout($templateName);
+
+            $layoutStats = $this->copyTemplateLayoutFromSource($sourceTemplate, $templateName);
+            if ((int)$layoutStats['rows'] < 1) {
+                throw new RuntimeException('Не удалось скопировать default layout из шаблона ' . $sourceTemplate . '.');
+            }
+
+            $bindingsCount = $this->copyTemplateBindingsFromSource(
+                $backendWidgetsModel,
+                $sourceTemplate,
+                $templateName,
+                $layoutStats['positions'],
+                true
+            );
+
+            $this->deleteLayoutStateByTemplate($templateName);
+
+            $this->db->commit();
+
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOn();
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Шаблон ' . $templateName . ' возвращен к default-схеме из ' . $sourceTemplate . '.',
+                'rows' => (int)$layoutStats['rows'],
+                'columns' => (int)$layoutStats['columns'],
+                'widgets' => $bindingsCount
+            ];
+        } catch (Throwable $exception) {
+            $this->db->rollback();
+
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOn();
+            }
+
+            return [
+                'ok' => false,
+                'message' => 'Не удалось вернуть шаблон к default-схеме.',
+                'details' => $exception->getMessage()
+            ];
+        }
     }
 
     protected function bindingExists(int $bindId): bool {
