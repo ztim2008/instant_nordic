@@ -71,7 +71,7 @@ class actionNordicstylPicker extends cmsAction {
 
         $rulesUrl = href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'rules']);
 
-        $mapItems = $this->model->searchSelectorMap($mapQ, 200, $mapSource);
+        $mapItems = $this->model->searchSelectorMap($mapSource, $mapQ, 200);
 
         return $this->cms_template->render('backend/picker', [
             'menu' => $this->controller->getBackendMenu(),

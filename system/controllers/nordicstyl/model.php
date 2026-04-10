@@ -76,7 +76,7 @@ class modelNordicstyl extends cmsModel {
         ];
     }
 
-    public function searchSelectorMap(string $query = '', int $limit = 200, string $source): array {
+    public function searchSelectorMap(string $source, string $query = '', int $limit = 200): array {
 
         if (!$this->selectorMapTableExists()) {
             return [];
@@ -331,5 +331,537 @@ class modelNordicstyl extends cmsModel {
 
     public function getMaxRuleOrdering(): int {
         return (int)$this->getMaxOrdering('nordicstyl_styles');
+    }
+
+    public function publishLayoutState(string $templateName, string $targetUri, array $layoutState): array {
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+
+        if ($templateName === '') {
+            return [
+                'ok' => false,
+                'message' => 'Не указан шаблон для публикации.'
+            ];
+        }
+
+        if ($targetUri !== '/') {
+            return [
+                'ok' => false,
+                'message' => 'Публикация native layout пока доступна только для главной страницы.'
+            ];
+        }
+
+        $desktopRows = $this->extractDesktopRows($layoutState);
+        if (!$desktopRows) {
+            return [
+                'ok' => false,
+                'message' => 'В desktop state нет рядов для публикации.'
+            ];
+        }
+
+        $backendWidgetsModel = cmsCore::getModel('backend_widgets', '_', false);
+        if (!$backendWidgetsModel) {
+            return [
+                'ok' => false,
+                'message' => 'Model backend_widgets недоступна для публикации.'
+            ];
+        }
+
+        $autocommitWasEnabled = $this->db->isAutocommitOn();
+
+        try {
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOff();
+            }
+
+            $this->db->beginTransaction();
+
+            $preservedBindIds = $this->collectReferencedBindIds($desktopRows);
+            $this->cleanupTemplatePageBindings($templateName, 1, $preservedBindIds);
+            $this->deleteTemplateLayout($templateName);
+
+            $publishContext = [
+                'used_positions' => [],
+                'column_positions' => [],
+                'published_rows' => 0,
+                'published_columns' => 0
+            ];
+
+            $this->insertPublishedRows($desktopRows, $templateName, null, $publishContext);
+            $bindingsStats = $this->publishHomepageBindings($backendWidgetsModel, $templateName, $desktopRows, $publishContext['column_positions']);
+
+            $this->db->commit();
+
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOn();
+            }
+
+            return [
+                'ok' => true,
+                'message' => 'Desktop-схема опубликована в native layout для шаблона ' . $templateName . '.',
+                'rows' => $publishContext['published_rows'],
+                'columns' => $publishContext['published_columns'],
+                'widgets' => $bindingsStats['widgets']
+            ];
+        } catch (Throwable $exception) {
+            $this->db->rollback();
+
+            if ($autocommitWasEnabled) {
+                $this->db->autocommitOn();
+            }
+
+            return [
+                'ok' => false,
+                'message' => 'Не удалось опубликовать desktop-схему в native layout.',
+                'details' => $exception->getMessage()
+            ];
+        }
+    }
+
+    protected function extractDesktopRows(array $layoutState): array {
+
+        $rows = $layoutState['desktop']['rows'] ?? [];
+
+        return is_array($rows) ? $rows : [];
+    }
+
+    protected function collectReferencedBindIds(array $rows): array {
+
+        $bindIds = [];
+
+        foreach ($rows as $row) {
+            if (!empty($row['hidden'])) {
+                continue;
+            }
+
+            $columns = is_array($row['columns'] ?? null) ? $row['columns'] : [];
+            foreach ($columns as $column) {
+                if (!empty($column['hidden'])) {
+                    continue;
+                }
+
+                $widgets = is_array($column['widgets'] ?? null) ? $column['widgets'] : [];
+                foreach ($widgets as $widget) {
+                    if (!empty($widget['hidden'])) {
+                        continue;
+                    }
+
+                    $bindId = (int)($widget['bind_id'] ?? 0);
+                    if ($bindId > 0) {
+                        $bindIds[$bindId] = $bindId;
+                    }
+                }
+
+                $nestedRows = is_array($column['nested_rows'] ?? null) ? $column['nested_rows'] : [];
+                foreach ($this->collectReferencedBindIds($nestedRows) as $bindId) {
+                    $bindIds[$bindId] = $bindId;
+                }
+            }
+        }
+
+        return array_values($bindIds);
+    }
+
+    protected function cleanupTemplatePageBindings(string $templateName, int $pageId, array $preservedBindIds): void {
+
+        $this->resetFilters();
+        $existingBindings = $this->filterEqual('template', $templateName)->filterEqual('page_id', $pageId)->get('widgets_bind_pages', false) ?: [];
+
+        $bindIds = [];
+        foreach ($existingBindings as $bindingPage) {
+            $bindId = (int)($bindingPage['bind_id'] ?? 0);
+            if ($bindId > 0) {
+                $bindIds[$bindId] = $bindId;
+            }
+        }
+
+        $this->resetFilters();
+        $this->filterEqual('template', $templateName)->filterEqual('page_id', $pageId)->deleteFiltered('widgets_bind_pages');
+
+        foreach ($bindIds as $bindId) {
+            if (in_array($bindId, $preservedBindIds, true)) {
+                continue;
+            }
+
+            $this->resetFilters();
+            $bindPagesCount = (int)$this->filterEqual('bind_id', $bindId)->getCount('widgets_bind_pages', 'id', true);
+            if ($bindPagesCount < 1) {
+                $this->delete('widgets_bind', $bindId);
+            }
+        }
+    }
+
+    protected function deleteTemplateLayout(string $templateName): void {
+
+        $this->resetFilters();
+        $rows = $this->filterEqual('template', $templateName)->get('layout_rows', false) ?: [];
+
+        $rowIds = [];
+        foreach ($rows as $row) {
+            $rowId = (int)($row['id'] ?? 0);
+            if ($rowId > 0) {
+                $rowIds[] = $rowId;
+            }
+        }
+
+        if ($rowIds) {
+            $this->resetFilters();
+            $this->filterIn('row_id', $rowIds)->deleteFiltered('layout_cols');
+        }
+
+        $this->resetFilters();
+        $this->filterEqual('template', $templateName)->deleteFiltered('layout_rows');
+    }
+
+    protected function insertPublishedRows(array $rows, string $templateName, ?int $parentColumnId, array &$publishContext): void {
+
+        $ordering = 1;
+
+        foreach ($rows as $row) {
+            if (!is_array($row) || !empty($row['hidden'])) {
+                continue;
+            }
+
+            $rowMeta = is_array($row['meta'] ?? null) ? $row['meta'] : [];
+            $rowOptions = is_array($rowMeta['options'] ?? null) ? $rowMeta['options'] : $this->getDefaultPublishedRowOptions();
+            $rowData = [
+                'parent_id' => $parentColumnId,
+                'title' => trim((string)($row['title'] ?? 'Ряд')),
+                'tag' => trim((string)($rowMeta['tag'] ?? 'div')) ?: 'div',
+                'template' => $templateName,
+                'ordering' => $ordering,
+                'nested_position' => $parentColumnId ? $this->normalizeNestedPosition((string)($rowMeta['nested_position'] ?? 'after')) : null,
+                'class' => $this->normalizeNullableString($rowMeta['class'] ?? null),
+                'options' => cmsModel::arrayToString($this->applyWidthModeToRowOptions($rowOptions, (string)($row['width_mode'] ?? 'grid')))
+            ];
+
+            $rowId = $this->insert('layout_rows', $rowData, true);
+            $publishContext['published_rows']++;
+
+            $columns = is_array($row['columns'] ?? null) ? $row['columns'] : [];
+            $columnOrdering = 1;
+
+            foreach ($columns as $column) {
+                if (!is_array($column) || !empty($column['hidden'])) {
+                    continue;
+                }
+
+                $columnMeta = is_array($column['meta'] ?? null) ? $column['meta'] : [];
+                $positionName = $this->generatePublishedPositionName($column, $publishContext['used_positions']);
+                $columnOptions = is_array($columnMeta['options'] ?? null) ? $columnMeta['options'] : $this->getDefaultPublishedColumnOptions();
+                $columnData = [
+                    'row_id' => $rowId,
+                    'title' => trim((string)($column['title'] ?? 'Колонка')),
+                    'name' => $positionName,
+                    'type' => $this->normalizeColumnType((string)($columnMeta['type'] ?? 'typical')),
+                    'ordering' => $columnOrdering,
+                    'tag' => trim((string)($columnMeta['tag'] ?? 'div')) ?: 'div',
+                    'class' => $this->normalizeNullableString($columnMeta['class'] ?? null),
+                    'wrapper' => $this->normalizeNullableString($columnMeta['wrapper'] ?? null),
+                    'options' => cmsModel::arrayToString($this->applyWidthToColumnOptions($columnOptions, (int)($column['width'] ?? 12)))
+                ];
+
+                $columnId = $this->insert('layout_cols', $columnData, true);
+                $publishContext['column_positions'][(string)($column['uid'] ?? '')] = $positionName;
+                $publishContext['published_columns']++;
+
+                $nestedRows = is_array($column['nested_rows'] ?? null) ? $column['nested_rows'] : [];
+                if ($nestedRows) {
+                    $this->insertPublishedRows($nestedRows, $templateName, (int)$columnId, $publishContext);
+                }
+
+                $columnOrdering++;
+            }
+
+            $ordering++;
+        }
+    }
+
+    protected function publishHomepageBindings(modelBackendWidgets $backendWidgetsModel, string $templateName, array $rows, array $columnPositions): array {
+
+        $publishedWidgets = 0;
+
+        foreach ($rows as $row) {
+            if (!is_array($row) || !empty($row['hidden'])) {
+                continue;
+            }
+
+            $columns = is_array($row['columns'] ?? null) ? $row['columns'] : [];
+            foreach ($columns as $column) {
+                if (!is_array($column) || !empty($column['hidden'])) {
+                    continue;
+                }
+
+                $columnUid = (string)($column['uid'] ?? '');
+                $positionName = $columnPositions[$columnUid] ?? '';
+                if ($positionName === '') {
+                    continue;
+                }
+
+                $widgets = is_array($column['widgets'] ?? null) ? $column['widgets'] : [];
+                foreach ($widgets as $widget) {
+                    if (!is_array($widget) || !empty($widget['hidden'])) {
+                        continue;
+                    }
+
+                    $bindId = (int)($widget['bind_id'] ?? 0);
+                    if ($bindId > 0 && $this->bindingExists($bindId)) {
+                        $backendWidgetsModel->addWidgetBindPage($bindId, 1, $positionName, $templateName, null, 1);
+                        $publishedWidgets++;
+                        continue;
+                    }
+
+                    $widgetId = (int)($widget['widget_id'] ?? 0);
+                    if ($widgetId < 1) {
+                        $widgetId = $this->getWidgetDefinitionId((string)($widget['widget_controller'] ?? ''), (string)($widget['widget_name'] ?? ''));
+                    }
+
+                    if ($widgetId < 1) {
+                        throw new RuntimeException('Не найден widget_id для виджета «' . trim((string)($widget['title'] ?? 'Виджет')) . '».');
+                    }
+
+                    $created = $backendWidgetsModel->addWidgetBinding([
+                        'id' => $widgetId,
+                        'title' => trim((string)($widget['title'] ?? 'Виджет')) ?: 'Виджет'
+                    ], 1, $positionName, $templateName);
+
+                    if (!$created || empty($created['id'])) {
+                        throw new RuntimeException('Не удалось создать native binding для виджета «' . trim((string)($widget['title'] ?? 'Виджет')) . '».');
+                    }
+
+                    $publishedWidgets++;
+                }
+
+                $nestedRows = is_array($column['nested_rows'] ?? null) ? $column['nested_rows'] : [];
+                if ($nestedRows) {
+                    $nestedStats = $this->publishHomepageBindings($backendWidgetsModel, $templateName, $nestedRows, $columnPositions);
+                    $publishedWidgets += (int)($nestedStats['widgets'] ?? 0);
+                }
+            }
+        }
+
+        return ['widgets' => $publishedWidgets];
+    }
+
+    protected function bindingExists(int $bindId): bool {
+
+        if ($bindId <= 0) {
+            return false;
+        }
+
+        return (bool)$this->getItemById('widgets_bind', $bindId);
+    }
+
+    protected function getWidgetDefinitionId(string $controller, string $widgetName): int {
+
+        $controllerSql = $this->db->escape(trim($controller));
+        $nameSql = $this->db->escape(trim($widgetName));
+
+        if ($nameSql === '') {
+            return 0;
+        }
+
+        $row = $this->db->getRow('widgets', "controller = '{$controllerSql}' AND name = '{$nameSql}'", 'id');
+
+        return (int)($row['id'] ?? 0);
+    }
+
+    protected function applyWidthModeToRowOptions(array $options, string $widthMode): array {
+
+        $options = $options ?: $this->getDefaultPublishedRowOptions();
+        $widthMode = $widthMode === 'full' ? 'full' : 'grid';
+
+        $options['container'] = $widthMode === 'full' ? '' : 'container';
+        $options['container_tag'] = $options['container_tag'] ?? 'div';
+        $options['container_tag_class'] = $options['container_tag_class'] ?? '';
+        $options['parrent_tag'] = $options['parrent_tag'] ?? '';
+        $options['parrent_tag_class'] = $options['parrent_tag_class'] ?? '';
+
+        return $options;
+    }
+
+    protected function applyWidthToColumnOptions(array $options, int $width): array {
+
+        $options = $options ?: $this->getDefaultPublishedColumnOptions();
+        $width = max(2, min(12, $width));
+
+        $options['default_col_class'] = 'col-12';
+        $options['lg_col_class'] = 'col-lg-' . $width;
+        $options['md_col_class'] = $options['md_col_class'] ?? '';
+        $options['xl_col_class'] = $options['xl_col_class'] ?? '';
+        $options['col_class'] = $options['col_class'] ?? '';
+
+        return $options;
+    }
+
+    protected function generatePublishedPositionName(array $column, array &$usedPositionNames): string {
+
+        $meta = is_array($column['meta'] ?? null) ? $column['meta'] : [];
+        $candidate = trim((string)($meta['position_name'] ?? ''));
+        $candidate = strtolower(preg_replace('/[^a-z0-9_]+/i', '_', $candidate));
+        $candidate = trim($candidate, '_');
+
+        if ($candidate === '') {
+            $candidate = 'pos_' . substr(md5((string)($column['uid'] ?? microtime(true))), 0, 10);
+        }
+
+        $positionName = $candidate;
+        $suffix = 2;
+
+        while (isset($usedPositionNames[$positionName])) {
+            $positionName = $candidate . '_' . $suffix;
+            $suffix++;
+        }
+
+        $usedPositionNames[$positionName] = true;
+
+        return substr($positionName, 0, 32);
+    }
+
+    protected function normalizeNestedPosition(string $nestedPosition): string {
+
+        return $nestedPosition === 'before' ? 'before' : 'after';
+    }
+
+    protected function normalizeColumnType(string $columnType): string {
+
+        return $columnType === 'custom' ? 'custom' : 'typical';
+    }
+
+    protected function normalizeNullableString($value): ?string {
+
+        $value = trim((string)$value);
+
+        return $value === '' ? null : $value;
+    }
+
+    protected function getDefaultPublishedRowOptions(): array {
+
+        return [
+            'no_gutters' => null,
+            'vertical_align' => '',
+            'horizontal_align' => '',
+            'container' => 'container',
+            'container_tag' => 'div',
+            'container_tag_class' => '',
+            'parrent_tag' => '',
+            'parrent_tag_class' => ''
+        ];
+    }
+
+    protected function getDefaultPublishedColumnOptions(): array {
+
+        return [
+            'cut_before' => null,
+            'default_col_class' => 'col-12',
+            'md_col_class' => '',
+            'lg_col_class' => 'col-lg-12',
+            'xl_col_class' => '',
+            'col_class' => '',
+            'default_order' => 0,
+            'sm_order' => 0,
+            'md_order' => 0,
+            'lg_order' => 0,
+            'xl_order' => 0
+        ];
+    }
+
+    public function getLayoutState(string $templateName, string $targetUri): ?array {
+
+        if (!$this->ensureLayoutStateTableExists()) {
+            return null;
+        }
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+
+        if ($templateName === '') {
+            return null;
+        }
+
+        $templateSql = $this->db->escape($templateName);
+        $uriSql = $this->db->escape($targetUri);
+        $row = $this->db->getRow('nordicstyl_layout_state', "template = '{$templateSql}' AND target_uri = '{$uriSql}'", 'layout_state');
+        $payload = trim((string)($row['layout_state'] ?? ''));
+
+        if ($payload === '') {
+            return null;
+        }
+
+        $decoded = json_decode($payload, true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
+    public function saveLayoutState(string $templateName, string $targetUri, array $layoutState): bool {
+
+        if (!$this->ensureLayoutStateTableExists()) {
+            return false;
+        }
+
+        $templateName = trim($templateName);
+        $targetUri = $this->normalizeLayoutStateUri($targetUri);
+
+        if ($templateName === '') {
+            return false;
+        }
+
+        $payload = json_encode($layoutState, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($payload) || $payload === '') {
+            return false;
+        }
+
+        $templateSql = $this->db->escape($templateName);
+        $uriSql = $this->db->escape($targetUri);
+        $payloadSql = $this->db->escape($payload);
+
+        return (bool)$this->db->query(
+            "INSERT INTO {#}nordicstyl_layout_state (template, target_uri, layout_state, created_at, updated_at)
+             VALUES ('{$templateSql}', '{$uriSql}', '{$payloadSql}', NOW(), NOW())
+             ON DUPLICATE KEY UPDATE layout_state = VALUES(layout_state), updated_at = VALUES(updated_at)",
+            false,
+            true
+        );
+    }
+
+    protected function ensureLayoutStateTableExists(): bool {
+
+        $res = $this->db->query("SHOW TABLES LIKE '{#}nordicstyl_layout_state'", false, true);
+        if ($res) {
+            $exists = (int)$this->db->numRows($res) > 0;
+            $this->db->freeResult($res);
+            if ($exists) {
+                return true;
+            }
+        }
+
+        $created = $this->db->query(
+            "CREATE TABLE IF NOT EXISTS {#}nordicstyl_layout_state (
+                id int(10) unsigned NOT NULL AUTO_INCREMENT,
+                template varchar(64) NOT NULL,
+                target_uri varchar(191) NOT NULL DEFAULT '/',
+                layout_state mediumtext NOT NULL,
+                created_at datetime NOT NULL,
+                updated_at datetime NOT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY template_uri (template, target_uri)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8",
+            false,
+            true
+        );
+
+        return $created !== false;
+    }
+
+    protected function normalizeLayoutStateUri(string $targetUri): string {
+
+        $targetUri = trim($targetUri);
+
+        if ($targetUri === '' || $targetUri === '/') {
+            return '/';
+        }
+
+        return '/' . ltrim($targetUri, '/');
     }
 }

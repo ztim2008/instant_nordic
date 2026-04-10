@@ -78,6 +78,13 @@ try {
     $lb_takeover_active = false;
     $lb_takeover_html = '';
 }
+
+$is_nordicstyl_builder_page =
+    isset($this->controller) &&
+    $this->controller instanceof cmsController &&
+    $this->controller->name === 'nordicstyl' &&
+    $this->controller->current_action === 'builder' &&
+    $this->isBody();
 ?>
 <!DOCTYPE html>
 <html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
@@ -119,7 +126,9 @@ try {
     <?php } ?>
     </head>
     <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>" class="d-flex flex-column min-vh-100<?php if(!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
-		<?php if ($lb_takeover_active) { ?>
+        <?php if ($is_nordicstyl_builder_page) { ?>
+            <?php $this->body(); ?>
+        <?php } elseif ($lb_takeover_active) { ?>
 			<?php echo $lb_takeover_html; ?>
 		<?php } else { ?>
 			<?php $this->renderLayoutChild('scheme', ['rows' => $rows]); ?>

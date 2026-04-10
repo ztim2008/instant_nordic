@@ -9,6 +9,13 @@ class backendNordicstyl extends cmsBackend {
     public function getBackendMenu() {
         return [
             [
+                'title' => 'Builder',
+                'url'   => href_to_abs($this->name, 'builder'),
+                'options' => [
+                    'icon' => 'columns'
+                ]
+            ],
+            [
                 'title' => 'Правила',
                 'url'   => href_to_abs('admin', 'controllers', ['edit', $this->name, 'rules']),
                 'options' => [

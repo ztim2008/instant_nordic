@@ -2,6 +2,9 @@
 
 class actionNordicstylRules extends cmsAction {
 
+    protected const RULE_DEVICES = ['base', 'mobile', 'tablet', 'desktop'];
+    protected const RULE_STATES = ['default', 'hover', 'active', 'focus', 'focus-visible', 'visited', 'before', 'after'];
+
     public function run() {
 
         $baseUrl = href_to_abs('admin', 'controllers', ['edit', $this->controller->name, 'rules']);
@@ -95,14 +98,18 @@ class actionNordicstylRules extends cmsAction {
             if ($stylesYaml !== '') {
                 $parsed = cmsModel::yamlToArray($stylesYaml);
                 if (!is_array($parsed)) {
-                    $errors['styles_yaml'] = 'styles должен быть валидным YAML (массив состояний).';
+                    $errors['styles_yaml'] = 'styles должен быть валидным YAML.';
+                } elseif (!$this->isValidRuleStylesPayload($parsed)) {
+                    $errors['styles_yaml'] = 'styles должен быть либо массивом состояний, либо массивом устройств -> состояний.';
                 }
             }
 
             if ($customYaml !== '') {
                 $parsed = cmsModel::yamlToArray($customYaml);
                 if (!is_array($parsed)) {
-                    $errors['custom_yaml'] = 'custom должен быть валидным YAML (массив состояний).';
+                    $errors['custom_yaml'] = 'custom должен быть валидным YAML.';
+                } elseif (!$this->isValidRuleCustomPayload($parsed)) {
+                    $errors['custom_yaml'] = 'custom должен быть либо массивом состояний, либо массивом устройств -> состояний.';
                 }
             }
 
@@ -158,5 +165,91 @@ class actionNordicstylRules extends cmsAction {
             'errors'     => [],
             'current'    => $current
         ]);
+    }
+
+    protected function isValidRuleStylesPayload(array $payload): bool {
+
+        if (!$payload) {
+            return true;
+        }
+
+        if ($this->isDeviceAwarePayload($payload)) {
+            foreach ($payload as $states) {
+                if (!is_array($states)) {
+                    return false;
+                }
+                foreach ($states as $state => $declarations) {
+                    if (!$this->isKnownStateKey((string)$state) || !is_array($declarations)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        foreach ($payload as $state => $declarations) {
+            if (!$this->isKnownStateKey((string)$state) || !is_array($declarations)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function isValidRuleCustomPayload(array $payload): bool {
+
+        if (!$payload) {
+            return true;
+        }
+
+        if ($this->isDeviceAwarePayload($payload)) {
+            foreach ($payload as $states) {
+                if (!is_array($states)) {
+                    return false;
+                }
+                foreach ($states as $state => $css) {
+                    if (!$this->isKnownStateKey((string)$state) || is_array($css)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        foreach ($payload as $state => $css) {
+            if (!$this->isKnownStateKey((string)$state) || is_array($css)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function isDeviceAwarePayload(array $payload): bool {
+
+        if (!$payload) {
+            return false;
+        }
+
+        $hasKnownDevice = false;
+        $hasKnownState = false;
+
+        foreach (array_keys($payload) as $key) {
+            $key = (string)$key;
+            if (in_array($key, self::RULE_DEVICES, true)) {
+                $hasKnownDevice = true;
+            }
+            if (in_array($key, self::RULE_STATES, true)) {
+                $hasKnownState = true;
+            }
+        }
+
+        return $hasKnownDevice && !$hasKnownState;
+    }
+
+    protected function isKnownStateKey(string $state): bool {
+        return in_array($state, self::RULE_STATES, true);
     }
 }

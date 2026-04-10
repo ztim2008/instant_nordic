@@ -24,6 +24,13 @@ $val = function($key, $default = '') use ($current) {
     <?php if ($tokens_url) { ?><a class="button" href="<?php html($tokens_url); ?>">Токены (:root)</a><?php } ?>
 </div>
 
+<div class="notice" style="margin: 1rem 0; padding: 1rem; background: #f7f8fb; border: 1px solid #d7dce5; border-radius: 10px;">
+    <strong>Поддерживаются два формата YAML:</strong><br>
+    1. legacy: состояния на верхнем уровне (`default`, `hover`, `active`)<br>
+    2. device-aware: сначала устройство (`base`, `mobile`, `tablet`, `desktop`), потом состояния<br>
+    Состояния: `default`, `hover`, `active`, `focus`, `focus-visible`, `visited`, `before`, `after`.
+</div>
+
 <div style="margin: 1rem 0;">
     <form method="post" action="<?php html($base_url); ?>">
         <input type="hidden" name="csrf_token" value="<?php html($csrf_token); ?>">
@@ -57,19 +64,43 @@ $val = function($key, $default = '') use ($current) {
 
         <div class="form-row">
             <div class="form-group" style="width: 100%;">
-                <label>Styles YAML (опционально)</label>
-                <textarea class="textarea" name="styles_yaml" rows="6" placeholder="default:\n  color: '#333'\nhover:\n  color: '#000'\n"><?php html((string)$val('styles', ''), true); ?></textarea>
+                <label>Styles YAML (legacy или device-aware)</label>
+                <textarea class="textarea" name="styles_yaml" rows="10" placeholder="base:\n  default:\n    color: '#333'\n  hover:\n    color: '#000'\nmobile:\n  default:\n    padding: '16px'\n"><?php html((string)$val('styles', ''), true); ?></textarea>
                 <?php if (!empty($errors['styles_yaml'])) { ?><div class="hint"><?php html($errors['styles_yaml']); ?></div><?php } ?>
             </div>
         </div>
 
         <div class="form-row">
             <div class="form-group" style="width: 100%;">
-                <label>Custom YAML (опционально)</label>
-                <textarea class="textarea" name="custom_yaml" rows="6" placeholder="default: |\n  background: red;\n  padding: 12px;\n"><?php html((string)$val('custom', ''), true); ?></textarea>
+                <label>Custom YAML (legacy или device-aware)</label>
+                <textarea class="textarea" name="custom_yaml" rows="10" placeholder="base:\n  default: |\n    transition: all .2s ease;\nmobile:\n  default: |\n    min-height: 44px;\n"><?php html((string)$val('custom', ''), true); ?></textarea>
                 <?php if (!empty($errors['custom_yaml'])) { ?><div class="hint"><?php html($errors['custom_yaml']); ?></div><?php } ?>
             </div>
         </div>
+
+        <details style="margin: 1rem 0;">
+            <summary>Примеры YAML</summary>
+            <div style="margin-top: .75rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+                <div>
+                    <strong>Legacy states</strong>
+                    <pre style="white-space: pre-wrap; background: #f7f8fb; padding: .75rem; border-radius: 8px; border: 1px solid #d7dce5;">default:
+  color: '#333'
+hover:
+  color: '#000'</pre>
+                </div>
+                <div>
+                    <strong>Device-aware</strong>
+                    <pre style="white-space: pre-wrap; background: #f7f8fb; padding: .75rem; border-radius: 8px; border: 1px solid #d7dce5;">base:
+  default:
+    color: '#333'
+  hover:
+    color: '#000'
+mobile:
+  default:
+    padding: '16px'</pre>
+                </div>
+            </div>
+        </details>
 
         <div class="form-row">
             <button class="button" type="submit">Сохранить</button>
