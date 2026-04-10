@@ -3,6 +3,17 @@ class widgetTemplate extends cmsWidget {
 
     public $is_cacheable = false;
 
+    protected function getTemplateAssetPath($template, $relativePath) {
+
+        $assetPath = $template->getTplFilePath($relativePath, false);
+
+        if ($assetPath) {
+            return $template->getHeadFilePath($assetPath);
+        }
+
+        return $template->getTemplateFilePath($relativePath);
+    }
+
     public function run(){
 
         $logos = [];
@@ -56,8 +67,8 @@ class widgetTemplate extends cmsWidget {
 
             if(empty($logo_wd['file'])){
 
-                $logos['logo'] = $template->getTemplateFilePath('images/logo.svg');
-                $logos['small_logo'] = $template->getTemplateFilePath('images/small_logo.svg');
+                $logos['logo'] = $this->getTemplateAssetPath($template, 'images/logo.svg');
+                $logos['small_logo'] = $this->getTemplateAssetPath($template, 'images/small_logo.svg');
 
                 // Растр
                 $r_logo_file = $template->getOption('logo');
@@ -79,10 +90,10 @@ class widgetTemplate extends cmsWidget {
                 }
             } else {
 
-                $logos['logo'] = $template->getTemplateFilePath('images/'.$logo_wd['file']);
+                $logos['logo'] = $this->getTemplateAssetPath($template, 'images/'.$logo_wd['file']);
 
                 if(!empty($logo_wd['file_small'])){
-                    $logos['small_logo'] = $template->getTemplateFilePath('images/'.$logo_wd['file_small']);
+                    $logos['small_logo'] = $this->getTemplateAssetPath($template, 'images/'.$logo_wd['file_small']);
                 }
             }
 

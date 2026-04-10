@@ -401,9 +401,30 @@ class actionNordicstylBuilder extends cmsAction {
         foreach ($bindings as $binding) {
 
             $position = (string) ($binding['position'] ?? '');
+            $bindId = (int)($binding['bind_id'] ?? 0);
 
             if ($position === '') {
                 continue;
+            }
+
+            if ($bindId > 0 && !empty($widgetsByPosition[$position])) {
+                foreach ($widgetsByPosition[$position] as $index => $existingWidget) {
+                    if ((int)($existingWidget['bind_id'] ?? 0) !== $bindId) {
+                        continue;
+                    }
+
+                    $existingPageId = (int)($existingWidget['source_page_id'] ?? 0);
+                    $bindingPageId = (int)($binding['page_id'] ?? 0);
+
+                    if ($existingPageId === 0 && $bindingPageId === 1) {
+                        continue 2;
+                    }
+
+                    if ($existingPageId === 1 && $bindingPageId === 0) {
+                        $widgetsByPosition[$position][$index] = $this->buildWidgetStateItem($binding, $position);
+                        continue 2;
+                    }
+                }
             }
 
             $widgetsByPosition[$position][] = $this->buildWidgetStateItem($binding, $position);
@@ -466,6 +487,7 @@ class actionNordicstylBuilder extends cmsAction {
             'meta' => [
                 'row_id' => (int)($row['id'] ?? 0),
                 'parent_id' => (int)($row['parent_id'] ?? 0),
+                'ordering' => (int)($row['ordering'] ?? 0),
                 'nested_position' => trim((string)($row['nested_position'] ?? '')),
                 'tag' => trim((string)($row['tag'] ?? '')),
                 'class' => trim((string)($row['class'] ?? '')),
@@ -486,6 +508,7 @@ class actionNordicstylBuilder extends cmsAction {
             'width' => $this->detectColumnWidth($column, $columnsCount),
             'meta' => [
                 'col_id' => (int)($column['id'] ?? 0),
+                'ordering' => (int)($column['ordering'] ?? 0),
                 'position_name' => $positionName,
                 'type' => trim((string)($column['type'] ?? 'typical')),
                 'tag' => trim((string)($column['tag'] ?? '')),
@@ -618,6 +641,7 @@ class actionNordicstylBuilder extends cmsAction {
             'widget_id' => (int)($binding['widget_id'] ?? 0),
             'bind_id' => (int)($binding['bind_id'] ?? 0),
             'binding_page_id' => (int)($binding['id'] ?? 0),
+            'source_page_id' => (int)($binding['page_id'] ?? 0),
             'position_name' => $position,
             'is_enabled' => !empty($binding['is_enabled'])
         ];

@@ -522,6 +522,19 @@ class modelNordicstyl extends cmsModel {
 
     protected function insertPublishedRows(array $rows, string $templateName, ?int $parentColumnId, array &$publishContext): void {
 
+        usort($rows, function (array $left, array $right): int {
+            $leftMeta = is_array($left['meta'] ?? null) ? $left['meta'] : [];
+            $rightMeta = is_array($right['meta'] ?? null) ? $right['meta'] : [];
+            $leftOrdering = (int)($leftMeta['ordering'] ?? 0);
+            $rightOrdering = (int)($rightMeta['ordering'] ?? 0);
+
+            if ($leftOrdering !== $rightOrdering) {
+                return $leftOrdering <=> $rightOrdering;
+            }
+
+            return strcmp((string)($left['uid'] ?? ''), (string)($right['uid'] ?? ''));
+        });
+
         $ordering = 1;
 
         foreach ($rows as $row) {
@@ -531,12 +544,13 @@ class modelNordicstyl extends cmsModel {
 
             $rowMeta = is_array($row['meta'] ?? null) ? $row['meta'] : [];
             $rowOptions = is_array($rowMeta['options'] ?? null) ? $rowMeta['options'] : $this->getDefaultPublishedRowOptions();
+            $rowOrdering = (int)($rowMeta['ordering'] ?? 0);
             $rowData = [
                 'parent_id' => $parentColumnId,
                 'title' => trim((string)($row['title'] ?? 'Ряд')),
                 'tag' => trim((string)($rowMeta['tag'] ?? 'div')) ?: 'div',
                 'template' => $templateName,
-                'ordering' => $ordering,
+                'ordering' => $rowOrdering > 0 ? $rowOrdering : $ordering,
                 'nested_position' => $parentColumnId ? $this->normalizeNestedPosition((string)($rowMeta['nested_position'] ?? 'after')) : null,
                 'class' => $this->normalizeNullableString($rowMeta['class'] ?? null),
                 'options' => cmsModel::arrayToString($this->applyWidthModeToRowOptions($rowOptions, (string)($row['width_mode'] ?? 'grid')))
@@ -546,6 +560,18 @@ class modelNordicstyl extends cmsModel {
             $publishContext['published_rows']++;
 
             $columns = is_array($row['columns'] ?? null) ? $row['columns'] : [];
+            usort($columns, function (array $left, array $right): int {
+                $leftMeta = is_array($left['meta'] ?? null) ? $left['meta'] : [];
+                $rightMeta = is_array($right['meta'] ?? null) ? $right['meta'] : [];
+                $leftOrdering = (int)($leftMeta['ordering'] ?? 0);
+                $rightOrdering = (int)($rightMeta['ordering'] ?? 0);
+
+                if ($leftOrdering !== $rightOrdering) {
+                    return $leftOrdering <=> $rightOrdering;
+                }
+
+                return strcmp((string)($left['uid'] ?? ''), (string)($right['uid'] ?? ''));
+            });
             $columnOrdering = 1;
 
             foreach ($columns as $column) {
@@ -556,12 +582,13 @@ class modelNordicstyl extends cmsModel {
                 $columnMeta = is_array($column['meta'] ?? null) ? $column['meta'] : [];
                 $positionName = $this->generatePublishedPositionName($column, $publishContext['used_positions']);
                 $columnOptions = is_array($columnMeta['options'] ?? null) ? $columnMeta['options'] : $this->getDefaultPublishedColumnOptions();
+                $savedColumnOrdering = (int)($columnMeta['ordering'] ?? 0);
                 $columnData = [
                     'row_id' => $rowId,
                     'title' => trim((string)($column['title'] ?? 'Колонка')),
                     'name' => $positionName,
                     'type' => $this->normalizeColumnType((string)($columnMeta['type'] ?? 'typical')),
-                    'ordering' => $columnOrdering,
+                    'ordering' => $savedColumnOrdering > 0 ? $savedColumnOrdering : $columnOrdering,
                     'tag' => trim((string)($columnMeta['tag'] ?? 'div')) ?: 'div',
                     'class' => $this->normalizeNullableString($columnMeta['class'] ?? null),
                     'wrapper' => $this->normalizeNullableString($columnMeta['wrapper'] ?? null),
@@ -587,6 +614,7 @@ class modelNordicstyl extends cmsModel {
     protected function publishHomepageBindings(modelBackendWidgets $backendWidgetsModel, string $templateName, array $rows, array $columnPositions): array {
 
         $publishedWidgets = 0;
+        $processedBindingKeys = [];
 
         foreach ($rows as $row) {
             if (!is_array($row) || !empty($row['hidden'])) {
@@ -612,7 +640,21 @@ class modelNordicstyl extends cmsModel {
                     }
 
                     $bindId = (int)($widget['bind_id'] ?? 0);
+                    $bindingKey = $bindId > 0 ? $bindId . ':' . $positionName : '';
+                    if ($bindingKey !== '' && isset($processedBindingKeys[$bindingKey])) {
+                        continue;
+                    }
+
                     if ($bindId > 0 && $this->bindingExists($bindId)) {
+                        $sourcePageId = (int)($widget['source_page_id'] ?? 0);
+                        $sourcePosition = trim((string)($widget['position_name'] ?? ''));
+                        $processedBindingKeys[$bindingKey] = true;
+
+                        if ($sourcePageId === 0 && $sourcePosition === $positionName) {
+                            $publishedWidgets++;
+                            continue;
+                        }
+
                         $backendWidgetsModel->addWidgetBindPage($bindId, 1, $positionName, $templateName, null, 1);
                         $publishedWidgets++;
                         continue;
@@ -939,8 +981,6 @@ class modelNordicstyl extends cmsModel {
                 $layoutStats['positions'],
                 true
             );
-
-            $this->deleteLayoutStateByTemplate($templateName);
 
             $this->db->commit();
 

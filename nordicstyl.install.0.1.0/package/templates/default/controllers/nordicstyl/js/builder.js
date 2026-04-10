@@ -205,13 +205,44 @@
             width: clampUnits(parseInt(column.width || 12, 10) || 12),
             hidden: Boolean(column.hidden),
             meta: column.meta && typeof column.meta === 'object' ? deepClone(column.meta) : {},
-            widgets: Array.isArray(column.widgets) ? column.widgets.map(function (widget) {
+            widgets: dedupeWidgets(Array.isArray(column.widgets) ? column.widgets.map(function (widget) {
                 return normalizeWidget(widget);
-            }) : [],
+            }) : []),
             nested_rows: Array.isArray(column.nested_rows) ? column.nested_rows.map(function (nestedRow) {
                 return normalizeRow(nestedRow);
             }) : []
         };
+    }
+
+    function dedupeWidgets(widgets) {
+        var seen = {};
+
+        return (widgets || []).filter(function (widget) {
+            var bindId = parseInt(widget.bind_id || 0, 10) || 0;
+            var positionName = String(widget.position_name || '');
+            var sourcePageId = parseInt(widget.source_page_id || 0, 10) || 0;
+            var key;
+            var existing;
+
+            if (bindId < 1 || !positionName) {
+                return true;
+            }
+
+            key = String(bindId) + ':' + positionName;
+            existing = seen[key];
+
+            if (!existing) {
+                seen[key] = widget;
+                return true;
+            }
+
+            if ((parseInt(existing.source_page_id || 0, 10) || 0) === 1 && sourcePageId === 0) {
+                seen[key] = widget;
+                return true;
+            }
+
+            return false;
+        });
     }
 
     function normalizeWidget(widget) {
@@ -227,6 +258,7 @@
             widget_controller: String(widget.widget_controller || ''),
             bind_id: parseInt(widget.bind_id || 0, 10) || 0,
             binding_page_id: parseInt(widget.binding_page_id || 0, 10) || 0,
+            source_page_id: parseInt(widget.source_page_id || 0, 10) || 0,
             position_name: String(widget.position_name || ''),
             library_uid: String(widget.library_uid || ''),
             hidden: Boolean(widget.hidden)
@@ -855,6 +887,7 @@
         if (type === 'widget') {
             node.bind_id = 0;
             node.binding_page_id = 0;
+            node.source_page_id = 0;
         }
     }
 

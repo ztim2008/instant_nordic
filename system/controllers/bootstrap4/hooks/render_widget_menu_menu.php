@@ -2,6 +2,17 @@
 
 class onBootstrap4RenderWidgetMenuMenu extends cmsAction {
 
+    protected function getTemplateAssetPath($template, $relativePath) {
+
+        $assetPath = $template->getTplFilePath($relativePath, false);
+
+        if ($assetPath) {
+            return $template->getHeadFilePath($assetPath);
+        }
+
+        return $template->getTemplateFilePath($relativePath);
+    }
+
     public function run($_data){
 
         list($widget, $tpl_file, $data) = $_data;
@@ -31,8 +42,8 @@ class onBootstrap4RenderWidgetMenuMenu extends cmsAction {
         $logos = [];
         $config = cmsConfig::getInstance();
 
-        $logos['logo'] = $template->getTemplateFilePath('images/logo.svg');
-        $logos['small_logo'] = $template->getTemplateFilePath('images/small_logo.svg');
+        $logos['logo'] = $this->getTemplateAssetPath($template, 'images/logo.svg');
+        $logos['small_logo'] = $this->getTemplateAssetPath($template, 'images/small_logo.svg');
 
         // Растр
         $r_logo_file = $template->getOption('logo');
