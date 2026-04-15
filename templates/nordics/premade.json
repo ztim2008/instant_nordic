@@ -1,0 +1,141 @@
+{
+  "Shell": {
+    "Корень страницы": {
+      "title": "Корень страницы",
+      "role": "page.root",
+      "selector": "[data-nordic-role=\"page.root\"]"
+    },
+    "Shell": {
+      "title": "Основной shell",
+      "role": "shell.root",
+      "selector": "[data-nordic-role=\"shell.root\"]"
+    },
+    "Шапка": {
+      "title": "Шапка сайта",
+      "role": "header",
+      "selector": "[data-nordic-role=\"header\"]"
+    },
+    "Main": {
+      "title": "Основная зона страницы",
+      "role": "shell.main",
+      "selector": "[data-nordic-role=\"shell.main\"]"
+    },
+    "Контентный фрейм": {
+      "title": "Контентный фрейм",
+      "role": "content.frame",
+      "selector": "[data-nordic-role=\"content.frame\"]"
+    },
+    "Подвал": {
+      "title": "Подвал сайта",
+      "role": "footer",
+      "selector": "[data-nordic-role=\"footer\"]"
+    }
+  },
+  "Страница": {
+    "Header": {
+      "Логотип": {
+        "title": "Логотип сайта",
+        "role": "header.logo",
+        "selector": "[data-nordic-role=\"header.logo\"]"
+      },
+      "Меню": {
+        "title": "Меню",
+        "role": "header.menu",
+        "selector": "[data-nordic-role=\"header.menu\"]"
+      },
+      "Панель меню": {
+        "title": "Панель меню",
+        "role": "header.menu.panel",
+        "selector": "[data-nordic-role=\"header.menu.panel\"]"
+      },
+      "Кнопка меню": {
+        "title": "Кнопка меню",
+        "role": "header.menu.toggle",
+        "selector": "[data-nordic-role=\"header.menu.toggle\"]"
+      },
+      "Поиск": {
+        "title": "Форма поиска",
+        "role": "header.search",
+        "selector": "[data-nordic-role=\"header.search\"]"
+      }
+    },
+    "System": {
+      "Хлебные крошки": {
+        "title": "Хлебные крошки",
+        "role": "system.breadcrumbs",
+        "selector": "[data-nordic-role=\"system.breadcrumbs\"]"
+      },
+      "Основное содержимое": {
+        "title": "Основное содержимое",
+        "role": "system.body",
+        "selector": "[data-nordic-role=\"system.body\"]"
+      },
+      "Блок перед контентом": {
+        "title": "Блок перед контентом",
+        "role": "system.before-body",
+        "selector": "[data-nordic-role=\"system.before-body\"]"
+      },
+      "Блок после контента": {
+        "title": "Блок после контента",
+        "role": "system.after-body",
+        "selector": "[data-nordic-role=\"system.after-body\"]"
+      }
+    },
+    "Footer": {
+      "Копирайт": {
+        "title": "Копирайт",
+        "role": "footer.copyright",
+        "selector": "[data-nordic-role=\"footer.copyright\"]"
+      },
+      "Ссылка владельца": {
+        "title": "Ссылка владельца сайта",
+        "role": "footer.owner-link",
+        "selector": "[data-nordic-role=\"footer.owner-link\"]"
+      },
+      "Год копирайта": {
+        "title": "Год копирайта",
+        "role": "footer.owner-year",
+        "selector": "[data-nordic-role=\"footer.owner-year\"]"
+      }
+    }
+  },
+  "Контент": {
+    "Категория": {
+      "title": "Страница категории",
+      "role": "content.category",
+      "selector": "[data-nordic-role=\"content.category\"]"
+    },
+    "Страница записи": {
+      "title": "Страница записи",
+      "role": "content.item",
+      "selector": "[data-nordic-role=\"content.item\"]"
+    },
+    "Список карточек": {
+      "title": "Список карточек контента",
+      "role": "content.list",
+      "selector": "[data-nordic-role=\"content.list\"]"
+    },
+    "Карточка списка": {
+      "title": "Карточка списка",
+      "role": "content.list.item",
+      "selector": "[data-nordic-role=\"content.list.item\"]"
+    }
+  },
+  "Layout": {
+    "Ряд": {
+      "title": "Ряд layout",
+      "role": "layout-row",
+      "selector": "[data-nordic-role=\"layout-row\"]"
+    },
+    "Колонка": {
+      "title": "Колонка layout",
+      "role": "layout-column",
+      "selector": "[data-nordic-role=\"layout-column\"]"
+    },
+    "Виджет": {
+      "title": "Обертка виджета",
+      "role": "widget-wrapper",
+      "selector": "[data-nordic-role=\"widget-wrapper\"]"
+    }
+  }
+}

@@ -62,9 +62,10 @@
     var styleSaveButton = root.querySelector('[data-style-save]');
     var styleResetButton = root.querySelector('[data-style-reset]');
     var styleOpenPickerButton = root.querySelector('[data-style-open-picker]');
-    var stylePickerModal = document.querySelector('[data-style-picker-modal]');
-    var stylePickerFrame = document.querySelector('[data-style-picker-frame]');
-    var stylePickerCloseButtons = Array.prototype.slice.call(document.querySelectorAll('[data-style-picker-close]'));
+    var liveShellFrame = root.querySelector('[data-builder-live-frame]');
+    var stylePickerFrame = liveShellFrame;
+    var liveShellOpenButton = root.querySelector('[data-live-shell-open]');
+    var liveShellStatus = root.querySelector('[data-live-shell-status]');
     var deviceLabels = {
         desktop: 'Desktop',
         tablet: 'Tablet',
@@ -98,6 +99,12 @@
         var tokenNode = document.querySelector('meta[name="csrf-token"]');
 
         return tokenNode ? String(tokenNode.getAttribute('content') || '') : '';
+    }
+
+    function setLiveShellStatus(text) {
+        if (liveShellStatus) {
+            liveShellStatus.textContent = text;
+        }
     }
 
     function buildStorageKey(pageState) {
@@ -659,18 +666,18 @@
     }
 
     function renderDeviceBadge(node) {
-        var label = 'Base';
+        var label = 'Desktop';
         var className = 'nb-node-badge nb-node-badge--base';
 
         if (activeDevice !== 'desktop') {
             if (node.hidden) {
-                label = 'Hidden';
+                label = 'Скрыт';
                 className = 'nb-node-badge nb-node-badge--hidden';
             } else if (hasOverride(activeDevice)) {
-                label = 'Override';
+                label = 'Своя';
                 className = 'nb-node-badge nb-node-badge--override';
             } else {
-                label = 'Inherited';
+                label = 'Наследует';
                 className = 'nb-node-badge nb-node-badge--inherited';
             }
         }
@@ -1211,6 +1218,59 @@
         };
     }
 
+    function escapeCssAttributeValue(value) {
+        return String(value || '')
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"');
+    }
+
+    function buildNodeStyleSelector(targetKey) {
+        targetKey = String(targetKey || '').trim();
+
+        return targetKey ? ('[data-nordic-id="' + escapeCssAttributeValue(targetKey) + '"]') : '';
+    }
+
+    function buildNodeStoragePath(targetKey) {
+        targetKey = String(targetKey || '').trim();
+
+        return targetKey ? ('node:' + targetKey) : '';
+    }
+
+    function resolveNodeTargetKey(value) {
+        var normalized = String(value || '').trim();
+        var match = null;
+
+        if (!normalized) {
+            return '';
+        }
+
+        if (normalized.indexOf('node:') === 0) {
+            return String(normalized.slice(5) || '').trim();
+        }
+
+        match = normalized.match(/^\[data-nordic-id="([^"]+)"\]$/);
+
+        return match ? String(match[1] || '').trim() : '';
+    }
+
+    function normalizeNodeStyleTarget(selector, source, title, targetKey) {
+        var normalizedTargetKey = String(targetKey || resolveNodeTargetKey(selector)).trim();
+        var normalizedSelector = normalizedTargetKey ? buildNodeStyleSelector(normalizedTargetKey) : '';
+
+        return {
+            selector: normalizedSelector,
+            targetKey: normalizedTargetKey,
+            storagePath: normalizedTargetKey ? buildNodeStoragePath(normalizedTargetKey) : '',
+            displayValue: normalizedTargetKey ? buildNodeStoragePath(normalizedTargetKey) : '',
+            source: String(source || 'manual'),
+            title: String(title || normalizedTargetKey || normalizedSelector)
+        };
+    }
+
+    function parseNodeStyleTargetInput(value) {
+        return normalizeNodeStyleTarget(String(value || '').trim(), 'manual', String(value || '').trim());
+    }
+
     function ensureNodeMeta(node) {
         if (!node.meta || typeof node.meta !== 'object' || Array.isArray(node.meta)) {
             node.meta = {};
@@ -1226,39 +1286,41 @@
         if (!target) {
             return {
                 selector: '',
+                targetKey: '',
+                storagePath: '',
+                displayValue: '',
                 source: 'builder',
                 title: ''
             };
         }
 
         if (typeof target === 'string') {
-            return {
-                selector: String(target),
-                source: 'manual',
-                title: String(target)
-            };
+            return normalizeNodeStyleTarget(String(target), 'manual', String(target));
         }
 
-        return {
-            selector: String(target.selector || ''),
-            source: String(target.source || 'builder'),
-            title: String(target.title || target.selector || '')
-        };
+        return normalizeNodeStyleTarget(
+            String(target.selector || ''),
+            String(target.source || 'builder'),
+            String(target.title || target.selector || target.targetKey || ''),
+            String(target.targetKey || '')
+        );
     }
 
-    function setNodeStyleTarget(node, selector, source, title) {
+    function setNodeStyleTarget(node, selector, source, title, targetKey) {
         var meta = ensureNodeMeta(node);
+        var normalizedTarget = normalizeNodeStyleTarget(selector, source, title, targetKey);
 
-        selector = String(selector || '').trim();
-        if (!selector) {
+        if (!normalizedTarget.selector && !normalizedTarget.targetKey) {
             delete meta.style_target;
             return;
         }
 
         meta.style_target = {
-            selector: selector,
-            source: String(source || 'manual'),
-            title: String(title || selector)
+            selector: normalizedTarget.selector,
+            targetKey: normalizedTarget.targetKey,
+            storagePath: normalizedTarget.storagePath,
+            source: normalizedTarget.source,
+            title: normalizedTarget.title
         };
     }
 
@@ -1348,16 +1410,16 @@
     }
 
     function updateStyleButtons(record, target) {
-        var hasSelector = Boolean(target && target.selector);
+        var hasTarget = Boolean(target && (target.targetKey || target.selector));
 
         if (styleSaveButton) {
-            styleSaveButton.disabled = !record || !hasSelector;
+            styleSaveButton.disabled = !record || !hasTarget;
         }
         if (styleResetButton) {
             styleResetButton.disabled = !record;
         }
         if (styleOpenPickerButton) {
-            styleOpenPickerButton.disabled = !record || !pickerFrameUrl;
+            styleOpenPickerButton.disabled = !record || !liveShellFrame;
         }
     }
 
@@ -1367,10 +1429,10 @@
         }
 
         if (styleTargetHint) {
-            if (!target.selector) {
-                styleTargetHint.textContent = 'У этого узла пока нет style target. Впишите selector вручную или возьмите его с live-страницы.';
+            if (!target.selector && !target.targetKey) {
+                styleTargetHint.textContent = 'У этого узла пока нет style target. Выберите элемент на live-странице, чтобы назначить node target.';
             } else {
-                styleTargetHint.textContent = 'Rule будет сохранено для selector ' + target.selector + ' в текущем runtime nordicstyl.';
+                styleTargetHint.textContent = 'Rule будет сохранено для node target ' + target.storagePath + ' в текущем runtime nordicstyl.';
             }
         }
     }
@@ -1383,19 +1445,19 @@
         }
 
         if (deviceKey === 'base') {
-            styleScopeNote.textContent = 'Desktop пишет в ветку base/default. Это общая база для всех устройств.';
+            styleScopeNote.textContent = 'Desktop редактирует общую ветку стилей. Tablet наследует desktop, а Mobile наследует desktop и tablet, пока вы не зададите свои значения.';
             return;
         }
 
-        styleScopeNote.textContent = (deviceLabels[activeDevice] || activeDevice) + ' пишет в ветку ' + deviceKey + '/default. Если rule уже есть в base, здесь можно сделать отдельный override.';
+        styleScopeNote.textContent = (deviceLabels[activeDevice] || activeDevice) + ' редактирует свою ветку. Пустые поля наследуются от предыдущего устройства по цепочке desktop -> tablet -> mobile.';
     }
 
-    function buildStyleInspectorKey(record, selector) {
+    function buildStyleInspectorKey(record, targetIdentity) {
         if (!record) {
             return '';
         }
 
-        return [record.node.uid, normalizeDeviceKey(activeDevice), String(selector || '')].join('|');
+        return [record.node.uid, normalizeDeviceKey(activeDevice), String(targetIdentity || '')].join('|');
     }
 
     function buildSelectorForState(selector, state) {
@@ -1528,35 +1590,24 @@
     }
 
     function openStylePicker() {
-        if (!pickerFrameUrl) {
-            setStatus('Live picker для этой страницы сейчас недоступен.');
+        if (!liveShellFrame) {
+            setStatus('Live-окно для этой страницы сейчас недоступно.');
             return;
         }
 
-        if (stylePickerFrame && !stylePickerFrame.getAttribute('src')) {
-            stylePickerFrame.setAttribute('src', pickerFrameUrl);
-        }
-
-        if (stylePickerModal) {
-            stylePickerModal.hidden = false;
-        }
-
+        setStatus('Live-страница уже открыта ниже. Кликните по нужному элементу внутри iframe.');
+        setLiveShellStatus('Режим выбора активен. Кликните по элементу внутри live-страницы, чтобы забрать node target в inspector.');
+        liveShellFrame.scrollIntoView({ behavior: 'smooth', block: 'center' });
         applyStylePreview();
     }
 
-    function closeStylePicker() {
-        if (stylePickerModal) {
-            stylePickerModal.hidden = true;
-        }
-    }
-
-    function loadStyleRule(selector, record, inspectorKey) {
+    function loadStyleRule(target, record, inspectorKey) {
         var requestToken;
         var body;
+        var selector = String((target && target.selector) || '').trim();
+        var targetKey = String((target && target.targetKey) || '').trim();
 
-        selector = String(selector || '').trim();
-
-        if (!selector) {
+        if (!selector && !targetKey) {
             currentStyleRule = createEmptyStyleRule('');
             loadedStyleKey = inspectorKey;
             applyStyleDeclarationsToForm({});
@@ -1581,7 +1632,9 @@
         body = serializeRequestBody({
             csrf_token: csrfToken,
             mode: 'load',
-            selector: selector
+            selector: selector,
+            target_type: targetKey ? 'node' : '',
+            target_key: targetKey
         });
 
         window.fetch(styleRuleUrl, {
@@ -1595,7 +1648,7 @@
         }).then(function (response) {
             return response.json();
         }).then(function (response) {
-            if (styleRuleRequestToken !== requestToken || buildStyleInspectorKey(getSelectedRecord(), selector) !== inspectorKey) {
+            if (styleRuleRequestToken !== requestToken || buildStyleInspectorKey(getSelectedRecord(), targetKey || selector) !== inspectorKey) {
                 return;
             }
 
@@ -1643,22 +1696,22 @@
                 styleSelectorInput.value = '';
             }
             applyStyleDeclarationsToForm({});
-            updateStyleTargetMeta({ selector: '', source: 'builder' });
-            updateStyleButtons(null, { selector: '' });
+            updateStyleTargetMeta({ selector: '', targetKey: '', storagePath: '', source: 'builder' });
+            updateStyleButtons(null, { selector: '', targetKey: '' });
             applyStylePreview();
             return;
         }
 
         target = getNodeStyleTarget(record.node);
-        if (styleSelectorInput && styleSelectorInput.value !== target.selector) {
-            styleSelectorInput.value = target.selector;
+        if (styleSelectorInput && styleSelectorInput.value !== target.displayValue) {
+            styleSelectorInput.value = target.displayValue;
         }
 
         updateStyleTargetMeta(target);
         updateStyleButtons(record, target);
-        inspectorKey = buildStyleInspectorKey(record, target.selector);
+        inspectorKey = buildStyleInspectorKey(record, target.storagePath || target.selector);
 
-        if (!target.selector) {
+        if (!target.selector && !target.targetKey) {
             currentStyleRule = createEmptyStyleRule('');
             loadedStyleKey = inspectorKey;
             applyStyleDeclarationsToForm({});
@@ -1677,12 +1730,15 @@
             return;
         }
 
-        loadStyleRule(target.selector, record, inspectorKey);
+        loadStyleRule(target, record, inspectorKey);
     }
 
     function updateCurrentStyleDraftFromForm() {
+        var inputTarget;
+
         if (!currentStyleRule.path && styleSelectorInput) {
-            currentStyleRule.path = String(styleSelectorInput.value || '').trim();
+            inputTarget = parseNodeStyleTargetInput(styleSelectorInput.value);
+            currentStyleRule.path = inputTarget.selector;
         }
 
         setStyleBranchDeclarations(currentStyleRule, getActiveStyleDeviceKey(), 'default', collectStyleDeclarationsFromForm());
@@ -1690,17 +1746,18 @@
 
     function saveCurrentStyleRule() {
         var record = getSelectedRecord();
-        var selector;
         var body;
+        var inputTarget;
+        var target;
 
         if (!record) {
             setStatus('Сначала выберите узел, для которого сохраняется style rule.');
             return;
         }
 
-        selector = styleSelectorInput ? String(styleSelectorInput.value || '').trim() : '';
-        if (!selector) {
-            setStatus('Сначала укажите selector target.');
+        inputTarget = styleSelectorInput ? parseNodeStyleTargetInput(styleSelectorInput.value) : { selector: '', targetKey: '' };
+        if (!inputTarget.selector && !inputTarget.targetKey) {
+            setStatus('Сначала укажите node target для style rule.');
             return;
         }
 
@@ -1709,8 +1766,9 @@
             return;
         }
 
-        setNodeStyleTarget(record.node, selector, getNodeStyleTarget(record.node).source || 'manual', selector);
-        currentStyleRule.path = selector;
+        setNodeStyleTarget(record.node, inputTarget.selector, getNodeStyleTarget(record.node).source || 'manual', inputTarget.displayValue || inputTarget.selector, inputTarget.targetKey);
+        target = getNodeStyleTarget(record.node);
+        currentStyleRule.path = target.selector;
         currentStyleRule.title = 'Builder · ' + String(record.node.title || defaultTitle(record.type));
         updateCurrentStyleDraftFromForm();
         persistCurrentRows();
@@ -1720,6 +1778,8 @@
             csrf_token: csrfToken,
             mode: 'save',
             selector: currentStyleRule.path,
+            target_type: 'node',
+            target_key: target.targetKey || '',
             title: currentStyleRule.title,
             rule_id: currentStyleRule.id || 0,
             styles: JSON.stringify(currentStyleRule.styles || {}),
@@ -1743,7 +1803,7 @@
             }
 
             currentStyleRule = normalizeStyleRule(response.rule || currentStyleRule);
-            loadedStyleKey = buildStyleInspectorKey(record, selector);
+            loadedStyleKey = buildStyleInspectorKey(record, target.storagePath || target.selector);
             applyStyleDeclarationsToForm(getEditorStyleDeclarations(currentStyleRule));
             applyStylePreview();
             setStatus(response.message || 'Style rule сохранено.');
@@ -1752,23 +1812,37 @@
         });
     }
 
-    function applyStyleTarget(selector, source) {
+    function applyStyleTarget(selectorOrTarget, source) {
         var record = getSelectedRecord();
+        var normalizedTarget;
+        var sourceName;
 
-        selector = String(selector || '').trim();
         if (!record) {
             return;
         }
 
-        setNodeStyleTarget(record.node, selector, source || 'manual', selector);
+        if (selectorOrTarget && typeof selectorOrTarget === 'object') {
+            normalizedTarget = normalizeNodeStyleTarget(
+                String(selectorOrTarget.selector || ''),
+                String(source || selectorOrTarget.source || 'manual'),
+                String(selectorOrTarget.title || selectorOrTarget.storage_path || selectorOrTarget.selector || ''),
+                String(selectorOrTarget.target_key || selectorOrTarget.targetKey || '')
+            );
+        } else {
+            normalizedTarget = parseNodeStyleTargetInput(selectorOrTarget);
+            normalizedTarget.source = String(source || 'manual');
+        }
+
+        sourceName = normalizedTarget.source || source || 'manual';
+        setNodeStyleTarget(record.node, normalizedTarget.selector, sourceName, normalizedTarget.title || normalizedTarget.displayValue, normalizedTarget.targetKey);
         if (styleSelectorInput) {
-            styleSelectorInput.value = selector;
+            styleSelectorInput.value = normalizedTarget.displayValue;
         }
 
         persistCurrentRows();
         loadedStyleKey = '';
         syncStyleInspector(record);
-        setStatus(selector ? ('Style target назначен: ' + selector + '.') : 'Style target очищен для выбранного узла.');
+        setStatus(normalizedTarget.displayValue ? ('Style target назначен: ' + normalizedTarget.displayValue + '.') : 'Style target очищен для выбранного узла.');
     }
 
     function syncInspectorPanels(record) {
@@ -1833,16 +1907,16 @@
         }
 
         if (viewportSourceNode) {
-            viewportSourceNode.textContent = source === 'base' ? 'Base' : (source === 'override' ? 'Override' : 'Inherited');
+            viewportSourceNode.textContent = source === 'base' ? 'Desktop' : (source === 'override' ? 'Своя' : 'Наследует');
         }
 
         if (viewportSubtitleNode) {
             if (source === 'inherited') {
-                viewportSubtitleNode.textContent = 'Сейчас используется унаследованная версия от предыдущего устройства. Первое изменение создаст override.';
+                viewportSubtitleNode.textContent = 'Сейчас используется версия, унаследованная от предыдущего устройства. Первое изменение создаст свою ветку.';
             } else if (source === 'override') {
-                viewportSubtitleNode.textContent = 'Для этого устройства уже есть свой layout override. Canvas показывает именно его.';
+                viewportSubtitleNode.textContent = 'Для этого устройства уже есть своя ветка layout. Canvas показывает именно ее.';
             } else {
-                viewportSubtitleNode.textContent = 'Desktop остается базовой live-схемой страницы.';
+                viewportSubtitleNode.textContent = 'Desktop остается основной схемой страницы.';
             }
         }
     }
@@ -2014,11 +2088,11 @@
 
         if (deviceOverrideNote) {
             if (activeDevice === 'desktop') {
-                deviceOverrideNote.textContent = 'Desktop — базовая snapshot-схема страницы.';
+                deviceOverrideNote.textContent = 'Desktop — основная snapshot-схема страницы.';
             } else if (hasOverride(activeDevice)) {
-                deviceOverrideNote.textContent = 'Для ' + (deviceLabels[activeDevice] || activeDevice) + ' уже есть свой override.';
+                deviceOverrideNote.textContent = 'Для ' + (deviceLabels[activeDevice] || activeDevice) + ' уже есть своя ветка.';
             } else {
-                deviceOverrideNote.textContent = 'Сейчас используется наследование от ' + (deviceLabels[getParentDevice(activeDevice)] || 'Desktop') + '. Первое изменение создаст override.';
+                deviceOverrideNote.textContent = 'Сейчас используется наследование от ' + (deviceLabels[getParentDevice(activeDevice)] || 'Desktop') + '. Первое изменение создаст свою ветку.';
             }
         }
 
@@ -2579,15 +2653,18 @@
         });
     }
 
-    stylePickerCloseButtons.forEach(function (button) {
-        button.addEventListener('click', function () {
-            closeStylePicker();
-        });
-    });
-
     if (stylePickerFrame) {
         stylePickerFrame.addEventListener('load', function () {
             applyStylePreview();
+            setLiveShellStatus('Live-страница готова. Выберите узел справа и кликните по нужному элементу внутри iframe.');
+        });
+    }
+
+    if (liveShellOpenButton) {
+        liveShellOpenButton.addEventListener('click', function () {
+            if (liveShellFrame) {
+                liveShellFrame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         });
     }
 
@@ -2602,13 +2679,8 @@
             return;
         }
 
-        applyStyleTarget(String(data.selector || ''), 'picker');
-    });
-
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && stylePickerModal && !stylePickerModal.hidden) {
-            closeStylePicker();
-        }
+        applyStyleTarget(data, 'picker');
+        setLiveShellStatus('Элемент выбран на живой странице. Node target забран в inspector справа.');
     });
 
     rerender();

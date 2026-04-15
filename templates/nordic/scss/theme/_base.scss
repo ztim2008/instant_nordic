@@ -7,8 +7,9 @@ body.nordic-template {
 
 body.nordic-template {
     font-family: var(--nordic-font-body);
+    font-size: var(--nordic-font-size);
     font-feature-settings: "kern" 1;
-    line-height: 1.7;
+    line-height: #{$nordic-line-height};
 }
 
 .nordic-template h1,
@@ -28,7 +29,7 @@ body.nordic-template {
 }
 
 .nordic-template ::selection {
-    background: rgba(180, 35, 24, 0.18);
+    background: rgba(#{red($nordic-color-accent)}, #{green($nordic-color-accent)}, #{blue($nordic-color-accent)}, 0.18);
     color: var(--nordic-ink);
 }
 
@@ -48,3 +49,29 @@ body.nordic-template {
     top: 1rem;
     color: #fff;
 }
+
+// ── Стиль кнопок из дизайн-системы ───────────────────────────────────────────
+@if $nordic-btn-style == 'outline' {
+    .nordic-template .btn-primary,
+    .nordic-template .btn-primary:not(:disabled):not(.disabled) {
+        background-color: transparent;
+        border-color: var(--nordic-accent);
+        color: var(--nordic-accent);
+        &:hover, &:focus {
+            background-color: var(--nordic-accent);
+            color: #fff;
+        }
+    }
+} @else if $nordic-btn-style == 'ghost' {
+    .nordic-template .btn-primary,
+    .nordic-template .btn-primary:not(:disabled):not(.disabled) {
+        background-color: transparent;
+        border-color: transparent;
+        color: var(--nordic-accent);
+        &:hover, &:focus {
+            background-color: var(--nordic-accent-soft);
+            color: var(--nordic-accent-strong);
+        }
+    }
+}
+// filled — стандартный Bootstrap, ничего не переопределяем

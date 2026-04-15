@@ -83,6 +83,24 @@
       }
     }
   },
+  "Семантические targets": {
+    "Виджет (карточка)": {
+      "Обертка": "[data-nordic-target='widget-card']",
+      "Заголовок": "[data-nordic-target='widget-card-title']",
+      "Тело": "[data-nordic-target='widget-card-body']"
+    },
+    "Виджет (plain)": {
+      "Обертка": "[data-nordic-target='widget-plain']"
+    },
+    "Табовый виджет": {
+      "Обертка": "[data-nordic-target='widget-tabbed']",
+      "Заголовок": "[data-nordic-target='widget-tabbed-header']",
+      "Список табов": "[data-nordic-target='widget-tabbed-tabs']",
+      "Элемент таба": "[data-nordic-target='widget-tab-item']",
+      "Ссылка таба": "[data-nordic-target='widget-tab-link']",
+      "Панель таба": "[data-nordic-target='widget-tab-panel']"
+    }
+  },
   "Виджеты": {
     "Стандартный виджет (card)": {
       "Обертка": ".icms-widget",

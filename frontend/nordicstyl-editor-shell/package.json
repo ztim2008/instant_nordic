@@ -1,0 +1,18 @@
+{
+  "name": "nordicstyl-editor-shell",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "flexlayout-react": "^0.8.17",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.3"
+  }
+}

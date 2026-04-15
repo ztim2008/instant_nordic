@@ -1,0 +1,201 @@
+/*
+ * NordicBlocks Design System — tokens.css
+ *
+ * Все размеры используют clamp(min, preferred, max):
+ *   — нет breakpoint'ов
+ *   — нет медиа‑запросов в блоках
+ *   — шрифты и отступы плавно меняются от 320px до 1400px
+ *
+ * Формула preferred:  base + coeff * vw
+ *   coeff = (max_rem - min_rem) / (1400px - 320px) * 100
+ */
+
+:root {
+
+    /* ── ЦВЕТА ── */
+    --nb-color-accent:     #b42318;      /* переопределяется из design */
+    --nb-color-accent-alt: #8a1910;
+    --nb-color-bg:         #ffffff;
+    --nb-color-bg-alt:     #f7f7f6;
+    --nb-color-bg-dark:    #111111;
+    --nb-color-text:       #1a1a1a;
+    --nb-color-text-muted: #6b7280;
+    --nb-color-border:     #e5e7eb;
+    --nb-color-surface:    #ffffff;
+
+    /* ── ШРИФТЫ (fluid clamp) ── */
+    /* xs: 11px → 13px */
+    --nb-text-xs:   clamp(0.6875rem, 0.63rem + 0.25vw, 0.8125rem);
+    /* sm: 13px → 15px */
+    --nb-text-sm:   clamp(0.8125rem, 0.75rem + 0.26vw, 0.9375rem);
+    /* base: 16px → 18px */
+    --nb-text-base: clamp(1rem,      0.94rem + 0.27vw, 1.125rem);
+    /* lg: 18px → 20px */
+    --nb-text-lg:   clamp(1.125rem,  1.05rem + 0.34vw, 1.25rem);
+    /* xl: 20px → 24px */
+    --nb-text-xl:   clamp(1.25rem,   1.1rem  + 0.65vw, 1.5rem);
+    /* 2xl: 24px → 32px */
+    --nb-text-2xl:  clamp(1.5rem,    1.2rem  + 1.3vw,  2rem);
+    /* 3xl: 30px → 40px */
+    --nb-text-3xl:  clamp(1.875rem,  1.5rem  + 1.7vw,  2.5rem);
+    /* 4xl: 36px → 56px */
+    --nb-text-4xl:  clamp(2.25rem,   1.5rem  + 3.4vw,  3.5rem);
+    /* hero: 40px → 72px */
+    --nb-text-hero: clamp(2.5rem,    1.8rem  + 5vw,    4.5rem);
+
+    /* ── ОТСТУПЫ (fluid clamp) ── */
+    /* xs: 4px → 8px */
+    --nb-space-xs:  clamp(0.25rem,  0.2rem  + 0.22vw, 0.5rem);
+    /* sm: 8px → 12px */
+    --nb-space-sm:  clamp(0.5rem,   0.4rem  + 0.37vw, 0.75rem);
+    /* md: 16px → 24px */
+    --nb-space-md:  clamp(1rem,     0.8rem  + 0.74vw, 1.5rem);
+    /* lg: 24px → 48px */
+    --nb-space-lg:  clamp(1.5rem,   1rem    + 2.2vw,  3rem);
+    /* xl: 32px → 64px */
+    --nb-space-xl:  clamp(2rem,     1.2rem  + 3.7vw,  4rem);
+    /* 2xl: 48px → 96px */
+    --nb-space-2xl: clamp(3rem,     1.5rem  + 6.85vw, 6rem);
+    /* 3xl: 64px → 120px */
+    --nb-space-3xl: clamp(4rem,     2rem    + 10.4vw, 7.5rem);
+
+    /* ── СЕКЦИЯ: вертикальный ритм ── */
+    /* padding‑top/bottom секций: 48px → 96px */
+    --nb-section-py:  clamp(3rem, 2rem + 5vw, 6rem);
+    /* gap между секциями на странице: 32px → 80px */
+    --nb-section-gap: clamp(2rem, 1rem + 7.4vw, 5rem);
+
+    /* ── КОНТЕЙНЕР ── */
+    --nb-container-max:  1200px;
+    --nb-container-px:   clamp(1rem, 0.5rem + 2.5vw, 2rem);
+
+    /* ── РАДИУСЫ ── */
+    --nb-radius-sm:  4px;
+    --nb-radius-md:  8px;
+    --nb-radius-lg:  16px;
+    --nb-radius-xl:  24px;
+    --nb-radius-pill:9999px;
+    /* активный набор (переопределяется из design) */
+    --nb-radius:     var(--nb-radius-md);
+    --nb-radius-card:var(--nb-radius-lg);
+    --nb-radius-btn: var(--nb-radius-md);
+
+    /* ── ТЕНИ ── */
+    --nb-shadow-sm:  0 1px 2px 0 rgb(0 0 0 / .06);
+    --nb-shadow-md:  0 4px 12px 0 rgb(0 0 0 / .08);
+    --nb-shadow-lg:  0 8px 32px 0 rgb(0 0 0 / .12);
+    --nb-shadow-card:var(--nb-shadow-md);
+
+    /* ── ТИПОГРАФИКА: стек шрифтов ── */
+    --nb-font-sans:  'Inter', 'Helvetica Neue', Arial, sans-serif;
+    --nb-font-serif: 'Playfair Display', Georgia, serif;
+    --nb-font-mono:  'JetBrains Mono', 'Courier New', monospace;
+    --nb-font-body:  var(--nb-font-sans);
+    --nb-font-head:  var(--nb-font-sans);
+    /* переопределяется из design: sans | serif */
+
+    /* line-height */
+    --nb-leading-tight:  1.2;
+    --nb-leading-snug:   1.375;
+    --nb-leading-normal: 1.5;
+    --nb-leading-relaxed:1.625;
+
+    /* letter-spacing */
+    --nb-tracking-tight: -0.02em;
+    --nb-tracking-normal: 0;
+    --nb-tracking-wide:   0.05em;
+
+    /* font-weight */
+    --nb-weight-normal: 400;
+    --nb-weight-medium: 500;
+    --nb-weight-semibold: 600;
+    --nb-weight-bold: 700;
+    --nb-weight-black: 900;
+
+    /* ── ПЕРЕХОДЫ ── */
+    --nb-ease:         cubic-bezier(.4, 0, .2, 1);
+    --nb-duration-sm:  150ms;
+    --nb-duration-md:  250ms;
+    --nb-duration-lg:  400ms;
+    --nb-transition:   var(--nb-duration-md) var(--nb-ease);
+
+    /* ── Z-INDEX ── */
+    --nb-z-base:    0;
+    --nb-z-raised:  10;
+    --nb-z-overlay: 100;
+    --nb-z-modal:   200;
+    --nb-z-toast:   300;
+}
+
+/* ── ТЁМНАЯ ТЕМА (через data-nb-theme="dark" на секции) ── */
+[data-nb-theme="dark"] {
+    --nb-color-bg:         #111111;
+    --nb-color-bg-alt:     #1c1c1c;
+    --nb-color-bg-dark:    #000000;
+    --nb-color-text:       #f5f5f5;
+    --nb-color-text-muted: #9ca3af;
+    --nb-color-border:     #2d2d2d;
+    --nb-color-surface:    #1c1c1c;
+}
+
+/* ── БАЗОВЫЕ СТИЛИ БЛОКА ── */
+.nb-section {
+    padding-top:    var(--nb-section-py);
+    padding-bottom: var(--nb-section-py);
+    background:     var(--nb-color-bg);
+    color:          var(--nb-color-text);
+}
+
+.nb-container {
+    width:      100%;
+    max-width:  var(--nb-container-max);
+    margin-inline: auto;
+    padding-inline: var(--nb-container-px);
+}
+
+/* ── КНОПКИ ── */
+.nb-btn {
+    display:         inline-flex;
+    align-items:     center;
+    gap:             var(--nb-space-xs);
+    padding:         var(--nb-space-sm) var(--nb-space-lg);
+    border-radius:   var(--nb-radius-btn);
+    font-family:     var(--nb-font-body);
+    font-size:       var(--nb-text-base);
+    font-weight:     var(--nb-weight-semibold);
+    text-decoration: none;
+    cursor:          pointer;
+    transition:      background var(--nb-transition), color var(--nb-transition),
+                     border-color var(--nb-transition), box-shadow var(--nb-transition);
+    border:          2px solid transparent;
+    line-height:     1;
+    white-space:     nowrap;
+}
+
+.nb-btn--primary {
+    background:  var(--nb-color-accent);
+    color:       #fff;
+}
+.nb-btn--primary:hover {
+    background:  var(--nb-color-accent-alt);
+    box-shadow:  var(--nb-shadow-md);
+}
+
+.nb-btn--outline {
+    background:  transparent;
+    color:       var(--nb-color-accent);
+    border-color:var(--nb-color-accent);
+}
+.nb-btn--outline:hover {
+    background:  var(--nb-color-accent);
+    color:       #fff;
+}
+
+.nb-btn--ghost {
+    background:  transparent;
+    color:       var(--nb-color-text);
+    border-color:var(--nb-color-border);
+}
+.nb-btn--ghost:hover {
+    background:  var(--nb-color-bg-alt);
+}

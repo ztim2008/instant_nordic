@@ -12,12 +12,305 @@ $library_items = is_array($widget_library['items'] ?? null) ? $widget_library['i
 $history = is_array($builder_state['history'] ?? null) ? $builder_state['history'] : ['count' => 0, 'items' => [], 'is_available' => false];
 $save_action = is_array($builder_state['save_action'] ?? null) ? $builder_state['save_action'] : ['label' => 'Сохранить', 'title' => '', 'is_enabled' => false];
 $status_message = $builder_state['status_message'] ?? 'Каркас builder-а поднят. Следующий шаг: реальная вставка секций/виджетов и сохранение структуры.';
+$design_url = $builder_state['design_url'] ?? '';
 $rules_url = $builder_state['rules_url'] ?? '';
-$picker_url = $builder_state['picker_url'] ?? '';
 $picker_frame_url = $builder_state['picker_frame_url'] ?? '';
 $page_title = $page_title ?? ($page['title'] ?? 'Страница');
 $layout_source_label = (string)($page['layout_source_label'] ?? 'стандартная схема шаблона');
 $current_device_label = (string)($page['device_label'] ?? 'Desktop');
+$schema_state = is_array($builder_state['schema_state'] ?? null) ? $builder_state['schema_state'] : ['version' => 1, 'sections' => []];
+$published_schema_state = is_array($builder_state['published_schema_state'] ?? null) ? $builder_state['published_schema_state'] : ['version' => 1, 'sections' => []];
+
+if (($page['workspace'] ?? '') === 'schema') {
+?>
+<div class="nb-schema-builder" data-nordic-schema-builder>
+    <header class="nb-schema-builder__topbar">
+        <div class="nb-schema-builder__hero">
+            <div class="nb-schema-builder__eyebrow">Секционный режим</div>
+            <h1 class="nb-schema-builder__title"><?php html($page_title); ?></h1>
+            <p class="nb-schema-builder__subtitle">Отдельный секционный режим внутри content.body. Здесь собирается структура страницы, а опубликованная схема выводится прямо на самой странице. Поверх базового текстового слоя уже доступен первый маркетинговый блок CTA.</p>
+            <div class="nb-schema-builder__meta">
+                <span>Шаблон: <strong><?php html((string)($page['template'] ?? 'modern')); ?></strong></span>
+                <span>URI: <strong><?php html((string)($page['uri'] ?? '/')); ?></strong></span>
+                <span>Правило: <strong data-schema-binding-summary><?php html((string)($page['binding_summary'] ?? 'точный · /')); ?></strong></span>
+                <span>Источник: <strong><?php html((string)($page['binding_source_label'] ?? 'новое точечное правило')); ?></strong></span>
+                <span>Опубликовано секций: <strong data-schema-published-count><?php echo count(is_array($published_schema_state['sections'] ?? null) ? $published_schema_state['sections'] : []); ?></strong></span>
+            </div>
+        </div>
+
+        <div class="nb-schema-builder__actions">
+            <label class="nb-schema-builder__page-switcher">
+                <span>Страница</span>
+                <select data-schema-page-switcher>
+                    <?php foreach ($page_targets as $target) { ?>
+                        <option value="<?php html((string)($target['url'] ?? '')); ?>" <?php if (!empty($target['is_active'])) { ?>selected<?php } ?>><?php html((string)($target['title'] ?? 'Страница')); ?><?php if (!empty($target['uri'])) { ?> · <?php html((string)$target['uri']); ?><?php } ?></option>
+                    <?php } ?>
+                </select>
+            </label>
+
+            <div class="nb-schema-builder__page-switcher">
+                <span>Показывать</span>
+                <div class="nb-schema-builder__binding-tabs">
+                    <button type="button" class="nb-schema-builder__binding-tab" data-schema-binding-mode="exact">Точный URL</button>
+                    <button type="button" class="nb-schema-builder__binding-tab" data-schema-binding-mode="prefix">Раздел</button>
+                    <button type="button" class="nb-schema-builder__binding-tab" data-schema-binding-mode="global">Все страницы</button>
+                </div>
+                <input type="hidden" data-schema-binding-field="route_type" value="exact">
+            </div>
+
+            <label class="nb-schema-builder__page-switcher">
+                <span>Путь или префикс</span>
+                <input type="text" data-schema-binding-field="route_pattern" placeholder="/news или /">
+            </label>
+
+            <div class="nb-schema-builder__panel-note" data-schema-binding-note>Режим «Точный URL» показывает схему только на текущем адресе.</div>
+
+            <div class="nb-schema-builder__button-row">
+                <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="add-section">Стартовая секция</button>
+                <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="save">Сохранить черновик</button>
+                <button type="button" class="nb-schema-builder__button" data-schema-action="publish">Опубликовать</button>
+                <?php if ($design_url !== '') { ?><a class="nb-schema-builder__button nb-schema-builder__button--ghost" href="<?php html($design_url); ?>">Живой дизайн</a><?php } ?>
+                <a class="nb-schema-builder__button nb-schema-builder__button--ghost" href="<?php html($rules_url); ?>">CSS-правила</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="nb-schema-builder__layout">
+        <aside class="nb-schema-builder__sidebar nb-schema-builder__sidebar--left">
+            <section class="nb-schema-builder__panel">
+                <div class="nb-schema-builder__panel-head">
+                    <h2>Секции</h2>
+                    <span data-schema-count>0</span>
+                </div>
+                <div class="nb-schema-builder__panel-note">Не стартуем с пустого холста: кнопка сразу добавляет двухколоночную стартовую секцию с текстом и CTA.</div>
+                <div class="nb-schema-builder__section-list" data-schema-sections></div>
+            </section>
+
+            <section class="nb-schema-builder__panel">
+                <div class="nb-schema-builder__panel-head">
+                    <h2>Блоки</h2>
+                    <span><?php echo count($library_items); ?></span>
+                </div>
+                <div class="nb-schema-builder__panel-note">Первый продуктовый слой поверх секций: базовый текст и CTA с кнопкой. Кнопка добавляет блок в выбранную секцию.</div>
+                <div class="nb-schema-builder__widget-library">
+                    <?php if ($library_items) { ?>
+                        <?php foreach ($library_items as $item) { ?>
+                            <button
+                                type="button"
+                                class="nb-schema-builder__widget-card"
+                                data-schema-action="add-widget-selected"
+                                data-widget-kind="<?php html((string)($item['key'] ?? 'text')); ?>"
+                            >
+                                <strong><?php html((string)($item['title'] ?? 'Блок')); ?></strong>
+                                <span><?php html((string)($item['description'] ?? '')); ?></span>
+                            </button>
+                        <?php } ?>
+                    <?php } else { ?>
+                        <div class="nb-schema-builder__empty">Библиотека блоков пока пуста.</div>
+                    <?php } ?>
+                </div>
+            </section>
+
+            <section class="nb-schema-builder__panel">
+                <div class="nb-schema-builder__panel-head">
+                    <h2>Правила показа</h2>
+                    <span data-schema-bindings-count>0</span>
+                </div>
+                <div class="nb-schema-builder__panel-note">Здесь лежат все правила: точечные, по разделу и сквозные на весь сайт. Любое правило можно открыть, поправить и удалить целиком.</div>
+                <div class="nb-schema-builder__bindings" data-schema-bindings-list></div>
+            </section>
+
+            <section class="nb-schema-builder__panel">
+                <h2>Статус</h2>
+                <div class="nb-schema-builder__status" data-schema-status><?php html($status_message); ?></div>
+            </section>
+        </aside>
+
+        <main class="nb-schema-builder__canvas-wrap">
+            <div class="nb-schema-builder__canvas-head">
+                <div>
+                    <h2>Холст</h2>
+                    <p>Секции и блоки кликабельны. Справа меняются свойства выбранного узла, включая CTA-оффер и кнопку.</p>
+                </div>
+                <div class="nb-schema-builder__canvas-badge">зона вывода: content.body</div>
+            </div>
+            <div class="nb-schema-builder__canvas" data-schema-canvas></div>
+        </main>
+
+        <aside class="nb-schema-builder__sidebar nb-schema-builder__sidebar--right">
+            <section class="nb-schema-builder__panel">
+                <div class="nb-schema-builder__panel-head">
+                    <h2>Свойства</h2>
+                    <span data-schema-selection-kind>ничего</span>
+                </div>
+                <div class="nb-schema-builder__empty" data-schema-empty>Выберите секцию или блок.</div>
+
+                <div class="nb-schema-inspector" data-schema-inspector hidden>
+                    <div class="nb-schema-inspector__group" data-schema-group="section" hidden>
+                        <label>
+                            <span>Название секции</span>
+                            <input type="text" data-schema-field="section.title">
+                        </label>
+                        <label>
+                            <span>Фон</span>
+                            <input type="text" data-schema-field="section.style.background" placeholder="#ffffff или linear-gradient(...)">
+                        </label>
+                        <label>
+                            <span>Отступ сверху</span>
+                            <input type="range" min="0" max="240" step="4" data-schema-field="section.style.padding_top">
+                            <strong data-schema-value="section.style.padding_top">48</strong>
+                        </label>
+                        <label>
+                            <span>Отступ снизу</span>
+                            <input type="range" min="0" max="240" step="4" data-schema-field="section.style.padding_bottom">
+                            <strong data-schema-value="section.style.padding_bottom">48</strong>
+                        </label>
+                        <div class="nb-schema-inspector__actions">
+                            <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="add-text-selected">Добавить текстовый блок</button>
+                            <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="add-widget-selected" data-widget-kind="cta">Добавить CTA</button>
+                            <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="delete-selected">Удалить секцию</button>
+                        </div>
+                    </div>
+
+                    <div class="nb-schema-inspector__group" data-schema-group="block" hidden>
+                        <div class="nb-schema-inspector__type">Тип блока: <strong data-schema-block-type>Текст</strong></div>
+                        <div data-schema-widget-group="text">
+                            <label>
+                                <span>Текст</span>
+                                <textarea rows="7" data-schema-field="block.props.text"></textarea>
+                            </label>
+                        </div>
+                        <div data-schema-widget-group="cta" hidden>
+                            <label>
+                                <span>Надзаголовок</span>
+                                <input type="text" data-schema-field="block.props.eyebrow" placeholder="Спецпредложение">
+                            </label>
+                            <label>
+                                <span>Заголовок CTA</span>
+                                <textarea rows="4" data-schema-field="block.props.title"></textarea>
+                            </label>
+                            <label>
+                                <span>Описание</span>
+                                <textarea rows="5" data-schema-field="block.props.text"></textarea>
+                            </label>
+                            <label>
+                                <span>Текст кнопки</span>
+                                <input type="text" data-schema-field="block.props.button_label" placeholder="Оставить заявку">
+                            </label>
+                            <label>
+                                <span>Ссылка кнопки</span>
+                                <input type="text" data-schema-field="block.props.button_url" placeholder="/contacts">
+                            </label>
+                        </div>
+
+                        <div data-schema-widget-group="news_grid" hidden>
+                            <label>
+                                <span>Тип контента</span>
+                                <select data-schema-field="block.props.ctype">
+                                    <option value="">— выберите —</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>Количество карточек</span>
+                                <input type="number" min="1" max="24" data-schema-field="block.props.limit" value="6">
+                            </label>
+                            <label>
+                                <span>Колонок в сетке</span>
+                                <input type="number" min="1" max="6" data-schema-field="block.props.columns" value="3">
+                            </label>
+                            <label>
+                                <span>Поля (через запятую)</span>
+                                <input type="text" data-schema-field="block.props.fields" placeholder="title,image,date_pub">
+                                <small>Доступные: title, image, date_pub и пользовательские поля типа контента</small>
+                            </label>
+                        </div>
+
+                        <div data-schema-widget-group="hero" hidden>
+                            <label>
+                                <span>Надзаголовок</span>
+                                <input type="text" data-schema-field="block.props.eyebrow" placeholder="Добро пожаловать">
+                            </label>
+                            <label>
+                                <span>Главный заголовок</span>
+                                <textarea rows="3" data-schema-field="block.props.title"></textarea>
+                            </label>
+                            <label>
+                                <span>Подзаголовок</span>
+                                <textarea rows="3" data-schema-field="block.props.text"></textarea>
+                            </label>
+                            <label>
+                                <span>Текст кнопки</span>
+                                <input type="text" data-schema-field="block.props.button_label" placeholder="Подробнее">
+                            </label>
+                            <label>
+                                <span>Ссылка кнопки</span>
+                                <input type="text" data-schema-field="block.props.button_url" placeholder="/about">
+                            </label>
+                            <label>
+                                <span>Высота баннера (px)</span>
+                                <input type="range" min="200" max="800" step="20" data-schema-field="block.props.hero_height">
+                            </label>
+                        </div>
+                        <label>
+                            <span>Колонка</span>
+                            <select data-schema-field="block.column_id"></select>
+                        </label>
+                        <div data-schema-widget-group="text">
+                            <label>
+                                <span>Размер текста</span>
+                                <input type="range" min="10" max="120" step="1" data-schema-field="block.style.font_size">
+                                <strong data-schema-value="block.style.font_size">18</strong>
+                            </label>
+                        </div>
+                        <div data-schema-widget-group="cta" hidden>
+                            <label>
+                                <span>Размер заголовка</span>
+                                <input type="range" min="20" max="96" step="1" data-schema-field="block.style.title_size">
+                                <strong data-schema-value="block.style.title_size">40</strong>
+                            </label>
+                            <label>
+                                <span>Цвет кнопки</span>
+                                <input type="text" data-schema-field="block.style.accent_color" placeholder="#155e63">
+                            </label>
+                        </div>
+                        <label>
+                            <span>Цвет текста</span>
+                            <input type="text" data-schema-field="block.style.color" placeholder="#111111">
+                        </label>
+                        <label>
+                            <span>Выравнивание</span>
+                            <select data-schema-field="block.style.text_align">
+                                <option value="left">Слева</option>
+                                <option value="center">По центру</option>
+                                <option value="right">Справа</option>
+                                <option value="justify">По ширине</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Фон</span>
+                            <input type="text" data-schema-field="block.style.background" placeholder="#ffffff">
+                        </label>
+                        <label>
+                            <span>Внутренний отступ</span>
+                            <input type="range" min="0" max="240" step="4" data-schema-field="block.style.padding">
+                            <strong data-schema-value="block.style.padding">0</strong>
+                        </label>
+                        <div class="nb-schema-inspector__actions">
+                            <button type="button" class="nb-schema-builder__button nb-schema-builder__button--ghost" data-schema-action="delete-selected">Удалить блок</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<script>
+window.NORDIC_BUILDER_STATE = <?php echo json_encode($builder_state, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+</script>
+<?php
+    return;
+}
 
 if (!function_exists('nordicBuilderRenderRowsTemplate')) {
     function nordicBuilderRenderRowsTemplate(array $rows, bool $isNested = false) {
@@ -150,8 +443,9 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
             <?php if (!empty($builder_state['page']['default_source']) && $builder_state['page']['default_source'] !== ($builder_state['page']['template'] ?? '')) { ?>
                 <button class="nb-builder__link" type="button" data-builder-reset title="Вернуть шаблон к default-схеме <?php html((string)$builder_state['page']['default_source']); ?>">Default</button>
             <?php } ?>
+            <?php if (!empty($builder_state['editor_url'])) { ?><a class="nb-builder__link" href="<?php html($builder_state['editor_url']); ?>" title="Открыть новый editor shell">Editor</a><?php } ?>
+            <?php if ($design_url !== '') { ?><a class="nb-builder__link" href="<?php html($design_url); ?>" title="Открыть отдельную страницу live-дизайна">Design</a><?php } ?>
             <a class="nb-builder__link" href="<?php html($rules_url); ?>" title="Правила CSS">CSS</a>
-            <a class="nb-builder__link" href="<?php html($picker_url); ?>" title="Пикер элементов">Pick</a>
         </div>
     </header>
 
@@ -228,12 +522,12 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
         <main class="nb-builder__canvas" data-builder-canvas data-active-device="<?php html((string)($page['device'] ?? 'desktop')); ?>" data-device-source="base" aria-label="Builder canvas">
             <div class="nb-builder__viewport-bar">
                 <div>
-                    <div class="nb-builder__viewport-title">Live viewport</div>
-                    <div class="nb-builder__viewport-subtitle" data-viewport-subtitle>Текущий режим показывает live-предпросмотр страницы.</div>
+                    <div class="nb-builder__viewport-title">Schema viewport</div>
+                    <div class="nb-builder__viewport-subtitle" data-viewport-subtitle>Это отдельная страница схемы. Live-дизайн вынесен в самостоятельный workspace, чтобы не смешивать структуру и оформление.</div>
                 </div>
                 <div class="nb-builder__viewport-badges">
                     <span class="nb-viewport-badge nb-viewport-badge--device" data-viewport-device><?php html($current_device_label); ?></span>
-                    <span class="nb-viewport-badge" data-viewport-source>Base</span>
+                    <span class="nb-viewport-badge" data-viewport-source>Desktop</span>
                 </div>
             </div>
 
@@ -313,67 +607,13 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                             <div class="nb-widget-options__body" data-widget-options-body hidden></div>
                         </section>
 
-                        <section class="nb-inspector__section" data-style-inspector-block>
+                        <section class="nb-inspector__section">
                             <div class="nb-inspector__section-head">
-                                <h3>Style</h3>
-                                <span class="nb-help" title="Привязывает выбранный builder-узел к CSS selector и сохраняет rule в текущий runtime nordicstyl.">?</span>
+                                <h3>Live-дизайн</h3>
+                                <span class="nb-help" title="Оформление теперь живет на отдельной странице, чтобы не смешивать дизайн и layout-схему.">?</span>
                             </div>
-                            <label class="nb-field">
-                                <span class="nb-field__label">Selector target</span>
-                                <input class="nb-input" type="text" data-style-selector placeholder=".hero .title" />
-                            </label>
-                            <div class="nb-style-target-meta">
-                                <span class="nb-style-pill" data-style-target-source>manual</span>
-                                <div class="nb-builder__hint" data-style-target-hint>У этого узла пока нет style target. Впишите selector вручную или возьмите его с live-страницы.</div>
-                            </div>
-                            <div class="nb-action-row">
-                                <button class="nb-button nb-button--secondary" type="button" data-style-open-picker>Выбрать на live-странице</button>
-                                <a class="nb-button nb-button--ghost" href="<?php html($picker_url); ?>" target="_blank" rel="noopener">Отдельный picker</a>
-                            </div>
-                            <div class="nb-inspector__device-note" data-style-scope-note>Desktop пишет в base/default. Tablet и Mobile пишут в свои device-ветки.</div>
-                            <div class="nb-style-grid">
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Цвет текста</span>
-                                    <input class="nb-input" type="text" data-style-field="color" placeholder="#173042" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Фон</span>
-                                    <input class="nb-input" type="text" data-style-field="background-color" placeholder="#ffffff" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Размер текста</span>
-                                    <input class="nb-input" type="text" data-style-field="font-size" placeholder="18px" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Внутренний отступ</span>
-                                    <input class="nb-input" type="text" data-style-field="padding" placeholder="24px" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Радиус</span>
-                                    <input class="nb-input" type="text" data-style-field="border-radius" placeholder="16px" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Толщина рамки</span>
-                                    <input class="nb-input" type="text" data-style-field="border-width" placeholder="1px" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Цвет рамки</span>
-                                    <input class="nb-input" type="text" data-style-field="border-color" placeholder="#d5cec0" />
-                                </label>
-                                <label class="nb-field">
-                                    <span class="nb-field__label">Стиль рамки</span>
-                                    <select class="nb-select" data-style-field="border-style">
-                                        <option value="">Не задано</option>
-                                        <option value="solid">Solid</option>
-                                        <option value="dashed">Dashed</option>
-                                        <option value="dotted">Dotted</option>
-                                    </select>
-                                </label>
-                            </div>
-                            <div class="nb-action-row">
-                                <button class="nb-button" type="button" data-style-save>Сохранить style rule</button>
-                                <button class="nb-button nb-button--secondary" type="button" data-style-reset>Очистить поля</button>
-                            </div>
+                            <div class="nb-builder__hint">Открывайте отдельный design workspace и управляйте стилем на живой странице без примеси layout-схемы.</div>
+                            <?php if ($design_url !== '') { ?><div class="nb-action-row"><a class="nb-button" href="<?php html($design_url); ?>">Открыть live-дизайн</a></div><?php } ?>
                         </section>
                     </div>
                 </div>
@@ -405,28 +645,6 @@ if (!function_exists('nordicBuilderRenderRowsTemplate')) {
                 </div>
             </section>
         </aside>
-    </div>
-</div>
-
-<div class="nb-style-picker-modal" data-style-picker-modal hidden>
-    <div class="nb-style-picker-modal__backdrop" data-style-picker-close></div>
-    <div class="nb-style-picker-modal__dialog" role="dialog" aria-modal="true" aria-label="Live picker selector">
-        <div class="nb-style-picker-modal__head">
-            <div>
-                <div class="nb-style-picker-modal__title">Live picker</div>
-                <div class="nb-style-picker-modal__subtitle">Кликните по элементу в live-странице, чтобы забрать selector для выбранного builder-узла.</div>
-            </div>
-            <button class="nb-button nb-button--secondary" type="button" data-style-picker-close>Закрыть</button>
-        </div>
-        <div class="nb-style-picker-modal__body">
-            <iframe
-                class="nb-style-picker-modal__frame"
-                data-style-picker-frame
-                src="<?php html($picker_frame_url); ?>"
-                referrerpolicy="no-referrer"
-                title="Nordic builder live picker"
-            ></iframe>
-        </div>
     </div>
 </div>
 

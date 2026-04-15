@@ -27,11 +27,16 @@ if($ctype['options']['list_show_filter']) {
     </p>
 <?php return; } ?>
 
-<div class="content_list tiled <?php echo $ctype['name']; ?>_list mb-n4 row">
+<?php
+    $list_root_suffix = $ctype['name'] . '-' . (!empty($items[0]['id']) ? (int)$items[0]['id'] : 'empty') . '-' . count($items);
+?>
+
+<div class="content_list tiled <?php echo $ctype['name']; ?>_list mb-n4 row" data-nordic-id="content-list-<?php html($list_root_suffix); ?>" data-nordic-role="content.list" data-nordic-label="Список материалов плиткой">
 
     <?php foreach($items as $item){ ?>
+        <?php $item_nordic_base = 'content-list-item-' . $list_root_suffix . '-' . (int)$item['id']; ?>
 
-        <div class="tile <?php echo $ctype['name']; ?>_list_item col-lg-<?php echo 12/(!empty($list_opt['cols']) ? $list_opt['cols'] : 2); ?> mb-3 mb-md-4">
+        <div class="tile <?php echo $ctype['name']; ?>_list_item col-lg-<?php echo 12/(!empty($list_opt['cols']) ? $list_opt['cols'] : 2); ?> mb-3 mb-md-4" data-nordic-id="<?php html($item_nordic_base); ?>" data-nordic-role="content.list.item" data-nordic-label="<?php html(!empty($item['title']) ? ('Материал: ' . trim(strip_tags((string)$item['title']))) : 'Элемент списка'); ?>">
             <div class="icms-content-fields d-flex flex-column h-100">
             <?php foreach($item['fields'] as $field){ ?>
 
@@ -44,7 +49,7 @@ if($ctype['options']['list_show_filter']) {
                     <?php } ?>
 
                     <?php if ($field['name'] === 'title' && $ctype['options']['item_on']){ ?>
-                        <h3 class="h4 m-0">
+                        <h3 class="h4 m-0" data-nordic-id="<?php html($item_nordic_base . '-title'); ?>" data-nordic-role="content.list.item.title" data-nordic-label="Заголовок материала">
                         <?php if (!empty($this->menus['list_actions_menu'])){ ?>
                             <div class="dropdown ml-2 float-right">
                                 <button class="btn" type="button" data-toggle="dropdown">
@@ -60,7 +65,7 @@ if($ctype['options']['list_show_filter']) {
                             </div>
                         <?php } ?>
                         <?php if ($item['parent_id']){ ?>
-                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>"><?php html($item['parent_title']); ?></a>
+                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>" style="color: inherit;"><?php html($item['parent_title']); ?></a>
                             &rarr;
                         <?php } ?>
 
@@ -70,7 +75,7 @@ if($ctype['options']['list_show_filter']) {
                                 <?php html_svg_icon('solid', 'lock'); ?>
                             </span>
                         <?php } else { ?>
-                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>">
+                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>" style="color: inherit;">
                                 <?php html($item[$field['name']]); ?>
                             </a>
                             <?php if ($item['is_private']) { ?>
@@ -95,7 +100,7 @@ if($ctype['options']['list_show_filter']) {
             <?php } ?>
 
             <?php if (!empty($item['info_bar'])){ ?>
-                <div class="info_bar p-0 bg-transparent border-0 mt-auto">
+                <div class="info_bar p-0 bg-transparent border-0 mt-auto" data-nordic-id="<?php html($item_nordic_base . '-meta'); ?>" data-nordic-role="content.list.item.meta" data-nordic-label="Метаданные материала">
                     <?php foreach($item['info_bar'] as $bar){ ?>
                         <div class="bar_item <?php echo !empty($bar['css']) ? $bar['css'] : ''; ?>" title="<?php html(!empty($bar['title']) ? $bar['title'] : ''); ?>">
                             <?php if (!empty($bar['icon'])){ ?>

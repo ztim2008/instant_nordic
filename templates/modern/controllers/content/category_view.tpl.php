@@ -1,4 +1,9 @@
 <?php
+    $category_suffix = !empty($category['id']) ? (string)(int)$category['id'] : 'root';
+    $category_title_plain = trim(strip_tags((string)($category['title'] ?? $ctype['title'])));
+    $category_nordic_id = 'content-category-' . $ctype['name'] . '-' . $category_suffix;
+    $category_title_nordic_id = 'content-category-title';
+    $category_datasets_nordic_base = 'content-category-datasets';
 if (!$is_frontpage){
     if (cmsUser::isAllowed($ctype['name'], 'add')) {
 
@@ -56,7 +61,7 @@ if (!$is_frontpage){
 ?>
 <?php ob_start(); ?>
     <?php if ($show_h1){  ?>
-        <h1>
+        <h1 data-nordic-id="<?php html($category_title_nordic_id); ?>" data-nordic-role="content.title" data-nordic-label="Заголовок контентной страницы">
             <?php $this->pageH1(); ?>
             <?php if (!empty($ctype['rss_link'])){ ?>
                 <sup>
@@ -84,17 +89,23 @@ if (!$is_frontpage){
         'datasets'        => $datasets,
         'dataset_name'    => $dataset,
         'current_dataset' => $current_dataset,
+        'nordic_base'     => $category_datasets_nordic_base,
         'wrap_class'      => ($show_h1 ? 'my-3 my-md-4' : 'mb-3 mb-md-4').' content_datasets_'.$ctype['name'],
         'ds_prefix'       => '-',
         'base_ds_url'     => rel_to_href($base_ds_url)
     ]);
 } ?>
 
+<div data-nordic-id="<?php html($category_nordic_id); ?>" data-nordic-role="content.category" data-nordic-label="<?php html($category_title_plain !== '' ? ('Категория: ' . $category_title_plain) : 'Категория контента'); ?>">
+
+<div data-nordic-id="<?php html($category_nordic_id . '-body'); ?>" data-nordic-role="content.body" data-nordic-label="Основной контент страницы категории">
+
 <?php if (!empty($category['description'])){?>
-    <div class="category_description"><?php echo $category['description']; ?></div>
+    <div class="category_description" data-nordic-id="<?php html($category_nordic_id . '-description'); ?>" data-nordic-role="content.category.description" data-nordic-label="Описание категории"><?php echo $category['description']; ?></div>
 <?php } ?>
 
 <?php if ($subcats){ ?>
+    <div data-nordic-id="<?php html($category_nordic_id . '-subcats'); ?>" data-nordic-role="content.category.subcats" data-nordic-label="Подкатегории">
     <?php if($ctype['options']['cover_preset']){ ?>
         <div class="row mb-n3">
             <?php foreach($subcats as $c){ ?>
@@ -143,16 +154,23 @@ if (!$is_frontpage){
             <?php } ?>
         </ul>
     <?php } ?>
+    </div>
 <?php } ?>
 
 <?php $this->block('before_content_items_list_html'); ?>
 
-<?php echo $items_list_html; ?>
+<div data-nordic-id="<?php html($category_nordic_id . '-items'); ?>" data-nordic-role="content.category.items" data-nordic-label="Список материалов категории">
+    <?php echo $items_list_html; ?>
+</div>
 
 <?php $this->block('after_content_items_list_html'); ?>
 
 <?php if ($hooks_html) { ?>
-    <div class="sub_items_list">
+    <div class="sub_items_list" data-nordic-id="<?php html($category_nordic_id . '-hooks'); ?>" data-nordic-role="content.category.hooks" data-nordic-label="Дополнительные блоки категории">
         <?php echo html_each($hooks_html); ?>
     </div>
 <?php } ?>
+
+</div>
+
+</div>

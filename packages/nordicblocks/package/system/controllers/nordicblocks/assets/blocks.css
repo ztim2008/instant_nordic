@@ -1,0 +1,100 @@
+/*
+ * NordicBlocks — blocks.css
+ * Стили блоков. Размеры и отступы только через CSS-переменные из tokens.css.
+ * Нет @media breakpoint'ов — всё адаптивно через fluid clamp и CSS Grid.
+ */
+
+/* ════════════════════════════════════
+   HERO
+   ════════════════════════════════════ */
+
+.nb-hero {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 1 колонка (centered / left) */
+.nb-hero__container {
+    display:         grid;
+    grid-template-columns: 1fr;
+    gap:             var(--nb-space-2xl);
+    align-items:     center;
+}
+
+/* split: 2 колонки при достаточной ширине */
+.nb-hero--split .nb-hero__container {
+    grid-template-columns: 1fr 1fr;
+}
+/* на узких экранах — в стопку */
+@media (max-width: 640px) {
+    .nb-hero--split .nb-hero__container {
+        grid-template-columns: 1fr;
+    }
+    .nb-hero--split .nb-hero__media {
+        order: -1;
+    }
+}
+
+/* centered */
+.nb-hero--centered .nb-hero__content {
+    text-align: center;
+    margin-inline: auto;
+    max-width: 720px;
+}
+.nb-hero--centered .nb-hero__actions {
+    justify-content: center;
+}
+
+.nb-hero__eyebrow {
+    font-size:      var(--nb-text-sm);
+    font-weight:    var(--nb-weight-semibold);
+    letter-spacing: var(--nb-tracking-wide);
+    text-transform: uppercase;
+    color:          var(--nb-color-accent);
+    margin-bottom:  var(--nb-space-sm);
+}
+[data-nb-theme="dark"]  .nb-hero__eyebrow,
+[data-nb-theme="accent"] .nb-hero__eyebrow {
+    color: rgba(255,255,255,.75);
+}
+
+.nb-hero__heading {
+    font-family:    var(--nb-font-head);
+    font-size:      var(--nb-text-hero);
+    font-weight:    var(--nb-weight-black);
+    line-height:    var(--nb-leading-tight);
+    letter-spacing: var(--nb-tracking-tight);
+    color:          var(--nb-color-text);
+    margin-bottom:  var(--nb-space-md);
+}
+[data-nb-theme="dark"]  .nb-hero__heading,
+[data-nb-theme="accent"] .nb-hero__heading {
+    color: #fff;
+}
+
+.nb-hero__subheading {
+    font-size:     var(--nb-text-xl);
+    line-height:   var(--nb-leading-relaxed);
+    color:         var(--nb-color-text-muted);
+    margin-bottom: var(--nb-space-lg);
+    max-width:     60ch;
+}
+[data-nb-theme="dark"]  .nb-hero__subheading,
+[data-nb-theme="accent"] .nb-hero__subheading {
+    color: rgba(255,255,255,.8);
+}
+
+.nb-hero__actions {
+    display:   flex;
+    flex-wrap: wrap;
+    gap:       var(--nb-space-sm);
+    align-items: center;
+}
+
+.nb-hero__image {
+    width:         100%;
+    height:        auto;
+    border-radius: var(--nb-radius-card);
+    box-shadow:    var(--nb-shadow-lg);
+    display:       block;
+}

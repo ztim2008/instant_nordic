@@ -1,0 +1,69 @@
+{
+    "title":    "Text — текстовая секция",
+    "category": "content",
+    "version":  "1.0",
+    "fields": [
+        {
+            "key":     "eyebrow",
+            "label":   "Надзаголовок",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "heading",
+            "label":   "Заголовок",
+            "type":    "text",
+            "default": "О нас"
+        },
+        {
+            "key":     "body",
+            "label":   "Текст (поддерживает переносы строк)",
+            "type":    "textarea",
+            "default": "Здесь разместите основной текст раздела."
+        },
+        {
+            "key":     "alignment",
+            "label":   "Выравнивание",
+            "type":    "select",
+            "default": "center",
+            "options": [
+                { "value": "left",   "label": "Слева"   },
+                { "value": "center", "label": "По центру" }
+            ]
+        },
+        {
+            "key":     "theme",
+            "label":   "Фон секции",
+            "type":    "select",
+            "default": "light",
+            "options": [
+                { "value": "light", "label": "Светлый"   },
+                { "value": "alt",   "label": "Серый фон" },
+                { "value": "dark",  "label": "Тёмный"    }
+            ]
+        },
+        {
+            "key":     "max_width",
+            "label":   "Максимальная ширина текста",
+            "type":    "select",
+            "default": "md",
+            "options": [
+                { "value": "sm", "label": "Узкий (560px)"    },
+                { "value": "md", "label": "Средний (720px)"  },
+                { "value": "lg", "label": "Широкий (960px)"  }
+            ]
+        },
+        {
+            "key":     "btn_label",
+            "label":   "Кнопка (пусто — не показывать)",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "btn_url",
+            "label":   "Ссылка кнопки",
+            "type":    "text",
+            "default": "#"
+        }
+    ]
+}

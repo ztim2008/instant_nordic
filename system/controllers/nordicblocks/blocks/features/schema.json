@@ -1,0 +1,113 @@
+{
+    "title":    "Features — сетка преимуществ",
+    "category": "grid",
+    "version":  "1.0",
+    "fields": [
+        {
+            "key":     "eyebrow",
+            "label":   "Надзаголовок",
+            "type":    "text",
+            "default": "Почему мы"
+        },
+        {
+            "key":     "heading",
+            "label":   "Заголовок секции",
+            "type":    "text",
+            "default": "Всё что нужно для запуска"
+        },
+        {
+            "key":     "columns",
+            "label":   "Количество колонок",
+            "type":    "select",
+            "default": "3",
+            "options": [
+                { "value": "2", "label": "2 колонки" },
+                { "value": "3", "label": "3 колонки" },
+                { "value": "4", "label": "4 колонки" }
+            ]
+        },
+        {
+            "key":     "theme",
+            "label":   "Фон секции",
+            "type":    "select",
+            "default": "light",
+            "options": [
+                { "value": "light",  "label": "Светлый"    },
+                { "value": "alt",    "label": "Серый фон"  },
+                { "value": "dark",   "label": "Тёмный"     }
+            ]
+        },
+        {
+            "key":     "item1_icon",
+            "label":   "Иконка 1 (Font Awesome, напр. fa-bolt)",
+            "type":    "text",
+            "default": "fa-bolt"
+        },
+        {
+            "key":     "item1_title",
+            "label":   "Заголовок 1",
+            "type":    "text",
+            "default": "Быстрый старт"
+        },
+        {
+            "key":     "item1_text",
+            "label":   "Описание 1",
+            "type":    "textarea",
+            "default": "Готовый сайт за несколько минут без написания кода."
+        },
+        {
+            "key":     "item2_icon",
+            "label":   "Иконка 2",
+            "type":    "text",
+            "default": "fa-paint-brush"
+        },
+        {
+            "key":     "item2_title",
+            "label":   "Заголовок 2",
+            "type":    "text",
+            "default": "Гибкий дизайн"
+        },
+        {
+            "key":     "item2_text",
+            "label":   "Описание 2",
+            "type":    "textarea",
+            "default": "Настройте цвета, типографику и отступы под свой бренд."
+        },
+        {
+            "key":     "item3_icon",
+            "label":   "Иконка 3",
+            "type":    "text",
+            "default": "fa-shield-alt"
+        },
+        {
+            "key":     "item3_title",
+            "label":   "Заголовок 3",
+            "type":    "text",
+            "default": "Надёжность"
+        },
+        {
+            "key":     "item3_text",
+            "label":   "Описание 3",
+            "type":    "textarea",
+            "default": "Проверено на реальных проектах. Стабильная работа."
+        },
+        {
+            "key":     "item4_icon",
+            "label":   "Иконка 4 (необязательно)",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "item4_title",
+            "label":   "Заголовок 4",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "item4_text",
+            "label":   "Описание 4",
+            "type":    "textarea",
+            "default": ""
+        }
+    ]
+}

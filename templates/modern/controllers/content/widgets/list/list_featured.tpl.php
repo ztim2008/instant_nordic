@@ -4,14 +4,20 @@
  * Template Type: widget
  */
 ?>
-<div class="icms-widget__content_list mb-n3 mb-md-n4 content_list featured row">
+<?php
+    $list_root_suffix = (isset($widget) && is_object($widget) && isset($widget->id)) ? ('widget-' . (int)$widget->id) : ($ctype['name'] . '-' . (!empty($items[0]['id']) ? (int)$items[0]['id'] : 'empty') . '-' . count($items));
+?>
+<div class="icms-widget__content_list mb-n3 mb-md-n4 content_list featured row" data-nordic-id="content-list-<?php html($list_root_suffix); ?>" data-nordic-role="content.list" data-nordic-label="Избранный список материалов">
     <?php $index = 0; ?>
     <?php foreach($items as $item) { ?>
         <?php
             $class = $index === 0 ? 'col-md-6 col-lg-12 mb-3 mb-md-4' : 'col-md-6 col-lg-4 mb-3 mb-md-4';
             $title_tag  = $index === 0 ? 'h4' : 'h5';
+            $item_nordic_base = (isset($widget) && is_object($widget) && isset($widget->id))
+                ? ('content-list-widget-' . (int)$widget->id . '-item-' . $index)
+                : ('content-list-item-' . $list_root_suffix . '-' . (int)$item['id']);
         ?>
-        <div class="<?php echo $class; ?>">
+        <div class="<?php echo $class; ?>" data-nordic-id="<?php html($item_nordic_base); ?>" data-nordic-role="content.list.item" data-nordic-label="<?php html(!empty($item['title']) ? ('Материал: ' . trim(strip_tags((string)$item['title']))) : 'Элемент списка'); ?>">
             <div class="icms-content-fields<?php if($index){ ?> d-flex flex-column h-100<?php } ?>">
             <?php foreach($item['fields'] as $field){ ?>
                 <div class="field ft_<?php echo $field['type']; ?> f_<?php echo $field['name']; ?> <?php echo $field['options']['wrap_type']; ?>_field"<?php if($field['options']['wrap_width']){ ?> style="width: <?php echo $field['options']['wrap_width']; ?>;"<?php } ?>>
@@ -23,9 +29,9 @@
                     <?php } ?>
 
                     <?php if ($field['name'] === 'title' && $ctype['options']['item_on']){ ?>
-                        <<?php echo $title_tag; ?> class="value m-0">
+                        <<?php echo $title_tag; ?> class="value m-0" data-nordic-id="<?php html($item_nordic_base . '-title'); ?>" data-nordic-role="content.list.item.title" data-nordic-label="Заголовок материала">
                         <?php if ($item['parent_id']){ ?>
-                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>"><?php html($item['parent_title']); ?></a>
+                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>" style="color: inherit;"><?php html($item['parent_title']); ?></a>
                             &rarr;
                         <?php } ?>
                         <?php if (!empty($item['is_private_item'])) { ?>
@@ -34,7 +40,7 @@
                                 <?php html_svg_icon('solid', 'lock'); ?>
                             </span>
                         <?php } else { ?>
-                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>">
+                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>" style="color: inherit;">
                                 <?php html($item[$field['name']]); ?>
                             </a>
                             <?php if ($item['is_private']) { ?>
@@ -52,7 +58,7 @@
                 </div>
             <?php } ?>
             <?php if (!empty($item['info_bar'])){ $is_small = count($item['info_bar']) > 2; ?>
-                <div class="info_bar p-0 border-0 mt-auto">
+                <div class="info_bar p-0 border-0 mt-auto" data-nordic-id="<?php html($item_nordic_base . '-meta'); ?>" data-nordic-role="content.list.item.meta" data-nordic-label="Метаданные материала">
                     <?php foreach($item['info_bar'] as $bar){ ?>
                         <div class="mr-2<?php if($is_small){ ?> small<?php } ?> bar_item <?php echo !empty($bar['css']) ? $bar['css'] : ''; ?>" title="<?php html(!empty($bar['title']) ? $bar['title'] : ''); ?>">
                             <?php if (!empty($bar['icon'])){ ?>

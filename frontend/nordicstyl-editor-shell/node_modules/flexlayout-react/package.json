@@ -1,0 +1,101 @@
+{
+  "name": "flexlayout-react",
+  "version": "0.8.19",
+  "description": "A multi-tab docking layout manager",
+  "author": "Caplin Systems Ltd",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caplin/FlexLayout.git"
+  },
+  "license": "ISC",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./types/index.d.ts"
+    },
+    "./style/*": "./style/*"
+  },
+  "files": [
+    "dist/",
+    "types/",
+    "style/"
+  ],
+  "keywords": [
+    "react",
+    "layout",
+    "dock",
+    "popout",
+    "tabs",
+    "tabset",
+    "splitter",
+    "drag",
+    "drop",
+    "reactjs",
+    "flexlayout",
+    "flex layout",
+    "layout manager",
+    "drag and drop",
+    "split view",
+    "docking library",
+    "docking layout"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "npm run build:clean && npm run build:demo && npm run css && npm run build:lib && npm run build:types && npm run doc",
+    "build:clean": "rimraf demo/dist dist/ types/ typedoc/",
+    "build:demo": "vite build",
+    "build:types": "tsc -p tsconfig-types.json",
+    "build:lib": "vite build --config vite.config.lib.ts",
+    "test": "vitest",
+    "playwright": "playwright test --ui",
+    "lint": "eslint src/*",
+    "doc": "typedoc --out typedoc --exclude \"**/demo/**/*.tsx\" --excludeInternal --disableSources --excludePrivate --excludeProtected --readme none ./src",
+    "css": "sass style:style"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@eslint/js": "^9.39.3",
+    "@mui/material": "^7.3.9",
+    "@mui/x-data-grid": "^8.27.3",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.3.3",
+    "@types/prismjs": "^1.26.6",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "ag-grid-community": "^35.1.0",
+    "ag-grid-react": "^35.1.0",
+    "chart.js": "^4.5.1",
+    "eslint": "^9.39.3",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^17.4.0",
+    "ol": "^10.8.0",
+    "prettier": "^3.8.1",
+    "prismjs": "^1.30.0",
+    "react": "^19.2.4",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.2.4",
+    "react-scripts": "5.0.1",
+    "rimraf": "^6.1.3",
+    "sass": "^1.97.3",
+    "styled-components": "^6.3.11",
+    "typedoc": "^0.28.17",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}

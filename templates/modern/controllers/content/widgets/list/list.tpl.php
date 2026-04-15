@@ -4,9 +4,13 @@
  * Template Type: widget
  */
 ?>
-<div class="icms-widget__content_list content_list">
-    <?php foreach($items as $item) { ?>
-        <div class="content_list_item <?php echo $ctype['name']; ?>_list_item clearfix">
+<?php
+    $list_root_suffix = (isset($widget) && is_object($widget) && isset($widget->id)) ? ('widget-' . (int)$widget->id) : ($ctype['name'] . '-' . (!empty($items[0]['id']) ? (int)$items[0]['id'] : 'empty') . '-' . count($items));
+?>
+<div class="icms-widget__content_list content_list" data-nordic-id="content-list-<?php html($list_root_suffix); ?>" data-nordic-role="content.list" data-nordic-label="Список материалов">
+    <?php foreach($items as $index => $item) { ?>
+        <?php $item_nordic_base = (isset($widget) && is_object($widget) && isset($widget->id)) ? ('content-list-widget-' . (int)$widget->id . '-item-' . $index) : ('content-list-item-' . $list_root_suffix . '-' . (int)$item['id']); ?>
+        <div class="content_list_item <?php echo $ctype['name']; ?>_list_item clearfix" data-nordic-id="<?php html($item_nordic_base); ?>" data-nordic-role="content.list.item" data-nordic-label="<?php html(!empty($item['title']) ? ('Материал: ' . trim(strip_tags((string)$item['title']))) : 'Элемент списка'); ?>">
             <div class="icms-content-fields">
             <?php foreach($item['fields'] as $field){ ?>
                 <div class="field ft_<?php echo $field['type']; ?> f_<?php echo $field['name']; ?> <?php echo $field['options']['wrap_type']; ?>_field" <?php if($field['options']['wrap_width']){ ?> style="width: <?php echo $field['options']['wrap_width']; ?>;"<?php } ?>>
@@ -18,9 +22,9 @@
                     <?php } ?>
 
                     <?php if ($field['name'] === 'title' && $ctype['options']['item_on']){ ?>
-                        <h3 class="m-0">
+                        <h3 class="m-0" data-nordic-id="<?php html($item_nordic_base . '-title'); ?>" data-nordic-role="content.list.item.title" data-nordic-label="Заголовок материала">
                         <?php if ($item['parent_id']){ ?>
-                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>"><?php html($item['parent_title']); ?></a>
+                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>" style="color: inherit;"><?php html($item['parent_title']); ?></a>
                             &rarr;
                         <?php } ?>
 
@@ -30,7 +34,7 @@
                                 <?php html_svg_icon('solid', 'lock'); ?>
                             </span>
                         <?php } else { ?>
-                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>">
+                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>" style="color: inherit;">
                                 <?php html($item[$field['name']]); ?>
                             </a>
                             <?php if ($item['is_private']) { ?>
@@ -50,7 +54,7 @@
             </div>
 
             <?php if (!empty($item['info_bar'])){ ?>
-                <div class="info_bar mt-2 p-0 bg-transparent border-0">
+                <div class="info_bar mt-2 p-0 bg-transparent border-0" data-nordic-id="<?php html($item_nordic_base . '-meta'); ?>" data-nordic-role="content.list.item.meta" data-nordic-label="Метаданные материала">
                     <?php foreach($item['info_bar'] as $bar){ ?>
                         <div class="mr-2 bar_item <?php echo !empty($bar['css']) ? $bar['css'] : ''; ?>" title="<?php html(!empty($bar['title']) ? $bar['title'] : ''); ?>">
                             <?php if (!empty($bar['icon'])){ ?>

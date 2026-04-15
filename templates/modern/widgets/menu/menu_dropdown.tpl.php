@@ -1,5 +1,9 @@
-<div class="dropdown">
-    <button class="btn btn-light" type="button" data-toggle="dropdown">
+<?php
+$dropdown_key = isset($widget->id) ? ('widget-' . (int)$widget->id) : trim((string)($widget->title ?? 'menu-dropdown'));
+$dropdown_key = preg_replace('/[^a-z0-9\-_]+/i', '-', strtolower($dropdown_key)) ?: 'menu-dropdown';
+?>
+<div class="dropdown" data-nordic-id="menu-dropdown-<?php echo $dropdown_key; ?>" data-nordic-role="header.menu.dropdown" data-nordic-label="Выпадающее меню">
+    <button class="btn btn-light" type="button" data-toggle="dropdown" data-nordic-id="menu-dropdown-<?php echo $dropdown_key; ?>-toggle" data-nordic-role="header.menu.toggle" data-nordic-label="Кнопка выпадающего меню">
         <?php if($widget->is_title){ ?>
             <span class="d-none d-md-inline-block"><?php echo $widget->title; ?></span>
         <?php } ?>

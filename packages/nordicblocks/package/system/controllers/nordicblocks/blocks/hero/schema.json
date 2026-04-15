@@ -1,0 +1,83 @@
+{
+    "title":    "Hero — заголовок секции",
+    "category": "hero",
+    "version":  "1.0",
+    "fields": [
+        {
+            "key":     "layout",
+            "label":   "Раскладка",
+            "type":    "select",
+            "default": "centered",
+            "options": [
+                { "value": "centered", "label": "По центру"   },
+                { "value": "left",     "label": "Слева"       },
+                { "value": "split",    "label": "Текст + фото" }
+            ]
+        },
+        {
+            "key":     "theme",
+            "label":   "Тема секции",
+            "type":    "select",
+            "default": "light",
+            "options": [
+                { "value": "light", "label": "Светлая" },
+                { "value": "dark",  "label": "Тёмная"  },
+                { "value": "accent","label": "Акцент"  }
+            ]
+        },
+        {
+            "key":     "eyebrow",
+            "label":   "Надзаголовок",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "heading",
+            "label":   "Заголовок",
+            "type":    "text",
+            "default": "Создавайте сайты быстро"
+        },
+        {
+            "key":     "subheading",
+            "label":   "Подзаголовок",
+            "type":    "textarea",
+            "default": "Визуальный конструктор лендингов для InstantCMS"
+        },
+        {
+            "key":     "btn_primary_label",
+            "label":   "Кнопка (главная)",
+            "type":    "text",
+            "default": "Начать бесплатно"
+        },
+        {
+            "key":     "btn_primary_url",
+            "label":   "Ссылка кнопки",
+            "type":    "text",
+            "default": "#"
+        },
+        {
+            "key":     "btn_secondary_label",
+            "label":   "Кнопка (второстепенная)",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "btn_secondary_url",
+            "label":   "Ссылка второй кнопки",
+            "type":    "text",
+            "default": "#"
+        },
+        {
+            "key":     "image",
+            "label":   "Изображение (для split)",
+            "type":    "image",
+            "default": ""
+        },
+        {
+            "key":     "image_alt",
+            "label":   "Alt текст изображения",
+            "type":    "text",
+            "default": ""
+        }
+    ]
+}

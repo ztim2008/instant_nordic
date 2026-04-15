@@ -85,6 +85,12 @@ $is_nordicstyl_builder_page =
     $this->controller->name === 'nordicstyl' &&
     $this->controller->current_action === 'builder' &&
     $this->isBody();
+
+$has_server_content_body_wrapper =
+    !$is_nordicstyl_builder_page &&
+    !$lb_takeover_active &&
+    $this->isBody() &&
+    (($core->controller ?? '') !== 'content');
 ?>
 <!DOCTYPE html>
 <html <?php echo html_attr_str(($this->layout_params['attr'] ?? []), false); ?>>
@@ -131,7 +137,13 @@ $is_nordicstyl_builder_page =
         <?php } elseif ($lb_takeover_active) { ?>
 			<?php echo $lb_takeover_html; ?>
 		<?php } else { ?>
+            <?php if ($has_server_content_body_wrapper) { ?>
+                <div data-nordic-id="shell-content-body-runtime" data-nordic-role="content.body" data-nordic-source-role="system.content" data-nordic-label="Серверный контентный mount">
+            <?php } ?>
 			<?php $this->renderLayoutChild('scheme', ['rows' => $rows]); ?>
+            <?php if ($has_server_content_body_wrapper) { ?>
+                </div>
+            <?php } ?>
 		<?php } ?>
         <?php if (!empty($this->options['show_top_btn'])){ ?>
             <a class="btn btn-secondary btn-lg" href="#<?php echo $device_type; ?>_device_type" id="scroll-top">

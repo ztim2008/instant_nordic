@@ -6,17 +6,12 @@ $iframe_url = $iframe_url ?? '';
 $target_raw = $target_raw ?? '/';
 $host_origin = $host_origin ?? '';
 $csrf_token = $csrf_token ?? '';
-
-$map_q = $map_q ?? '';
-$map_items = $map_items ?? [];
-$map_stats = $map_stats ?? ['table_exists' => false, 'count' => 0, 'updated_at' => null, 'source_hash' => ''];
-$map_source_file = $map_source_file ?? '';
 ?>
 
 <h1>NordicStyl — live-редактор стиля</h1>
 
 <p class="hint">
-  Открой страницу в preview-окне, кликни по нужному элементу и меняй его стиль прямо там, поверх сайта. Справа остается только вспомогательная панель с selector и картой элементов.
+  Открой страницу в preview-окне, кликни по нужному элементу и меняй его стиль прямо там, поверх сайта. Справа остается только вспомогательная панель с текущим node target и переходом в rules.
 </p>
 
 <div style="display:flex; gap: 16px; align-items: flex-start;">
@@ -37,9 +32,9 @@ $map_source_file = $map_source_file ?? '';
 
         <div class="form-row">
             <div class="form-group" style="width: 100%;">
-                <label>Текущий selector</label>
-                <input id="nordicstyl-picker-selector" class="input" type="text" value="" readonly>
-                <div class="hint">После клика по элементу selector появится здесь, а в preview уже откроется live-панель поверх страницы.</div>
+                <label>Текущий target</label>
+            <input id="nordicstyl-picker-target" class="input" type="text" value="" readonly>
+            <div class="hint">После клика по элементу здесь появится node target вида node:shell-header. В preview уже откроется live-панель поверх страницы.</div>
             </div>
         </div>
 
@@ -55,48 +50,6 @@ $map_source_file = $map_source_file ?? '';
                   В preview можно кликать по любым элементам. Переходы и submit временно блокируются, чтобы страница работала как live-редактор, а не уводила вас по сайту.
                 </div>
             </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" style="width: 100%;">
-            <label>Карта селекторов</label>
-
-            <?php if (empty($map_stats['table_exists'])) { ?>
-              <div class="hint">Таблица словаря селекторов ещё не создана. Установи миграцию <code>005_selector_map.sql</code> через инсталлер NordicStyl.</div>
-            <?php } else { ?>
-              <div class="hint">
-                Записей: <b><?php echo (int)($map_stats['count'] ?? 0); ?></b>
-                <?php if (!empty($map_source_file)) { ?> • источник: <code><?php html($map_source_file); ?></code><?php } ?>
-              </div>
-
-              <div style="margin: 8px 0; display:flex; gap:8px; align-items:center;">
-                <form method="get" action="" style="display:flex; gap:8px; align-items:center; flex: 1 1 auto;">
-                  <input class="input" type="text" name="q" value="<?php html($map_q); ?>" placeholder="Поиск: кнопка, header, .widget..." style="flex: 1 1 auto;">
-                  <input type="hidden" name="target" value="<?php html($target_raw); ?>">
-                  <button class="button" type="submit">Найти</button>
-                </form>
-                <form method="post" action="" style="margin:0;">
-                  <input type="hidden" name="csrf_token" value="<?php html($csrf_token); ?>">
-                  <input type="hidden" name="import_map" value="1">
-                  <button class="button" type="submit">Импортировать</button>
-                </form>
-              </div>
-
-              <select id="nordicstyl-picker-map" class="input" size="10" style="width:100%;">
-                <?php if (!$map_items) { ?>
-                  <option value="" disabled><?php echo ((int)($map_stats['count'] ?? 0) > 0) ? 'Ничего не найдено' : 'Словарь пуст — нажми «Импортировать»'; ?></option>
-                <?php } else { foreach ($map_items as $it) {
-                  $gp = trim((string)($it['group_path'] ?? ''));
-                  $tt = trim((string)($it['title'] ?? ''));
-                  $sel = (string)($it['selector'] ?? '');
-                  $label = ($gp !== '' ? ($gp . ' → ') : '') . $tt;
-                ?>
-                  <option value="<?php html($sel, true); ?>" data-title="<?php html($tt, true); ?>"><?php html($label); ?></option>
-                <?php } } ?>
-              </select>
-              <div class="hint">Выбери элемент из списка, если не хочешь искать его мышкой на странице.</div>
-            <?php } ?>
-          </div>
         </div>
     </div>
 
@@ -115,18 +68,17 @@ $map_source_file = $map_source_file ?? '';
 <script>
 (function(){
   const allowedOrigin = <?php echo json_encode((string)$host_origin); ?>;
-  const selectorInput = document.getElementById('nordicstyl-picker-selector');
+  const targetInput = document.getElementById('nordicstyl-picker-target');
   const openRules = document.getElementById('nordicstyl-picker-open-rules');
   const copyBtn = document.getElementById('nordicstyl-picker-copy');
-  const mapSelect = document.getElementById('nordicstyl-picker-map');
 
-  function setSelector(sel, title){
-    if (!sel) return;
-    selectorInput.value = sel;
+  function setTarget(path, title){
+    if (!path) return;
+    targetInput.value = path;
 
     try {
       const url = new URL(openRules.getAttribute('href'), window.location.origin);
-      url.searchParams.set('path', sel);
+      url.searchParams.set('path', path);
       const t = String(title || '').trim();
       if (t) {
         url.searchParams.set('title', t);
@@ -147,21 +99,11 @@ $map_source_file = $map_source_file ?? '';
       return;
     }
 
-    setSelector(String(data.selector || ''), 'picked');
+    setTarget(String(data.storage_path || '').trim(), String(data.title || '').trim() || 'picked');
   });
 
-  if (mapSelect) {
-    mapSelect.addEventListener('change', function(){
-      const opt = mapSelect.options[mapSelect.selectedIndex];
-      if (!opt) return;
-      const sel = String(opt.value || '');
-      const title = String(opt.getAttribute('data-title') || '');
-      setSelector(sel, title || 'picked');
-    });
-  }
-
   copyBtn.addEventListener('click', function(){
-    const val = selectorInput.value || '';
+    const val = targetInput.value || '';
     if (!val) return;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -169,8 +111,8 @@ $map_source_file = $map_source_file ?? '';
       return;
     }
 
-    selectorInput.focus();
-    selectorInput.select();
+    targetInput.focus();
+    targetInput.select();
     try { document.execCommand('copy'); } catch (e) {}
   });
 })();

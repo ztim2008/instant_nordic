@@ -1,31 +1,108 @@
+// ─── Design Tokens: принимают значения из options.form.php ───────────────────
+// Все переменные имеют !default — форма перезаписывает нужные, остальные берутся из fallback
+
+// Цвета
+$nordic-color-accent:    #b42318 !default;
+$nordic-color-bg:        #eceff3 !default;
+$nordic-color-surface:   #ffffff !default;
+$nordic-color-ink:       #10141b !default;
+$nordic-color-muted:     #5f6b7a !default;
+$nordic-color-panel:     #121826 !default;
+$nordic-color-header-bg: #121826 !default;
+$nordic-color-header-fg: #ffffff !default;
+$nordic-color-footer-bg: #1d2638 !default;
+$nordic-color-footer-fg: #9aa5b4 !default;
+
+// Типографика
+$nordic-font-body:        '"PT Serif", Georgia, serif' !default;
+$nordic-font-ui:          '"Roboto Condensed", "Arial Narrow", sans-serif' !default;
+$nordic-font-size-base:   16px !default;
+$nordic-line-height:      1.7 !default;
+
+// Форма элементов (радиус)
+$nordic-radius-scale:    'md' !default;
+// xs=0px, sm=4px, md=12px, lg=18px, xl=24px, pill=999px
+$nordic-radius-map: (
+    'none': (xl: 0px,   lg: 0px,  md: 0px,  sm: 0px),
+    'sm':   (xl: 8px,   lg: 6px,  md: 4px,  sm: 2px),
+    'md':   (xl: 24px,  lg: 18px, md: 12px, sm: 6px),
+    'lg':   (xl: 32px,  lg: 24px, md: 16px, sm: 10px),
+    'pill': (xl: 999px, lg: 999px, md: 999px, sm: 999px)
+);
+
+$nordic-radius-values: map-get($nordic-radius-map, $nordic-radius-scale);
+$nordic-r-xl: map-get($nordic-radius-values, xl);
+$nordic-r-lg: map-get($nordic-radius-values, lg);
+$nordic-r-md: map-get($nordic-radius-values, md);
+$nordic-r-sm: map-get($nordic-radius-values, sm);
+
+// Тени
+$nordic-shadow-scale: 'md' !default;
+$nordic-shadow-map: (
+    'none': (card: none,                                  md: none),
+    'sm':   (card: 0 1px 4px rgba(16,20,27,.06),          md: 0 2px 8px rgba(16,20,27,.08)),
+    'md':   (card: 0 4px 14px rgba(16,20,27,.07),         md: 0 8px 24px rgba(16,20,27,.08)),
+    'lg':   (card: 0 8px 32px rgba(16,20,27,.12),         md: 0 16px 48px rgba(16,20,27,.14))
+);
+
+$nordic-shadow-values: map-get($nordic-shadow-map, $nordic-shadow-scale);
+$nordic-s-card: map-get($nordic-shadow-values, card);
+$nordic-s-md:   map-get($nordic-shadow-values, md);
+
+// Кнопки
+$nordic-btn-style:  'filled' !default;  // filled | outline | ghost
+$nordic-btn-radius: $nordic-r-md;
+
+// Акцентный цвет — производные
+$nordic-accent-strong: darken($nordic-color-accent, 8%);
+$nordic-accent-soft:   rgba($nordic-color-accent, 0.08);
+
+// ─── CSS Custom Properties ────────────────────────────────────────────────────
 :root {
-    --nordic-bg: var(--lb-page-background, #eceff3);
-    --nordic-bg-soft: var(--lb-surface-soft, #f6f8fb);
-    --nordic-surface: var(--lb-surface-color, #ffffff);
-    --nordic-surface-strong: var(--lb-surface-color, #ffffff);
-    --nordic-ink: var(--lb-text-color, #10141b);
-    --nordic-ink-soft: var(--lb-heading-color, #2b3442);
-    --nordic-muted: var(--lb-text-muted, #5f6b7a);
-    --nordic-accent: var(--lb-accent-color, #b42318);
-    --nordic-accent-strong: var(--lb-accent-color, #8f1d14);
-    --nordic-accent-soft: var(--lb-accent-soft, rgba(180, 35, 24, 0.08));
-    --nordic-panel: var(--lb-contrast-surface, #121826);
-    --nordic-panel-soft: var(--lb-contrast-surface, #1d2638);
-    --nordic-line: var(--lb-border-contrast, var(--lb-border-color, rgba(16, 20, 27, 0.12)));
-    --nordic-line-strong: var(--lb-border-contrast, var(--lb-border-color, rgba(16, 20, 27, 0.22)));
-    --nordic-shadow: var(--lb-shadow-md, 0 8px 24px rgba(16, 20, 27, 0.08));
-    --nordic-shadow-card: var(--lb-card-shadow, 0 4px 14px rgba(16, 20, 27, 0.07));
-    --nordic-radius-xl: var(--lb-radius-lg, 24px);
-    --nordic-radius-lg: var(--lb-radius-md, 18px);
-    --nordic-radius-md: var(--lb-radius-sm, 12px);
-    --nordic-content-max: var(--lb-page-max-width, 100%);
-    --nordic-shell-gap: var(--lb-content-gap, 18px);
-    --nordic-shell-pad-y: var(--lb-topbar-padding-y, 12px);
-    --nordic-shell-pad-x: var(--lb-topbar-padding-x, 18px);
-    --nordic-control-height: var(--lb-control-height, 42px);
-    --nordic-card-padding: var(--lb-card-padding, 20px);
-    --nordic-button-padding-y: var(--lb-button-padding-y, 12px);
-    --nordic-button-padding-x: var(--lb-button-padding-x, 22px);
-    --nordic-font-body: var(--lb-font-body, "PT Serif", Georgia, serif);
-    --nordic-font-ui: var(--lb-font-heading, "Roboto Condensed", "Arial Narrow", "Trebuchet MS", sans-serif);
+    // Цвета
+    --nordic-bg:           #{$nordic-color-bg};
+    --nordic-bg-soft:      #{lighten($nordic-color-bg, 2%)};
+    --nordic-surface:      #{$nordic-color-surface};
+    --nordic-surface-strong: #{$nordic-color-surface};
+    --nordic-ink:          #{$nordic-color-ink};
+    --nordic-ink-soft:     #{lighten($nordic-color-ink, 15%)};
+    --nordic-muted:        #{$nordic-color-muted};
+    --nordic-accent:       #{$nordic-color-accent};
+    --nordic-accent-strong:#{$nordic-accent-strong};
+    --nordic-accent-soft:  #{$nordic-accent-soft};
+    --nordic-panel:        #{$nordic-color-panel};
+    --nordic-panel-soft:   #{lighten($nordic-color-panel, 5%)};
+    --nordic-line:         rgba(#{red($nordic-color-ink)}, #{green($nordic-color-ink)}, #{blue($nordic-color-ink)}, 0.12);
+    --nordic-line-strong:  rgba(#{red($nordic-color-ink)}, #{green($nordic-color-ink)}, #{blue($nordic-color-ink)}, 0.22);
+
+    // Тени
+    --nordic-shadow:       #{$nordic-s-md};
+    --nordic-shadow-card:  #{$nordic-s-card};
+
+    // Радиусы
+    --nordic-radius-xl:    #{$nordic-r-xl};
+    --nordic-radius-lg:    #{$nordic-r-lg};
+    --nordic-radius-md:    #{$nordic-r-md};
+    --nordic-radius-sm:    #{$nordic-r-sm};
+
+    // Типографика
+    --nordic-font-body:    #{unquote($nordic-font-body)};
+    --nordic-font-ui:      #{unquote($nordic-font-ui)};
+    --nordic-font-size:    #{$nordic-font-size-base};
+
+    // Шелл
+    --nordic-content-max:  var(--lb-page-max-width, 100%);
+    --nordic-shell-gap:    18px;
+    --nordic-shell-pad-y:  12px;
+    --nordic-shell-pad-x:  18px;
+    --nordic-control-height: 42px;
+    --nordic-card-padding: 20px;
+    --nordic-button-padding-y: 10px;
+    --nordic-button-padding-x: 22px;
+
+    // Шапка и футер
+    --nordic-header-bg:    #{$nordic-color-header-bg};
+    --nordic-header-fg:    #{$nordic-color-header-fg};
+    --nordic-footer-bg:    #{$nordic-color-footer-bg};
+    --nordic-footer-fg:    #{$nordic-color-footer-fg};
 }

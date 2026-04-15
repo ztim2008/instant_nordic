@@ -1,0 +1,54 @@
+{
+    "title":    "CTA — призыв к действию",
+    "category": "cta",
+    "version":  "1.0",
+    "fields": [
+        {
+            "key":     "heading",
+            "label":   "Заголовок",
+            "type":    "text",
+            "default": "Готовы начать?"
+        },
+        {
+            "key":     "subheading",
+            "label":   "Подзаголовок",
+            "type":    "text",
+            "default": "Запустите свой проект сегодня"
+        },
+        {
+            "key":     "theme",
+            "label":   "Тема блока",
+            "type":    "select",
+            "default": "accent",
+            "options": [
+                { "value": "accent", "label": "Акцент (цвет бренда)" },
+                { "value": "dark",   "label": "Тёмный"               },
+                { "value": "light",  "label": "Светлый"              }
+            ]
+        },
+        {
+            "key":     "btn_primary_label",
+            "label":   "Кнопка (главная)",
+            "type":    "text",
+            "default": "Начать бесплатно"
+        },
+        {
+            "key":     "btn_primary_url",
+            "label":   "Ссылка главной кнопки",
+            "type":    "text",
+            "default": "#"
+        },
+        {
+            "key":     "btn_secondary_label",
+            "label":   "Кнопка (вторая, пусто — скрыть)",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "btn_secondary_url",
+            "label":   "Ссылка второй кнопки",
+            "type":    "text",
+            "default": "#"
+        }
+    ]
+}

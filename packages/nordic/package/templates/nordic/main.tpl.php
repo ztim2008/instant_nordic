@@ -286,6 +286,14 @@ if (!empty($nordic_context['body_class'])) {
 // data-атрибут для страницы (используется CSS)
 $_nc_body_page_type = $nordic_context['page_type'] ?? '';
 
+$normalizeNordicToken = function($value, string $fallback = 'node'): string {
+    $value = strtolower(trim((string) $value));
+    $value = preg_replace('/[^a-z0-9\-_]+/i', '-', $value) ?? '';
+    $value = trim($value, '-');
+
+    return $value !== '' ? $value : $fallback;
+};
+
 $getSlotPositions = function($slot, array $fallback = []) use ($slot_positions) {
     return !empty($slot_positions[$slot]) ? $slot_positions[$slot] : $fallback;
 };
@@ -298,8 +306,9 @@ $isSlotEnabled = function($slot) use ($active_shell_slots) {
     return isset($active_shell_slots[$slot]);
 };
 
-$renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_plain', $itemBaseClass = 'nordic-shell__slot') {
+$renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_plain', $itemBaseClass = 'nordic-shell__slot', $groupKey = 'slot') use ($normalizeNordicToken) {
     $has_content = false;
+    $groupToken = $normalizeNordicToken($groupKey, 'slot');
 
     foreach ($positions as $position) {
         ob_start();
@@ -311,11 +320,12 @@ $renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_pla
         }
 
         if (!$has_content) {
-            echo '<div class="' . html($groupClass, false) . '">';
+            echo '<div class="' . html($groupClass, false) . '" data-nordic-id="slot-group-' . html($groupToken, false) . '" data-nordic-role="shell.slot.group" data-nordic-label="Группа слота: ' . html($groupToken, false) . '">';
             $has_content = true;
         }
 
-        echo '<div class="' . html($itemBaseClass, false) . ' ' . html($itemBaseClass . '--' . $position, false) . '">';
+        $positionToken = $normalizeNordicToken($position, 'position');
+        echo '<div class="' . html($itemBaseClass, false) . ' ' . html($itemBaseClass . '--' . $position, false) . '" data-nordic-id="slot-item-' . html($groupToken, false) . '-' . html($positionToken, false) . '" data-nordic-role="shell.slot.item" data-nordic-label="Позиция: ' . html($position, false) . '">';
         echo $position_html;
         echo '</div>';
     }
@@ -327,16 +337,17 @@ $renderPositionGroup = function($positions, $groupClass, $wrapper = 'wrapper_pla
     return $has_content;
 };
 
-$renderSlot = function($positions, $slotClass, $wrapper = 'wrapper_plain') use ($renderPositionGroup) {
+$renderSlot = function($positions, $slotClass, $wrapper = 'wrapper_plain', $slotKey = 'slot') use ($renderPositionGroup, $normalizeNordicToken) {
+    $slotToken = $normalizeNordicToken($slotKey, 'slot');
     ob_start();
-    $has_content = $renderPositionGroup($positions, 'nordic-shell__slot-panel', $wrapper, 'nordic-shell__slot');
+    $has_content = $renderPositionGroup($positions, 'nordic-shell__slot-panel', $wrapper, 'nordic-shell__slot', $slotKey);
     $content = ob_get_clean();
 
     if (!$has_content) {
         return;
     }
 
-    echo '<section class="' . html($slotClass, false) . '">';
+    echo '<section class="' . html($slotClass, false) . '" data-nordic-id="shell-slot-' . html($slotToken, false) . '" data-nordic-role="shell.slot" data-nordic-label="Слот: ' . html($slotKey, false) . '">';
     echo $content;
     echo '</section>';
 };
@@ -717,8 +728,8 @@ if ($lb_effective_page_trace_comment !== '') {
         <link rel="icon" href="<?php echo $config->upload_root . $this->options['favicon']['path']; ?>" type="<?php echo pathinfo($this->options['favicon']['path'], PATHINFO_EXTENSION) === 'svg' ? 'image/svg+xml' : 'image/x-icon'; ?>">
     <?php } ?>
     </head>
-    <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>"<?php if (!empty($_nc_body_page_type)) { ?> data-page-type="<?php html($_nc_body_page_type); ?>"<?php } ?><?php if (!empty($shell_runtime['variant_key'])) { ?> data-shell-variant="<?php html($shell_runtime['variant_key']); ?>"<?php } ?><?php if (!empty($shell_runtime['body_layout'])) { ?> data-shell-layout="<?php html($shell_runtime['body_layout']); ?>"<?php } ?><?php if (!empty($shell_chrome['header_variant'])) { ?> data-shell-header="<?php html($shell_chrome['header_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['footer_variant'])) { ?> data-shell-footer="<?php html($shell_chrome['footer_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['menu_placement'])) { ?> data-shell-menu="<?php html($shell_chrome['menu_placement']); ?>"<?php } ?><?php if (!empty($shell_chrome['mobile_menu_mode'])) { ?> data-shell-mobile-menu="<?php html($shell_chrome['mobile_menu_mode']); ?>"<?php } ?><?php if (!empty($shell_chrome['homepage_shell_mode'])) { ?> data-shell-homepage-mode="<?php html($shell_chrome['homepage_shell_mode']); ?>"<?php } ?> class="d-flex flex-column min-vh-100<?php if (!$nordic_use_modern_skin) { ?> nordic-template<?php } ?><?php if (!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
-        <a class="<?php echo $nordic_use_modern_skin ? 'sr-only sr-only-focusable' : 'nordic-skip-link'; ?>" href="#nordic-content-frame">Перейти к содержимому</a>
+    <body id="<?php echo $device_type; ?>_device_type" data-device="<?php echo $device_type; ?>" data-nordic-id="root" data-nordic-role="page.root" data-nordic-root="true" data-nordic-label="Корень страницы"<?php if (!empty($_nc_body_page_type)) { ?> data-page-type="<?php html($_nc_body_page_type); ?>"<?php } ?><?php if (!empty($shell_runtime['variant_key'])) { ?> data-shell-variant="<?php html($shell_runtime['variant_key']); ?>"<?php } ?><?php if (!empty($shell_runtime['body_layout'])) { ?> data-shell-layout="<?php html($shell_runtime['body_layout']); ?>"<?php } ?><?php if (!empty($shell_chrome['header_variant'])) { ?> data-shell-header="<?php html($shell_chrome['header_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['footer_variant'])) { ?> data-shell-footer="<?php html($shell_chrome['footer_variant']); ?>"<?php } ?><?php if (!empty($shell_chrome['menu_placement'])) { ?> data-shell-menu="<?php html($shell_chrome['menu_placement']); ?>"<?php } ?><?php if (!empty($shell_chrome['mobile_menu_mode'])) { ?> data-shell-mobile-menu="<?php html($shell_chrome['mobile_menu_mode']); ?>"<?php } ?><?php if (!empty($shell_chrome['homepage_shell_mode'])) { ?> data-shell-homepage-mode="<?php html($shell_chrome['homepage_shell_mode']); ?>"<?php } ?> class="d-flex flex-column min-vh-100<?php if (!$nordic_use_modern_skin) { ?> nordic-template<?php } ?><?php if (!empty($body_classes)) { ?> <?php html(implode(' ', $body_classes)); ?><?php } ?> <?php html($this->options['body_classes'] ?? ''); ?>">
+        <a class="<?php echo $nordic_use_modern_skin ? 'sr-only sr-only-focusable' : 'nordic-skip-link'; ?>" href="#nordic-content-frame" data-nordic-id="page-skip-link" data-nordic-role="page.skip-link" data-nordic-label="Ссылка перехода к содержимому">Перейти к содержимому</a>
 
         <?php if ($nordic_use_modern_skin) { ?>
             <?php
@@ -840,10 +851,10 @@ if ($lb_effective_page_trace_comment !== '') {
                 }
             ?>
         <?php } else { ?>
-        <div class="nordic-shell nordic-shell--header-<?php html($shell_chrome['header_variant'] ?? 'classic'); ?> nordic-shell--footer-<?php html($shell_chrome['footer_variant'] ?? 'columns_4'); ?> nordic-shell--menu-<?php html($menu_placement); ?> nordic-shell--mobile-menu-<?php html($shell_chrome['mobile_menu_mode'] ?? 'drawer'); ?> nordic-shell--homepage-mode-<?php html($shell_chrome['homepage_shell_mode'] ?? 'inherit'); ?>"<?php if (!$nordic_use_modern_skin && !empty($lb_effective_shell_style)) { ?> style="<?php html($lb_effective_shell_style); ?>"<?php } ?>>
+        <div class="nordic-shell nordic-shell--header-<?php html($shell_chrome['header_variant'] ?? 'classic'); ?> nordic-shell--footer-<?php html($shell_chrome['footer_variant'] ?? 'columns_4'); ?> nordic-shell--menu-<?php html($menu_placement); ?> nordic-shell--mobile-menu-<?php html($shell_chrome['mobile_menu_mode'] ?? 'drawer'); ?> nordic-shell--homepage-mode-<?php html($shell_chrome['homepage_shell_mode'] ?? 'inherit'); ?>" data-nordic-id="shell-root" data-nordic-role="shell.root" data-nordic-label="Основной shell"<?php if (!$nordic_use_modern_skin && !empty($lb_effective_shell_style)) { ?> style="<?php html($lb_effective_shell_style); ?>"<?php } ?>>
 
             <?php if (!$config->is_site_on) { ?>
-                <div class="nordic-shell__notice">
+                <div class="nordic-shell__notice" data-nordic-id="shell-notice" data-nordic-role="shell.notice" data-nordic-label="Системное уведомление сайта">
                     <?php if (cmsUser::isAdmin()) { ?>
                         <?php printf(ERR_SITE_OFFLINE_FULL, href_to('admin', 'settings', 'siteon')); ?>
                     <?php } else { ?>
@@ -852,46 +863,46 @@ if ($lb_effective_page_trace_comment !== '') {
                 </div>
             <?php } ?>
 
-            <?php if ($isSlotEnabled('site_top')) { $renderSlot($resolveSlotPositions('site_top'), 'nordic-shell__site-top'); } ?>
+            <?php if ($isSlotEnabled('site_top')) { $renderSlot($resolveSlotPositions('site_top'), 'nordic-shell__site-top', 'wrapper_plain', 'site_top'); } ?>
 
-            <header class="nordic-shell__header">
-                <?php if ($isSlotEnabled('header_primary')) { $renderSlot($resolveSlotPositions('header_primary'), 'nordic-shell__header-primary'); } ?>
-                <?php if ($isSlotEnabled('header_secondary')) { $renderSlot($resolveSlotPositions('header_secondary'), 'nordic-shell__header-secondary'); } ?>
+            <header class="nordic-shell__header" data-nordic-id="shell-header" data-nordic-role="header" data-nordic-label="Шапка сайта">
+                <?php if ($isSlotEnabled('header_primary')) { $renderSlot($resolveSlotPositions('header_primary'), 'nordic-shell__header-primary', 'wrapper_plain', 'header_primary'); } ?>
+                <?php if ($isSlotEnabled('header_secondary')) { $renderSlot($resolveSlotPositions('header_secondary'), 'nordic-shell__header-secondary', 'wrapper_plain', 'header_secondary'); } ?>
             </header>
 
             <?php
                 $lb_hero_html = $lbGetBuilderSlotHtml('hero');
                 if ($lb_hero_html !== '') {
-                    echo '<section class="nordic-shell__hero">' . $lb_hero_html . '</section>';
+                    echo '<section class="nordic-shell__hero" data-nordic-id="shell-hero" data-nordic-role="shell.hero" data-nordic-label="Hero зона">' . $lb_hero_html . '</section>';
                 } elseif (!$lb_takeover_active && $isSlotEnabled('hero')) {
-                    $renderSlot($resolveSlotPositions('hero'), 'nordic-shell__hero');
+                    $renderSlot($resolveSlotPositions('hero'), 'nordic-shell__hero', 'wrapper_plain', 'hero');
                 }
 
                 $lb_before_html = $lbGetBuilderSlotHtml('before_content');
                 if ($lb_before_html !== '') {
-                    echo '<section class="nordic-shell__before-content">' . $lb_before_html . '</section>';
+                    echo '<section class="nordic-shell__before-content" data-nordic-id="shell-before-content" data-nordic-role="shell.before-content" data-nordic-label="Зона перед контентом">' . $lb_before_html . '</section>';
                 } elseif (!$lb_takeover_active && $isSlotEnabled('before_content')) {
-                    $renderSlot($resolveSlotPositions('before_content'), 'nordic-shell__before-content');
+                    $renderSlot($resolveSlotPositions('before_content'), 'nordic-shell__before-content', 'wrapper_plain', 'before_content');
                 }
             ?>
 
-            <main class="nordic-shell__main">
-                <div class="nordic-shell__content-frame" id="nordic-content-frame" data-slot="content_body">
-                    <div class="<?php html($content_grid_class); ?>"<?php if ($content_grid_style !== '') { ?> style="<?php html($content_grid_style); ?>"<?php } ?>>
+            <main class="nordic-shell__main" data-nordic-id="shell-main" data-nordic-role="shell.main" data-nordic-label="Основная зона страницы">
+                <div class="nordic-shell__content-frame" id="nordic-content-body" data-slot="content_body" data-nordic-id="shell-content-body" data-nordic-role="shell.content-body" data-nordic-label="Основная контентная зона">
+                    <div class="<?php html($content_grid_class); ?>" data-nordic-id="shell-content-grid" data-nordic-role="shell.content-grid" data-nordic-label="Контентная сетка"<?php if ($content_grid_style !== '') { ?> style="<?php html($content_grid_style); ?>"<?php } ?>>
                         <?php if ($has_left_content_sidebar) { ?>
-                            <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--left" data-slot="content_sidebar_left">
+                            <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--left" data-slot="content_sidebar_left" data-nordic-id="shell-content-sidebar-left" data-nordic-role="shell.content-sidebar.left" data-nordic-label="Левая боковая колонка">
                                 <?php if ($lb_takeover_active) { ?>
                                     <?php echo $lb_left_sidebar_html; ?>
                                 <?php } else { ?>
-                                    <?php $renderPositionGroup($left_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                    <?php $renderPositionGroup($left_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget', 'content_sidebar_left'); ?>
                                 <?php } ?>
                             </aside>
                         <?php } ?>
-                        <div class="nordic-shell__content-body-slot" data-slot="content_body">
+                        <div class="nordic-shell__content-body-slot" data-slot="content_body" data-nordic-id="shell-content-body-slot" data-nordic-role="shell.content-body.slot" data-nordic-label="Слот основного контента">
                             <?php if ($has_content_body_widgets) { ?>
-                                <?php $renderPositionGroup($content_body_positions, 'nordic-shell__content-body-widgets', 'wrapper_plain', 'nordic-shell__content-widget'); ?>
+                                <?php $renderPositionGroup($content_body_positions, 'nordic-shell__content-body-widgets', 'wrapper_plain', 'nordic-shell__content-widget', 'content_body'); ?>
                             <?php } ?>
-                            <div class="nordic-shell__content-body-runtime">
+                            <div class="nordic-shell__content-body-runtime" data-nordic-id="shell-content-body-runtime" data-nordic-role="system.content" data-nordic-label="Системный контент страницы">
                                 <?php
                                     if ($lb_takeover_active) {
                                         $content_slot_key = (string) (($lb_takeover_runtime['shell']['content_slot'] ?? '') ?: 'content_body');
@@ -924,11 +935,11 @@ if ($lb_effective_page_trace_comment !== '') {
                             </div>
                         </div>
                         <?php if ($has_right_content_sidebar) { ?>
-                            <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--right" data-slot="content_sidebar_right">
+                            <aside class="nordic-shell__content-sidebar nordic-shell__content-sidebar--right" data-slot="content_sidebar_right" data-nordic-id="shell-content-sidebar-right" data-nordic-role="shell.content-sidebar.right" data-nordic-label="Правая боковая колонка">
                                 <?php if ($lb_takeover_active) { ?>
                                     <?php echo $lb_right_sidebar_html; ?>
                                 <?php } else { ?>
-                                    <?php $renderPositionGroup($right_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget'); ?>
+                                    <?php $renderPositionGroup($right_sidebar_positions, 'nordic-shell__content-sidebar-group', 'wrapper_plain', 'nordic-shell__content-sidebar-widget', 'content_sidebar_right'); ?>
                                 <?php } ?>
                             </aside>
                         <?php } ?>
@@ -939,27 +950,27 @@ if ($lb_effective_page_trace_comment !== '') {
             <?php
                 $lb_after_html = $lbGetBuilderSlotHtml('after_content');
                 if ($lb_after_html !== '') {
-                    echo '<section class="nordic-shell__after-content">' . $lb_after_html . '</section>';
+                    echo '<section class="nordic-shell__after-content" data-nordic-id="shell-after-content" data-nordic-role="shell.after-content" data-nordic-label="Зона после контента">' . $lb_after_html . '</section>';
                 } elseif (!$lb_takeover_active && $isSlotEnabled('after_content')) {
-                    $renderSlot($resolveSlotPositions('after_content'), 'nordic-shell__after-content');
+                    $renderSlot($resolveSlotPositions('after_content'), 'nordic-shell__after-content', 'wrapper_plain', 'after_content');
                 }
             ?>
 
-            <footer class="nordic-shell__footer">
-                <?php if ($isSlotEnabled('footer_primary')) { $renderSlot($resolveSlotPositions('footer_primary'), 'nordic-shell__footer-primary'); } ?>
-                <?php if ($isSlotEnabled('footer_secondary')) { $renderSlot($resolveSlotPositions('footer_secondary'), 'nordic-shell__footer-secondary'); } ?>
+            <footer class="nordic-shell__footer" data-nordic-id="shell-footer" data-nordic-role="footer" data-nordic-label="Подвал сайта">
+                <?php if ($isSlotEnabled('footer_primary')) { $renderSlot($resolveSlotPositions('footer_primary'), 'nordic-shell__footer-primary', 'wrapper_plain', 'footer_primary'); } ?>
+                <?php if ($isSlotEnabled('footer_secondary')) { $renderSlot($resolveSlotPositions('footer_secondary'), 'nordic-shell__footer-secondary', 'wrapper_plain', 'footer_secondary'); } ?>
             </footer>
         </div>
 
         <?php } ?>
 
         <?php if (!empty($this->options['show_top_btn'])) { ?>
-            <a class="btn btn-secondary btn-lg" href="#<?php echo $device_type; ?>_device_type" id="scroll-top">
+            <a class="btn btn-secondary btn-lg" href="#<?php echo $device_type; ?>_device_type" id="scroll-top" data-nordic-id="page-scroll-top" data-nordic-role="page.scroll-top" data-nordic-label="Кнопка наверх">
                 <?php html_svg_icon('solid', 'chevron-up'); ?>
             </a>
         <?php } ?>
         <?php if (!empty($this->options['show_cookiealert'])) { ?>
-            <div class="alert text-center py-3 border-0 rounded-0 m-0 position-fixed fixed-bottom icms-cookiealert" id="icms-cookiealert">
+            <div class="alert text-center py-3 border-0 rounded-0 m-0 position-fixed fixed-bottom icms-cookiealert" id="icms-cookiealert" data-nordic-id="page-cookie-alert" data-nordic-role="page.cookie-alert" data-nordic-label="Cookie уведомление">
                 <div class="container">
                     <?php echo $this->options['cookiealert_text']; ?>
                     <button type="button" class="ml-2 btn btn-primary btn-sm acceptcookies">

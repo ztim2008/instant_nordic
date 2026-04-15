@@ -26,7 +26,11 @@ if( $ctype['options']['list_show_filter'] ) {
     </p>
 <?php return; } ?>
 
-<div class="content_list featured mb-n4 <?php echo $ctype['name']; ?>_list row">
+<?php
+    $list_root_suffix = $ctype['name'] . '-' . (!empty($items[0]['id']) ? (int)$items[0]['id'] : 'empty') . '-' . count($items);
+?>
+
+<div class="content_list featured mb-n4 <?php echo $ctype['name']; ?>_list row" data-nordic-id="content-list-<?php html($list_root_suffix); ?>" data-nordic-role="content.list" data-nordic-label="Избранный список материалов">
 
     <?php $index = 0; ?>
 
@@ -34,9 +38,10 @@ if( $ctype['options']['list_show_filter'] ) {
         <?php
             $class = $index === 0 ? 'col-md-6 col-lg-12' : ($index < 3 ? 'col-md-6' : 'col-lg-4');
             $title_tag = $index === 0 ? 'h3' : ($index < 3 ? 'h4' : 'h5');
+            $item_nordic_base = 'content-list-item-' . $list_root_suffix . '-' . (int)$item['id'];
         ?>
 
-        <div class="tile <?php echo $ctype['name']; ?>_list_item <?php echo $class; ?> mb-4">
+        <div class="tile <?php echo $ctype['name']; ?>_list_item <?php echo $class; ?> mb-4" data-nordic-id="<?php html($item_nordic_base); ?>" data-nordic-role="content.list.item" data-nordic-label="<?php html(!empty($item['title']) ? ('Материал: ' . trim(strip_tags((string)$item['title']))) : 'Элемент списка'); ?>">
             <div class="icms-content-fields<?php if($index){ ?> d-flex flex-column h-100<?php } ?>">
             <?php foreach($item['fields'] as $field){ ?>
 
@@ -49,7 +54,7 @@ if( $ctype['options']['list_show_filter'] ) {
                     <?php } ?>
 
                     <?php if ($field['name'] === 'title' && $ctype['options']['item_on']){ ?>
-                        <<?php echo $title_tag; ?> class="value m-0">
+                        <<?php echo $title_tag; ?> class="value m-0" data-nordic-id="<?php html($item_nordic_base . '-title'); ?>" data-nordic-role="content.list.item.title" data-nordic-label="Заголовок материала">
                         <?php if (!empty($this->menus['list_actions_menu'])){ ?>
                             <div class="dropdown ml-2 float-right">
                                 <button class="btn" type="button" data-toggle="dropdown">
@@ -65,7 +70,7 @@ if( $ctype['options']['list_show_filter'] ) {
                             </div>
                         <?php } ?>
                         <?php if ($item['parent_id']){ ?>
-                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>"><?php html($item['parent_title']); ?></a>
+                            <a class="parent_title" href="<?php echo rel_to_href($item['parent_url']); ?>" style="color: inherit;"><?php html($item['parent_title']); ?></a>
                             &rarr;
                         <?php } ?>
 
@@ -75,7 +80,7 @@ if( $ctype['options']['list_show_filter'] ) {
                                 <?php html_svg_icon('solid', 'lock'); ?>
                             </span>
                         <?php } else { ?>
-                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>">
+                            <a href="<?php echo href_to($ctype['name'], $item['slug'].'.html'); ?>" style="color: inherit;">
                                 <?php html($item[$field['name']]); ?>
                             </a>
                             <?php if ($item['is_private']) { ?>
@@ -102,7 +107,7 @@ if( $ctype['options']['list_show_filter'] ) {
 
                     <?php if (!empty($item['info_bar'])){ ?>
                     <div class="mobile-menu-wrapper mobile-menu-wrapper__info_bar transparent">
-                        <div class="info_bar swipe-wrapper px-0">
+                        <div class="info_bar swipe-wrapper px-0" data-nordic-id="<?php html($item_nordic_base . '-meta'); ?>" data-nordic-role="content.list.item.meta" data-nordic-label="Метаданные материала">
                             <?php foreach($item['info_bar'] as $bar){ ?>
                                 <div class="bar_item swipe-item <?php echo !empty($bar['css']) ? $bar['css'] : ''; ?>" title="<?php html(!empty($bar['title']) ? $bar['title'] : ''); ?>">
                                     <?php if (!empty($bar['icon'])){ ?>

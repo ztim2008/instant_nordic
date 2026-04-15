@@ -1,5 +1,8 @@
+<?php
+    $item_nordic_base = 'content-item-' . $ctype['name'] . '-' . (int)$item['id'];
+?>
 <?php if (!empty($fields['title']['is_in_item']) && in_array('page', $fields['title']['options']['is_in_item_pos'])){ ?>
-    <h1>
+    <h1 data-nordic-id="<?php html($item_nordic_base . '-title'); ?>" data-nordic-role="content.title" data-nordic-label="Заголовок материала">
         <?php html($item['title']); ?>
         <?php if ($item['is_private']) { ?>
             <span class="is_private  text-secondary" title="<?php html(LANG_PRIVACY_HINT); ?>">
@@ -21,7 +24,7 @@
     <?php $this->menu('item-menu', true, 'nav nav-tabs my-3'); ?>
 <?php } ?>
 
-<div class="content_item <?php echo $ctype['name']; ?>_item clearfix text-break my-3">
+<div class="content_item <?php echo $ctype['name']; ?>_item clearfix text-break my-3" data-nordic-id="<?php html($item_nordic_base . '-body'); ?>" data-nordic-role="content.body" data-nordic-label="Основной контент материала">
     <?php if($fields_fieldsets) { ?>
         <div class="icms-content-fields">
         <?php foreach ($fields_fieldsets as $fieldset_id => $fieldset) { ?>
@@ -104,7 +107,7 @@
     <?php } ?>
 
     <?php if (!empty($item['info_bar'])){ ?>
-        <div class="info_bar">
+        <div class="info_bar" data-nordic-id="<?php html($item_nordic_base . '-meta'); ?>" data-nordic-role="content.meta" data-nordic-label="Метаданные материала">
             <?php foreach($item['info_bar'] as $bar){ ?>
                 <div class="bar_item <?php echo !empty($bar['css']) ? $bar['css'] : ''; ?>" title="<?php html(!empty($bar['title']) ? $bar['title'] : ''); ?>">
                     <?php if (!empty($bar['icon'])){ ?>

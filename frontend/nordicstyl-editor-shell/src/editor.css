@@ -1,0 +1,805 @@
+:root {
+    color-scheme: light;
+}
+
+html,
+body,
+#nordic-editor-shell-root {
+    min-height: 100vh;
+}
+
+body {
+    margin: 0;
+    background: #f3f1ec;
+    color: #1b232b;
+    font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.ne-shell,
+.ne-shell * {
+    box-sizing: border-box;
+}
+
+.ne-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 12px;
+    padding: 12px;
+    background:
+        linear-gradient(180deg, #f6f4ef 0%, #ece8e1 100%),
+        radial-gradient(circle at top left, rgba(22, 57, 82, 0.06), transparent 30%);
+}
+
+.ne-shell__topbar {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.2fr) minmax(340px, 1fr) auto;
+    gap: 14px;
+    align-items: start;
+    padding: 14px 16px;
+    border: 1px solid #d4d9df;
+    border-radius: 6px;
+    background: #fbfaf8;
+}
+
+.ne-shell__headline,
+.ne-shell__controls {
+    min-width: 0;
+}
+
+.ne-shell__eyebrow,
+.ne-field__label,
+.ne-panel__subtitle,
+.ne-shell__subtitle,
+.ne-shell__status-meta,
+.ne-viewport-panel__title,
+.ne-viewport-panel__subtitle,
+.ne-kv-list dt,
+.ne-layers__meta,
+.ne-history__time {
+    color: #5e6974;
+}
+
+.ne-shell__eyebrow,
+.ne-field__label,
+.ne-viewport-panel__title,
+.ne-panel__title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.ne-shell__title {
+    margin: 2px 0 0;
+    font-size: 28px;
+    line-height: 1.05;
+    font-weight: 700;
+}
+
+.ne-shell__subtitle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.ne-shell__controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+}
+
+.ne-shell__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.ne-shell__status {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e1e5ea;
+    font-size: 13px;
+}
+
+.ne-shell__status--ok .ne-shell__status-line {
+    color: #235d35;
+}
+
+.ne-shell__status--warn .ne-shell__status-line,
+.ne-shell__status--error .ne-shell__status-line {
+    color: #8b4e12;
+}
+
+.ne-shell__workspace {
+    position: relative;
+    min-height: calc(100vh - 130px);
+    border: 1px solid #d4d9df;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f7f5f1;
+}
+
+.ne-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.ne-field--wide {
+    min-width: 220px;
+}
+
+.ne-input,
+.ne-button,
+.ne-icon-button,
+.ne-segmented__button {
+    border-radius: 4px;
+}
+
+.ne-input {
+    min-height: 38px;
+    width: 100%;
+    border: 1px solid #cbd3dc;
+    background: #ffffff;
+    padding: 0 12px;
+    font: inherit;
+    color: #1b232b;
+}
+
+.ne-input:focus,
+.ne-button:focus,
+.ne-icon-button:focus,
+.ne-segmented__button:focus,
+.ne-layers__button:focus {
+    outline: 2px solid rgba(24, 85, 133, 0.22);
+    outline-offset: 1px;
+}
+
+.ne-input--select {
+    appearance: none;
+}
+
+.ne-segmented {
+    display: inline-flex;
+}
+
+.ne-segmented__button {
+    min-height: 38px;
+    border: 1px solid #cbd3dc;
+    background: #ffffff;
+    padding: 0 12px;
+    font: inherit;
+    color: #1b232b;
+    cursor: pointer;
+    margin-left: -1px;
+}
+
+.ne-segmented__button:first-child {
+    margin-left: 0;
+}
+
+.ne-segmented__button.is-active {
+    position: relative;
+    z-index: 1;
+    background: #e7edf4;
+    color: #173f67;
+}
+
+.ne-button,
+.ne-icon-button {
+    appearance: none;
+    border: 1px solid #c2ccd6;
+    background: #ffffff;
+    color: #17222d;
+    cursor: pointer;
+    font: inherit;
+}
+
+.ne-button {
+    min-height: 38px;
+    padding: 0 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.ne-button--ghost {
+    background: #f8fafc;
+}
+
+.ne-icon-button {
+    min-width: 34px;
+    min-height: 34px;
+    padding: 0;
+}
+
+.ne-panel,
+.ne-viewport-panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #fbfaf8;
+}
+
+.ne-panel {
+    padding: 14px;
+    gap: 12px;
+}
+
+.ne-inspector {
+    gap: 10px;
+}
+
+.ne-panel__header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ne-panel__title {
+    margin: 0;
+    color: #19252f;
+}
+
+.ne-panel__subtitle {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.ne-empty {
+    padding: 14px;
+    border: 1px dashed #ccd4dc;
+    background: #f7f8fa;
+    color: #65707c;
+    font-size: 13px;
+}
+
+.ne-layers {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+}
+
+.ne-layers__summary {
+    font-size: 11px;
+    color: #68727d;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.ne-layers__branch {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ne-layers__row {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: start;
+    padding-left: calc(2px + (var(--layer-depth, 0) * 12px));
+    border-bottom: 1px solid #eceff3;
+}
+
+.ne-layers__toggle {
+    min-width: 22px;
+    min-height: 28px;
+    border: 0;
+    background: transparent;
+    color: #6f7a85;
+    cursor: pointer;
+    font: inherit;
+}
+
+.ne-layers__toggle--placeholder {
+    display: inline-flex;
+}
+
+.ne-layers__button {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 6px 8px 6px 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ne-layers__button:hover,
+.ne-layers__button.is-selected {
+    background: #edf2f7;
+}
+
+.ne-layers__button.is-selected {
+    box-shadow: inset 2px 0 0 #1b5688;
+}
+
+.ne-layers__title {
+    display: block;
+    font-size: 12px;
+    color: #17222d;
+    line-height: 1.3;
+}
+
+.ne-layers__meta {
+    display: block;
+    font-size: 10px;
+}
+
+.ne-inspector-card {
+    padding: 12px;
+    border: 1px solid #d9dfe5;
+    background: #f7f8fa;
+}
+
+.ne-inspector-fold {
+    border: 1px solid #d9dfe5;
+    background: #fbfcfd;
+}
+
+.ne-inspector-fold__toggle {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ne-inspector-fold__toggle .ne-inspector-card {
+    border: 0;
+    background: transparent;
+}
+
+.ne-inspector-fold__toggle-label {
+    align-self: start;
+    margin: 12px 12px 0 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5e6974;
+}
+
+.ne-inspector-fold__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 12px 12px;
+    border-top: 1px solid #eceff3;
+}
+
+.ne-inspector-fold__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.ne-meta-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 8px;
+    border: 1px solid #d9dfe5;
+    background: #ffffff;
+    font-size: 11px;
+    color: #465462;
+}
+
+.ne-inspector-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #19252f;
+}
+
+.ne-inspector-card__path {
+    margin-top: 6px;
+    font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+    font-size: 12px;
+    color: #52606d;
+    word-break: break-word;
+}
+
+.ne-kv-list {
+    margin: 0;
+}
+
+.ne-kv-list__row {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #eceff3;
+    font-size: 13px;
+}
+
+.ne-kv-list__row:last-child {
+    border-bottom: 0;
+}
+
+.ne-kv-list dt {
+    margin: 0;
+}
+
+.ne-kv-list dd {
+    margin: 0;
+    color: #16222c;
+    word-break: break-word;
+}
+
+.ne-action-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ne-note-card,
+.ne-status-card {
+    padding: 10px 12px;
+    border: 1px solid #d9dfe5;
+    background: #f7f8fa;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #4c5a66;
+}
+
+.ne-status-card--ok {
+    border-color: #c5d8cb;
+    background: #eef7f0;
+    color: #235d35;
+}
+
+.ne-status-card--warn,
+.ne-status-card--error {
+    border-color: #e4cfb2;
+    background: #fbf3e8;
+    color: #8b4e12;
+}
+
+.ne-inspector__state-switcher {
+    display: inline-flex;
+}
+
+.ne-inspector__target-switcher {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ne-inspector__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow: auto;
+}
+
+.ne-inspector-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #eceff3;
+}
+
+.ne-inspector-section:first-child {
+    padding-top: 0;
+    border-top: 0;
+}
+
+.ne-inspector-section__title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5e6974;
+}
+
+.ne-inspector-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
+}
+
+.ne-field--dense {
+    gap: 3px;
+}
+
+.ne-field--dense .ne-field__label {
+    font-size: 10px;
+}
+
+.ne-input--mono {
+    font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+    font-size: 12px;
+}
+
+.ne-color-control {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 6px;
+}
+
+.ne-color-control__picker {
+    width: 42px;
+    height: 38px;
+    padding: 3px;
+    border: 1px solid #cbd3dc;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+.ne-note-card--tight {
+    padding: 8px 10px;
+}
+
+.ne-box-editor-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ne-box-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid #e1e6eb;
+    background: #f8fafb;
+}
+
+.ne-box-editor__header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ne-box-editor__title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5e6974;
+}
+
+.ne-box-editor__subtitle {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #556270;
+}
+
+.ne-box-editor__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.ne-inline-button {
+    min-height: 28px;
+    padding: 0 9px;
+    border: 1px solid #cfd7df;
+    background: #ffffff;
+    font-size: 11px;
+    color: #2b3844;
+    cursor: pointer;
+}
+
+.ne-inline-button.is-active {
+    border-color: #173f67;
+    background: #eaf1f8;
+    color: #173f67;
+}
+
+.ne-box-editor__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 10px;
+}
+
+.ne-box-editor__input-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 34px;
+    gap: 6px;
+    align-items: center;
+}
+
+.ne-box-editor__reset {
+    width: 34px;
+    height: 38px;
+    border: 1px solid #cfd7df;
+    background: #ffffff;
+    font-size: 12px;
+    color: #5e6974;
+    cursor: pointer;
+}
+
+.ne-history {
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ne-history__section-title {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #5e6974;
+}
+
+.ne-history--session .ne-history__item {
+    justify-content: flex-start;
+}
+
+.ne-history__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #d9dfe5;
+    background: #f8fafb;
+}
+
+.ne-history__meta {
+    min-width: 0;
+}
+
+.ne-history__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #17222d;
+}
+
+.ne-history__time {
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.ne-viewport-panel {
+    background: #f1efea;
+}
+
+.ne-viewport-panel__bar {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid #d7dde4;
+    background: #fbfaf8;
+}
+
+.ne-viewport-panel__subtitle {
+    margin-top: 6px;
+    font-size: 12px;
+    max-width: 720px;
+    line-height: 1.45;
+}
+
+.ne-viewport-panel__chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.ne-chip {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    border: 1px solid #d1d8df;
+    background: #ffffff;
+    font-size: 12px;
+    color: #475360;
+}
+
+.ne-chip--strong {
+    font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+    color: #173f67;
+}
+
+.ne-viewport-frame-shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 16px;
+    overflow: auto;
+}
+
+.ne-viewport-frame-wrap {
+    width: 100%;
+    height: 100%;
+    min-height: 72vh;
+    margin: 0 auto;
+}
+
+.ne-viewport-frame-shell[data-device="tablet"] .ne-viewport-frame-wrap {
+    max-width: 860px;
+}
+
+.ne-viewport-frame-shell[data-device="mobile"] .ne-viewport-frame-wrap {
+    max-width: 420px;
+}
+
+.ne-viewport-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 72vh;
+    border: 1px solid #bfc9d3;
+    background: #ffffff;
+}
+
+.flexlayout__layout {
+    background: #f3f1ec;
+}
+
+.flexlayout__tabset {
+    background: #fbfaf8;
+}
+
+.flexlayout__tabset_header {
+    background: #f5f4f1;
+    border-bottom: 1px solid #d7dde4;
+}
+
+.flexlayout__tab_button {
+    border-radius: 0;
+}
+
+.flexlayout__tab_button--selected {
+    background: #ffffff;
+    color: #173f67;
+}
+
+.flexlayout__splitter {
+    background: #dfe4ea;
+}
+
+.flexlayout__splitter:hover,
+.flexlayout__splitter_drag {
+    background: #bcc8d4;
+}
+
+@media (max-width: 1200px) {
+    .ne-shell__topbar {
+        grid-template-columns: 1fr;
+    }
+
+    .ne-shell__controls {
+        grid-template-columns: 1fr;
+    }
+
+    .ne-shell__actions {
+        justify-content: flex-start;
+    }
+
+    .ne-inspector-grid {
+        grid-template-columns: 1fr;
+    }
+}
