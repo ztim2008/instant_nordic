@@ -85,6 +85,74 @@ class modelNordicblocks extends cmsModel {
         return $row;
     }
 
+    public function getBlockDefinition($type) {
+        $type = $this->normalizeBlockType($type);
+        if (!$type) { return null; }
+
+        $blocks_dir = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $block_dir  = $blocks_dir . '/' . $type;
+        if (!is_dir($block_dir)) { return null; }
+
+        $schema_file = $block_dir . '/schema.json';
+        if (!file_exists($schema_file)) { return null; }
+
+        $schema = json_decode((string) file_get_contents($schema_file), true);
+        if (!is_array($schema)) { return null; }
+
+        $meta_file = $block_dir . '/meta.json';
+        $meta      = file_exists($meta_file)
+            ? json_decode((string) file_get_contents($meta_file), true)
+            : [];
+
+        if (!is_array($meta)) {
+            $meta = [];
+        }
+
+        $title       = (string) ($meta['name'] ?? $schema['title'] ?? $type);
+        $category    = (string) ($meta['category'] ?? $schema['category'] ?? 'content');
+        $description = (string) ($meta['description'] ?? $schema['description'] ?? '');
+        $preview     = file_exists($block_dir . '/preview.png') ? '/nordicblocks/blocks/' . $type . '/preview.png' : '';
+
+        return [
+            'name'        => $type,
+            'title'       => $title,
+            'category'    => $category,
+            'description' => $description,
+            'preview'     => $preview,
+            'meta'        => $meta,
+            'schema'      => [
+                'title'       => $title,
+                'category'    => $category,
+                'description' => $description,
+                'fields'      => $this->normalizeBlockSchemaFields($schema),
+            ],
+        ];
+    }
+
+    public function getBlockDefinitions() {
+        $blocks_dir  = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $definitions = [];
+
+        if (!is_dir($blocks_dir)) {
+            return $definitions;
+        }
+
+        foreach (scandir($blocks_dir) as $block_name) {
+            if ($block_name[0] === '.') {
+                continue;
+            }
+
+            $definition = $this->getBlockDefinition($block_name);
+            if ($definition) {
+                $definitions[$block_name] = $definition;
+            }
+        }
+
+        ksort($definitions);
+
+        return $definitions;
+    }
+
     public function createBlock($type, $title) {
         $now = date('Y-m-d H:i:s');
         return $this->db->insert(self::TBL_BLOCKS, [
@@ -362,5 +430,55 @@ class modelNordicblocks extends cmsModel {
         $g = max(0, hexdec(substr($hex, 2, 2)) - $amount);
         $b = max(0, hexdec(substr($hex, 4, 2)) - $amount);
         return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    private function normalizeBlockSchemaFields(array $schema) {
+        $fields = [];
+
+        if (!empty($schema['fields']) && is_array($schema['fields'])) {
+            foreach ($schema['fields'] as $field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+
+                $key = $this->normalizeFieldKey($field['key'] ?? '');
+                if (!$key) {
+                    continue;
+                }
+
+                $field['key'] = $key;
+                $fields[]     = $field;
+            }
+
+            return $fields;
+        }
+
+        foreach ($schema as $raw_key => $field) {
+            if (!is_array($field) || !isset($field['type'])) {
+                continue;
+            }
+
+            $key = $this->normalizeFieldKey($raw_key);
+            if (!$key) {
+                continue;
+            }
+
+            $field['key'] = $key;
+            $fields[]     = $field;
+        }
+
+        return $fields;
+    }
+
+    private function normalizeBlockType($type) {
+        return preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim((string) $type)));
+    }
+
+    private function normalizeFieldKey($key) {
+        $key = preg_replace('/(?<!^)([A-Z])/', '_$1', (string) $key);
+        $key = strtolower($key);
+        $key = preg_replace('/[^a-z0-9_]+/', '_', $key);
+        $key = preg_replace('/_+/', '_', $key);
+        return trim($key, '_');
     }
 }

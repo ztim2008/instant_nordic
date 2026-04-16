@@ -30,33 +30,6 @@ class actionNordicblocksBlockEdit extends cmsAction {
     }
 
     private function loadBlockRegistry() {
-        $blocks_dir = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
-        $registry   = [];
-
-        if (!is_dir($blocks_dir)) {
-            return $registry;
-        }
-
-        foreach (scandir($blocks_dir) as $block_name) {
-            if ($block_name[0] === '.') {
-                continue;
-            }
-            $schema_file = "{$blocks_dir}/{$block_name}/schema.json";
-            if (!file_exists($schema_file)) {
-                continue;
-            }
-            $schema = json_decode(file_get_contents($schema_file), true);
-            if (!is_array($schema)) {
-                continue;
-            }
-            $registry[$block_name] = [
-                'name'     => $block_name,
-                'title'    => $schema['title']    ?? $block_name,
-                'category' => $schema['category'] ?? 'content',
-                'schema'   => $schema,
-            ];
-        }
-
-        return $registry;
+        return $this->model->getBlockDefinitions();
     }
 }

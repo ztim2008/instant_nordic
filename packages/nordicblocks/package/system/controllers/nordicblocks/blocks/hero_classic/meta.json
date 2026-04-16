@@ -1,0 +1,11 @@
+{
+  "id": "hero-classic",
+  "name": "Hero Classic",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Классический центрированный hero-блок на базе donor hero-classic.",
+  "tags": ["hero", "cover", "classic", "center"],
+  "author": "NORDIC",
+  "created": "2026-04-16"
+}

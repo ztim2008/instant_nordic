@@ -58,24 +58,14 @@ class actionNordicblocksBlockSave extends cmsAction {
     }
 
     private function loadSchemaFields($type) {
-        $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim((string) $type)));
-        if ($type === '') {
-            return [];
-        }
-
-        $schema_file = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks/' . $type . '/schema.json';
-        if (!file_exists($schema_file)) {
-            return [];
-        }
-
-        $schema = json_decode((string) file_get_contents($schema_file), true);
-        if (!is_array($schema) || empty($schema['fields']) || !is_array($schema['fields'])) {
+        $definition = $this->model->getBlockDefinition($type);
+        if (!$definition || empty($definition['schema']['fields'])) {
             return [];
         }
 
         $fields = [];
-        foreach ($schema['fields'] as $field) {
-            $key = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($field['key'] ?? '')));
+        foreach ($definition['schema']['fields'] as $field) {
+            $key = (string) ($field['key'] ?? '');
             if ($key === '') {
                 continue;
             }
@@ -84,6 +74,8 @@ class actionNordicblocksBlockSave extends cmsAction {
                 'type'    => (string) ($field['type'] ?? 'text'),
                 'default' => $field['default'] ?? '',
                 'options' => is_array($field['options'] ?? null) ? $field['options'] : [],
+                'min'     => $field['min'] ?? null,
+                'max'     => $field['max'] ?? null,
             ];
         }
 
@@ -110,6 +102,7 @@ class actionNordicblocksBlockSave extends cmsAction {
 
     private function sanitizeFieldValue(array $field, $value) {
         $type    = strtolower((string) ($field['type'] ?? 'text'));
+        $raw_default = $field['default'] ?? '';
         $default = (string) ($field['default'] ?? '');
 
         if (is_bool($value)) {
@@ -121,6 +114,31 @@ class actionNordicblocksBlockSave extends cmsAction {
         }
 
         $value = trim($value);
+
+        if ($type === 'boolean') {
+            $truthy = ['1', 'true', 'yes', 'on'];
+            if ($value === '') {
+                return $raw_default ? '1' : '0';
+            }
+            return in_array(strtolower($value), $truthy, true) ? '1' : '0';
+        }
+
+        if ($type === 'number') {
+            $number = is_numeric($value) ? (0 + $value) : (is_numeric($raw_default) ? (0 + $raw_default) : 0);
+
+            if (is_numeric($field['min'] ?? null) && $number < (0 + $field['min'])) {
+                $number = 0 + $field['min'];
+            }
+            if (is_numeric($field['max'] ?? null) && $number > (0 + $field['max'])) {
+                $number = 0 + $field['max'];
+            }
+
+            if ((float) $number === (float) ((int) $number)) {
+                return (string) ((int) $number);
+            }
+
+            return rtrim(rtrim(sprintf('%.4F', $number), '0'), '.');
+        }
 
         if ($type === 'select') {
             $allowed = [];

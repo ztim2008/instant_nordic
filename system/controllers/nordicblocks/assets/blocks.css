@@ -99,6 +99,102 @@
     display:       block;
 }
 
+.nb-hero-classic {
+    position: relative;
+    overflow: hidden;
+}
+
+.nb-hero-classic__inner {
+    width: min(100%, 980px);
+    margin-inline: auto;
+    text-align: var(--nb-hero-classic-align, center);
+}
+
+.nb-hero-classic__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .45rem .85rem;
+    border-radius: 999px;
+    margin-bottom: var(--nb-space-md, 1rem);
+    background: color-mix(in srgb, var(--nb-color-accent) 10%, transparent);
+    color: var(--nb-color-accent);
+    font-size: var(--nb-text-sm, .875rem);
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.nb-hero-classic__title {
+    margin: 0;
+    font-family: var(--nb-font-head);
+    font-size: var(--nb-hero-classic-title-desktop, clamp(3rem, 8vw, 8rem));
+    line-height: .95;
+    letter-spacing: -.04em;
+    font-weight: var(--nb-weight-black, 800);
+    color: var(--nb-color-text);
+    text-wrap: balance;
+}
+
+.nb-hero-classic__divider {
+    width: 88px;
+    height: 4px;
+    border-radius: 999px;
+    margin: var(--nb-space-lg, 1.5rem) auto;
+    background: var(--nb-color-accent);
+}
+
+.nb-hero-classic--left .nb-hero-classic__divider {
+    margin-inline: 0;
+}
+
+.nb-hero-classic--right .nb-hero-classic__divider {
+    margin-inline: 0 0 0 auto;
+}
+
+.nb-hero-classic__subtitle {
+    margin: 0 auto;
+    max-width: 720px;
+    font-size: var(--nb-hero-classic-subtitle-desktop, clamp(1.125rem, 2vw, 1.5rem));
+    line-height: 1.65;
+    color: var(--nb-color-text-muted);
+    text-wrap: pretty;
+}
+
+.nb-hero-classic--left .nb-hero-classic__subtitle,
+.nb-hero-classic--right .nb-hero-classic__subtitle {
+    margin-inline: 0;
+}
+
+.nb-hero-classic--right .nb-hero-classic__subtitle {
+    margin-left: auto;
+}
+
+.nb-hero-classic__actions {
+    display: flex;
+    gap: var(--nb-space-sm, .75rem);
+    margin-top: var(--nb-space-xl, 1.75rem);
+    justify-content: center;
+}
+
+.nb-hero-classic--left .nb-hero-classic__actions {
+    justify-content: flex-start;
+}
+
+.nb-hero-classic--right .nb-hero-classic__actions {
+    justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+    .nb-hero-classic__title {
+        font-size: var(--nb-hero-classic-title-mobile, clamp(2.25rem, 12vw, 3.75rem));
+    }
+
+    .nb-hero-classic__subtitle {
+        font-size: var(--nb-hero-classic-subtitle-mobile, 1.125rem);
+    }
+}
+
 /* ════════════════════════════════════
    SECTION SHARED
    ════════════════════════════════════ */

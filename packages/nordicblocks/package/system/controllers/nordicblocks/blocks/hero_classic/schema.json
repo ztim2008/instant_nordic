@@ -1,0 +1,91 @@
+{
+  "title": {
+    "type": "text",
+    "label": "Заголовок",
+    "default": "Запустите сильный лендинг на InstantCMS",
+    "placeholder": "Введите заголовок...",
+    "maxLength": 120
+  },
+  "subtitle": {
+    "type": "textarea",
+    "label": "Подзаголовок",
+    "default": "SSR-блоки, стандартное размещение через виджеты и единый runtime без takeover-магии.",
+    "placeholder": "Введите подзаголовок...",
+    "rows": 3,
+    "maxLength": 320
+  },
+  "badge": {
+    "type": "text",
+    "label": "Бейдж",
+    "default": "Donor Hero #1",
+    "placeholder": "Необязательно"
+  },
+  "showDivider": {
+    "type": "boolean",
+    "label": "Показать разделитель",
+    "default": true
+  },
+  "buttonText": {
+    "type": "text",
+    "label": "Текст кнопки",
+    "default": "Начать",
+    "placeholder": "Текст кнопки"
+  },
+  "buttonLink": {
+    "type": "url",
+    "label": "Ссылка кнопки",
+    "default": "#",
+    "placeholder": "#section или https://..."
+  },
+  "showButton": {
+    "type": "boolean",
+    "label": "Показать кнопку",
+    "default": true
+  },
+  "textAlign": {
+    "type": "select",
+    "label": "Выравнивание текста",
+    "default": "center",
+    "options": [
+      { "label": "По центру", "value": "center" },
+      { "label": "Слева", "value": "left" },
+      { "label": "Справа", "value": "right" }
+    ]
+  },
+  "titleDesktopPx": {
+    "type": "number",
+    "label": "Заголовок — desktop",
+    "default": 96,
+    "min": 24,
+    "max": 200,
+    "step": 1,
+    "unit": "px"
+  },
+  "titleMobilePx": {
+    "type": "number",
+    "label": "Заголовок — mobile",
+    "default": 52,
+    "min": 18,
+    "max": 140,
+    "step": 1,
+    "unit": "px"
+  },
+  "subtitleDesktopPx": {
+    "type": "number",
+    "label": "Подзаголовок — desktop",
+    "default": 24,
+    "min": 10,
+    "max": 64,
+    "step": 1,
+    "unit": "px"
+  },
+  "subtitleMobilePx": {
+    "type": "number",
+    "label": "Подзаголовок — mobile",
+    "default": 18,
+    "min": 10,
+    "max": 48,
+    "step": 1,
+    "unit": "px"
+  }
+}

@@ -9,6 +9,24 @@ $block_id        = (int) $block['id'];
 $schema          = $block_registry[$block['type']]['schema'] ?? [];
 $fields          = $schema['fields'] ?? [];
 $props           = $block['props'] ?? [];
+$field_groups    = [];
+
+foreach ($fields as $field) {
+    if (!is_array($field)) {
+        continue;
+    }
+
+    $section_key = (string) ($field['section'] ?? 'general');
+    if (!isset($field_groups[$section_key])) {
+        $field_groups[$section_key] = [
+            'label' => (string) ($field['section_label'] ?? 'Основное'),
+            'hint'  => (string) ($field['section_hint'] ?? ''),
+            'fields'=> [],
+        ];
+    }
+
+    $field_groups[$section_key]['fields'][] = $field;
+}
 
 $this->setPageTitle('Редактор: ' . $block_title_esc);
 $this->addBreadcrumb('NordicBlocks', $back_url);
@@ -250,6 +268,7 @@ $this->addMenuItems('admin_toolbar', $menu);
     box-shadow: 0 0 0 3px rgba(59,130,246,.1);
 }
 .nbe-field textarea { resize: vertical; min-height: 64px; }
+.nbe-field input[type=checkbox] { width: auto; }
 .nbe-color-row { display: flex; gap: .4rem; align-items: center; }
 .nbe-color-swatch {
     width: 32px; height: 32px; border-radius: 5px;
@@ -260,6 +279,32 @@ $this->addMenuItems('admin_toolbar', $menu);
     position: absolute; inset: -4px;
     width: calc(100% + 8px); height: calc(100% + 8px);
     opacity: 0; cursor: pointer; border: none;
+}
+.nbe-insp-section {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: .85rem .9rem;
+    margin-bottom: .9rem;
+}
+.nbe-insp-section:last-child { margin-bottom: 0; }
+.nbe-insp-section__title {
+    font-size: .8rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: .2rem;
+}
+.nbe-insp-section__hint {
+    font-size: .72rem;
+    line-height: 1.45;
+    color: #64748b;
+    margin-bottom: .75rem;
+}
+.nbe-field-help {
+    margin-top: .3rem;
+    font-size: .7rem;
+    line-height: 1.4;
+    color: #64748b;
 }
 
 /* ════════════════════════════════════════════════════
@@ -481,17 +526,31 @@ $this->addMenuItems('admin_toolbar', $menu);
                         <div>Для этого типа блока<br>нет настроек</div>
                     </div>
                     <?php else: ?>
-                    <?php foreach ($fields as $f):
+                    <?php foreach ($field_groups as $group): ?>
+                    <div class="nbe-insp-section">
+                        <div class="nbe-insp-section__title"><?= htmlspecialchars($group['label'], ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php if (!empty($group['hint'])): ?>
+                        <div class="nbe-insp-section__hint"><?= htmlspecialchars($group['hint'], ENT_QUOTES, 'UTF-8') ?></div>
+                        <?php endif; ?>
+                        <?php foreach ($group['fields'] as $f):
                         $fkey   = htmlspecialchars($f['key']   ?? '', ENT_QUOTES, 'UTF-8');
                         $flabel = htmlspecialchars($f['label'] ?? $f['key'] ?? '', ENT_QUOTES, 'UTF-8');
                         $ftype  = $f['type'] ?? 'text';
                         $fval   = $props[$f['key'] ?? ''] ?? ($f['default'] ?? '');
                         $fval_e = htmlspecialchars((string)$fval, ENT_QUOTES, 'UTF-8');
+                        $fmin   = htmlspecialchars((string) ($f['min'] ?? ''), ENT_QUOTES, 'UTF-8');
+                        $fmax   = htmlspecialchars((string) ($f['max'] ?? ''), ENT_QUOTES, 'UTF-8');
+                        $fstep  = htmlspecialchars((string) ($f['step'] ?? ''), ENT_QUOTES, 'UTF-8');
+                        $fph    = htmlspecialchars((string) ($f['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+                        $frows  = (int) ($f['rows'] ?? 3);
+                        $fhelp  = htmlspecialchars((string) ($f['help'] ?? ''), ENT_QUOTES, 'UTF-8');
+                        $fbool  = in_array(strtolower((string) $fval), ['1', 'true', 'yes', 'on'], true);
                     ?>
                     <div class="nbe-field">
                         <label for="nbf-<?= $fkey ?>"><?= $flabel ?></label>
                         <?php if ($ftype === 'textarea'): ?>
-                            <textarea id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" rows="3"
+                            <textarea id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" rows="<?= $frows ?>"
+                                placeholder="<?= $fph ?>"
                                 oninput="markDirty();scheduleReload()"><?= $fval_e ?></textarea>
                         <?php elseif ($ftype === 'select'): ?>
                             <select id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" onchange="markDirty();scheduleReload()">
@@ -511,6 +570,20 @@ $this->addMenuItems('admin_toolbar', $menu);
                                 <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
                                     oninput="if(this.value.match(/^#[0-9a-fA-F]{3,6}$/)){document.getElementById('nbf-<?= $fkey ?>-picker').value=this.value;}markDirty();scheduleReload()">
                             </div>
+                        <?php elseif ($ftype === 'number'): ?>
+                            <input type="number" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
+                                <?= $fmin !== '' ? 'min="' . $fmin . '"' : '' ?>
+                                <?= $fmax !== '' ? 'max="' . $fmax . '"' : '' ?>
+                                <?= $fstep !== '' ? 'step="' . $fstep . '"' : '' ?>
+                                placeholder="<?= $fph ?>"
+                                oninput="markDirty();scheduleReload()">
+                        <?php elseif ($ftype === 'boolean'): ?>
+                            <label style="display:flex;align-items:center;gap:.55rem;font-size:.83rem;color:#374151;margin:0">
+                                <input type="checkbox" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="1"
+                                    <?= $fbool ? 'checked' : '' ?>
+                                    onchange="this.nextElementSibling.textContent=this.checked?'Включено':'Выключено';markDirty();scheduleReload()">
+                                <span><?= $fbool ? 'Включено' : 'Выключено' ?></span>
+                            </label>
                         <?php elseif ($ftype === 'image'): ?>
                             <div class="nbe-field-image-wrap">
                                 <div class="nbe-field-image-preview" id="nbf-<?= $fkey ?>-preview">
@@ -532,14 +605,19 @@ $this->addMenuItems('admin_toolbar', $menu);
                             </div>
                         <?php elseif ($ftype === 'url'): ?>
                             <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
-                                placeholder="https:// или /path/"
+                                placeholder="<?= $fph ?: 'https:// или /path/' ?>"
                                 oninput="markDirty();scheduleReload()">
                         <?php else: /* text */ ?>
                             <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
+                                placeholder="<?= $fph ?>"
                                 oninput="markDirty();scheduleReload()">
+                        <?php endif; ?>
+                        <?php if ($fhelp): ?>
+                        <div class="nbe-field-help"><?= $fhelp ?></div>
                         <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -580,7 +658,7 @@ var nbeDebTimer  = null;
 function nbeGetProps() {
     var props = {};
     document.querySelectorAll('#nbe-inspector [data-key]').forEach(function(el) {
-        props[el.dataset.key] = el.value;
+        props[el.dataset.key] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
     });
     return props;
 }

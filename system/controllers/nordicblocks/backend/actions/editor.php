@@ -33,35 +33,6 @@ class actionNordicblocksEditor extends cmsAction {
      * Сканирует /blocks/ и возвращает массив метаданных блоков.
      */
     private function loadBlockRegistry() {
-        $blocks_dir = __DIR__ . '/../../blocks';
-        $registry   = [];
-
-        if (!is_dir($blocks_dir)) {
-            return $registry;
-        }
-
-        foreach (scandir($blocks_dir) as $block_name) {
-            if ($block_name[0] === '.') {
-                continue;
-            }
-            $schema_file = "{$blocks_dir}/{$block_name}/schema.json";
-            if (!file_exists($schema_file)) {
-                continue;
-            }
-            $schema = json_decode(file_get_contents($schema_file), true);
-            if (!is_array($schema)) {
-                continue;
-            }
-            $preview = "/nordicblocks/blocks/{$block_name}/preview.png";
-            $registry[$block_name] = [
-                'name'    => $block_name,
-                'title'   => $schema['title']    ?? $block_name,
-                'category'=> $schema['category'] ?? 'content',
-                'preview' => $preview,
-                'schema'  => $schema,
-            ];
-        }
-
-        return $registry;
+        return $this->model->getBlockDefinitions();
     }
 }

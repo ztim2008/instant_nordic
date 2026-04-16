@@ -129,22 +129,6 @@ $this->addMenuItems('admin_toolbar', $menu);
 .nb-modal__footer .btn { padding: .5rem 1.25rem; }
 </style>
 
-<?php
-// Сканируем доступные типы блоков
-$blocks_dir = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
-$block_types = [];
-if (is_dir($blocks_dir)) {
-    foreach (scandir($blocks_dir) as $bname) {
-        if ($bname[0] === '.') { continue; }
-        $schema_file = "{$blocks_dir}/{$bname}/schema.json";
-        if (file_exists($schema_file)) {
-            $schema = json_decode(file_get_contents($schema_file), true) ?: [];
-            $block_types[$bname] = $schema['title'] ?? $bname;
-        }
-    }
-}
-?>
-
 <?php if (!$blocks): ?>
 <div class="nb-empty-state">
     <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" style="margin:0 auto 1rem"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>
