@@ -4,10 +4,15 @@
  * Переменные контекста: $props (array), $block_type, $block_uid
  */
 
+require_once dirname(__DIR__) . '/render_helpers.php';
+
 $eyebrow = htmlspecialchars(trim((string) ($props['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
 $heading = htmlspecialchars(trim((string) ($props['heading'] ?? '')), ENT_QUOTES, 'UTF-8');
 $cols    = in_array($props['columns'] ?? '3', ['2','3','4'], true) ? (int) $props['columns'] : 3;
 $theme   = in_array($props['theme'] ?? 'light', ['light','alt','dark'], true) ? $props['theme'] : 'light';
+$heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h2');
+$heading_weight = nb_block_get_font_weight((array) $props, 'heading', 800);
+$reveal = nb_block_get_reveal_settings((array) $props);
 
 // Собираем items из плоских полей item1..item4
 $items = [];
@@ -23,11 +28,13 @@ for ($i = 1; $i <= 4; $i++) {
 
 $theme_attr = ($theme !== 'light') ? ' data-nb-theme="' . $theme . '"' : '';
 $bg_class   = ($theme === 'alt') ? ' nb-section--alt' : '';
+$bg_class  .= $reveal['class'];
 ?>
 <section
     class="nb-section nb-features<?= $bg_class ?>"
     id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>"
     <?= $theme_attr ?>
+    <?= $reveal['style'] ? ' style="' . htmlspecialchars($reveal['style'], ENT_QUOTES, 'UTF-8') . '"' : '' ?>
 >
     <div class="nb-container">
 
@@ -37,7 +44,7 @@ $bg_class   = ($theme === 'alt') ? ' nb-section--alt' : '';
             <p class="nb-eyebrow"><?= $eyebrow ?></p>
             <?php endif; ?>
             <?php if ($heading): ?>
-            <h2 class="nb-section-title"><?= $heading ?></h2>
+            <<?= $heading_tag ?> class="nb-section-title" style="font-weight:<?= (int) $heading_weight ?>"><?= $heading ?></<?= $heading_tag ?>>
             <?php endif; ?>
         </div>
         <?php endif; ?>

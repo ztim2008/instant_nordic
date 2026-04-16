@@ -99,6 +99,69 @@
     display:       block;
 }
 
+/* ════════════════════════════════════
+   BLOCK ENTRY ANIMATION
+   ════════════════════════════════════ */
+
+.nb-anim {
+    animation-duration: .72s;
+    animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+    animation-fill-mode: both;
+    animation-delay: var(--nb-anim-delay, 0ms);
+    will-change: transform, opacity;
+}
+
+.nb-anim--fade-up {
+    animation-name: nbAnimFadeUp;
+}
+
+.nb-anim--fade-in {
+    animation-name: nbAnimFadeIn;
+}
+
+.nb-anim--zoom-in {
+    animation-name: nbAnimZoomIn;
+}
+
+@keyframes nbAnimFadeUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 28px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes nbAnimFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes nbAnimZoomIn {
+    from {
+        opacity: 0;
+        transform: scale(.96);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nb-anim {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
 .nb-hero-classic {
     position: relative;
     display: flex;

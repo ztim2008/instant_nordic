@@ -686,7 +686,7 @@ $this->addMenuItems('admin_toolbar', $menu);
                         $fph    = htmlspecialchars((string) ($f['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
                         $frows  = (int) ($f['rows'] ?? 3);
                         $fhelp  = htmlspecialchars((string) ($f['help'] ?? ''), ENT_QUOTES, 'UTF-8');
-                        $fbool  = in_array(strtolower((string) $fval), ['1', 'true', 'yes', 'on'], true);
+                        $fbool  = !is_array($fval) && in_array(strtolower((string) $fval), ['1', 'true', 'yes', 'on'], true);
                     ?>
                     <div class="nbe-field">
                         <label for="nbf-<?= $fkey ?>"><?= $flabel ?></label>

@@ -124,7 +124,7 @@ class modelNordicblocks extends cmsModel {
                 'title'       => $title,
                 'category'    => $category,
                 'description' => $description,
-                'fields'      => $this->normalizeBlockSchemaFields($schema),
+                'fields'      => $this->normalizeBlockSchemaFields($schema, $type),
             ],
         ];
     }
@@ -907,7 +907,7 @@ class modelNordicblocks extends cmsModel {
         return trim($value, '-');
     }
 
-    private function normalizeBlockSchemaFields(array $schema) {
+    private function normalizeBlockSchemaFields(array $schema, $block_type = '') {
         $fields = [];
 
         if (!empty($schema['fields']) && is_array($schema['fields'])) {
@@ -925,7 +925,7 @@ class modelNordicblocks extends cmsModel {
                 $fields[]     = $field;
             }
 
-            return $fields;
+            return $this->enhanceBlockSchemaFields($fields, $block_type);
         }
 
         foreach ($schema as $raw_key => $field) {
@@ -942,7 +942,130 @@ class modelNordicblocks extends cmsModel {
             $fields[]     = $field;
         }
 
+        return $this->enhanceBlockSchemaFields($fields, $block_type);
+    }
+
+    private function enhanceBlockSchemaFields(array $fields, $block_type = '') {
+        foreach (['title', 'heading'] as $base_key) {
+            $source_field = $this->findFieldByKey($fields, $base_key);
+            if (!$source_field) {
+                continue;
+            }
+
+            if (!$this->findFieldByKey($fields, $base_key . '_tag')) {
+                $fields[] = $this->buildHeadingTagField($source_field, $block_type);
+            }
+
+            if (!$this->findFieldByKey($fields, $base_key . '_weight')) {
+                $fields[] = $this->buildHeadingWeightField($source_field, $block_type);
+            }
+        }
+
+        if (!$this->findFieldByKey($fields, 'block_animation')) {
+            $fields[] = $this->buildBlockAnimationField();
+        }
+
+        if (!$this->findFieldByKey($fields, 'block_animation_delay')) {
+            $fields[] = $this->buildBlockAnimationDelayField();
+        }
+
         return $fields;
+    }
+
+    private function findFieldByKey(array $fields, $key) {
+        foreach ($fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            if ((string) ($field['key'] ?? '') === (string) $key) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildHeadingTagField(array $source_field, $block_type) {
+        $base_key     = (string) ($source_field['key'] ?? 'heading');
+        $field_label  = (string) ($source_field['label'] ?? 'Заголовок');
+        $default_tag  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? 'h1' : 'h2';
+
+        return [
+            'key'           => $base_key . '_tag',
+            'type'          => 'select',
+            'label'         => $field_label . ' — HTML тег',
+            'default'       => $default_tag,
+            'options'       => [
+                ['label' => 'DIV', 'value' => 'div'],
+                ['label' => 'H1', 'value' => 'h1'],
+                ['label' => 'H2', 'value' => 'h2'],
+                ['label' => 'H3', 'value' => 'h3'],
+            ],
+            'section'       => 'typography',
+            'section_label' => 'Типографика',
+            'section_hint'  => 'Размеры, семантика заголовка, жирность и SEO-структура блока.',
+            'help'          => 'Позволяет выбрать SEO-семантику: H1, H2, H3 или нейтральный DIV.',
+        ];
+    }
+
+    private function buildHeadingWeightField(array $source_field, $block_type) {
+        $base_key        = (string) ($source_field['key'] ?? 'heading');
+        $field_label     = (string) ($source_field['label'] ?? 'Заголовок');
+        $default_weight  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? '900' : '800';
+
+        return [
+            'key'           => $base_key . '_weight',
+            'type'          => 'select',
+            'label'         => $field_label . ' — жирность',
+            'default'       => $default_weight,
+            'options'       => [
+                ['label' => '400 — Normal', 'value' => '400'],
+                ['label' => '500 — Medium', 'value' => '500'],
+                ['label' => '600 — SemiBold', 'value' => '600'],
+                ['label' => '700 — Bold', 'value' => '700'],
+                ['label' => '800 — ExtraBold', 'value' => '800'],
+                ['label' => '900 — Black', 'value' => '900'],
+            ],
+            'section'       => 'typography',
+            'section_label' => 'Типографика',
+            'section_hint'  => 'Размеры, семантика заголовка, жирность и SEO-структура блока.',
+            'help'          => 'Шрифтовая пара берется из дизайн-системы, а жирность можно регулировать прямо в блоке.',
+        ];
+    }
+
+    private function buildBlockAnimationField() {
+        return [
+            'key'           => 'block_animation',
+            'type'          => 'select',
+            'label'         => 'Анимация появления',
+            'default'       => 'none',
+            'options'       => [
+                ['label' => 'Без анимации', 'value' => 'none'],
+                ['label' => 'Fade Up', 'value' => 'fade-up'],
+                ['label' => 'Fade In', 'value' => 'fade-in'],
+                ['label' => 'Zoom In', 'value' => 'zoom-in'],
+            ],
+            'section'       => 'effects',
+            'section_label' => 'Появление',
+            'section_hint'  => 'Легкая CSS-анимация блока без дополнительных зависимостей.',
+        ];
+    }
+
+    private function buildBlockAnimationDelayField() {
+        return [
+            'key'           => 'block_animation_delay',
+            'type'          => 'number',
+            'label'         => 'Задержка анимации',
+            'default'       => 0,
+            'min'           => 0,
+            'max'           => 1500,
+            'step'          => 50,
+            'unit'          => 'ms',
+            'section'       => 'effects',
+            'section_label' => 'Появление',
+            'section_hint'  => 'Легкая CSS-анимация блока без дополнительных зависимостей.',
+        ];
     }
 
     private function normalizeBlockType($type) {

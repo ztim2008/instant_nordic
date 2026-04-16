@@ -1,5 +1,7 @@
 <?php
 
+require_once dirname(__DIR__) . '/render_helpers.php';
+
 $escape = function ($value) {
     return htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
 };
@@ -58,6 +60,9 @@ if ($title === '') {
 
 $subtitle = $escape($props['subtitle'] ?? '');
 $badge    = $escape($props['badge'] ?? '');
+$title_tag = nb_block_get_heading_tag((array) $props, 'title', 'h1');
+$title_weight = nb_block_get_font_weight((array) $props, 'title', 900);
+$reveal = nb_block_get_reveal_settings((array) $props);
 
 $show_divider = in_array(strtolower((string) ($props['show_divider'] ?? '1')), ['1', 'true', 'yes', 'on'], true);
 $show_button  = in_array(strtolower((string) ($props['show_button'] ?? '1')), ['1', 'true', 'yes', 'on'], true);
@@ -120,6 +125,7 @@ if ($background_mode === 'gradient') {
 }
 
 $section_class = 'nb-section nb-hero-classic nb-hero-classic--' . $text_align;
+$section_class .= $reveal['class'];
 $section_style = $background_style . sprintf(
     '--nb-hero-classic-align:%s;--nb-hero-classic-content-width:%dpx;--nb-hero-classic-min-height-desktop:%dpx;--nb-hero-classic-min-height-mobile:%dpx;--nb-hero-classic-title-desktop:%dpx;--nb-hero-classic-title-mobile:%dpx;--nb-hero-classic-subtitle-desktop:%dpx;--nb-hero-classic-subtitle-mobile:%dpx;--nb-hero-classic-badge-color:%s;--nb-hero-classic-title-color:%s;--nb-hero-classic-subtitle-color:%s;--nb-hero-classic-button-text:%s;--nb-hero-classic-button-bg:%s;--nb-hero-classic-button-border:%s;--nb-hero-classic-button-radius:%dpx;--nb-hero-classic-padding-top-desktop:%dpx;--nb-hero-classic-padding-bottom-desktop:%dpx;--nb-hero-classic-padding-top-mobile:%dpx;--nb-hero-classic-padding-bottom-mobile:%dpx;',
     $text_align,
@@ -142,6 +148,7 @@ $section_style = $background_style . sprintf(
     $padding_top_mobile,
     $padding_bottom_mobile
 );
+$section_style = nb_block_append_style($section_style, $reveal['style']);
 ?>
 <section
     class="<?= htmlspecialchars($section_class, ENT_QUOTES, 'UTF-8') ?>"
@@ -154,7 +161,7 @@ $section_style = $background_style . sprintf(
             <div class="nb-hero-classic__badge"><?= $badge ?></div>
             <?php endif; ?>
 
-            <h1 class="nb-hero-classic__title"><?= $title ?></h1>
+            <<?= $title_tag ?> class="nb-hero-classic__title" style="font-weight:<?= (int) $title_weight ?>"><?= $title ?></<?= $title_tag ?>>
 
             <?php if ($show_divider): ?>
             <div class="nb-hero-classic__divider" aria-hidden="true"></div>

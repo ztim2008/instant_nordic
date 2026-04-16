@@ -4,9 +4,14 @@
  * Переменные контекста: $props (array), $block_type, $block_uid
  */
 
+require_once dirname(__DIR__) . '/render_helpers.php';
+
 $heading  = htmlspecialchars(trim((string) ($props['heading']    ?? 'Готовы начать?')), ENT_QUOTES, 'UTF-8');
 $subhead  = htmlspecialchars(trim((string) ($props['subheading'] ?? '')), ENT_QUOTES, 'UTF-8');
 $theme    = in_array($props['theme'] ?? 'accent', ['accent','dark','light'], true) ? $props['theme'] : 'accent';
+$heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h2');
+$heading_weight = nb_block_get_font_weight((array) $props, 'heading', 800);
+$reveal = nb_block_get_reveal_settings((array) $props);
 
 $btn1_label = htmlspecialchars(trim((string) ($props['btn_primary_label']   ?? '')), ENT_QUOTES, 'UTF-8');
 $btn1_url   = htmlspecialchars(trim((string) ($props['btn_primary_url']     ?? '#')), ENT_QUOTES, 'UTF-8');
@@ -27,9 +32,11 @@ if ($theme === 'accent') {
     $btn1_class    = 'nb-btn nb-btn--accent';
     $btn2_class    = 'nb-btn nb-btn--outline-white';
 }
+
+$section_style = nb_block_append_style($section_style, $reveal['style']);
 ?>
 <section
-    class="nb-section nb-cta"
+    class="nb-section nb-cta<?= $reveal['class'] ?>"
     id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>"
     style="<?= $section_style ?>"
 >
@@ -37,7 +44,7 @@ if ($theme === 'accent') {
         <div class="nb-cta__inner">
 
             <div class="nb-cta__copy">
-                <h2 class="nb-cta__heading"><?= $heading ?></h2>
+                <<?= $heading_tag ?> class="nb-cta__heading" style="font-weight:<?= (int) $heading_weight ?>"><?= $heading ?></<?= $heading_tag ?>>
                 <?php if ($subhead): ?>
                 <p class="nb-cta__subheading"><?= $subhead ?></p>
                 <?php endif; ?>
