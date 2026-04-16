@@ -36,6 +36,7 @@ $base_colors = [
 
 $button_colors = [
     'button_primary_bg'     => ['Primary: фон', $token('colors', 'button_primary_bg', '#b42318'), 'colors.button_primary_bg'],
+    'button_primary_bg_hover' => ['Primary: hover фон', $token('colors', 'button_primary_bg_hover', '#8a1910'), 'colors.button_primary_bg_hover'],
     'button_primary_text'   => ['Primary: текст', $token('colors', 'button_primary_text', '#ffffff'), 'colors.button_primary_text'],
     'button_primary_border' => ['Primary: бордер', $token('colors', 'button_primary_border', '#b42318'), 'colors.button_primary_border'],
     'button_outline_text'   => ['Outline: текст', $token('colors', 'button_outline_text', '#b42318'), 'colors.button_outline_text'],
@@ -220,6 +221,126 @@ $button_colors = [
     background: #f8fafc;
 }
 .nb-mini-preview { font-size: .82rem; color: #475569; }
+.nb-live-playground {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, .10), transparent 38%),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+.nb-live-playground-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .85rem;
+}
+.nb-live-playground-head strong {
+    display: block;
+    margin-bottom: .18rem;
+    font-size: .88rem;
+    color: #0f172a;
+}
+.nb-live-playground-head span {
+    font-size: .76rem;
+    color: #64748b;
+}
+.nb-live-playground-main {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: .8rem;
+}
+.nb-live-demo-button {
+    min-width: 220px;
+}
+.nb-live-demo-button.is-demo-hover {
+    transform: var(--nb-btn-hover-transform, none);
+    box-shadow: var(--nb-btn-hover-shadow, none);
+}
+.nb-live-demo-button.is-demo-hover::after {
+    opacity: var(--nb-btn-glint-opacity, 0);
+    transform: translateX(135%);
+}
+.nb-live-demo-button.is-demo-hover.nb-btn--primary {
+    background: var(--nb-btn-primary-bg-hover);
+    color: var(--nb-btn-primary-text-hover);
+    border-color: var(--nb-btn-primary-border-hover);
+}
+.nb-live-demo-button.is-demo-hover.nb-btn--outline {
+    background: var(--nb-btn-outline-bg-hover);
+    color: var(--nb-btn-outline-text-hover);
+    border-color: var(--nb-btn-outline-border-hover);
+}
+.nb-live-demo-button.is-demo-hover.nb-btn--ghost {
+    background: var(--nb-btn-ghost-bg-hover);
+    color: var(--nb-btn-ghost-text-hover);
+    border-color: var(--nb-btn-ghost-border-hover);
+}
+.nb-live-demo-button.is-demo-press {
+    transform: var(--nb-btn-active-transform, scale(.98));
+}
+.nb-live-demo-button.is-demo-press.nb-btn--primary {
+    background: var(--nb-btn-primary-bg-active);
+    color: var(--nb-btn-primary-text-active);
+    border-color: var(--nb-btn-primary-border-active);
+}
+.nb-live-demo-button.is-demo-press.nb-btn--outline {
+    background: var(--nb-btn-outline-bg-active);
+    color: var(--nb-btn-outline-text-active);
+    border-color: var(--nb-btn-outline-border-active);
+}
+.nb-live-demo-button.is-demo-press.nb-btn--ghost {
+    background: var(--nb-btn-ghost-bg-active);
+    color: var(--nb-btn-ghost-text-active);
+    border-color: var(--nb-btn-ghost-border-active);
+}
+.nb-live-replay-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: .65rem .95rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s, transform .12s, box-shadow .15s;
+}
+.nb-live-replay-btn:hover {
+    border-color: #94a3b8;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, .08);
+    transform: translateY(-1px);
+}
+.nb-live-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.nb-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .42rem;
+    padding: .36rem .58rem;
+    border: 1px solid #dbe4ef;
+    border-radius: 999px;
+    background: rgba(255,255,255,.82);
+    font-size: .75rem;
+    color: #475569;
+}
+.nb-live-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--nb-btn-primary-bg-hover, #8a1910);
+    border: 1px solid rgba(15, 23, 42, .12);
+}
 .nb-toggle {
     display: inline-flex;
     align-items: center;
@@ -473,6 +594,24 @@ $button_colors = [
                         <div class="nb-ds-section-title"><i class="fa fa-hand-pointer-o"></i> Кнопки</div>
                         <div class="nb-ds-section-note">Одна механика для всех блоков</div>
                     </div>
+                    <div class="nb-live-playground">
+                        <div class="nb-live-playground-head">
+                            <div>
+                                <strong>Живой preview кнопки</strong>
+                                <span>Наведи курсор, нажми или вручную переиграй hover-анимацию.</span>
+                            </div>
+                            <span class="nb-live-pill" id="nbLiveAnimationLabel">Анимация: Lift</span>
+                        </div>
+                        <div class="nb-live-playground-main">
+                            <a href="#" class="nb-btn nb-btn--primary nb-live-demo-button" id="nbLivePreviewButton" onclick="return false">Живая CTA-кнопка</a>
+                            <button type="button" class="nb-live-replay-btn" id="nbLivePreviewReplay">Повторить hover</button>
+                        </div>
+                        <div class="nb-live-meta">
+                            <span class="nb-live-pill" id="nbLivePreviewState">Состояние: обычное</span>
+                            <span class="nb-live-pill"><span class="nb-live-swatch" id="nbLiveHoverSwatch"></span> Hover color</span>
+                            <span class="nb-live-pill" id="nbLiveStyleLabel">Стиль: Primary</span>
+                        </div>
+                    </div>
                     <div class="nb-ds-grid-2">
                         <div class="nb-ds-field">
                             <label>Стиль по умолчанию</label>
@@ -689,6 +828,26 @@ var nbFontFaces = {
     'mono': "'JetBrains Mono','Courier New',monospace",
     'display': "'Montserrat','Arial',sans-serif"
 };
+var nbButtonStyleLabels = {
+    'primary': 'Primary',
+    'outline': 'Outline',
+    'ghost': 'Ghost'
+};
+var nbButtonAnimationLabels = {
+    'none': 'Без анимации',
+    'lift': 'Lift',
+    'grow': 'Grow',
+    'glow': 'Glow',
+    'glint': 'Glint'
+};
+var nbLivePreviewCurrentState = 'base';
+var nbButtonAnimationPresets = {
+    'none':  { transform: 'none', shadow: 'none', glint: '0' },
+    'lift':  { transform: 'translateY(-2px)', shadow: '0 8px 32px 0 rgb(0 0 0 / .12)', glint: '0' },
+    'grow':  { transform: 'scale(1.03)', shadow: '0 4px 12px 0 rgb(0 0 0 / .08)', glint: '0' },
+    'glow':  { transform: 'none', shadow: '', glint: '0' },
+    'glint': { transform: 'none', shadow: '0 4px 12px 0 rgb(0 0 0 / .08)', glint: '1' }
+};
 
 function nbSyncColorField(key) {
     var textEl = document.getElementById('nbColorText_' + key);
@@ -728,6 +887,240 @@ function nbSetFieldValue(name, value) {
     }
 }
 
+function nbGetFieldValue(name, fallback) {
+    var node = document.querySelector('[name="' + name + '"]');
+    if (!node) {
+        return fallback || '';
+    }
+    if (node.type === 'checkbox') {
+        return node.checked ? '1' : '0';
+    }
+    var value = String(node.value || '').trim();
+    return value || (fallback || '');
+}
+
+function nbNormalizeHex(value, fallback) {
+    var raw = String(value || '').trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(raw)) {
+        return raw.toLowerCase();
+    }
+    var safeFallback = String(fallback || '').trim();
+    if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(safeFallback)) {
+        return safeFallback.toLowerCase();
+    }
+    return '#b42318';
+}
+
+function nbExpandHex(value) {
+    var hex = nbNormalizeHex(value, '#000000').slice(1);
+    if (hex.length === 3) {
+        return hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    return hex;
+}
+
+function nbDarkenHex(value, amount) {
+    var hex = nbExpandHex(value);
+    var shift = Math.max(0, parseInt(amount, 10) || 0);
+    var red = Math.max(0, parseInt(hex.slice(0, 2), 16) - shift);
+    var green = Math.max(0, parseInt(hex.slice(2, 4), 16) - shift);
+    var blue = Math.max(0, parseInt(hex.slice(4, 6), 16) - shift);
+    return '#' + [red, green, blue].map(function(channel) {
+        return channel.toString(16).padStart(2, '0');
+    }).join('');
+}
+
+function nbHexToRgba(value, alpha) {
+    var hex = nbExpandHex(value);
+    var opacity = Number(alpha);
+    if (isNaN(opacity)) {
+        opacity = 1;
+    }
+    opacity = Math.max(0, Math.min(1, opacity));
+    return 'rgba(' + parseInt(hex.slice(0, 2), 16) + ', ' + parseInt(hex.slice(2, 4), 16) + ', ' + parseInt(hex.slice(4, 6), 16) + ', ' + opacity + ')';
+}
+
+function nbClampInt(value, min, max, fallback) {
+    var parsed = parseInt(value, 10);
+    if (isNaN(parsed)) {
+        parsed = fallback;
+    }
+    return Math.max(min, Math.min(max, parsed));
+}
+
+function nbBuildLivePreviewVars() {
+    var accent = nbNormalizeHex(nbGetFieldValue('color_accent', '#b42318'), '#b42318');
+    var bgAlt = nbNormalizeHex(nbGetFieldValue('color_bg_alt', '#f7f7f6'), '#f7f7f6');
+    var border = nbNormalizeHex(nbGetFieldValue('color_border', '#e5e7eb'), '#e5e7eb');
+    var text = nbNormalizeHex(nbGetFieldValue('color_text', '#1a1a1a'), '#1a1a1a');
+
+    var primaryBg = nbNormalizeHex(nbGetFieldValue('button_primary_bg', accent), accent);
+    var primaryText = nbNormalizeHex(nbGetFieldValue('button_primary_text', '#ffffff'), '#ffffff');
+    var primaryBorder = nbNormalizeHex(nbGetFieldValue('button_primary_border', primaryBg), primaryBg);
+    var primaryBgHover = nbNormalizeHex(nbGetFieldValue('button_primary_bg_hover', nbDarkenHex(primaryBg, 12)), nbDarkenHex(primaryBg, 12));
+    var primaryBgActive = nbDarkenHex(primaryBgHover, 10);
+
+    var outlineText = nbNormalizeHex(nbGetFieldValue('button_outline_text', accent), accent);
+    var outlineBorder = nbNormalizeHex(nbGetFieldValue('button_outline_border', accent), accent);
+
+    var ghostText = nbNormalizeHex(nbGetFieldValue('button_ghost_text', text), text);
+    var ghostBorder = nbNormalizeHex(nbGetFieldValue('button_ghost_border', border), border);
+
+    var animationKey = nbGetFieldValue('btn_hover_animation', 'lift');
+    var animationPreset = nbButtonAnimationPresets[animationKey] || nbButtonAnimationPresets.lift;
+    var hoverShadow = animationKey === 'glow'
+        ? '0 0 0 4px ' + nbHexToRgba(accent, 0.16)
+        : animationPreset.shadow;
+    var glintColor = nbNormalizeHex(nbGetFieldValue('btn_glint_color', '#ffffff'), '#ffffff');
+    var glintDuration = nbClampInt(nbGetFieldValue('btn_glint_duration', 900), 250, 3000, 900);
+
+    return {
+        '--nb-btn-primary-bg': primaryBg,
+        '--nb-btn-primary-text': primaryText,
+        '--nb-btn-primary-border': primaryBorder,
+        '--nb-btn-primary-bg-hover': primaryBgHover,
+        '--nb-btn-primary-text-hover': primaryText,
+        '--nb-btn-primary-border-hover': primaryBgHover,
+        '--nb-btn-primary-bg-active': primaryBgActive,
+        '--nb-btn-primary-text-active': primaryText,
+        '--nb-btn-primary-border-active': primaryBgActive,
+        '--nb-btn-outline-bg': 'transparent',
+        '--nb-btn-outline-text': outlineText,
+        '--nb-btn-outline-border': outlineBorder,
+        '--nb-btn-outline-bg-hover': primaryBgHover,
+        '--nb-btn-outline-text-hover': primaryText,
+        '--nb-btn-outline-border-hover': outlineBorder,
+        '--nb-btn-outline-bg-active': primaryBgActive,
+        '--nb-btn-outline-text-active': primaryText,
+        '--nb-btn-outline-border-active': primaryBgActive,
+        '--nb-btn-ghost-bg': 'transparent',
+        '--nb-btn-ghost-text': ghostText,
+        '--nb-btn-ghost-border': ghostBorder,
+        '--nb-btn-ghost-bg-hover': bgAlt,
+        '--nb-btn-ghost-text-hover': ghostText,
+        '--nb-btn-ghost-border-hover': ghostBorder,
+        '--nb-btn-ghost-bg-active': nbDarkenHex(bgAlt, 8),
+        '--nb-btn-ghost-text-active': ghostText,
+        '--nb-btn-ghost-border-active': ghostBorder,
+        '--nb-btn-hover-transform': animationPreset.transform,
+        '--nb-btn-hover-shadow': hoverShadow,
+        '--nb-btn-active-transform': 'scale(.98)',
+        '--nb-btn-glint-opacity': animationPreset.glint,
+        '--nb-btn-glint-color': glintColor,
+        '--nb-btn-glint-duration': glintDuration + 'ms'
+    };
+}
+
+function nbApplyLivePreviewVars(liveButton) {
+    if (!liveButton) { return; }
+    var vars = nbBuildLivePreviewVars();
+    Object.keys(vars).forEach(function(name) {
+        liveButton.style.setProperty(name, vars[name]);
+    });
+}
+
+function nbGetLivePreviewStyleValue(liveButton, name, fallback) {
+    if (!liveButton) {
+        return fallback || '';
+    }
+    var value = getComputedStyle(liveButton).getPropertyValue(name).trim();
+    return value || (fallback || '');
+}
+
+function nbSetLivePreviewState(text) {
+    var state = document.getElementById('nbLivePreviewState');
+    if (state) {
+        state.textContent = text;
+    }
+}
+
+function nbGetCssVar(name, fallback) {
+    var value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || (fallback || '');
+}
+
+function nbApplyLivePreviewVisualState(stateName) {
+    var liveButton = document.getElementById('nbLivePreviewButton');
+    var styleSelect = document.querySelector('[name="btn_style"]');
+    if (!liveButton || !styleSelect) { return; }
+
+    nbApplyLivePreviewVars(liveButton);
+    nbLivePreviewCurrentState = stateName === 'hover' || stateName === 'press' ? stateName : 'base';
+
+    var style = styleSelect.value || 'primary';
+    var prefix = '--nb-btn-' + style;
+    var suffix = '';
+
+    if (stateName === 'hover') {
+        suffix = '-hover';
+    }
+    if (stateName === 'press') {
+        suffix = '-active';
+    }
+
+    liveButton.classList.remove('is-demo-hover', 'is-demo-press');
+    if (stateName === 'hover') {
+        liveButton.classList.add('is-demo-hover');
+    }
+    if (stateName === 'press') {
+        liveButton.classList.add('is-demo-press');
+    }
+
+    liveButton.style.backgroundColor = nbGetLivePreviewStyleValue(liveButton, prefix + '-bg' + suffix, style === 'ghost' || style === 'outline' ? 'transparent' : '#b42318');
+    liveButton.style.color = nbGetLivePreviewStyleValue(liveButton, prefix + '-text' + suffix, '#ffffff');
+    liveButton.style.borderColor = nbGetLivePreviewStyleValue(liveButton, prefix + '-border' + suffix, '#b42318');
+    liveButton.style.transform = stateName === 'press'
+        ? nbGetLivePreviewStyleValue(liveButton, '--nb-btn-active-transform', 'scale(.98)')
+        : stateName === 'hover'
+            ? nbGetLivePreviewStyleValue(liveButton, '--nb-btn-hover-transform', 'none')
+            : 'none';
+    liveButton.style.boxShadow = stateName === 'hover'
+        ? nbGetLivePreviewStyleValue(liveButton, '--nb-btn-hover-shadow', 'none')
+        : 'none';
+}
+
+function nbSyncLivePreviewButton() {
+    var liveButton = document.getElementById('nbLivePreviewButton');
+    if (!liveButton) { return; }
+
+    var styleSelect = document.querySelector('[name="btn_style"]');
+    var animationSelect = document.querySelector('[name="btn_hover_animation"]');
+    var hoverColor = document.getElementById('nbColorText_button_primary_bg_hover');
+    var hoverSwatch = document.getElementById('nbLiveHoverSwatch');
+    var styleLabel = document.getElementById('nbLiveStyleLabel');
+    var animationLabel = document.getElementById('nbLiveAnimationLabel');
+    var style = styleSelect ? styleSelect.value : 'primary';
+    var animation = animationSelect ? animationSelect.value : 'lift';
+
+    liveButton.className = 'nb-btn nb-live-demo-button nb-btn--' + style;
+    nbApplyLivePreviewVars(liveButton);
+
+    if (styleLabel) {
+        styleLabel.textContent = 'Стиль: ' + (nbButtonStyleLabels[style] || 'Primary');
+    }
+    if (animationLabel) {
+        animationLabel.textContent = 'Анимация: ' + (nbButtonAnimationLabels[animation] || 'Lift');
+    }
+    if (hoverSwatch && hoverColor && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hoverColor.value.trim())) {
+        hoverSwatch.style.background = hoverColor.value.trim();
+    }
+
+    nbApplyLivePreviewVisualState(nbLivePreviewCurrentState);
+}
+
+function nbReplayLivePreviewHover() {
+    var liveButton = document.getElementById('nbLivePreviewButton');
+    if (!liveButton) { return; }
+    liveButton.classList.remove('is-demo-hover');
+    void liveButton.offsetWidth;
+    nbApplyLivePreviewVisualState('hover');
+    nbSetLivePreviewState('Состояние: demo hover');
+    window.setTimeout(function() {
+        nbApplyLivePreviewVisualState('base');
+        nbSetLivePreviewState('Состояние: обычное');
+    }, 1100);
+}
+
 document.querySelectorAll('.nb-preset-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
         var preset = nbPresets[btn.dataset.preset];
@@ -742,6 +1135,7 @@ document.querySelectorAll('.nb-preset-btn').forEach(function(btn) {
         nbUpdateFontPreview('nbFontHead', 'nbFontHeadPreview', 'sans');
         var buttonFallback = document.getElementById('nbFontButton') && document.getElementById('nbFontButton').value ? document.getElementById('nbFontButton').value : (document.getElementById('nbFontBody') ? document.getElementById('nbFontBody').value : 'sans');
         nbUpdateFontPreview('nbFontButton', 'nbFontButtonPreview', buttonFallback || 'sans');
+        nbSyncLivePreviewButton();
         updatePreviewTokens();
     });
 });
@@ -775,6 +1169,7 @@ document.querySelectorAll('#nbDesignForm select, #nbDesignForm input[type=number
         nbUpdateFontPreview('nbFontHead', 'nbFontHeadPreview', 'sans');
         var buttonFallback = document.getElementById('nbFontButton') && document.getElementById('nbFontButton').value ? document.getElementById('nbFontButton').value : (document.getElementById('nbFontBody') ? document.getElementById('nbFontBody').value : 'sans');
         nbUpdateFontPreview('nbFontButton', 'nbFontButtonPreview', buttonFallback || 'sans');
+        nbSyncLivePreviewButton();
         updatePreviewTokens();
     });
 });
@@ -784,10 +1179,48 @@ document.querySelectorAll('#nbDesignForm input[type=text]').forEach(function(el)
     el.addEventListener('input', updatePreviewTokens);
 });
 
+(function() {
+    var liveButton = document.getElementById('nbLivePreviewButton');
+    var replayButton = document.getElementById('nbLivePreviewReplay');
+    if (!liveButton) { return; }
+
+    liveButton.addEventListener('mouseenter', function() {
+        nbApplyLivePreviewVisualState('hover');
+        nbSetLivePreviewState('Состояние: hover');
+    });
+    liveButton.addEventListener('mouseleave', function() {
+        nbApplyLivePreviewVisualState('base');
+        nbSetLivePreviewState('Состояние: обычное');
+    });
+    liveButton.addEventListener('mousedown', function() {
+        nbApplyLivePreviewVisualState('press');
+        nbSetLivePreviewState('Состояние: нажатие');
+    });
+    liveButton.addEventListener('mouseup', function() {
+        nbApplyLivePreviewVisualState('hover');
+        nbSetLivePreviewState('Состояние: hover');
+    });
+    liveButton.addEventListener('focus', function() {
+        nbApplyLivePreviewVisualState('hover');
+        nbSetLivePreviewState('Состояние: focus');
+    });
+    liveButton.addEventListener('blur', function() {
+        nbApplyLivePreviewVisualState('base');
+        nbSetLivePreviewState('Состояние: обычное');
+    });
+
+    if (replayButton) {
+        replayButton.addEventListener('click', function() {
+            nbReplayLivePreviewHover();
+        });
+    }
+})();
+
 var nbPreviewTimer = null;
 function updatePreviewTokens() {
     clearTimeout(nbPreviewTimer);
     nbPreviewTimer = setTimeout(function() {
+        nbSyncLivePreviewButton();
         var form = document.getElementById('nbDesignForm');
         if (!form) { return; }
         var params = new URLSearchParams();
@@ -801,6 +1234,7 @@ function updatePreviewTokens() {
                 if (!css) { return; }
                 var styleEl = document.getElementById('nb-design-preview-tokens');
                 if (styleEl) { styleEl.textContent = css; }
+                nbSyncLivePreviewButton();
             })
             .catch(function() {});
     }, 120);
@@ -809,4 +1243,5 @@ function updatePreviewTokens() {
 nbUpdateFontPreview('nbFontBody', 'nbFontBodyPreview', 'sans');
 nbUpdateFontPreview('nbFontHead', 'nbFontHeadPreview', 'sans');
 nbUpdateFontPreview('nbFontButton', 'nbFontButtonPreview', document.getElementById('nbFontBody') ? document.getElementById('nbFontBody').value : 'sans');
+nbSyncLivePreviewButton();
 </script>

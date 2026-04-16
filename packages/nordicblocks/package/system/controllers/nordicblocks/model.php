@@ -231,6 +231,7 @@ class modelNordicblocks extends cmsModel {
                 'text'                 => '#1a1a1a',
                 'text_muted'           => '#6b7280',
                 'button_primary_bg'    => '#b42318',
+                'button_primary_bg_hover' => '#8a1910',
                 'button_primary_text'  => '#ffffff',
                 'button_primary_border'=> '#b42318',
                 'button_outline_text'  => '#b42318',
@@ -278,6 +279,7 @@ class modelNordicblocks extends cmsModel {
                 'color_border'     => '#e5e7eb',
                 'color_text'       => '#111827',
                 'color_text_muted' => '#6b7280',
+                'button_primary_bg_hover' => '#8a1910',
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'md',
@@ -299,6 +301,7 @@ class modelNordicblocks extends cmsModel {
                 'color_border'     => '#2d3244',
                 'color_text'       => '#f0f2f5',
                 'color_text_muted' => '#8b95a7',
+                'button_primary_bg_hover' => '#c94e41',
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'md',
@@ -320,6 +323,7 @@ class modelNordicblocks extends cmsModel {
                 'color_border'     => '#e3ddd6',
                 'color_text'       => '#1c1610',
                 'color_text_muted' => '#7a6e64',
+                'button_primary_bg_hover' => '#a95022',
                 'font_body'        => 'sans',
                 'font_head'        => 'serif',
                 'radius_preset'    => 'sm',
@@ -341,6 +345,7 @@ class modelNordicblocks extends cmsModel {
                 'color_border'     => '#dde4f0',
                 'color_text'       => '#0f172a',
                 'color_text_muted' => '#64748b',
+                'button_primary_bg_hover' => '#1b43b8',
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'sm',
@@ -362,6 +367,7 @@ class modelNordicblocks extends cmsModel {
                 'color_border'     => '#e0d9f8',
                 'color_text'       => '#1e1b2e',
                 'color_text_muted' => '#6b6485',
+                'button_primary_bg_hover' => '#692ed1',
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'xl',
@@ -435,15 +441,18 @@ class modelNordicblocks extends cmsModel {
         $primary_bg            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_bg'], $accent), $accent);
         $primary_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_text'], '#ffffff'), '#ffffff');
         $primary_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_border'], $primary_bg), $primary_bg);
-        $primary_bg_hover      = $this->darkenHex($primary_bg, 12);
-        $primary_bg_active     = $this->darkenHex($primary_bg, 20);
-        $primary_border_hover  = $this->darkenHex($primary_border, 12);
-        $primary_border_active = $this->darkenHex($primary_border, 20);
+        $primary_bg_hover      = $this->sanitizeColor(
+            $this->getTokenPath($tokens, ['colors', 'button_primary_bg_hover'], $this->darkenHex($primary_bg, 12)),
+            $this->darkenHex($primary_bg, 12)
+        );
+        $primary_bg_active     = $this->darkenHex($primary_bg_hover, 10);
+        $primary_border_hover  = $primary_bg_hover;
+        $primary_border_active = $primary_bg_active;
 
         $outline_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_text'], $accent), $accent);
         $outline_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_border'], $accent), $accent);
-        $outline_bg_hover      = $outline_border;
-        $outline_bg_active     = $this->darkenHex($outline_border, 18);
+        $outline_bg_hover      = $primary_bg_hover;
+        $outline_bg_active     = $primary_bg_active;
 
         $ghost_text            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_text'], $text), $text);
         $ghost_border          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_border'], $border), $border);
@@ -521,9 +530,11 @@ class modelNordicblocks extends cmsModel {
 
     public function normalizeDesignTokens(array $tokens) {
         $defaults = $this->getDefaultTokens();
+        $has_primary_hover = !empty($tokens['colors']) && is_array($tokens['colors']) && array_key_exists('button_primary_bg_hover', $tokens['colors']);
 
         $is_legacy_flat = isset($tokens['color_accent']) || isset($tokens['font_body']) || isset($tokens['radius_preset']);
         if ($is_legacy_flat) {
+            $has_primary_hover = array_key_exists('button_primary_bg_hover', $tokens);
             $tokens = [
                 'version'    => 2,
                 'colors'     => [
@@ -535,6 +546,7 @@ class modelNordicblocks extends cmsModel {
                     'text'                  => $tokens['color_text'] ?? null,
                     'text_muted'            => $tokens['color_text_muted'] ?? null,
                     'button_primary_bg'     => $tokens['button_primary_bg'] ?? ($tokens['color_accent'] ?? null),
+                    'button_primary_bg_hover' => $tokens['button_primary_bg_hover'] ?? null,
                     'button_primary_text'   => $tokens['button_primary_text'] ?? null,
                     'button_primary_border' => $tokens['button_primary_border'] ?? ($tokens['color_accent'] ?? null),
                     'button_outline_text'   => $tokens['button_outline_text'] ?? ($tokens['color_accent'] ?? null),
@@ -583,6 +595,13 @@ class modelNordicblocks extends cmsModel {
         $merged['colors']['text']                   = $this->sanitizeColor($merged['colors']['text'] ?? $defaults['colors']['text'], $defaults['colors']['text']);
         $merged['colors']['text_muted']             = $this->sanitizeColor($merged['colors']['text_muted'] ?? $defaults['colors']['text_muted'], $defaults['colors']['text_muted']);
         $merged['colors']['button_primary_bg']      = $this->sanitizeColor($merged['colors']['button_primary_bg'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        if (!$has_primary_hover) {
+            $merged['colors']['button_primary_bg_hover'] = $this->darkenHex($merged['colors']['button_primary_bg'], 12);
+        }
+        $merged['colors']['button_primary_bg_hover'] = $this->sanitizeColor(
+            $merged['colors']['button_primary_bg_hover'] ?? $this->darkenHex($merged['colors']['button_primary_bg'], 12),
+            $this->darkenHex($merged['colors']['button_primary_bg'], 12)
+        );
         $merged['colors']['button_primary_text']    = $this->sanitizeColor($merged['colors']['button_primary_text'] ?? '#ffffff', '#ffffff');
         $merged['colors']['button_primary_border']  = $this->sanitizeColor($merged['colors']['button_primary_border'] ?? $merged['colors']['button_primary_bg'], $merged['colors']['button_primary_bg']);
         $merged['colors']['button_outline_text']    = $this->sanitizeColor($merged['colors']['button_outline_text'] ?? $merged['colors']['accent'], $merged['colors']['accent']);

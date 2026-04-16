@@ -30,6 +30,7 @@
     "text": "#1a1a1a",
     "text_muted": "#6b7280",
     "button_primary_bg": "#b42318",
+    "button_primary_bg_hover": "#8a1910",
     "button_primary_text": "#ffffff",
     "button_primary_border": "#b42318",
     "button_outline_text": "#b42318",
@@ -101,12 +102,13 @@
 4. Базовые цвета системы.
 5. Global button states:
    normal, hover, pressed.
-6. Global button size.
-7. Global button hover animation.
-8. Card/surface radius.
-9. Media radius.
-10. Border width и shadow preset карточек.
-11. Section spacing.
+6. Отдельный hover color для primary-кнопки.
+7. Global button size.
+8. Global button hover animation.
+9. Card/surface radius.
+10. Media radius.
+11. Border width и shadow preset карточек.
+12. Section spacing.
 
 ## 6. Что остается локальным в блоках
 
@@ -146,6 +148,7 @@
 
 1. Открыть `/admin/controllers/edit/nordicblocks/design`.
 2. Проверить live preview кнопок и карточек.
+3. Проверить отдельный button playground: hover, pressed и replay hover.
 3. Проверить block editor preview.
 4. Проверить live homepage, что существующие блоки не потеряли стили.
 5. Проверить package-файлы на syntax errors.
