@@ -347,6 +347,7 @@ var nbhCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhState = {
     loaded: false,
     server: null,
+    inspector: null,
     draft: null,
     blockTitle: document.getElementById('nbh-title-input').value || '',
     selectedEntity: 'title',
@@ -438,6 +439,16 @@ function nbhSetViewport(mode) {
     frame.classList.toggle('is-mobile', mode === 'mobile');
 }
 
+function nbhBuildInspectorState(payload) {
+    return {
+        entityGroups: nbhGet(payload, 'inspector.entityGroups', {}),
+        controlPresets: nbhGet(payload, 'inspector.controlPresets', {}),
+        availablePanels: nbhGet(payload, 'inspector.availablePanels', nbhGet(payload, 'registry.panels', [])),
+        tabs: nbhGet(payload, 'inspector.tabs', nbhGet(payload, 'registry.tabs', [])),
+        selectionModel: nbhGet(payload, 'inspector.selectionModel', {})
+    };
+}
+
 function nbhLoadState() {
     return fetch(nbhEditorStateUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(response) { return response.json(); })
@@ -447,6 +458,7 @@ function nbhLoadState() {
             }
             nbhState.server = payload;
             nbhState.draft = nbhClone(payload.contract);
+            nbhState.inspector = nbhBuildInspectorState(payload);
             nbhState.activeTab = payload.ui && payload.ui.activeTab ? payload.ui.activeTab : 'content';
             nbhState.activeBreakpoint = payload.ui && payload.ui.activeBreakpoint ? payload.ui.activeBreakpoint : 'desktop';
             nbhState.selectedEntity = payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : 'title';
@@ -497,6 +509,7 @@ function nbhPanelVisible(panel) {
 function nbhPanelMatchesSelection(panel) {
     var selected = nbhState.selectedEntity;
     var scope = panel.entityScope || 'block';
+    var groups = nbhState.inspector && nbhState.inspector.entityGroups ? nbhState.inspector.entityGroups : {};
 
     if (!selected || scope === 'block' || scope === 'section') {
         return true;
@@ -506,15 +519,7 @@ function nbhPanelMatchesSelection(panel) {
         return true;
     }
 
-    if (scope === 'buttons' && (selected === 'primaryButton' || selected === 'secondaryButton')) {
-        return true;
-    }
-
-    if ((scope === 'media' || scope === 'mediaSurface') && (selected === 'media' || selected === 'mediaSurface')) {
-        return true;
-    }
-
-    if (scope === 'items' && (selected === 'items' || selected === 'itemSurface' || selected === 'itemTitle' || selected === 'itemText')) {
+    if (groups[scope] && Array.isArray(groups[scope].entities) && groups[scope].entities.indexOf(selected) !== -1) {
         return true;
     }
 
@@ -522,7 +527,7 @@ function nbhPanelMatchesSelection(panel) {
 }
 
 function nbhPanelsForTab() {
-    var panels = (nbhState.server.registry.panels || []).filter(function(panel) {
+    var panels = (nbhState.inspector && nbhState.inspector.availablePanels ? nbhState.inspector.availablePanels : []).filter(function(panel) {
         return nbhPanelVisible(panel) && nbhPanelMatchesSelection(panel);
     });
     var selected = nbhState.selectedEntity;
@@ -540,40 +545,6 @@ function nbhEntityChipList() {
     return Object.keys(resolved).map(function(key) {
         return '<button type="button" class="nbh-entity-chip' + (nbhState.selectedEntity === key ? ' is-active' : '') + '" data-entity="' + key + '">' + nbhHumanEntity(key) + '</button>';
     }).join('');
-}
-
-function nbhFlatPropsFromDraft() {
-    var draft = nbhState.draft;
-    var props = {
-        eyebrow: nbhGet(draft, 'content.eyebrow', ''),
-        heading: nbhGet(draft, 'content.title', ''),
-        subheading: nbhGet(draft, 'content.subtitle', ''),
-        btn_primary_label: nbhGet(draft, 'content.primaryButton.label', ''),
-        btn_primary_url: nbhGet(draft, 'content.primaryButton.url', '#'),
-        btn_secondary_label: nbhGet(draft, 'content.secondaryButton.label', ''),
-        btn_secondary_url: nbhGet(draft, 'content.secondaryButton.url', '#'),
-        image: nbhGet(draft, 'content.media.image', ''),
-        image_alt: nbhGet(draft, 'content.media.alt', ''),
-        heading_tag: nbhGet(draft, 'design.entities.title.tag', 'h1'),
-        heading_weight: String(nbhGet(draft, 'design.entities.title.weight', 900)),
-        title_size_desktop: nbhGet(draft, 'design.entities.title.desktop.fontSize', 64),
-        title_size_mobile: nbhGet(draft, 'design.entities.title.mobile.fontSize', 40),
-        subtitle_size_desktop: nbhGet(draft, 'design.entities.subtitle.desktop.fontSize', 20),
-        subtitle_size_mobile: nbhGet(draft, 'design.entities.subtitle.mobile.fontSize', 18),
-        btn_primary_style: nbhGet(draft, 'design.entities.primaryButton.style', 'primary'),
-        btn_secondary_style: nbhGet(draft, 'design.entities.secondaryButton.style', 'outline'),
-        theme: nbhGet(draft, 'design.section.theme', 'light'),
-        layout: nbhGet(draft, 'layout.desktop.mode', 'centered'),
-        content_width: nbhGet(draft, 'layout.desktop.contentWidth', 640),
-        padding_top_desktop: nbhGet(draft, 'layout.desktop.paddingTop', 96),
-        padding_bottom_desktop: nbhGet(draft, 'layout.desktop.paddingBottom', 96),
-        min_height_desktop: nbhGet(draft, 'layout.desktop.minHeight', 0),
-        padding_top_mobile: nbhGet(draft, 'layout.mobile.paddingTop', 56),
-        padding_bottom_mobile: nbhGet(draft, 'layout.mobile.paddingBottom', 56),
-        min_height_mobile: nbhGet(draft, 'layout.mobile.minHeight', 0)
-    };
-
-    return props;
 }
 
 function nbhSave(silent) {
@@ -596,7 +567,7 @@ function nbhSave(silent) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             title: nbhState.blockTitle,
-            props: nbhFlatPropsFromDraft()
+            contract: nbhState.draft
         })
     })
         .then(function(response) { return response.json(); })
@@ -608,6 +579,10 @@ function nbhSave(silent) {
                 btn.innerHTML = '<i class="fa fa-save"></i> Сохранить';
                 alert('Ошибка: ' + (payload.error || '?'));
                 return;
+            }
+
+            if (payload.contract) {
+                nbhState.draft = nbhClone(payload.contract);
             }
 
             nbhState.dirty = false;
@@ -634,7 +609,7 @@ function nbhSave(silent) {
 }
 
 function nbhRenderTabs() {
-    var tabs = (nbhState.server.registry.tabs || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
+    var tabs = (nbhState.inspector && nbhState.inspector.tabs ? nbhState.inspector.tabs : []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); });
     document.getElementById('nbhTabs').innerHTML = tabs.map(function(tab) {
         return '<button type="button" class="nbh-tab' + (tab.key === nbhState.activeTab ? ' is-active' : '') + '" data-tab="' + tab.key + '">' + tab.label + '</button>';
     }).join('');
@@ -668,130 +643,130 @@ function nbhBreakpointToggle() {
     return '<div class="nbh-breakpoints"><button type="button" data-breakpoint="desktop" class="' + (nbhState.activeBreakpoint === 'desktop' ? 'is-active' : '') + '">Desktop</button><button type="button" data-breakpoint="mobile" class="' + (nbhState.activeBreakpoint === 'mobile' ? 'is-active' : '') + '">Mobile</button></div>';
 }
 
-function nbhRenderPanel(panel) {
-    var body = '';
-    var bp = nbhState.activeBreakpoint;
-
-    switch (panel.controlPreset) {
-        case 'textContent':
-            if (panel.entityScope === 'eyebrow') {
-                body = nbhField('Текст', nbhInput('content.eyebrow'));
-            } else if (panel.entityScope === 'title') {
-                body = nbhField('Текст', nbhTextarea('content.title', ''));
-            } else if (panel.entityScope === 'subtitle') {
-                body = nbhField('Текст', nbhTextarea('content.subtitle', ''));
-            }
-            break;
-
-        case 'buttonContent':
-            body = '<div class="nbh-grid-2">'
-                + nbhField('Primary label', nbhInput('content.primaryButton.label'))
-                + nbhField('Primary URL', nbhInput('content.primaryButton.url'))
-                + nbhField('Secondary label', nbhInput('content.secondaryButton.label'))
-                + nbhField('Secondary URL', nbhInput('content.secondaryButton.url'))
+var nbhPresetRenderers = {
+    textContent: function(panel) {
+        if (panel.entityScope === 'eyebrow') {
+            return nbhField('Текст', nbhInput('content.eyebrow'));
+        }
+        if (panel.entityScope === 'title') {
+            return nbhField('Текст', nbhTextarea('content.title', ''));
+        }
+        if (panel.entityScope === 'subtitle') {
+            return nbhField('Текст', nbhTextarea('content.subtitle', ''));
+        }
+        return '<div class="nbh-note">Нет text mapping для сущности ' + panel.entityScope + '.</div>';
+    },
+    buttonContent: function() {
+        return '<div class="nbh-grid-2">'
+            + nbhField('Primary label', nbhInput('content.primaryButton.label'))
+            + nbhField('Primary URL', nbhInput('content.primaryButton.url'))
+            + nbhField('Secondary label', nbhInput('content.secondaryButton.label'))
+            + nbhField('Secondary URL', nbhInput('content.secondaryButton.url'))
+            + '</div>';
+    },
+    mediaContent: function() {
+        return nbhField('Путь к изображению', nbhInput('content.media.image'))
+            + nbhField('Alt', nbhInput('content.media.alt'));
+    },
+    sectionBackground: function() {
+        return nbhField('Тема секции', nbhSelect('design.section.theme', [
+            { value: 'light', label: 'Светлая' },
+            { value: 'dark', label: 'Темная' },
+            { value: 'accent', label: 'Accent' }
+        ], 'light'));
+    },
+    sectionContainer: function() {
+        return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }));
+    },
+    typographyText: function(panel, bp) {
+        var body = nbhBreakpointToggle();
+        if (panel.entityScope === 'title') {
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 64 : 40 }))
+                + (bp === 'desktop'
+                    ? nbhField('Жирность', nbhSelect('design.entities.title.weight', [
+                        { value: '400', label: '400' },
+                        { value: '500', label: '500' },
+                        { value: '600', label: '600' },
+                        { value: '700', label: '700' },
+                        { value: '800', label: '800' },
+                        { value: '900', label: '900' }
+                    ], '900'))
+                    : '')
                 + '</div>';
-            break;
-
-        case 'mediaContent':
-            body = nbhField('Путь к изображению', nbhInput('content.media.image'))
-                + nbhField('Alt', nbhInput('content.media.alt'));
-            break;
-
-        case 'sectionBackground':
-            body = nbhField('Тема секции', nbhSelect('design.section.theme', [
-                { value: 'light', label: 'Светлая' },
-                { value: 'dark', label: 'Темная' },
-                { value: 'accent', label: 'Accent' }
-            ], 'light'));
-            break;
-
-        case 'sectionContainer':
-            body = nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }));
-            break;
-
-        case 'typographyText':
-            body = nbhBreakpointToggle();
-            if (panel.entityScope === 'title') {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 64 : 40 }))
-                    + (bp === 'desktop'
-                        ? nbhField('Жирность', nbhSelect('design.entities.title.weight', [
-                            { value: '400', label: '400' },
-                            { value: '500', label: '500' },
-                            { value: '600', label: '600' },
-                            { value: '700', label: '700' },
-                            { value: '800', label: '800' },
-                            { value: '900', label: '900' }
-                        ], '900'))
-                        : '')
-                    + '</div>';
-                if (bp === 'desktop') {
-                    body += nbhField('HTML тег', nbhSelect('design.entities.title.tag', [
-                        { value: 'div', label: 'DIV' },
-                        { value: 'h1', label: 'H1' },
-                        { value: 'h2', label: 'H2' },
-                        { value: 'h3', label: 'H3' }
-                    ], 'h1'));
-                }
-            } else if (panel.entityScope === 'subtitle') {
-                body += nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 20 : 18 }));
-            } else {
-                body += '<div class="nbh-note">Этот preset уже зарезервирован для item/entity typography и будет расширен следующим этапом.</div>';
-            }
-            break;
-
-        case 'buttonStyle':
-            body = '<div class="nbh-grid-2">'
-                + nbhField('Primary style', nbhSelect('design.entities.primaryButton.style', [
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'outline', label: 'Outline' },
-                    { value: 'ghost', label: 'Ghost' }
-                ], 'primary'))
-                + nbhField('Secondary style', nbhSelect('design.entities.secondaryButton.style', [
-                    { value: 'primary', label: 'Primary' },
-                    { value: 'outline', label: 'Outline' },
-                    { value: 'ghost', label: 'Ghost' }
-                ], 'outline'))
-                + '</div>';
-            break;
-
-        case 'surfaceStyle':
-            body = '<div class="nbh-note">Surface controls пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
-            break;
-
-        case 'spacingLayout':
-            body = nbhBreakpointToggle();
             if (bp === 'desktop') {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Padding top', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: 96 }))
-                    + nbhField('Padding bottom', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: 96 }))
-                    + nbhField('Min height', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
-                    + nbhField('Content width', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }))
-                    + '</div>';
-            } else {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Padding top', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
-                    + nbhField('Padding bottom', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
-                    + nbhField('Min height', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
-                    + '</div>';
+                body += nbhField('HTML тег', nbhSelect('design.entities.title.tag', [
+                    { value: 'div', label: 'DIV' },
+                    { value: 'h1', label: 'H1' },
+                    { value: 'h2', label: 'H2' },
+                    { value: 'h3', label: 'H3' }
+                ], 'h1'));
             }
-            break;
-
-        case 'alignmentLayout':
-            body = nbhField('Режим hero', nbhSelect('layout.desktop.mode', [
-                { value: 'centered', label: 'Centered' },
-                { value: 'left', label: 'Left' },
-                { value: 'split', label: 'Split' }
-            ], 'centered'));
-            break;
-
-        case 'dataBindingSingle':
-            body = '<div class="nbh-note">Источник данных и slot bindings уже предусмотрены state layer, но в hero prototype эта вкладка пока read-only. Следующий шаг — вывести source selector и compatible slot mapping.</div>';
-            break;
-
-        default:
-            body = '<div class="nbh-note">Preset ' + panel.controlPreset + ' пока не подключен.</div>';
+            return body;
+        }
+        if (panel.entityScope === 'subtitle') {
+            return body + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 20 : 18 }));
+        }
+        return body + '<div class="nbh-note">Этот preset уже зарезервирован для item/entity typography и будет расширен следующим этапом.</div>';
+    },
+    buttonStyle: function() {
+        return '<div class="nbh-grid-2">'
+            + nbhField('Primary style', nbhSelect('design.entities.primaryButton.style', [
+                { value: 'primary', label: 'Primary' },
+                { value: 'outline', label: 'Outline' },
+                { value: 'ghost', label: 'Ghost' }
+            ], 'primary'))
+            + nbhField('Secondary style', nbhSelect('design.entities.secondaryButton.style', [
+                { value: 'primary', label: 'Primary' },
+                { value: 'outline', label: 'Outline' },
+                { value: 'ghost', label: 'Ghost' }
+            ], 'outline'))
+            + '</div>';
+    },
+    surfaceStyle: function() {
+        return '<div class="nbh-note">Surface controls пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
+    },
+    spacingLayout: function(panel, bp) {
+        var body = nbhBreakpointToggle();
+        if (bp === 'desktop') {
+            return body + '<div class="nbh-grid-2">'
+                + nbhField('Padding top', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: 96 }))
+                + nbhField('Padding bottom', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: 96 }))
+                + nbhField('Min height', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
+                + nbhField('Content width', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }))
+                + '</div>';
+        }
+        return body + '<div class="nbh-grid-2">'
+            + nbhField('Padding top', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
+            + nbhField('Padding bottom', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
+            + nbhField('Min height', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
+            + '</div>';
+    },
+    alignmentLayout: function() {
+        return nbhField('Режим hero', nbhSelect('layout.desktop.mode', [
+            { value: 'centered', label: 'Centered' },
+            { value: 'left', label: 'Left' },
+            { value: 'split', label: 'Split' }
+        ], 'centered'));
+    },
+    dataBindingSingle: function() {
+        return '<div class="nbh-note">Источник данных и slot bindings уже предусмотрены state layer, но в hero prototype эта вкладка пока read-only. Следующий шаг — вывести source selector и compatible slot mapping.</div>';
+    },
+    dataBindingRepeater: function() {
+        return '<div class="nbh-note">Repeater bindings появятся после первого dynamic list runtime.</div>';
+    },
+    repeaterItems: function() {
+        return '<div class="nbh-note">Редактор repeater items будет подключён следующим этапом, после стабилизации hero contract runtime.</div>';
+    },
+    __default: function(panel) {
+        return '<div class="nbh-note">Preset ' + panel.controlPreset + ' пока не подключен.</div>';
     }
+};
+
+function nbhRenderPanel(panel) {
+    var bp = nbhState.activeBreakpoint;
+    var renderer = nbhPresetRenderers[panel.controlPreset] || nbhPresetRenderers.__default;
+    var body = renderer(panel, bp);
 
     return '<section class="nbh-section" data-panel="' + panel.key + '">' +
         '<div class="nbh-section-head"><strong>' + panel.label + '</strong><span>' + panel.section + '</span></div>' +
@@ -824,6 +799,9 @@ document.getElementById('nbhSaveBtn').addEventListener('click', function() {
 
 document.getElementById('nbh-title-input').addEventListener('input', function() {
     nbhState.blockTitle = this.value;
+    if (nbhState.draft && nbhState.draft.meta) {
+        nbhState.draft.meta.label = this.value;
+    }
     nbhMarkDirty();
     nbhScheduleSave();
 });

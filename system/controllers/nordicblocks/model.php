@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
+
 class modelNordicblocks extends cmsModel {
 
     const TBL_PAGES  = 'nordicblocks_pages';
@@ -81,7 +83,31 @@ class modelNordicblocks extends cmsModel {
         $id  = (int) $id;
         $row = $this->db->getRow(self::TBL_BLOCKS, "`id` = {$id}");
         if (!$row) { return null; }
-        $row['props'] = !empty($row['props_json']) ? (array) json_decode($row['props_json'], true) : [];
+
+        $stored_payload = !empty($row['props_json']) ? (array) json_decode($row['props_json'], true) : [];
+        $is_contract = NordicblocksBlockContractNormalizer::isContractPayload($stored_payload);
+
+        if ($is_contract) {
+            $row['contract'] = NordicblocksBlockContractNormalizer::normalize([
+                'id'     => (int) ($row['id'] ?? 0),
+                'type'   => (string) ($row['type'] ?? ''),
+                'title'  => (string) ($row['title'] ?? ''),
+                'status' => (string) ($row['status'] ?? 'active'),
+                'props'  => $stored_payload,
+            ]);
+            $row['props'] = NordicblocksBlockContractNormalizer::denormalizeProps((string) ($row['type'] ?? ''), (array) $row['contract']);
+        } else {
+            $row['props'] = $stored_payload;
+            $row['contract'] = NordicblocksBlockContractNormalizer::normalize([
+                'id'     => (int) ($row['id'] ?? 0),
+                'type'   => (string) ($row['type'] ?? ''),
+                'title'  => (string) ($row['title'] ?? ''),
+                'status' => (string) ($row['status'] ?? 'active'),
+                'props'  => $stored_payload,
+            ]);
+        }
+
+        $row['props'] = $this->normalizeImagePropsByType((string) ($row['type'] ?? ''), (array) ($row['props'] ?? []));
         return $row;
     }
 
@@ -172,6 +198,18 @@ class modelNordicblocks extends cmsModel {
             'props_json' => json_encode($props, JSON_UNESCAPED_UNICODE),
             'updated_at' => date('Y-m-d H:i:s'),
         ];
+        $this->db->update(self::TBL_BLOCKS, "`id` = {$id}", $data, true);
+        $this->invalidateBlockCache($id);
+    }
+
+    public function saveBlockContract($id, $title, array $contract) {
+        $id   = (int) $id;
+        $data = [
+            'title'      => trim((string) $title),
+            'props_json' => json_encode($contract, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
         $this->db->update(self::TBL_BLOCKS, "`id` = {$id}", $data, true);
         $this->invalidateBlockCache($id);
     }

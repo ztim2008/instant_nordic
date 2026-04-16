@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
+
 class actionNordicblocksBlockCreate extends cmsAction {
 
     public function run() {
@@ -35,7 +37,18 @@ class actionNordicblocksBlockCreate extends cmsAction {
         $block_id = $this->model->createBlock($type, $title);
 
         if ($block_id && $default_props) {
-            $this->model->saveBlock($block_id, $title, $default_props);
+            if ($type === 'hero') {
+                $contract = NordicblocksBlockContractNormalizer::normalize([
+                    'id'     => (int) $block_id,
+                    'type'   => $type,
+                    'title'  => $title,
+                    'status' => 'active',
+                    'props'  => $default_props,
+                ]);
+                $this->model->saveBlockContract($block_id, $title, $contract);
+            } else {
+                $this->model->saveBlock($block_id, $title, $default_props);
+            }
         }
 
         return $this->redirect(href_to($this->controller->root_url, 'block_edit', $block_id));

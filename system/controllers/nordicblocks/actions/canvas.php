@@ -81,9 +81,10 @@ a{color:inherit;text-decoration:none}
         $render_file = dirname(__DIR__) . "/blocks/{$type}/render.php";
         if (!file_exists($render_file)) { return ''; }
 
-        $props      = (array) ($block['props'] ?? []);
-        $block_type = $type;
-        $block_uid  = 'block_' . (int) $block['id'];
+        $props          = (array) ($block['props'] ?? []);
+        $block_contract = (array) ($block['contract'] ?? []);
+        $block_type     = $type;
+        $block_uid      = 'block_' . (int) $block['id'];
 
         ob_start();
         include $render_file;

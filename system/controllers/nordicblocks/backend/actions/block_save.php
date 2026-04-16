@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
+
 class actionNordicblocksBlockSave extends cmsAction {
 
     public function run($block_id = 0) {
@@ -30,6 +32,21 @@ class actionNordicblocksBlockSave extends cmsAction {
             $title = (string) $block['title'];
         }
         $title = $this->limitString($title, 255);
+
+        if ((string) ($block['type'] ?? '') === 'hero' && isset($data['contract']) && is_array($data['contract'])) {
+            $contract = NordicblocksBlockContractNormalizer::normalize([
+                'id'     => (int) $block['id'],
+                'type'   => (string) $block['type'],
+                'title'  => $title,
+                'status' => (string) ($block['status'] ?? 'active'),
+                'props'  => NordicblocksBlockContractNormalizer::denormalizeProps((string) $block['type'], $data['contract']),
+            ]);
+
+            $this->model->saveBlockContract($block_id, $title, $contract);
+
+            echo json_encode(['ok' => true, 'contract' => $contract], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
 
         $incoming_props = isset($data['props']) && is_array($data['props']) ? $data['props'] : [];
         $schema_fields  = $this->loadSchemaFields((string) ($block['type'] ?? ''));

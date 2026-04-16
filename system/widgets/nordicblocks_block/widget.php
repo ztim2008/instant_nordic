@@ -35,9 +35,10 @@ class widgetNordicblocksBlock extends cmsWidget {
         $inline_css = $model->buildInlineCss($tokens);
         $blocks_css = @file_get_contents(cmsConfig::get('root_path') . 'system/controllers/nordicblocks/assets/blocks.css') ?: '';
 
-        $props      = (array) ($block['props'] ?? []);
-        $block_type = $type;
-        $block_uid  = 'widget_block_' . $block_id;
+        $props          = (array) ($block['props'] ?? []);
+        $block_contract = (array) ($block['contract'] ?? []);
+        $block_type     = $type;
+        $block_uid      = 'widget_block_' . $block_id;
 
         ob_start();
         include $render_file;

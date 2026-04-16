@@ -6,8 +6,10 @@ class NordicblocksInspectorRegistryBuilder {
         return [
             'tabs'             => self::getTabs(),
             'entities'         => self::getEntityRegistry(),
+            'entityGroups'     => self::getEntityGroups(),
             'capabilities'     => self::getCapabilityRegistry(),
             'capabilityMatrix' => self::getCapabilityMatrix(),
+            'controlPresets'   => self::getControlPresets(),
             'panels'           => self::getPanelRegistry(),
         ];
     }
@@ -146,6 +148,26 @@ class NordicblocksInspectorRegistryBuilder {
         ];
     }
 
+    private static function getEntityGroups() {
+        return [
+            'buttons' => [
+                'key'      => 'buttons',
+                'label'    => 'Кнопки',
+                'entities' => ['primaryButton', 'secondaryButton'],
+            ],
+            'media' => [
+                'key'      => 'media',
+                'label'    => 'Медиа',
+                'entities' => ['media', 'mediaSurface'],
+            ],
+            'items' => [
+                'key'      => 'items',
+                'label'    => 'Элементы',
+                'entities' => ['items', 'itemSurface', 'itemTitle', 'itemText'],
+            ],
+        ];
+    }
+
     private static function getCapabilityRegistry() {
         return [
             'sectionBackground'   => ['key' => 'sectionBackground', 'label' => 'Фон секции', 'tab' => 'design', 'default' => true],
@@ -169,6 +191,76 @@ class NordicblocksInspectorRegistryBuilder {
             'responsiveSpacing'   => ['key' => 'responsiveSpacing', 'label' => 'Responsive spacing', 'tab' => 'layout', 'default' => false],
             'dataBindings'        => ['key' => 'dataBindings', 'label' => 'Привязки данных', 'tab' => 'data', 'default' => false],
             'repeaterBindings'    => ['key' => 'repeaterBindings', 'label' => 'Привязки repeater', 'tab' => 'data', 'default' => false],
+        ];
+    }
+
+    private static function getControlPresets() {
+        return [
+            'textContent' => [
+                'key'       => 'textContent',
+                'component' => 'text-content-panel',
+                'label'     => 'Текстовый контент',
+            ],
+            'buttonContent' => [
+                'key'       => 'buttonContent',
+                'component' => 'button-content-panel',
+                'label'     => 'Контент кнопок',
+            ],
+            'mediaContent' => [
+                'key'       => 'mediaContent',
+                'component' => 'media-content-panel',
+                'label'     => 'Контент медиа',
+            ],
+            'sectionBackground' => [
+                'key'       => 'sectionBackground',
+                'component' => 'section-background-panel',
+                'label'     => 'Фон секции',
+            ],
+            'sectionContainer' => [
+                'key'       => 'sectionContainer',
+                'component' => 'section-container-panel',
+                'label'     => 'Контейнер секции',
+            ],
+            'typographyText' => [
+                'key'       => 'typographyText',
+                'component' => 'typography-text-panel',
+                'label'     => 'Типографика текста',
+            ],
+            'buttonStyle' => [
+                'key'       => 'buttonStyle',
+                'component' => 'button-style-panel',
+                'label'     => 'Стиль кнопок',
+            ],
+            'surfaceStyle' => [
+                'key'       => 'surfaceStyle',
+                'component' => 'surface-style-panel',
+                'label'     => 'Surface style',
+            ],
+            'spacingLayout' => [
+                'key'       => 'spacingLayout',
+                'component' => 'spacing-layout-panel',
+                'label'     => 'Spacing layout',
+            ],
+            'alignmentLayout' => [
+                'key'       => 'alignmentLayout',
+                'component' => 'alignment-layout-panel',
+                'label'     => 'Alignment layout',
+            ],
+            'dataBindingSingle' => [
+                'key'       => 'dataBindingSingle',
+                'component' => 'data-binding-single-panel',
+                'label'     => 'Data binding',
+            ],
+            'dataBindingRepeater' => [
+                'key'       => 'dataBindingRepeater',
+                'component' => 'data-binding-repeater-panel',
+                'label'     => 'Repeater binding',
+            ],
+            'repeaterItems' => [
+                'key'       => 'repeaterItems',
+                'component' => 'repeater-items-panel',
+                'label'     => 'Элементы списка',
+            ],
         ];
     }
 

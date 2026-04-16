@@ -6,6 +6,10 @@
 
 require_once dirname(__DIR__) . '/render_helpers.php';
 
+$hero_contract = (isset($block_contract) && is_array($block_contract) && (($block_contract['meta']['blockType'] ?? '') === 'hero'))
+    ? $block_contract
+    : null;
+
 if (!function_exists('nb_hero_prop_int')) {
     function nb_hero_prop_int(array $props, $key, $default, $min, $max) {
         $value = $props[$key] ?? $default;
@@ -25,51 +29,91 @@ if (!function_exists('nb_hero_prop_int')) {
     }
 }
 
-$layout = in_array($props['layout'] ?? '', ['centered', 'left', 'split'], true)
-    ? $props['layout'] : 'centered';
-$theme = in_array($props['theme'] ?? '', ['light', 'dark', 'accent'], true)
-    ? $props['theme'] : 'light';
+if ($hero_contract) {
+    $layout = in_array($hero_contract['layout']['desktop']['mode'] ?? '', ['centered', 'left', 'split'], true)
+        ? (string) $hero_contract['layout']['desktop']['mode'] : 'centered';
+    $theme = in_array($hero_contract['design']['section']['theme'] ?? '', ['light', 'dark', 'accent'], true)
+        ? (string) $hero_contract['design']['section']['theme'] : 'light';
 
-$eyebrow = htmlspecialchars(trim((string) ($props['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
-$heading = htmlspecialchars(trim((string) ($props['heading'] ?? 'Заголовок')), ENT_QUOTES, 'UTF-8');
-$subhead = htmlspecialchars(trim((string) ($props['subheading'] ?? '')), ENT_QUOTES, 'UTF-8');
-$heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h1');
-$heading_weight = nb_block_get_font_weight((array) $props, 'heading', 900);
-$title_size_desktop = nb_hero_prop_int((array) $props, 'title_size_desktop', 64, 12, 240);
-$title_size_mobile = nb_hero_prop_int((array) $props, 'title_size_mobile', 40, 12, 240);
-$subtitle_size_desktop = nb_hero_prop_int((array) $props, 'subtitle_size_desktop', 20, 10, 120);
-$subtitle_size_mobile = nb_hero_prop_int((array) $props, 'subtitle_size_mobile', 18, 10, 120);
-$content_width = nb_hero_prop_int((array) $props, 'content_width', 640, 280, 1440);
-$padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', 96, 0, 300);
-$padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', 96, 0, 300);
-$padding_top_mobile = nb_hero_prop_int((array) $props, 'padding_top_mobile', 56, 0, 300);
-$padding_bottom_mobile = nb_hero_prop_int((array) $props, 'padding_bottom_mobile', 56, 0, 300);
-$min_height_desktop = nb_hero_prop_int((array) $props, 'min_height_desktop', 0, 0, 1200);
-$min_height_mobile = nb_hero_prop_int((array) $props, 'min_height_mobile', 0, 0, 1200);
-$reveal = nb_block_get_reveal_settings((array) $props);
+    $eyebrow = htmlspecialchars(trim((string) ($hero_contract['content']['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $heading = htmlspecialchars(trim((string) ($hero_contract['content']['title'] ?? 'Заголовок')), ENT_QUOTES, 'UTF-8');
+    $subhead = htmlspecialchars(trim((string) ($hero_contract['content']['subtitle'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $heading_tag = htmlspecialchars((string) ($hero_contract['design']['entities']['title']['tag'] ?? 'h1'), ENT_QUOTES, 'UTF-8');
+    $heading_weight = (int) ($hero_contract['design']['entities']['title']['weight'] ?? 900);
+    $title_size_desktop = (int) ($hero_contract['design']['entities']['title']['desktop']['fontSize'] ?? 64);
+    $title_size_mobile = (int) ($hero_contract['design']['entities']['title']['mobile']['fontSize'] ?? 40);
+    $subtitle_size_desktop = (int) ($hero_contract['design']['entities']['subtitle']['desktop']['fontSize'] ?? 20);
+    $subtitle_size_mobile = (int) ($hero_contract['design']['entities']['subtitle']['mobile']['fontSize'] ?? 18);
+    $content_width = (int) ($hero_contract['layout']['desktop']['contentWidth'] ?? 640);
+    $padding_top_desktop = (int) ($hero_contract['layout']['desktop']['paddingTop'] ?? 96);
+    $padding_bottom_desktop = (int) ($hero_contract['layout']['desktop']['paddingBottom'] ?? 96);
+    $padding_top_mobile = (int) ($hero_contract['layout']['mobile']['paddingTop'] ?? 56);
+    $padding_bottom_mobile = (int) ($hero_contract['layout']['mobile']['paddingBottom'] ?? 56);
+    $min_height_desktop = (int) ($hero_contract['layout']['desktop']['minHeight'] ?? 0);
+    $min_height_mobile = (int) ($hero_contract['layout']['mobile']['minHeight'] ?? 0);
+    $reveal = nb_block_get_reveal_settings([
+        'block_animation' => (string) ($hero_contract['runtime']['animation']['name'] ?? 'none'),
+        'block_animation_delay' => (int) ($hero_contract['runtime']['animation']['delay'] ?? 0),
+    ]);
 
-$btn1_label = htmlspecialchars(trim((string) ($props['btn_primary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
-$btn1_url = htmlspecialchars(trim((string) ($props['btn_primary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
-$btn1_style = in_array($props['btn_primary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
-    ? (string) $props['btn_primary_style'] : 'primary';
-$btn2_label = htmlspecialchars(trim((string) ($props['btn_secondary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
-$btn2_url = htmlspecialchars(trim((string) ($props['btn_secondary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
-$btn2_style = in_array($props['btn_secondary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
-    ? (string) $props['btn_secondary_style'] : 'outline';
+    $btn1_label = htmlspecialchars(trim((string) ($hero_contract['content']['primaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn1_url = htmlspecialchars(trim((string) ($hero_contract['content']['primaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn1_style = in_array($hero_contract['design']['entities']['primaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $hero_contract['design']['entities']['primaryButton']['style'] : 'primary';
+    $btn2_label = htmlspecialchars(trim((string) ($hero_contract['content']['secondaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn2_url = htmlspecialchars(trim((string) ($hero_contract['content']['secondaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn2_style = in_array($hero_contract['design']['entities']['secondaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $hero_contract['design']['entities']['secondaryButton']['style'] : 'outline';
 
-$image_value = $props['image'] ?? '';
-if (is_string($image_value)) {
-    $decoded = json_decode($image_value, true);
-    if (is_array($decoded)) {
-        $image_value = $decoded;
+    $image = htmlspecialchars(trim((string) ($hero_contract['content']['media']['image'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $image_alt = htmlspecialchars(trim((string) ($hero_contract['content']['media']['alt'] ?? '')), ENT_QUOTES, 'UTF-8');
+} else {
+    $layout = in_array($props['layout'] ?? '', ['centered', 'left', 'split'], true)
+        ? $props['layout'] : 'centered';
+    $theme = in_array($props['theme'] ?? '', ['light', 'dark', 'accent'], true)
+        ? $props['theme'] : 'light';
+
+    $eyebrow = htmlspecialchars(trim((string) ($props['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $heading = htmlspecialchars(trim((string) ($props['heading'] ?? 'Заголовок')), ENT_QUOTES, 'UTF-8');
+    $subhead = htmlspecialchars(trim((string) ($props['subheading'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h1');
+    $heading_weight = nb_block_get_font_weight((array) $props, 'heading', 900);
+    $title_size_desktop = nb_hero_prop_int((array) $props, 'title_size_desktop', 64, 12, 240);
+    $title_size_mobile = nb_hero_prop_int((array) $props, 'title_size_mobile', 40, 12, 240);
+    $subtitle_size_desktop = nb_hero_prop_int((array) $props, 'subtitle_size_desktop', 20, 10, 120);
+    $subtitle_size_mobile = nb_hero_prop_int((array) $props, 'subtitle_size_mobile', 18, 10, 120);
+    $content_width = nb_hero_prop_int((array) $props, 'content_width', 640, 280, 1440);
+    $padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', 96, 0, 300);
+    $padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', 96, 0, 300);
+    $padding_top_mobile = nb_hero_prop_int((array) $props, 'padding_top_mobile', 56, 0, 300);
+    $padding_bottom_mobile = nb_hero_prop_int((array) $props, 'padding_bottom_mobile', 56, 0, 300);
+    $min_height_desktop = nb_hero_prop_int((array) $props, 'min_height_desktop', 0, 0, 1200);
+    $min_height_mobile = nb_hero_prop_int((array) $props, 'min_height_mobile', 0, 0, 1200);
+    $reveal = nb_block_get_reveal_settings((array) $props);
+
+    $btn1_label = htmlspecialchars(trim((string) ($props['btn_primary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn1_url = htmlspecialchars(trim((string) ($props['btn_primary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn1_style = in_array($props['btn_primary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $props['btn_primary_style'] : 'primary';
+    $btn2_label = htmlspecialchars(trim((string) ($props['btn_secondary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn2_url = htmlspecialchars(trim((string) ($props['btn_secondary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn2_style = in_array($props['btn_secondary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $props['btn_secondary_style'] : 'outline';
+
+    $image_value = $props['image'] ?? '';
+    if (is_string($image_value)) {
+        $decoded = json_decode($image_value, true);
+        if (is_array($decoded)) {
+            $image_value = $decoded;
+        }
     }
-}
-if (!is_array($image_value)) {
-    $image_value = ['display' => (string) $image_value, 'original' => (string) $image_value, 'alt' => ''];
-}
+    if (!is_array($image_value)) {
+        $image_value = ['display' => (string) $image_value, 'original' => (string) $image_value, 'alt' => ''];
+    }
 
-$image = htmlspecialchars(trim((string) ($image_value['display'] ?? $image_value['original'] ?? '')), ENT_QUOTES, 'UTF-8');
-$image_alt = htmlspecialchars(trim((string) ($image_value['alt'] ?? ($props['image_alt'] ?? ''))), ENT_QUOTES, 'UTF-8');
+    $image = htmlspecialchars(trim((string) ($image_value['display'] ?? $image_value['original'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $image_alt = htmlspecialchars(trim((string) ($image_value['alt'] ?? ($props['image_alt'] ?? ''))), ENT_QUOTES, 'UTF-8');
+}
 
 $section_class = 'nb-section nb-hero nb-hero--' . $layout;
 $section_class .= $reveal['class'];

@@ -155,9 +155,10 @@ JS;
             return '';
         }
 
-        $props      = (array) ($block['props'] ?? []);
-        $block_type = $type;
-        $block_uid  = 'block_' . (int) $block['id'];
+        $props          = (array) ($block['props'] ?? []);
+        $block_contract = (array) ($block['contract'] ?? []);
+        $block_type     = $type;
+        $block_uid      = 'block_' . (int) $block['id'];
 
         ob_start();
         include $render_file;
