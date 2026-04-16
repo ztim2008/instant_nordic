@@ -6,26 +6,28 @@ class widgetNordicblocksPage extends cmsWidget {
 
         $page_key = trim((string) ($this->options['page_key'] ?? ''));
         if ($page_key === '') {
-            return ['html' => '', 'inline_css' => ''];
+            return ['html' => '', 'inline_css' => '', 'blocks_css' => ''];
         }
 
         $model = cmsCore::getModel('nordicblocks');
         if (!$model) {
-            return ['html' => '', 'inline_css' => ''];
+            return ['html' => '', 'inline_css' => '', 'blocks_css' => ''];
         }
 
         $page = $model->getPageByKey($page_key);
         if (!$page || $page['status'] !== 'published') {
-            return ['html' => '', 'inline_css' => ''];
+            return ['html' => '', 'inline_css' => '', 'blocks_css' => ''];
         }
 
         $tokens     = $model->getDesignTokens();
         $inline_css = $model->buildInlineCss($tokens);
+        $blocks_css = @file_get_contents(cmsConfig::get('root_path') . 'system/controllers/nordicblocks/assets/blocks.css') ?: '';
         $html       = $this->renderBlocks($page, $model);
 
         return [
             'html'       => $html,
             'inline_css' => $inline_css,
+            'blocks_css' => $blocks_css,
         ];
     }
 

@@ -10,6 +10,8 @@ class actionNordicblocksBlockEdit extends cmsAction {
             return cmsCore::error404();
         }
 
+        $block['props'] = $this->model->normalizeImagePropsByType((string) ($block['type'] ?? ''), (array) ($block['props'] ?? []));
+
         $block_registry = $this->loadBlockRegistry();
         $tokens         = $this->model->getDesignTokens();
         $inline_css     = $this->model->buildInlineCss($tokens);

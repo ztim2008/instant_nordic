@@ -475,6 +475,137 @@ $this->addMenuItems('admin_toolbar', $menu);
     background: #f8fafc; font-size: .75rem; cursor: pointer; color: #4b5563; transition: background .15s;
 }
 .nbe-img-btns button:hover { background: #f1f5f9; }
+.nbe-filepicker-toolbar {
+    padding: .75rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: end;
+    gap: .75rem;
+    flex-wrap: wrap;
+    background: #fcfdff;
+}
+.nbe-filepicker-filter {
+    display: flex;
+    flex-direction: column;
+    gap: .28rem;
+    font-size: .72rem;
+    color: #64748b;
+}
+.nbe-filepicker-filter select {
+    min-width: 220px;
+    padding: .42rem .6rem;
+    border: 1px solid #dbe3ee;
+    border-radius: 8px;
+    background: #fff;
+    color: #0f172a;
+    font-size: .78rem;
+}
+.nbe-filepicker-summary {
+    margin-left: auto;
+    font-size: .75rem;
+    color: #64748b;
+}
+.nbe-filepicker-current {
+    padding: .42rem .65rem;
+    border-radius: 999px;
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-size: .72rem;
+    font-weight: 600;
+}
+.nbe-filepicker-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: .85rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+    gap: .75rem;
+    align-content: start;
+}
+.nbe-media-card {
+    border: 1px solid #dbe3ee;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #fff;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+.nbe-media-card:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, .08);
+    transform: translateY(-1px);
+}
+.nbe-media-card__thumb {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #eef2f7, #f8fafc);
+    overflow: hidden;
+}
+.nbe-media-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.nbe-media-card__body {
+    padding: .6rem .65rem .7rem;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+.nbe-media-card__title {
+    font-size: .76rem;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #0f172a;
+}
+.nbe-media-card__path {
+    font-size: .68rem;
+    line-height: 1.35;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nbe-media-card__badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .28rem;
+}
+.nbe-media-card__badge {
+    padding: .18rem .42rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: .64rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+.nbe-media-card__badge--ready {
+    background: #ecfdf5;
+    color: #047857;
+}
+.nbe-media-card__badge--generated {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.nbe-media-card__badge--warn {
+    background: #fff7ed;
+    color: #c2410c;
+}
+.nbe-media-card__empty {
+    grid-column: 1 / -1;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    gap: .45rem;
+    font-size: .8rem;
+}
 .nbe-block-name-wrap { display: flex; align-items: center; }
 </style>
 
@@ -667,7 +798,15 @@ $this->addMenuItems('admin_toolbar', $menu);
             <h3 style="margin:0;font-size:.95rem;flex:1;color:#1e293b"><i class="fa fa-images"></i> Медиабиблиотека</h3>
             <button onclick="nbeCloseFilePicker()" style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1.15rem;padding:.25rem;border-radius:4px"><i class="fa fa-times"></i></button>
         </div>
-        <div id="nb-filepicker-grid" style="flex:1;overflow-y:auto;padding:.75rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:.5rem;align-content:start">
+        <div class="nbe-filepicker-toolbar">
+            <label class="nbe-filepicker-filter">
+                <span>Фильтр по готовности preset</span>
+                <select id="nb-fp-filter"></select>
+            </label>
+            <div id="nb-fp-current-preset" class="nbe-filepicker-current">Текущий preset: original</div>
+            <div id="nb-fp-summary" class="nbe-filepicker-summary"></div>
+        </div>
+        <div id="nb-filepicker-grid" class="nbe-filepicker-grid">
             <div style="grid-column:1/-1;min-height:120px;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:.8rem">
                 <i class="fa fa-spinner fa-spin" style="font-size:1.5rem;margin-right:.4rem"></i> Загрузка...
             </div>
@@ -685,10 +824,12 @@ $this->addMenuItems('admin_toolbar', $menu);
 <script>
 var nbeSaveUrl   = <?= json_encode($save_url,   JSON_UNESCAPED_UNICODE) ?>;
 var nbeCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
+var nbeImagePresets = <?= json_encode($image_presets ?? [], JSON_UNESCAPED_UNICODE) ?>;
 var nbeDirty     = false;
 var nbeDebTimer  = null;
 var nbeQueueSave = false;
 var nbeQueueSilent = true;
+var nbeFpItems   = [];
 
 function nbeGetProps() {
     var props = {};
@@ -727,6 +868,14 @@ function nbeParseImagePayload(raw) {
         alt: '',
         variants: raw ? { original: raw } : {}
     };
+}
+
+function nbeEscapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
 }
 
 function nbeSyncColorSwatch(fieldId, value) {
@@ -937,26 +1086,21 @@ function nbeCloseFilePicker() {
 
 function nbeFpLoad() {
     var grid = document.getElementById('nb-filepicker-grid');
+    nbeBuildFilePickerFilters();
     grid.innerHTML = '<div style="grid-column:1/-1;min-height:120px;display:flex;align-items:center;justify-content:center;color:#94a3b8"><i class="fa fa-spinner fa-spin" style="font-size:1.5rem"></i></div>';
     fetch('/nordicblocks/media_list', { headers: {'X-Requested-With': 'XMLHttpRequest'} })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-        grid.innerHTML = '';
-        var files = d.files || [];
-        if (!files.length) {
-            grid.innerHTML = '<div style="grid-column:1/-1;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;gap:.4rem"><i class="fa fa-images" style="font-size:1.8rem"></i><span style="font-size:.78rem">Нет изображений</span></div>';
+        nbeFpItems = Array.isArray(d.files) ? d.files : [];
+        if (!nbeFpItems.length) {
+            grid.innerHTML = '<div class="nbe-media-card__empty"><i class="fa fa-images" style="font-size:1.8rem"></i><span>Нет изображений</span></div>';
+            var summary = document.getElementById('nb-fp-summary');
+            if (summary) {
+                summary.textContent = '0 изображений';
+            }
             return;
         }
-        files.forEach(function(f) {
-            var el = document.createElement('div');
-            el.style.cssText = 'border:2px solid #e5e7eb;border-radius:7px;overflow:hidden;cursor:pointer;background:#f8fafc;transition:border-color .15s;display:flex;flex-direction:column';
-            el.innerHTML = '<div style="aspect-ratio:1;background:#eef2f7"><img src="' + (f.preview_url || '') + '" style="width:100%;height:100%;object-fit:cover"></div>'
-                + '<div style="padding:.35rem .45rem;font-size:.68rem;line-height:1.35;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (f.title || 'Изображение') + '</div>';
-            el.addEventListener('mouseenter', function() { el.style.borderColor = '#3b82f6'; });
-            el.addEventListener('mouseleave', function() { el.style.borderColor = '#e5e7eb'; });
-            el.addEventListener('click', function() { nbeFpSelect(f); });
-            grid.appendChild(el);
-        });
+        nbeRenderFilePicker();
     })
     .catch(function() {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ef4444;padding:2rem;font-size:.8rem">Ошибка загрузки</div>';
@@ -992,6 +1136,148 @@ function nbeClearImage(fieldId) {
     nbeSetImageField(fieldId, '', false);
 }
 
+function nbeGetPickerTargetPreset() {
+    if (!nbeFpTarget) {
+        return 'original';
+    }
+
+    var presetInput = document.getElementById(nbeFpTarget + '-preset');
+    return presetInput && presetInput.value ? presetInput.value : 'original';
+}
+
+function nbeBuildFilePickerFilters() {
+    var filter = document.getElementById('nb-fp-filter');
+    var currentPreset = nbeGetPickerTargetPreset();
+    var currentLabel = nbeImagePresets[currentPreset] || currentPreset || 'original';
+    var currentBadge = document.getElementById('nb-fp-current-preset');
+
+    if (currentBadge) {
+        currentBadge.textContent = 'Текущий preset: ' + currentLabel;
+    }
+
+    if (!filter) {
+        return;
+    }
+
+    var options = [
+        { value: 'all', label: 'Все изображения' },
+        { value: 'current', label: 'Где уже готов текущий preset' },
+        { value: 'generated_any', label: 'Есть generated-версии' },
+        { value: 'original_only', label: 'Только original' }
+    ];
+
+    Object.keys(nbeImagePresets).forEach(function(presetKey) {
+        if (presetKey === 'original') {
+            return;
+        }
+        options.push({ value: 'preset:' + presetKey, label: 'Где готов ' + nbeImagePresets[presetKey] });
+    });
+
+    filter.innerHTML = options.map(function(option) {
+        return '<option value="' + nbeEscapeHtml(option.value) + '">' + nbeEscapeHtml(option.label) + '</option>';
+    }).join('');
+    filter.value = currentPreset !== 'original' ? 'current' : 'all';
+}
+
+function nbeMediaMatchesFilter(item) {
+    var filter = document.getElementById('nb-fp-filter');
+    var filterValue = filter ? (filter.value || 'all') : 'all';
+    var available = Array.isArray(item.available_presets) ? item.available_presets : [];
+    var generated = Array.isArray(item.generated_presets) ? item.generated_presets : [];
+    var currentPreset = nbeGetPickerTargetPreset();
+
+    if (filterValue === 'all') {
+        return true;
+    }
+
+    if (filterValue === 'current') {
+        return currentPreset === 'original' ? available.indexOf('original') !== -1 : available.indexOf(currentPreset) !== -1;
+    }
+
+    if (filterValue === 'generated_any') {
+        return generated.length > 0;
+    }
+
+    if (filterValue === 'original_only') {
+        return generated.length === 0;
+    }
+
+    if (filterValue.indexOf('preset:') === 0) {
+        return available.indexOf(filterValue.slice(7)) !== -1;
+    }
+
+    return true;
+}
+
+function nbeBuildMediaCardBadges(item) {
+    var currentPreset = nbeGetPickerTargetPreset();
+    var currentLabel = nbeImagePresets[currentPreset] || currentPreset;
+    var available = Array.isArray(item.available_presets) ? item.available_presets : [];
+    var generated = Array.isArray(item.generated_presets) ? item.generated_presets : [];
+    var badges = [
+        '<span class="nbe-media-card__badge">original</span>'
+    ];
+
+    if (generated.length > 0) {
+        badges.push('<span class="nbe-media-card__badge nbe-media-card__badge--generated">generated ' + generated.length + '</span>');
+        generated.slice(0, 2).forEach(function(presetKey) {
+            badges.push('<span class="nbe-media-card__badge nbe-media-card__badge--generated">' + nbeEscapeHtml(nbeImagePresets[presetKey] || presetKey) + '</span>');
+        });
+        if (generated.length > 2) {
+            badges.push('<span class="nbe-media-card__badge">+' + (generated.length - 2) + '</span>');
+        }
+    }
+
+    if (currentPreset && currentPreset !== 'original') {
+        if (available.indexOf(currentPreset) !== -1) {
+            badges.push('<span class="nbe-media-card__badge nbe-media-card__badge--ready">' + nbeEscapeHtml(currentLabel) + ' готов</span>');
+        } else if (item.media && item.media.original_path) {
+            badges.push('<span class="nbe-media-card__badge nbe-media-card__badge--warn">' + nbeEscapeHtml(currentLabel) + ' при сохранении</span>');
+        }
+    }
+
+    return badges.join('');
+}
+
+function nbeRenderFilePicker() {
+    var grid = document.getElementById('nb-filepicker-grid');
+    var summary = document.getElementById('nb-fp-summary');
+    if (!grid) {
+        return;
+    }
+
+    grid.innerHTML = '';
+    var items = nbeFpItems.filter(nbeMediaMatchesFilter);
+
+    var filter = document.getElementById('nb-fp-filter');
+    if (!items.length && filter && filter.value === 'current' && nbeFpItems.length) {
+        filter.value = 'all';
+        items = nbeFpItems.filter(nbeMediaMatchesFilter);
+    }
+
+    if (summary) {
+        summary.textContent = items.length + ' из ' + nbeFpItems.length + ' изображений';
+    }
+
+    if (!items.length) {
+        grid.innerHTML = '<div class="nbe-media-card__empty"><i class="fa fa-filter" style="font-size:1.8rem"></i><span>По этому фильтру ничего нет</span></div>';
+        return;
+    }
+
+    items.forEach(function(item) {
+        var el = document.createElement('div');
+        el.className = 'nbe-media-card';
+        el.innerHTML = '<div class="nbe-media-card__thumb"><img src="' + nbeEscapeHtml(item.preview_url || '') + '" alt="' + nbeEscapeHtml(item.alt || item.title || '') + '"></div>'
+            + '<div class="nbe-media-card__body">'
+            + '<div class="nbe-media-card__title">' + nbeEscapeHtml(item.title || 'Изображение') + '</div>'
+            + '<div class="nbe-media-card__path">' + nbeEscapeHtml(item.original_path || '') + '</div>'
+            + '<div class="nbe-media-card__badges">' + nbeBuildMediaCardBadges(item) + '</div>'
+            + '</div>';
+        el.addEventListener('click', function() { nbeFpSelect(item); });
+        grid.appendChild(el);
+    });
+}
+
 document.getElementById('nb-fp-file-input').addEventListener('change', function() {
     var file = this.files[0];
     if (!file) return;
@@ -1014,6 +1300,10 @@ document.getElementById('nb-fp-file-input').addEventListener('change', function(
 
 document.getElementById('nb-filepicker-overlay').addEventListener('click', function(e) {
     if (e.target === this) nbeCloseFilePicker();
+});
+
+document.getElementById('nb-fp-filter').addEventListener('change', function() {
+    nbeRenderFilePicker();
 });
 
 /* ── Keyboard shortcuts ── */

@@ -383,6 +383,27 @@ class modelNordicblocks extends cmsModel {
         return ['original' => defined('LANG_PARSER_IMAGE_SIZE_ORIGINAL') ? LANG_PARSER_IMAGE_SIZE_ORIGINAL : 'Оригинал'] + $presets;
     }
 
+    public function normalizeImagePropsByType($type, array $props) {
+        $definition = $this->getBlockDefinition($type);
+        if (!$definition || empty($definition['schema']['fields'])) {
+            return $props;
+        }
+
+        foreach ($definition['schema']['fields'] as $field) {
+            $key = (string) ($field['key'] ?? '');
+            if ($key === '' || ($field['type'] ?? 'text') !== 'image' || !array_key_exists($key, $props)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeImageFieldValue($props[$key]);
+            if ($normalized !== '') {
+                $props[$key] = $normalized;
+            }
+        }
+
+        return $props;
+    }
+
     public function normalizeImageFieldValue($value) {
         if (is_string($value)) {
             $trimmed = trim($value);
@@ -416,9 +437,14 @@ class modelNordicblocks extends cmsModel {
 
         $alt = $this->limitMediaText($value['alt'] ?? '', 255);
 
-        $original_ref  = (string) ($value['original_path'] ?? $value['original'] ?? '');
-        $original_path = $this->resolveUploadRelativePath($original_ref);
-        $original_url  = $original_path ? $this->buildUploadUrl($original_path) : $this->sanitizeMediaUrl($value['original'] ?? '');
+        $original_ref_candidate = trim((string) ($value['original_path'] ?? ''));
+        $original_ref  = $original_ref_candidate !== '' ? $original_ref_candidate : (string) ($value['original'] ?? '');
+        $original_path = $this->resolveExistingUploadRelativePath($original_ref);
+        $original_url  = $original_path ? $this->buildUploadUrl($original_path) : $this->sanitizeExternalMediaUrl($value['original'] ?? '');
+
+        if ($alt === '' && $original_path) {
+            $alt = $this->humanizeMediaLabel(pathinfo($original_path, PATHINFO_FILENAME));
+        }
 
         $variants = [];
         if ($original_url) {
@@ -432,17 +458,18 @@ class modelNordicblocks extends cmsModel {
                     continue;
                 }
 
-                $variant_path = $this->resolveUploadRelativePath($variant_ref);
-                $variant_url  = $variant_path ? $this->buildUploadUrl($variant_path) : $this->sanitizeMediaUrl($variant_ref);
+                $variant_path = $this->resolveExistingUploadRelativePath($variant_ref);
+                $variant_url  = $variant_path ? $this->buildUploadUrl($variant_path) : $this->sanitizeExternalMediaUrl($variant_ref);
                 if ($variant_url) {
                     $variants[$variant_preset] = $variant_url;
                 }
             }
         }
 
-        $display_ref  = (string) ($value['display_path'] ?? $value['display'] ?? '');
-        $display_path = $this->resolveUploadRelativePath($display_ref);
-        $display_url  = $display_path ? $this->buildUploadUrl($display_path) : $this->sanitizeMediaUrl($value['display'] ?? '');
+        $display_ref_candidate = trim((string) ($value['display_path'] ?? ''));
+        $display_ref  = $display_ref_candidate !== '' ? $display_ref_candidate : (string) ($value['display'] ?? '');
+        $display_path = $this->resolveExistingUploadRelativePath($display_ref);
+        $display_url  = $display_path ? $this->buildUploadUrl($display_path) : $this->sanitizeExternalMediaUrl($value['display'] ?? '');
 
         if ($original_path && $preset !== 'original') {
             $variant = $this->ensureImagePresetVariant($original_path, $preset);
@@ -524,7 +551,7 @@ class modelNordicblocks extends cmsModel {
             $stem    = pathinfo($relative, PATHINFO_FILENAME);
             list($base_stem, $variant_preset) = $this->splitMediaStemPreset($stem, $preset_names);
 
-            $group_key = ($dirname ? $dirname . '/' : '') . $base_stem;
+            $group_key = ($dirname ? $dirname . '/' : '') . $this->normalizeMediaStem($base_stem);
             if (!isset($groups[$group_key])) {
                 $title = $this->humanizeMediaLabel($base_stem);
                 $groups[$group_key] = [
@@ -579,11 +606,27 @@ class modelNordicblocks extends cmsModel {
                 continue;
             }
 
+            $generated_presets = [];
+            foreach ($preset_names as $preset_name) {
+                if ($preset_name !== 'original' && !empty($variants[$preset_name])) {
+                    $generated_presets[] = $preset_name;
+                }
+            }
+
+            $available_presets = ['original'];
+            foreach ($generated_presets as $generated_preset) {
+                $available_presets[] = $generated_preset;
+            }
+
             $items[] = [
-                'title'       => $group['title'],
-                'alt'         => $group['alt'],
-                'preview_url' => $media['display'],
-                'media'       => $media,
+                'title'             => $group['title'],
+                'alt'               => $group['alt'],
+                'original_path'     => $group['original_path'],
+                'preview_url'       => $media['display'],
+                'available_presets' => $available_presets,
+                'generated_presets' => $generated_presets,
+                'generated_count'   => count($generated_presets),
+                'media'             => $media,
             ];
         }
 
@@ -619,6 +662,10 @@ class modelNordicblocks extends cmsModel {
         }
 
         $dest_dir     = str_replace('\\', '/', dirname($original_abs)) . '/';
+        if (!is_dir($dest_dir) || !is_writable($dest_dir)) {
+            return null;
+        }
+
         $base_name    = pathinfo($original_abs, PATHINFO_FILENAME) . ' ' . $preset['name'];
         $dest_ext     = !empty($preset['convert_format']) ? (string) $preset['convert_format'] : strtolower((string) pathinfo($original_abs, PATHINFO_EXTENSION));
         $expected_abs = $dest_dir . files_sanitize_name($base_name) . '.' . $dest_ext;
@@ -642,6 +689,10 @@ class modelNordicblocks extends cmsModel {
         $generated_abs = $image
             ->setDestinationDir($dest_dir)
             ->resizeByPreset($preset, $base_name);
+
+        if (!$generated_abs || !is_file($generated_abs)) {
+            return null;
+        }
 
         $generated_rel = $this->resolveUploadRelativePath($generated_abs);
         if (!$generated_rel) {
@@ -730,6 +781,15 @@ class modelNordicblocks extends cmsModel {
         return '';
     }
 
+    private function sanitizeExternalMediaUrl($value) {
+        $value = $this->sanitizeMediaUrl($value);
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $value) ? $value : '';
+    }
+
     private function buildUploadUrl($relative_path) {
         $relative_path = ltrim(str_replace('\\', '/', (string) $relative_path), '/');
         if ($relative_path === '') {
@@ -797,11 +857,32 @@ class modelNordicblocks extends cmsModel {
         return $ref;
     }
 
+    private function resolveExistingUploadRelativePath($ref) {
+        $path = $this->resolveUploadRelativePath($ref);
+        if (!$path) {
+            return null;
+        }
+
+        $absolute_path = $this->buildUploadAbsolutePath($path);
+        return ($absolute_path && is_file($absolute_path)) ? $path : null;
+    }
+
     private function splitMediaStemPreset($stem, array $preset_names) {
         foreach ($preset_names as $preset_name) {
-            $suffix = ' ' . $preset_name;
-            if ($preset_name && substr($stem, -strlen($suffix)) === $suffix) {
-                return [substr($stem, 0, -strlen($suffix)), $preset_name];
+            if (!$preset_name) {
+                continue;
+            }
+
+            $suffixes = [
+                ' ' . $preset_name,
+                '-' . $this->normalizeMediaStem($preset_name),
+                '_' . str_replace('-', '_', $this->normalizeMediaStem($preset_name)),
+            ];
+
+            foreach ($suffixes as $suffix) {
+                if ($suffix !== '' && substr($stem, -strlen($suffix)) === $suffix) {
+                    return [substr($stem, 0, -strlen($suffix)), $preset_name];
+                }
             }
         }
 
@@ -816,6 +897,14 @@ class modelNordicblocks extends cmsModel {
             return 'Изображение';
         }
         return function_exists('mb_convert_case') ? mb_convert_case($label, MB_CASE_TITLE, 'UTF-8') : ucfirst($label);
+    }
+
+    private function normalizeMediaStem($value) {
+        $value = strtolower(trim((string) $value));
+        $value = preg_replace('/[\s_]+/', '-', $value);
+        $value = preg_replace('/[^a-z0-9\-]+/', '-', $value);
+        $value = preg_replace('/-+/', '-', $value);
+        return trim($value, '-');
     }
 
     private function normalizeBlockSchemaFields(array $schema) {
