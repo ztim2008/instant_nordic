@@ -3,6 +3,7 @@
 class modelNordicblocks extends cmsModel {
 
     const TBL_PAGES  = 'nordicblocks_pages';
+    const TBL_BLOCKS = 'nordicblocks_blocks';
     const TBL_DESIGN = 'nordicblocks_design';
     const TBL_CACHE  = 'nordicblocks_cache';
 
@@ -70,6 +71,124 @@ class modelNordicblocks extends cmsModel {
         return (bool) $this->db->getRow(self::TBL_PAGES, "`key` = '{$key}'", 'id');
     }
 
+    // ── БЛОКИ (новая архитектура) ──────────────────────────────────
+
+    public function getBlocks() {
+        return $this->db->getRows(self::TBL_BLOCKS, '1', '*', 'created_at DESC') ?: [];
+    }
+
+    public function getBlockById($id) {
+        $id  = (int) $id;
+        $row = $this->db->getRow(self::TBL_BLOCKS, "`id` = {$id}");
+        if (!$row) { return null; }
+        $row['props'] = !empty($row['props_json']) ? (array) json_decode($row['props_json'], true) : [];
+        return $row;
+    }
+
+    public function getBlockDefinition($type) {
+        $type = $this->normalizeBlockType($type);
+        if (!$type) { return null; }
+
+        $blocks_dir = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $block_dir  = $blocks_dir . '/' . $type;
+        if (!is_dir($block_dir)) { return null; }
+
+        $schema_file = $block_dir . '/schema.json';
+        if (!file_exists($schema_file)) { return null; }
+
+        $schema = json_decode((string) file_get_contents($schema_file), true);
+        if (!is_array($schema)) { return null; }
+
+        $meta_file = $block_dir . '/meta.json';
+        $meta      = file_exists($meta_file)
+            ? json_decode((string) file_get_contents($meta_file), true)
+            : [];
+
+        if (!is_array($meta)) {
+            $meta = [];
+        }
+
+        $title       = (string) ($meta['name'] ?? $schema['title'] ?? $type);
+        $category    = (string) ($meta['category'] ?? $schema['category'] ?? 'content');
+        $description = (string) ($meta['description'] ?? $schema['description'] ?? '');
+        $preview     = file_exists($block_dir . '/preview.png') ? '/nordicblocks/blocks/' . $type . '/preview.png' : '';
+
+        return [
+            'name'        => $type,
+            'title'       => $title,
+            'category'    => $category,
+            'description' => $description,
+            'preview'     => $preview,
+            'meta'        => $meta,
+            'schema'      => [
+                'title'       => $title,
+                'category'    => $category,
+                'description' => $description,
+                'fields'      => $this->normalizeBlockSchemaFields($schema, $type),
+            ],
+        ];
+    }
+
+    public function getBlockDefinitions() {
+        $blocks_dir  = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $definitions = [];
+
+        if (!is_dir($blocks_dir)) {
+            return $definitions;
+        }
+
+        foreach (scandir($blocks_dir) as $block_name) {
+            if ($block_name[0] === '.') {
+                continue;
+            }
+
+            $definition = $this->getBlockDefinition($block_name);
+            if ($definition) {
+                $definitions[$block_name] = $definition;
+            }
+        }
+
+        ksort($definitions);
+
+        return $definitions;
+    }
+
+    public function createBlock($type, $title) {
+        $now = date('Y-m-d H:i:s');
+        return $this->db->insert(self::TBL_BLOCKS, [
+            'type'       => preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim((string) $type))),
+            'title'      => trim((string) $title),
+            'props_json' => '{}',
+            'status'     => 'active',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], true);
+    }
+
+    public function saveBlock($id, $title, array $props) {
+        $id   = (int) $id;
+        $data = [
+            'title'      => trim((string) $title),
+            'props_json' => json_encode($props, JSON_UNESCAPED_UNICODE),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        $this->db->update(self::TBL_BLOCKS, "`id` = {$id}", $data, true);
+        $this->invalidateBlockCache($id);
+    }
+
+    public function deleteBlock($id) {
+        $id = (int) $id;
+        $this->db->delete(self::TBL_BLOCKS, "`id` = {$id}");
+        $this->invalidateBlockCache($id);
+    }
+
+    public function invalidateBlockCache($block_id) {
+        $id = (int) $block_id;
+        $this->db->query(
+            "DELETE FROM `{#}" . self::TBL_CACHE . "` WHERE `cache_key` LIKE 'block\\_{$id}\\_%'"
+        );
+    }
+
     // ── ДИЗАЙН-СИСТЕМА ────────────────────────────────────────────
 
     public function getDesignTokens() {
@@ -78,12 +197,12 @@ class modelNordicblocks extends cmsModel {
             return $this->getDefaultTokens();
         }
         $tokens = json_decode($row['tokens_json'], true);
-        return is_array($tokens) ? array_merge($this->getDefaultTokens(), $tokens) : $this->getDefaultTokens();
+        return is_array($tokens) ? $this->normalizeDesignTokens($tokens) : $this->getDefaultTokens();
     }
 
     public function saveDesignTokens(array $tokens) {
         $now  = date('Y-m-d H:i:s');
-        $json = json_encode($tokens, JSON_UNESCAPED_UNICODE);
+        $json = json_encode($this->normalizeDesignTokens($tokens), JSON_UNESCAPED_UNICODE);
         $has  = $this->db->getRow(self::TBL_DESIGN, '1', 'id');
 
         if ($has) {
@@ -102,21 +221,165 @@ class modelNordicblocks extends cmsModel {
 
     public function getDefaultTokens() {
         return [
-            'color_accent'     => '#b42318',
-            'color_bg'         => '#ffffff',
-            'color_bg_alt'     => '#f7f7f6',
-            'color_text'       => '#1a1a1a',
-            'color_text_muted' => '#6b7280',
-            'font_body'        => 'sans',
-            'font_head'        => 'sans',
-            'radius_preset'    => 'md',
-            'shadow_preset'    => 'md',
-            'section_spacing'  => 'comfortable',
-            'btn_style'        => 'primary',
+            'version'    => 2,
+            'colors'     => [
+                'accent'               => '#b42318',
+                'bg'                   => '#ffffff',
+                'bg_alt'               => '#f7f7f6',
+                'surface'              => '#ffffff',
+                'border'               => '#e5e7eb',
+                'text'                 => '#1a1a1a',
+                'text_muted'           => '#6b7280',
+                'button_primary_bg'    => '#b42318',
+                'button_primary_text'  => '#ffffff',
+                'button_primary_border'=> '#b42318',
+                'button_outline_text'  => '#b42318',
+                'button_outline_border'=> '#b42318',
+                'button_ghost_text'    => '#1a1a1a',
+                'button_ghost_border'  => '#e5e7eb',
+            ],
+            'typography' => [
+                'font_body'   => 'sans',
+                'font_head'   => 'sans',
+                'font_button' => '',
+            ],
+            'layout'     => [
+                'section_spacing' => 'comfortable',
+            ],
+            'radii'      => [
+                'base'   => 'md',
+                'card'   => 'lg',
+                'button' => 'md',
+                'media'  => 'lg',
+            ],
+            'buttons'    => [
+                'style'           => 'primary',
+                'size'            => 'md',
+                'hover_animation' => 'lift',
+                'glint_color'     => '#ffffff',
+                'glint_duration'  => 900,
+            ],
+            'cards'      => [
+                'border_width'   => 1,
+                'shadow_preset'  => 'md',
+                'surface_motion' => true,
+            ],
+        ];
+    }
+
+    public function getThemePresets() {
+        return [
+            'nordic-light' => [
+                'name'             => 'Nordic Light',
+                'color_accent'     => '#b42318',
+                'color_bg'         => '#ffffff',
+                'color_bg_alt'     => '#f7f7f6',
+                'color_surface'    => '#ffffff',
+                'color_border'     => '#e5e7eb',
+                'color_text'       => '#111827',
+                'color_text_muted' => '#6b7280',
+                'font_body'        => 'sans',
+                'font_head'        => 'sans',
+                'radius_preset'    => 'md',
+                'card_radius_preset' => 'lg',
+                'button_radius_preset' => 'md',
+                'media_radius_preset' => 'lg',
+                'shadow_preset'    => 'md',
+                'section_spacing'  => 'comfortable',
+                'btn_style'        => 'primary',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'lift',
+            ],
+            'nordic-dark' => [
+                'name'             => 'Nordic Dark',
+                'color_accent'     => '#e05c4e',
+                'color_bg'         => '#0f1117',
+                'color_bg_alt'     => '#1a1d24',
+                'color_surface'    => '#1e2230',
+                'color_border'     => '#2d3244',
+                'color_text'       => '#f0f2f5',
+                'color_text_muted' => '#8b95a7',
+                'font_body'        => 'sans',
+                'font_head'        => 'sans',
+                'radius_preset'    => 'md',
+                'card_radius_preset' => 'lg',
+                'button_radius_preset' => 'md',
+                'media_radius_preset' => 'lg',
+                'shadow_preset'    => 'lg',
+                'section_spacing'  => 'comfortable',
+                'btn_style'        => 'primary',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'glow',
+            ],
+            'warm-minimal' => [
+                'name'             => 'Warm Minimal',
+                'color_accent'     => '#c2622a',
+                'color_bg'         => '#faf9f7',
+                'color_bg_alt'     => '#f0ede8',
+                'color_surface'    => '#ffffff',
+                'color_border'     => '#e3ddd6',
+                'color_text'       => '#1c1610',
+                'color_text_muted' => '#7a6e64',
+                'font_body'        => 'sans',
+                'font_head'        => 'serif',
+                'radius_preset'    => 'sm',
+                'card_radius_preset' => 'md',
+                'button_radius_preset' => 'pill',
+                'media_radius_preset' => 'md',
+                'shadow_preset'    => 'sm',
+                'section_spacing'  => 'spacious',
+                'btn_style'        => 'outline',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'lift',
+            ],
+            'corporate' => [
+                'name'             => 'Corporate',
+                'color_accent'     => '#1d4ed8',
+                'color_bg'         => '#ffffff',
+                'color_bg_alt'     => '#f8faff',
+                'color_surface'    => '#ffffff',
+                'color_border'     => '#dde4f0',
+                'color_text'       => '#0f172a',
+                'color_text_muted' => '#64748b',
+                'font_body'        => 'sans',
+                'font_head'        => 'sans',
+                'radius_preset'    => 'sm',
+                'card_radius_preset' => 'md',
+                'button_radius_preset' => 'sm',
+                'media_radius_preset' => 'md',
+                'shadow_preset'    => 'sm',
+                'section_spacing'  => 'comfortable',
+                'btn_style'        => 'primary',
+                'btn_size'         => 'sm',
+                'btn_hover_animation' => 'grow',
+            ],
+            'creative' => [
+                'name'             => 'Creative',
+                'color_accent'     => '#7c3aed',
+                'color_bg'         => '#fdfcff',
+                'color_bg_alt'     => '#f3f0ff',
+                'color_surface'    => '#ffffff',
+                'color_border'     => '#e0d9f8',
+                'color_text'       => '#1e1b2e',
+                'color_text_muted' => '#6b6485',
+                'font_body'        => 'sans',
+                'font_head'        => 'sans',
+                'radius_preset'    => 'xl',
+                'card_radius_preset' => 'xl',
+                'button_radius_preset' => 'pill',
+                'media_radius_preset' => 'xl',
+                'shadow_preset'    => 'md',
+                'section_spacing'  => 'spacious',
+                'btn_style'        => 'primary',
+                'btn_size'         => 'lg',
+                'btn_hover_animation' => 'glint',
+            ],
         ];
     }
 
     public function buildInlineCss(array $tokens) {
+        $tokens = $this->normalizeDesignTokens($tokens);
+
         $radius_map = [
             'none' => '0px',  'sm' => '4px',  'md' => '8px',
             'lg'   => '16px', 'xl' => '24px', 'pill' => '9999px',
@@ -132,40 +395,639 @@ class modelNordicblocks extends cmsModel {
             'comfortable' => 'clamp(3rem, 2rem + 5vw, 6rem)',
             'spacious'    => 'clamp(4rem, 2.5rem + 7.5vw, 9rem)',
         ];
+        $button_size_map = [
+            'sm' => ['font' => '0.9375rem', 'pad_y' => '0.55rem', 'pad_x' => '1.1rem'],
+            'md' => ['font' => '1rem',      'pad_y' => '0.7rem',  'pad_x' => '1.5rem'],
+            'lg' => ['font' => '1.125rem',  'pad_y' => '0.9rem',  'pad_x' => '1.9rem'],
+        ];
+        $button_animation_map = [
+            'none'  => ['transform' => 'none', 'shadow' => 'none', 'glint' => '0'],
+            'lift'  => ['transform' => 'translateY(-2px)', 'shadow' => $shadow_map['lg'], 'glint' => '0'],
+            'grow'  => ['transform' => 'scale(1.03)', 'shadow' => $shadow_map['md'], 'glint' => '0'],
+            'glow'  => ['transform' => 'none', 'shadow' => '0 0 0 4px ' . $this->hexToRgba($this->getTokenPath($tokens, ['colors', 'accent'], '#b42318'), 0.16), 'glint' => '0'],
+            'glint' => ['transform' => 'none', 'shadow' => $shadow_map['md'], 'glint' => '1'],
+        ];
 
-        $accent    = $this->sanitizeColor($tokens['color_accent']     ?? '#b42318');
-        $bg        = $this->sanitizeColor($tokens['color_bg']         ?? '#ffffff');
-        $bgAlt     = $this->sanitizeColor($tokens['color_bg_alt']     ?? '#f7f7f6');
-        $text      = $this->sanitizeColor($tokens['color_text']       ?? '#1a1a1a');
-        $muted     = $this->sanitizeColor($tokens['color_text_muted'] ?? '#6b7280');
-        $radius    = $radius_map[$tokens['radius_preset']    ?? 'md']          ?? '8px';
-        $shadow    = $shadow_map[$tokens['shadow_preset']    ?? 'md']          ?? '0 4px 12px 0 rgb(0 0 0 / .08)';
-        $sectionPy = $section_py_map[$tokens['section_spacing'] ?? 'comfortable'] ?? 'clamp(3rem, 2rem + 5vw, 6rem)';
+        $accent    = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'accent'], '#b42318'));
+        $bg        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'bg'], '#ffffff'), '#ffffff');
+        $bgAlt     = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'bg_alt'], '#f7f7f6'), '#f7f7f6');
+        $surface   = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'surface'], '#ffffff'), '#ffffff');
+        $border    = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'border'], '#e5e7eb'), '#e5e7eb');
+        $text      = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'text'], '#1a1a1a'), '#1a1a1a');
+        $muted     = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'text_muted'], '#6b7280'), '#6b7280');
 
-        $fontBody = ($tokens['font_body'] ?? 'sans') === 'serif'
-            ? "'Playfair Display', Georgia, serif"
-            : "'Inter', 'Helvetica Neue', Arial, sans-serif";
-        $fontHead = ($tokens['font_head'] ?? 'sans') === 'serif'
-            ? "'Playfair Display', Georgia, serif"
-            : "'Inter', 'Helvetica Neue', Arial, sans-serif";
+        $base_radius   = $radius_map[$this->getTokenPath($tokens, ['radii', 'base'], 'md')]   ?? '8px';
+        $card_radius   = $radius_map[$this->getTokenPath($tokens, ['radii', 'card'], 'lg')]   ?? '16px';
+        $button_radius = $radius_map[$this->getTokenPath($tokens, ['radii', 'button'], 'md')] ?? '8px';
+        $media_radius  = $radius_map[$this->getTokenPath($tokens, ['radii', 'media'], 'lg')]  ?? '16px';
+        $card_shadow   = $shadow_map[$this->getTokenPath($tokens, ['cards', 'shadow_preset'], 'md')] ?? $shadow_map['md'];
+        $section_py    = $section_py_map[$this->getTokenPath($tokens, ['layout', 'section_spacing'], 'comfortable')] ?? $section_py_map['comfortable'];
 
-        $accentAlt = $this->darkenHex($accent, 15);
+        $font_body   = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_body'], 'sans'));
+        $font_head   = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_head'], 'sans'));
+        $font_button = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_button'], ''), $font_body);
 
-        return ":root{"
-            . "--nb-color-accent:{$accent};"
-            . "--nb-color-accent-alt:{$accentAlt};"
-            . "--nb-color-bg:{$bg};"
-            . "--nb-color-bg-alt:{$bgAlt};"
-            . "--nb-color-text:{$text};"
-            . "--nb-color-text-muted:{$muted};"
-            . "--nb-radius:{$radius};"
-            . "--nb-radius-card:{$radius};"
-            . "--nb-radius-btn:{$radius};"
-            . "--nb-shadow-card:{$shadow};"
-            . "--nb-section-py:{$sectionPy};"
-            . "--nb-font-body:{$fontBody};"
-            . "--nb-font-head:{$fontHead};"
-            . "}";
+        $button_size_key = $this->getTokenPath($tokens, ['buttons', 'size'], 'md');
+        $button_size     = $button_size_map[$button_size_key] ?? $button_size_map['md'];
+        $button_anim_key = $this->getTokenPath($tokens, ['buttons', 'hover_animation'], 'lift');
+        $button_anim     = $button_animation_map[$button_anim_key] ?? $button_animation_map['lift'];
+
+        $primary_bg            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_bg'], $accent), $accent);
+        $primary_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_text'], '#ffffff'), '#ffffff');
+        $primary_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_border'], $primary_bg), $primary_bg);
+        $primary_bg_hover      = $this->darkenHex($primary_bg, 12);
+        $primary_bg_active     = $this->darkenHex($primary_bg, 20);
+        $primary_border_hover  = $this->darkenHex($primary_border, 12);
+        $primary_border_active = $this->darkenHex($primary_border, 20);
+
+        $outline_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_text'], $accent), $accent);
+        $outline_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_border'], $accent), $accent);
+        $outline_bg_hover      = $outline_border;
+        $outline_bg_active     = $this->darkenHex($outline_border, 18);
+
+        $ghost_text            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_text'], $text), $text);
+        $ghost_border          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_border'], $border), $border);
+        $ghost_bg_hover        = $bgAlt;
+        $ghost_bg_active       = $this->darkenHex($bgAlt, 8);
+
+        $accent_alt            = $this->darkenHex($accent, 15);
+        $glint_color           = $this->sanitizeColor($this->getTokenPath($tokens, ['buttons', 'glint_color'], '#ffffff'), '#ffffff');
+        $glint_duration        = max(250, min(3000, (int) $this->getTokenPath($tokens, ['buttons', 'glint_duration'], 900)));
+        $card_border_width     = max(0, min(6, (int) $this->getTokenPath($tokens, ['cards', 'border_width'], 1)));
+        $surface_motion        = $this->toBool($this->getTokenPath($tokens, ['cards', 'surface_motion'], true));
+        $surface_motion_speed  = $surface_motion ? '180ms' : '0ms';
+        $focus_ring            = $this->hexToRgba($accent, 0.18);
+
+        return ':root{'
+            . '--nb-color-accent:' . $accent . ';'
+            . '--nb-color-accent-alt:' . $accent_alt . ';'
+            . '--nb-color-bg:' . $bg . ';'
+            . '--nb-color-bg-alt:' . $bgAlt . ';'
+            . '--nb-color-surface:' . $surface . ';'
+            . '--nb-color-border:' . $border . ';'
+            . '--nb-color-text:' . $text . ';'
+            . '--nb-color-text-muted:' . $muted . ';'
+            . '--nb-radius:' . $base_radius . ';'
+            . '--nb-radius-card:' . $card_radius . ';'
+            . '--nb-radius-btn:' . $button_radius . ';'
+            . '--nb-radius-media:' . $media_radius . ';'
+            . '--nb-shadow-card:' . $card_shadow . ';'
+            . '--nb-border-width:' . $card_border_width . 'px;'
+            . '--nb-section-py:' . $section_py . ';'
+            . '--nb-section-padding:' . $section_py . ';'
+            . '--nb-font-body:' . $font_body . ';'
+            . '--nb-font-head:' . $font_head . ';'
+            . '--nb-font-button:' . $font_button . ';'
+            . '--nb-btn-font-size:' . $button_size['font'] . ';'
+            . '--nb-btn-padding-y:' . $button_size['pad_y'] . ';'
+            . '--nb-btn-padding-x:' . $button_size['pad_x'] . ';'
+            . '--nb-btn-primary-bg:' . $primary_bg . ';'
+            . '--nb-btn-primary-text:' . $primary_text . ';'
+            . '--nb-btn-primary-border:' . $primary_border . ';'
+            . '--nb-btn-primary-bg-hover:' . $primary_bg_hover . ';'
+            . '--nb-btn-primary-text-hover:' . $primary_text . ';'
+            . '--nb-btn-primary-border-hover:' . $primary_border_hover . ';'
+            . '--nb-btn-primary-bg-active:' . $primary_bg_active . ';'
+            . '--nb-btn-primary-text-active:' . $primary_text . ';'
+            . '--nb-btn-primary-border-active:' . $primary_border_active . ';'
+            . '--nb-btn-outline-bg:transparent;'
+            . '--nb-btn-outline-text:' . $outline_text . ';'
+            . '--nb-btn-outline-border:' . $outline_border . ';'
+            . '--nb-btn-outline-bg-hover:' . $outline_bg_hover . ';'
+            . '--nb-btn-outline-text-hover:' . $primary_text . ';'
+            . '--nb-btn-outline-border-hover:' . $outline_border . ';'
+            . '--nb-btn-outline-bg-active:' . $outline_bg_active . ';'
+            . '--nb-btn-outline-text-active:' . $primary_text . ';'
+            . '--nb-btn-outline-border-active:' . $outline_bg_active . ';'
+            . '--nb-btn-ghost-bg:transparent;'
+            . '--nb-btn-ghost-text:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border:' . $ghost_border . ';'
+            . '--nb-btn-ghost-bg-hover:' . $ghost_bg_hover . ';'
+            . '--nb-btn-ghost-text-hover:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border-hover:' . $ghost_border . ';'
+            . '--nb-btn-ghost-bg-active:' . $ghost_bg_active . ';'
+            . '--nb-btn-ghost-text-active:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border-active:' . $ghost_border . ';'
+            . '--nb-btn-hover-transform:' . $button_anim['transform'] . ';'
+            . '--nb-btn-hover-shadow:' . $button_anim['shadow'] . ';'
+            . '--nb-btn-active-transform:scale(.98);'
+            . '--nb-btn-glint-opacity:' . $button_anim['glint'] . ';'
+            . '--nb-btn-glint-color:' . $glint_color . ';'
+            . '--nb-btn-glint-duration:' . $glint_duration . 'ms;'
+            . '--nb-surface-motion-duration:' . $surface_motion_speed . ';'
+            . '--nb-focus-ring:' . $focus_ring . ';'
+            . '}';
+    }
+
+    public function normalizeDesignTokens(array $tokens) {
+        $defaults = $this->getDefaultTokens();
+
+        $is_legacy_flat = isset($tokens['color_accent']) || isset($tokens['font_body']) || isset($tokens['radius_preset']);
+        if ($is_legacy_flat) {
+            $tokens = [
+                'version'    => 2,
+                'colors'     => [
+                    'accent'                => $tokens['color_accent'] ?? null,
+                    'bg'                    => $tokens['color_bg'] ?? null,
+                    'bg_alt'                => $tokens['color_bg_alt'] ?? null,
+                    'surface'               => $tokens['color_surface'] ?? null,
+                    'border'                => $tokens['color_border'] ?? null,
+                    'text'                  => $tokens['color_text'] ?? null,
+                    'text_muted'            => $tokens['color_text_muted'] ?? null,
+                    'button_primary_bg'     => $tokens['button_primary_bg'] ?? ($tokens['color_accent'] ?? null),
+                    'button_primary_text'   => $tokens['button_primary_text'] ?? null,
+                    'button_primary_border' => $tokens['button_primary_border'] ?? ($tokens['color_accent'] ?? null),
+                    'button_outline_text'   => $tokens['button_outline_text'] ?? ($tokens['color_accent'] ?? null),
+                    'button_outline_border' => $tokens['button_outline_border'] ?? ($tokens['color_accent'] ?? null),
+                    'button_ghost_text'     => $tokens['button_ghost_text'] ?? ($tokens['color_text'] ?? null),
+                    'button_ghost_border'   => $tokens['button_ghost_border'] ?? ($tokens['color_border'] ?? null),
+                ],
+                'typography' => [
+                    'font_body'   => $tokens['font_body'] ?? null,
+                    'font_head'   => $tokens['font_head'] ?? null,
+                    'font_button' => $tokens['font_button'] ?? null,
+                ],
+                'layout'     => [
+                    'section_spacing' => $tokens['section_spacing'] ?? null,
+                ],
+                'radii'      => [
+                    'base'   => $tokens['radius_preset'] ?? null,
+                    'card'   => $tokens['card_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                    'button' => $tokens['button_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                    'media'  => $tokens['media_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                ],
+                'buttons'    => [
+                    'style'           => $tokens['btn_style'] ?? null,
+                    'size'            => $tokens['btn_size'] ?? null,
+                    'hover_animation' => $tokens['btn_hover_animation'] ?? null,
+                    'glint_color'     => $tokens['btn_glint_color'] ?? null,
+                    'glint_duration'  => $tokens['btn_glint_duration'] ?? null,
+                ],
+                'cards'      => [
+                    'border_width'   => $tokens['card_border_width'] ?? null,
+                    'shadow_preset'  => $tokens['shadow_preset'] ?? null,
+                    'surface_motion' => $tokens['surface_motion'] ?? null,
+                ],
+            ];
+        }
+
+        $merged = array_replace_recursive($defaults, $tokens);
+
+        $merged['version'] = 2;
+
+        $merged['colors']['accent']                 = $this->sanitizeColor($merged['colors']['accent'] ?? $defaults['colors']['accent']);
+        $merged['colors']['bg']                     = $this->sanitizeColor($merged['colors']['bg'] ?? $defaults['colors']['bg'], $defaults['colors']['bg']);
+        $merged['colors']['bg_alt']                 = $this->sanitizeColor($merged['colors']['bg_alt'] ?? $defaults['colors']['bg_alt'], $defaults['colors']['bg_alt']);
+        $merged['colors']['surface']                = $this->sanitizeColor($merged['colors']['surface'] ?? $defaults['colors']['surface'], $defaults['colors']['surface']);
+        $merged['colors']['border']                 = $this->sanitizeColor($merged['colors']['border'] ?? $defaults['colors']['border'], $defaults['colors']['border']);
+        $merged['colors']['text']                   = $this->sanitizeColor($merged['colors']['text'] ?? $defaults['colors']['text'], $defaults['colors']['text']);
+        $merged['colors']['text_muted']             = $this->sanitizeColor($merged['colors']['text_muted'] ?? $defaults['colors']['text_muted'], $defaults['colors']['text_muted']);
+        $merged['colors']['button_primary_bg']      = $this->sanitizeColor($merged['colors']['button_primary_bg'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_primary_text']    = $this->sanitizeColor($merged['colors']['button_primary_text'] ?? '#ffffff', '#ffffff');
+        $merged['colors']['button_primary_border']  = $this->sanitizeColor($merged['colors']['button_primary_border'] ?? $merged['colors']['button_primary_bg'], $merged['colors']['button_primary_bg']);
+        $merged['colors']['button_outline_text']    = $this->sanitizeColor($merged['colors']['button_outline_text'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_outline_border']  = $this->sanitizeColor($merged['colors']['button_outline_border'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_ghost_text']      = $this->sanitizeColor($merged['colors']['button_ghost_text'] ?? $merged['colors']['text'], $merged['colors']['text']);
+        $merged['colors']['button_ghost_border']    = $this->sanitizeColor($merged['colors']['button_ghost_border'] ?? $merged['colors']['border'], $merged['colors']['border']);
+
+        foreach (['font_body', 'font_head'] as $font_key) {
+            $merged['typography'][$font_key] = $this->sanitizeFontToken($merged['typography'][$font_key] ?? $defaults['typography'][$font_key]);
+        }
+
+        $button_font = trim((string) ($merged['typography']['font_button'] ?? ''));
+        $merged['typography']['font_button'] = $button_font !== '' ? $this->sanitizeFontToken($button_font) : '';
+
+        $merged['layout']['section_spacing'] = $this->sanitizeEnum(
+            $merged['layout']['section_spacing'] ?? $defaults['layout']['section_spacing'],
+            ['compact', 'comfortable', 'spacious'],
+            $defaults['layout']['section_spacing']
+        );
+
+        foreach (['base', 'card', 'button', 'media'] as $radius_key) {
+            $merged['radii'][$radius_key] = $this->sanitizeEnum(
+                $merged['radii'][$radius_key] ?? $defaults['radii'][$radius_key],
+                ['none', 'sm', 'md', 'lg', 'xl', 'pill'],
+                $defaults['radii'][$radius_key]
+            );
+        }
+
+        $merged['buttons']['style'] = $this->sanitizeEnum(
+            $merged['buttons']['style'] ?? $defaults['buttons']['style'],
+            ['primary', 'outline', 'ghost'],
+            $defaults['buttons']['style']
+        );
+        $merged['buttons']['size'] = $this->sanitizeEnum(
+            $merged['buttons']['size'] ?? $defaults['buttons']['size'],
+            ['sm', 'md', 'lg'],
+            $defaults['buttons']['size']
+        );
+        $merged['buttons']['hover_animation'] = $this->sanitizeEnum(
+            $merged['buttons']['hover_animation'] ?? $defaults['buttons']['hover_animation'],
+            ['none', 'lift', 'grow', 'glow', 'glint'],
+            $defaults['buttons']['hover_animation']
+        );
+        $merged['buttons']['glint_color'] = $this->sanitizeColor(
+            $merged['buttons']['glint_color'] ?? $defaults['buttons']['glint_color'],
+            $defaults['buttons']['glint_color']
+        );
+        $merged['buttons']['glint_duration'] = max(250, min(3000, (int) ($merged['buttons']['glint_duration'] ?? $defaults['buttons']['glint_duration'])));
+
+        $merged['cards']['border_width'] = max(0, min(6, (int) ($merged['cards']['border_width'] ?? $defaults['cards']['border_width'])));
+        $merged['cards']['shadow_preset'] = $this->sanitizeEnum(
+            $merged['cards']['shadow_preset'] ?? $defaults['cards']['shadow_preset'],
+            ['none', 'sm', 'md', 'lg'],
+            $defaults['cards']['shadow_preset']
+        );
+        $merged['cards']['surface_motion'] = $this->toBool($merged['cards']['surface_motion'] ?? $defaults['cards']['surface_motion']);
+
+        return $merged;
+    }
+
+    public function getTokenPath(array $tokens, array $path, $default = null) {
+        $cursor = $tokens;
+        foreach ($path as $segment) {
+            if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
+                return $default;
+            }
+            $cursor = $cursor[$segment];
+        }
+        return $cursor;
+    }
+
+    private function sanitizeFontToken($value) {
+        return $this->sanitizeEnum($value, ['sans', 'serif', 'mono', 'display'], 'sans');
+    }
+
+    private function sanitizeEnum($value, array $allowed, $default) {
+        $value = trim((string) $value);
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    private function resolveFontFamilyCss($value, $fallback_css = null) {
+        $value = trim((string) $value);
+
+        if ($value === 'serif') {
+            return "'Playfair Display', Georgia, serif";
+        }
+        if ($value === 'mono') {
+            return "'JetBrains Mono', 'Courier New', monospace";
+        }
+        if ($value === 'display') {
+            return "'Montserrat', 'Arial', sans-serif";
+        }
+        if ($value === 'sans') {
+            return "'Inter', 'Helvetica Neue', Arial, sans-serif";
+        }
+
+        return $fallback_css ?: "'Inter', 'Helvetica Neue', Arial, sans-serif";
+    }
+
+    private function toBool($value) {
+        if (is_bool($value)) {
+            return $value;
+        }
+        return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function hexToRgba($hex, $alpha) {
+        $hex = ltrim($this->sanitizeColor($hex), '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $alpha = max(0, min(1, (float) $alpha));
+
+        return 'rgba(' . $r . ', ' . $g . ', ' . $b . ', ' . rtrim(rtrim(sprintf('%.3F', $alpha), '0'), '.') . ')';
+    }
+
+    public function getImagePresetOptions($with_params = true) {
+        $presets = cmsCore::getModel('images')->getPresetsList($with_params);
+        return ['original' => defined('LANG_PARSER_IMAGE_SIZE_ORIGINAL') ? LANG_PARSER_IMAGE_SIZE_ORIGINAL : 'Оригинал'] + $presets;
+    }
+
+    public function normalizeImagePropsByType($type, array $props) {
+        $definition = $this->getBlockDefinition($type);
+        if (!$definition || empty($definition['schema']['fields'])) {
+            return $props;
+        }
+
+        foreach ($definition['schema']['fields'] as $field) {
+            $key = (string) ($field['key'] ?? '');
+            if ($key === '' || ($field['type'] ?? 'text') !== 'image' || !array_key_exists($key, $props)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeImageFieldValue($props[$key]);
+            if ($normalized !== '') {
+                $props[$key] = $normalized;
+            }
+        }
+
+        return $props;
+    }
+
+    public function normalizeImageFieldValue($value) {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '') {
+                return '';
+            }
+
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            } else {
+                $value = [
+                    'original' => $trimmed,
+                    'display'  => $trimmed,
+                    'preset'   => 'original',
+                    'alt'      => '',
+                    'variants' => ['original' => $trimmed],
+                ];
+            }
+        }
+
+        if (!is_array($value)) {
+            return '';
+        }
+
+        $allowed_presets = array_keys($this->getImagePresetOptions(false));
+        $preset          = (string) ($value['preset'] ?? 'original');
+        if (!in_array($preset, $allowed_presets, true)) {
+            $preset = 'original';
+        }
+
+        $alt = $this->limitMediaText($value['alt'] ?? '', 255);
+
+        $original_ref_candidate = trim((string) ($value['original_path'] ?? ''));
+        $original_ref  = $original_ref_candidate !== '' ? $original_ref_candidate : (string) ($value['original'] ?? '');
+        $original_path = $this->resolveExistingUploadRelativePath($original_ref);
+        $original_url  = $original_path ? $this->buildUploadUrl($original_path) : $this->sanitizeExternalMediaUrl($value['original'] ?? '');
+
+        if ($alt === '' && $original_path) {
+            $alt = $this->humanizeMediaLabel(pathinfo($original_path, PATHINFO_FILENAME));
+        }
+
+        $variants = [];
+        if ($original_url) {
+            $variants['original'] = $original_url;
+        }
+
+        if (!empty($value['variants']) && is_array($value['variants'])) {
+            foreach ($value['variants'] as $variant_preset => $variant_ref) {
+                $variant_preset = (string) $variant_preset;
+                if (!in_array($variant_preset, $allowed_presets, true)) {
+                    continue;
+                }
+
+                $variant_path = $this->resolveExistingUploadRelativePath($variant_ref);
+                $variant_url  = $variant_path ? $this->buildUploadUrl($variant_path) : $this->sanitizeExternalMediaUrl($variant_ref);
+                if ($variant_url) {
+                    $variants[$variant_preset] = $variant_url;
+                }
+            }
+        }
+
+        $display_ref_candidate = trim((string) ($value['display_path'] ?? ''));
+        $display_ref  = $display_ref_candidate !== '' ? $display_ref_candidate : (string) ($value['display'] ?? '');
+        $display_path = $this->resolveExistingUploadRelativePath($display_ref);
+        $display_url  = $display_path ? $this->buildUploadUrl($display_path) : $this->sanitizeExternalMediaUrl($value['display'] ?? '');
+
+        if ($original_path && $preset !== 'original') {
+            $variant = $this->ensureImagePresetVariant($original_path, $preset);
+            if ($variant) {
+                $display_path       = $variant['path'];
+                $display_url        = $variant['url'];
+                $variants[$preset]  = $variant['url'];
+            }
+        }
+
+        if (!$display_url) {
+            if (!empty($variants[$preset])) {
+                $display_url = $variants[$preset];
+            } elseif ($original_url) {
+                $display_url = $original_url;
+            }
+        }
+
+        if (!$display_path && $display_url === $original_url) {
+            $display_path = $original_path;
+        }
+
+        if (!$original_url && $display_url) {
+            $original_url = $display_url;
+        }
+
+        if (!$original_url && !$display_url) {
+            return '';
+        }
+
+        return [
+            'mode'         => $original_path ? 'managed' : 'external',
+            'original'     => $original_url,
+            'original_path' => $original_path ?: '',
+            'display'      => $display_url ?: $original_url,
+            'display_path' => $display_path ?: '',
+            'preset'       => $preset,
+            'alt'          => $alt,
+            'variants'     => $variants,
+        ];
+    }
+
+    public function getMediaLibraryItems($limit = 200) {
+        $upload_path = rtrim((string) cmsConfig::get('upload_path'), '/\\');
+        if (!$upload_path || !is_dir($upload_path)) {
+            return [];
+        }
+
+        $upload_path  = str_replace('\\', '/', $upload_path);
+        $preset_names = array_keys(cmsCore::getModel('images')->getPresetsList(false));
+        usort($preset_names, function ($a, $b) {
+            return strlen((string) $b) <=> strlen((string) $a);
+        });
+
+        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+        $groups      = [];
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($upload_path, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file_info) {
+            if (!$file_info->isFile()) {
+                continue;
+            }
+
+            $ext = strtolower((string) pathinfo($file_info->getFilename(), PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed_ext, true)) {
+                continue;
+            }
+
+            $relative = $this->resolveUploadRelativePath($file_info->getPathname());
+            if (!$relative) {
+                continue;
+            }
+
+            $dirname = str_replace('\\', '/', dirname($relative));
+            $dirname = $dirname === '.' ? '' : $dirname;
+            $stem    = pathinfo($relative, PATHINFO_FILENAME);
+            list($base_stem, $variant_preset) = $this->splitMediaStemPreset($stem, $preset_names);
+
+            $group_key = ($dirname ? $dirname . '/' : '') . $this->normalizeMediaStem($base_stem);
+            if (!isset($groups[$group_key])) {
+                $title = $this->humanizeMediaLabel($base_stem);
+                $groups[$group_key] = [
+                    'title'         => $title,
+                    'alt'           => $title,
+                    'original_path' => '',
+                    'variant_paths' => [],
+                    'mtime'         => 0,
+                ];
+            }
+
+            $groups[$group_key]['variant_paths'][$variant_preset] = $relative;
+            if ($variant_preset === 'original' || !$groups[$group_key]['original_path']) {
+                $groups[$group_key]['original_path'] = $relative;
+            }
+            if ((int) $file_info->getMTime() > $groups[$group_key]['mtime']) {
+                $groups[$group_key]['mtime'] = (int) $file_info->getMTime();
+            }
+        }
+
+        usort($groups, function ($a, $b) {
+            return $b['mtime'] <=> $a['mtime'];
+        });
+
+        if ($limit > 0 && count($groups) > $limit) {
+            $groups = array_slice($groups, 0, $limit);
+        }
+
+        $items = [];
+        foreach ($groups as $group) {
+            $variants = [];
+            foreach ($group['variant_paths'] as $variant_preset => $variant_path) {
+                $variants[$variant_preset] = $this->buildUploadUrl($variant_path);
+            }
+
+            $preview_preset = 'original';
+            foreach (['small', 'normal', 'content_list_small', 'content_list', 'big', 'original'] as $candidate) {
+                if (!empty($variants[$candidate])) {
+                    $preview_preset = $candidate;
+                    break;
+                }
+            }
+
+            $media = $this->normalizeImageFieldValue([
+                'original_path' => $group['original_path'],
+                'preset'        => $preview_preset,
+                'alt'           => $group['alt'],
+                'variants'      => $variants,
+            ]);
+
+            if (!$media) {
+                continue;
+            }
+
+            $generated_presets = [];
+            foreach ($preset_names as $preset_name) {
+                if ($preset_name !== 'original' && !empty($variants[$preset_name])) {
+                    $generated_presets[] = $preset_name;
+                }
+            }
+
+            $available_presets = ['original'];
+            foreach ($generated_presets as $generated_preset) {
+                $available_presets[] = $generated_preset;
+            }
+
+            $items[] = [
+                'title'             => $group['title'],
+                'alt'               => $group['alt'],
+                'original_path'     => $group['original_path'],
+                'preview_url'       => $media['display'],
+                'available_presets' => $available_presets,
+                'generated_presets' => $generated_presets,
+                'generated_count'   => count($generated_presets),
+                'media'             => $media,
+            ];
+        }
+
+        return $items;
+    }
+
+    public function ensureImagePresetVariant($original_relative_path, $preset_name) {
+        $preset_name = (string) $preset_name;
+        if ($preset_name === '' || $preset_name === 'original') {
+            $original_relative_path = $this->resolveUploadRelativePath($original_relative_path);
+            if (!$original_relative_path) {
+                return null;
+            }
+            return [
+                'path' => $original_relative_path,
+                'url'  => $this->buildUploadUrl($original_relative_path),
+            ];
+        }
+
+        $preset = cmsCore::getModel('images')->getPresetByName($preset_name);
+        if (!$preset) {
+            return null;
+        }
+
+        $original_relative_path = $this->resolveUploadRelativePath($original_relative_path);
+        if (!$original_relative_path) {
+            return null;
+        }
+
+        $original_abs = $this->buildUploadAbsolutePath($original_relative_path);
+        if (!$original_abs || !is_file($original_abs)) {
+            return null;
+        }
+
+        $dest_dir     = str_replace('\\', '/', dirname($original_abs)) . '/';
+        if (!is_dir($dest_dir) || !is_writable($dest_dir)) {
+            return null;
+        }
+
+        $base_name    = pathinfo($original_abs, PATHINFO_FILENAME) . ' ' . $preset['name'];
+        $dest_ext     = !empty($preset['convert_format']) ? (string) $preset['convert_format'] : strtolower((string) pathinfo($original_abs, PATHINFO_EXTENSION));
+        $expected_abs = $dest_dir . files_sanitize_name($base_name) . '.' . $dest_ext;
+
+        if (is_file($expected_abs)) {
+            $expected_rel = $this->resolveUploadRelativePath($expected_abs);
+            if ($expected_rel) {
+                return [
+                    'path' => $expected_rel,
+                    'url'  => $this->buildUploadUrl($expected_rel),
+                ];
+            }
+        }
+
+        try {
+            $image = new cmsImages($original_abs);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $generated_abs = $image
+            ->setDestinationDir($dest_dir)
+            ->resizeByPreset($preset, $base_name);
+
+        if (!$generated_abs || !is_file($generated_abs)) {
+            return null;
+        }
+
+        $generated_rel = $this->resolveUploadRelativePath($generated_abs);
+        if (!$generated_rel) {
+            return null;
+        }
+
+        return [
+            'path' => $generated_rel,
+            'url'  => $this->buildUploadUrl($generated_rel),
+        ];
     }
 
     // ── SSR КЭШ ───────────────────────────────────────────────────
@@ -203,12 +1065,12 @@ class modelNordicblocks extends cmsModel {
 
     // ── УТИЛИТЫ ───────────────────────────────────────────────────
 
-    private function sanitizeColor($hex) {
+    private function sanitizeColor($hex, $fallback = '#b42318') {
         $hex = preg_replace('/[^0-9a-fA-F#]/', '', (string) $hex);
         if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex)) {
             return $hex;
         }
-        return '#b42318';
+        return preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) $fallback) ? $fallback : '#b42318';
     }
 
     private function darkenHex($hex, $amount = 20) {
@@ -220,5 +1082,326 @@ class modelNordicblocks extends cmsModel {
         $g = max(0, hexdec(substr($hex, 2, 2)) - $amount);
         $b = max(0, hexdec(substr($hex, 4, 2)) - $amount);
         return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    private function limitMediaText($value, $max) {
+        $value = trim(strip_tags((string) $value));
+        if ($max <= 0) {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $max);
+        }
+        return substr($value, 0, $max);
+    }
+
+    private function sanitizeMediaUrl($value) {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('#^(\/|https?:\/\/)#i', $value)) {
+            return $value;
+        }
+        return '';
+    }
+
+    private function sanitizeExternalMediaUrl($value) {
+        $value = $this->sanitizeMediaUrl($value);
+        if ($value === '') {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $value) ? $value : '';
+    }
+
+    private function buildUploadUrl($relative_path) {
+        $relative_path = ltrim(str_replace('\\', '/', (string) $relative_path), '/');
+        if ($relative_path === '') {
+            return '';
+        }
+        $upload_host = rtrim((string) cmsConfig::get('upload_host'), '/');
+        if ($upload_host) {
+            return $upload_host . '/' . $relative_path;
+        }
+        return '/upload/' . $relative_path;
+    }
+
+    private function buildUploadAbsolutePath($relative_path) {
+        $relative_path = ltrim(str_replace('\\', '/', (string) $relative_path), '/');
+        if ($relative_path === '') {
+            return null;
+        }
+
+        $upload_path = realpath((string) cmsConfig::get('upload_path'));
+        if (!$upload_path) {
+            return null;
+        }
+
+        return str_replace('\\', '/', $upload_path) . '/' . $relative_path;
+    }
+
+    private function resolveUploadRelativePath($ref) {
+        $ref = trim((string) $ref);
+        if ($ref === '') {
+            return null;
+        }
+
+        $ref         = str_replace('\\', '/', $ref);
+        $upload_path = realpath((string) cmsConfig::get('upload_path'));
+        if (!$upload_path) {
+            return null;
+        }
+        $upload_path = str_replace('\\', '/', $upload_path);
+        $upload_host = rtrim((string) cmsConfig::get('upload_host'), '/');
+
+        if ($upload_host && strpos($ref, $upload_host . '/') === 0) {
+            $ref = substr($ref, strlen($upload_host) + 1);
+        } elseif (strpos($ref, '/upload/') === 0) {
+            $ref = substr($ref, 8);
+        } elseif (strpos($ref, 'upload/') === 0) {
+            $ref = substr($ref, 7);
+        } elseif (strpos($ref, $upload_path . '/') === 0) {
+            $ref = substr($ref, strlen($upload_path) + 1);
+        }
+
+        $ref = ltrim($ref, '/');
+        if ($ref === '') {
+            return null;
+        }
+
+        $absolute_guess = $upload_path . '/' . $ref;
+        $absolute_real  = realpath($absolute_guess);
+        if ($absolute_real) {
+            $absolute_real = str_replace('\\', '/', $absolute_real);
+            if (strpos($absolute_real, $upload_path . '/') === 0) {
+                return ltrim(substr($absolute_real, strlen($upload_path)), '/');
+            }
+        }
+
+        return $ref;
+    }
+
+    private function resolveExistingUploadRelativePath($ref) {
+        $path = $this->resolveUploadRelativePath($ref);
+        if (!$path) {
+            return null;
+        }
+
+        $absolute_path = $this->buildUploadAbsolutePath($path);
+        return ($absolute_path && is_file($absolute_path)) ? $path : null;
+    }
+
+    private function splitMediaStemPreset($stem, array $preset_names) {
+        foreach ($preset_names as $preset_name) {
+            if (!$preset_name) {
+                continue;
+            }
+
+            $suffixes = [
+                ' ' . $preset_name,
+                '-' . $this->normalizeMediaStem($preset_name),
+                '_' . str_replace('-', '_', $this->normalizeMediaStem($preset_name)),
+            ];
+
+            foreach ($suffixes as $suffix) {
+                if ($suffix !== '' && substr($stem, -strlen($suffix)) === $suffix) {
+                    return [substr($stem, 0, -strlen($suffix)), $preset_name];
+                }
+            }
+        }
+
+        return [$stem, 'original'];
+    }
+
+    private function humanizeMediaLabel($base_stem) {
+        $label = str_replace(['-', '_'], ' ', (string) $base_stem);
+        $label = preg_replace('/\s+/', ' ', $label);
+        $label = trim($label);
+        if ($label === '') {
+            return 'Изображение';
+        }
+        return function_exists('mb_convert_case') ? mb_convert_case($label, MB_CASE_TITLE, 'UTF-8') : ucfirst($label);
+    }
+
+    private function normalizeMediaStem($value) {
+        $value = strtolower(trim((string) $value));
+        $value = preg_replace('/[\s_]+/', '-', $value);
+        $value = preg_replace('/[^a-z0-9\-]+/', '-', $value);
+        $value = preg_replace('/-+/', '-', $value);
+        return trim($value, '-');
+    }
+
+    private function normalizeBlockSchemaFields(array $schema, $block_type = '') {
+        $fields = [];
+
+        if (!empty($schema['fields']) && is_array($schema['fields'])) {
+            foreach ($schema['fields'] as $field) {
+                if (!is_array($field)) {
+                    continue;
+                }
+
+                $key = $this->normalizeFieldKey($field['key'] ?? '');
+                if (!$key) {
+                    continue;
+                }
+
+                $field['key'] = $key;
+                $fields[]     = $field;
+            }
+
+            return $this->enhanceBlockSchemaFields($fields, $block_type);
+        }
+
+        foreach ($schema as $raw_key => $field) {
+            if (!is_array($field) || !isset($field['type'])) {
+                continue;
+            }
+
+            $key = $this->normalizeFieldKey($raw_key);
+            if (!$key) {
+                continue;
+            }
+
+            $field['key'] = $key;
+            $fields[]     = $field;
+        }
+
+        return $this->enhanceBlockSchemaFields($fields, $block_type);
+    }
+
+    private function enhanceBlockSchemaFields(array $fields, $block_type = '') {
+        foreach (['title', 'heading'] as $base_key) {
+            $source_field = $this->findFieldByKey($fields, $base_key);
+            if (!$source_field) {
+                continue;
+            }
+
+            if (!$this->findFieldByKey($fields, $base_key . '_tag')) {
+                $fields[] = $this->buildHeadingTagField($source_field, $block_type);
+            }
+
+            if (!$this->findFieldByKey($fields, $base_key . '_weight')) {
+                $fields[] = $this->buildHeadingWeightField($source_field, $block_type);
+            }
+        }
+
+        if (!$this->findFieldByKey($fields, 'block_animation')) {
+            $fields[] = $this->buildBlockAnimationField();
+        }
+
+        if (!$this->findFieldByKey($fields, 'block_animation_delay')) {
+            $fields[] = $this->buildBlockAnimationDelayField();
+        }
+
+        return $fields;
+    }
+
+    private function findFieldByKey(array $fields, $key) {
+        foreach ($fields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            if ((string) ($field['key'] ?? '') === (string) $key) {
+                return $field;
+            }
+        }
+
+        return null;
+    }
+
+    private function buildHeadingTagField(array $source_field, $block_type) {
+        $base_key     = (string) ($source_field['key'] ?? 'heading');
+        $field_label  = (string) ($source_field['label'] ?? 'Заголовок');
+        $default_tag  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? 'h1' : 'h2';
+
+        return [
+            'key'           => $base_key . '_tag',
+            'type'          => 'select',
+            'label'         => $field_label . ' — HTML тег',
+            'default'       => $default_tag,
+            'options'       => [
+                ['label' => 'DIV', 'value' => 'div'],
+                ['label' => 'H1', 'value' => 'h1'],
+                ['label' => 'H2', 'value' => 'h2'],
+                ['label' => 'H3', 'value' => 'h3'],
+            ],
+            'section'       => 'typography',
+            'section_label' => 'Типографика',
+            'section_hint'  => 'Размеры, семантика заголовка, жирность и SEO-структура блока.',
+            'help'          => 'Позволяет выбрать SEO-семантику: H1, H2, H3 или нейтральный DIV.',
+        ];
+    }
+
+    private function buildHeadingWeightField(array $source_field, $block_type) {
+        $base_key        = (string) ($source_field['key'] ?? 'heading');
+        $field_label     = (string) ($source_field['label'] ?? 'Заголовок');
+        $default_weight  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? '900' : '800';
+
+        return [
+            'key'           => $base_key . '_weight',
+            'type'          => 'select',
+            'label'         => $field_label . ' — жирность',
+            'default'       => $default_weight,
+            'options'       => [
+                ['label' => '400 — Normal', 'value' => '400'],
+                ['label' => '500 — Medium', 'value' => '500'],
+                ['label' => '600 — SemiBold', 'value' => '600'],
+                ['label' => '700 — Bold', 'value' => '700'],
+                ['label' => '800 — ExtraBold', 'value' => '800'],
+                ['label' => '900 — Black', 'value' => '900'],
+            ],
+            'section'       => 'typography',
+            'section_label' => 'Типографика',
+            'section_hint'  => 'Размеры, семантика заголовка, жирность и SEO-структура блока.',
+            'help'          => 'Шрифтовая пара берется из дизайн-системы, а жирность можно регулировать прямо в блоке.',
+        ];
+    }
+
+    private function buildBlockAnimationField() {
+        return [
+            'key'           => 'block_animation',
+            'type'          => 'select',
+            'label'         => 'Анимация появления',
+            'default'       => 'none',
+            'options'       => [
+                ['label' => 'Без анимации', 'value' => 'none'],
+                ['label' => 'Fade Up', 'value' => 'fade-up'],
+                ['label' => 'Fade In', 'value' => 'fade-in'],
+                ['label' => 'Zoom In', 'value' => 'zoom-in'],
+            ],
+            'section'       => 'effects',
+            'section_label' => 'Появление',
+            'section_hint'  => 'Легкая CSS-анимация блока без дополнительных зависимостей.',
+        ];
+    }
+
+    private function buildBlockAnimationDelayField() {
+        return [
+            'key'           => 'block_animation_delay',
+            'type'          => 'number',
+            'label'         => 'Задержка анимации',
+            'default'       => 0,
+            'min'           => 0,
+            'max'           => 1500,
+            'step'          => 50,
+            'unit'          => 'ms',
+            'section'       => 'effects',
+            'section_label' => 'Появление',
+            'section_hint'  => 'Легкая CSS-анимация блока без дополнительных зависимостей.',
+        ];
+    }
+
+    private function normalizeBlockType($type) {
+        return preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim((string) $type)));
+    }
+
+    private function normalizeFieldKey($key) {
+        $key = preg_replace('/(?<!^)([A-Z])/', '_$1', (string) $key);
+        $key = strtolower($key);
+        $key = preg_replace('/[^a-z0-9_]+/', '_', $key);
+        $key = preg_replace('/_+/', '_', $key);
+        return trim($key, '_');
     }
 }

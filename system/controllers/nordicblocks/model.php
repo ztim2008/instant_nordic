@@ -197,12 +197,12 @@ class modelNordicblocks extends cmsModel {
             return $this->getDefaultTokens();
         }
         $tokens = json_decode($row['tokens_json'], true);
-        return is_array($tokens) ? array_merge($this->getDefaultTokens(), $tokens) : $this->getDefaultTokens();
+        return is_array($tokens) ? $this->normalizeDesignTokens($tokens) : $this->getDefaultTokens();
     }
 
     public function saveDesignTokens(array $tokens) {
         $now  = date('Y-m-d H:i:s');
-        $json = json_encode($tokens, JSON_UNESCAPED_UNICODE);
+        $json = json_encode($this->normalizeDesignTokens($tokens), JSON_UNESCAPED_UNICODE);
         $has  = $this->db->getRow(self::TBL_DESIGN, '1', 'id');
 
         if ($has) {
@@ -221,19 +221,49 @@ class modelNordicblocks extends cmsModel {
 
     public function getDefaultTokens() {
         return [
-            'color_accent'     => '#b42318',
-            'color_bg'         => '#ffffff',
-            'color_bg_alt'     => '#f7f7f6',
-            'color_surface'    => '#ffffff',
-            'color_border'     => '#e5e7eb',
-            'color_text'       => '#1a1a1a',
-            'color_text_muted' => '#6b7280',
-            'font_body'        => 'sans',
-            'font_head'        => 'sans',
-            'radius_preset'    => 'md',
-            'shadow_preset'    => 'md',
-            'section_spacing'  => 'comfortable',
-            'btn_style'        => 'primary',
+            'version'    => 2,
+            'colors'     => [
+                'accent'               => '#b42318',
+                'bg'                   => '#ffffff',
+                'bg_alt'               => '#f7f7f6',
+                'surface'              => '#ffffff',
+                'border'               => '#e5e7eb',
+                'text'                 => '#1a1a1a',
+                'text_muted'           => '#6b7280',
+                'button_primary_bg'    => '#b42318',
+                'button_primary_text'  => '#ffffff',
+                'button_primary_border'=> '#b42318',
+                'button_outline_text'  => '#b42318',
+                'button_outline_border'=> '#b42318',
+                'button_ghost_text'    => '#1a1a1a',
+                'button_ghost_border'  => '#e5e7eb',
+            ],
+            'typography' => [
+                'font_body'   => 'sans',
+                'font_head'   => 'sans',
+                'font_button' => '',
+            ],
+            'layout'     => [
+                'section_spacing' => 'comfortable',
+            ],
+            'radii'      => [
+                'base'   => 'md',
+                'card'   => 'lg',
+                'button' => 'md',
+                'media'  => 'lg',
+            ],
+            'buttons'    => [
+                'style'           => 'primary',
+                'size'            => 'md',
+                'hover_animation' => 'lift',
+                'glint_color'     => '#ffffff',
+                'glint_duration'  => 900,
+            ],
+            'cards'      => [
+                'border_width'   => 1,
+                'shadow_preset'  => 'md',
+                'surface_motion' => true,
+            ],
         ];
     }
 
@@ -251,9 +281,14 @@ class modelNordicblocks extends cmsModel {
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'md',
+                'card_radius_preset' => 'lg',
+                'button_radius_preset' => 'md',
+                'media_radius_preset' => 'lg',
                 'shadow_preset'    => 'md',
                 'section_spacing'  => 'comfortable',
                 'btn_style'        => 'primary',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'lift',
             ],
             'nordic-dark' => [
                 'name'             => 'Nordic Dark',
@@ -267,9 +302,14 @@ class modelNordicblocks extends cmsModel {
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'md',
+                'card_radius_preset' => 'lg',
+                'button_radius_preset' => 'md',
+                'media_radius_preset' => 'lg',
                 'shadow_preset'    => 'lg',
                 'section_spacing'  => 'comfortable',
                 'btn_style'        => 'primary',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'glow',
             ],
             'warm-minimal' => [
                 'name'             => 'Warm Minimal',
@@ -283,9 +323,14 @@ class modelNordicblocks extends cmsModel {
                 'font_body'        => 'sans',
                 'font_head'        => 'serif',
                 'radius_preset'    => 'sm',
+                'card_radius_preset' => 'md',
+                'button_radius_preset' => 'pill',
+                'media_radius_preset' => 'md',
                 'shadow_preset'    => 'sm',
                 'section_spacing'  => 'spacious',
                 'btn_style'        => 'outline',
+                'btn_size'         => 'md',
+                'btn_hover_animation' => 'lift',
             ],
             'corporate' => [
                 'name'             => 'Corporate',
@@ -299,9 +344,14 @@ class modelNordicblocks extends cmsModel {
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'sm',
+                'card_radius_preset' => 'md',
+                'button_radius_preset' => 'sm',
+                'media_radius_preset' => 'md',
                 'shadow_preset'    => 'sm',
                 'section_spacing'  => 'comfortable',
                 'btn_style'        => 'primary',
+                'btn_size'         => 'sm',
+                'btn_hover_animation' => 'grow',
             ],
             'creative' => [
                 'name'             => 'Creative',
@@ -315,14 +365,21 @@ class modelNordicblocks extends cmsModel {
                 'font_body'        => 'sans',
                 'font_head'        => 'sans',
                 'radius_preset'    => 'xl',
+                'card_radius_preset' => 'xl',
+                'button_radius_preset' => 'pill',
+                'media_radius_preset' => 'xl',
                 'shadow_preset'    => 'md',
                 'section_spacing'  => 'spacious',
                 'btn_style'        => 'primary',
+                'btn_size'         => 'lg',
+                'btn_hover_animation' => 'glint',
             ],
         ];
     }
 
     public function buildInlineCss(array $tokens) {
+        $tokens = $this->normalizeDesignTokens($tokens);
+
         $radius_map = [
             'none' => '0px',  'sm' => '4px',  'md' => '8px',
             'lg'   => '16px', 'xl' => '24px', 'pill' => '9999px',
@@ -338,44 +395,312 @@ class modelNordicblocks extends cmsModel {
             'comfortable' => 'clamp(3rem, 2rem + 5vw, 6rem)',
             'spacious'    => 'clamp(4rem, 2.5rem + 7.5vw, 9rem)',
         ];
+        $button_size_map = [
+            'sm' => ['font' => '0.9375rem', 'pad_y' => '0.55rem', 'pad_x' => '1.1rem'],
+            'md' => ['font' => '1rem',      'pad_y' => '0.7rem',  'pad_x' => '1.5rem'],
+            'lg' => ['font' => '1.125rem',  'pad_y' => '0.9rem',  'pad_x' => '1.9rem'],
+        ];
+        $button_animation_map = [
+            'none'  => ['transform' => 'none', 'shadow' => 'none', 'glint' => '0'],
+            'lift'  => ['transform' => 'translateY(-2px)', 'shadow' => $shadow_map['lg'], 'glint' => '0'],
+            'grow'  => ['transform' => 'scale(1.03)', 'shadow' => $shadow_map['md'], 'glint' => '0'],
+            'glow'  => ['transform' => 'none', 'shadow' => '0 0 0 4px ' . $this->hexToRgba($this->getTokenPath($tokens, ['colors', 'accent'], '#b42318'), 0.16), 'glint' => '0'],
+            'glint' => ['transform' => 'none', 'shadow' => $shadow_map['md'], 'glint' => '1'],
+        ];
 
-        $accent    = $this->sanitizeColor($tokens['color_accent']     ?? '#b42318');
-        $bg        = $this->sanitizeColor($tokens['color_bg']         ?? '#ffffff');
-        $bgAlt     = $this->sanitizeColor($tokens['color_bg_alt']     ?? '#f7f7f6');
-        $surface   = $this->sanitizeColor($tokens['color_surface']    ?? '#ffffff');
-        $border    = $this->sanitizeColor($tokens['color_border']     ?? '#e5e7eb');
-        $text      = $this->sanitizeColor($tokens['color_text']       ?? '#1a1a1a');
-        $muted     = $this->sanitizeColor($tokens['color_text_muted'] ?? '#6b7280');
-        $radius    = $radius_map[$tokens['radius_preset']    ?? 'md']          ?? '8px';
-        $shadow    = $shadow_map[$tokens['shadow_preset']    ?? 'md']          ?? '0 4px 12px 0 rgb(0 0 0 / .08)';
-        $sectionPy = $section_py_map[$tokens['section_spacing'] ?? 'comfortable'] ?? 'clamp(3rem, 2rem + 5vw, 6rem)';
+        $accent    = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'accent'], '#b42318'));
+        $bg        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'bg'], '#ffffff'), '#ffffff');
+        $bgAlt     = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'bg_alt'], '#f7f7f6'), '#f7f7f6');
+        $surface   = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'surface'], '#ffffff'), '#ffffff');
+        $border    = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'border'], '#e5e7eb'), '#e5e7eb');
+        $text      = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'text'], '#1a1a1a'), '#1a1a1a');
+        $muted     = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'text_muted'], '#6b7280'), '#6b7280');
 
-        $fontBody = ($tokens['font_body'] ?? 'sans') === 'serif'
-            ? "'Playfair Display', Georgia, serif"
-            : "'Inter', 'Helvetica Neue', Arial, sans-serif";
-        $fontHead = ($tokens['font_head'] ?? 'sans') === 'serif'
-            ? "'Playfair Display', Georgia, serif"
-            : "'Inter', 'Helvetica Neue', Arial, sans-serif";
+        $base_radius   = $radius_map[$this->getTokenPath($tokens, ['radii', 'base'], 'md')]   ?? '8px';
+        $card_radius   = $radius_map[$this->getTokenPath($tokens, ['radii', 'card'], 'lg')]   ?? '16px';
+        $button_radius = $radius_map[$this->getTokenPath($tokens, ['radii', 'button'], 'md')] ?? '8px';
+        $media_radius  = $radius_map[$this->getTokenPath($tokens, ['radii', 'media'], 'lg')]  ?? '16px';
+        $card_shadow   = $shadow_map[$this->getTokenPath($tokens, ['cards', 'shadow_preset'], 'md')] ?? $shadow_map['md'];
+        $section_py    = $section_py_map[$this->getTokenPath($tokens, ['layout', 'section_spacing'], 'comfortable')] ?? $section_py_map['comfortable'];
 
-        $accentAlt = $this->darkenHex($accent, 15);
+        $font_body   = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_body'], 'sans'));
+        $font_head   = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_head'], 'sans'));
+        $font_button = $this->resolveFontFamilyCss($this->getTokenPath($tokens, ['typography', 'font_button'], ''), $font_body);
 
-        return ":root{"
-            . "--nb-color-accent:{$accent};"
-            . "--nb-color-accent-alt:{$accentAlt};"
-            . "--nb-color-bg:{$bg};"
-            . "--nb-color-bg-alt:{$bgAlt};"
-            . "--nb-color-surface:{$surface};"
-            . "--nb-color-border:{$border};"
-            . "--nb-color-text:{$text};"
-            . "--nb-color-text-muted:{$muted};"
-            . "--nb-radius:{$radius};"
-            . "--nb-radius-card:{$radius};"
-            . "--nb-radius-btn:{$radius};"
-            . "--nb-shadow-card:{$shadow};"
-            . "--nb-section-py:{$sectionPy};"
-            . "--nb-font-body:{$fontBody};"
-            . "--nb-font-head:{$fontHead};"
-            . "}";
+        $button_size_key = $this->getTokenPath($tokens, ['buttons', 'size'], 'md');
+        $button_size     = $button_size_map[$button_size_key] ?? $button_size_map['md'];
+        $button_anim_key = $this->getTokenPath($tokens, ['buttons', 'hover_animation'], 'lift');
+        $button_anim     = $button_animation_map[$button_anim_key] ?? $button_animation_map['lift'];
+
+        $primary_bg            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_bg'], $accent), $accent);
+        $primary_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_text'], '#ffffff'), '#ffffff');
+        $primary_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_primary_border'], $primary_bg), $primary_bg);
+        $primary_bg_hover      = $this->darkenHex($primary_bg, 12);
+        $primary_bg_active     = $this->darkenHex($primary_bg, 20);
+        $primary_border_hover  = $this->darkenHex($primary_border, 12);
+        $primary_border_active = $this->darkenHex($primary_border, 20);
+
+        $outline_text          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_text'], $accent), $accent);
+        $outline_border        = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_outline_border'], $accent), $accent);
+        $outline_bg_hover      = $outline_border;
+        $outline_bg_active     = $this->darkenHex($outline_border, 18);
+
+        $ghost_text            = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_text'], $text), $text);
+        $ghost_border          = $this->sanitizeColor($this->getTokenPath($tokens, ['colors', 'button_ghost_border'], $border), $border);
+        $ghost_bg_hover        = $bgAlt;
+        $ghost_bg_active       = $this->darkenHex($bgAlt, 8);
+
+        $accent_alt            = $this->darkenHex($accent, 15);
+        $glint_color           = $this->sanitizeColor($this->getTokenPath($tokens, ['buttons', 'glint_color'], '#ffffff'), '#ffffff');
+        $glint_duration        = max(250, min(3000, (int) $this->getTokenPath($tokens, ['buttons', 'glint_duration'], 900)));
+        $card_border_width     = max(0, min(6, (int) $this->getTokenPath($tokens, ['cards', 'border_width'], 1)));
+        $surface_motion        = $this->toBool($this->getTokenPath($tokens, ['cards', 'surface_motion'], true));
+        $surface_motion_speed  = $surface_motion ? '180ms' : '0ms';
+        $focus_ring            = $this->hexToRgba($accent, 0.18);
+
+        return ':root{'
+            . '--nb-color-accent:' . $accent . ';'
+            . '--nb-color-accent-alt:' . $accent_alt . ';'
+            . '--nb-color-bg:' . $bg . ';'
+            . '--nb-color-bg-alt:' . $bgAlt . ';'
+            . '--nb-color-surface:' . $surface . ';'
+            . '--nb-color-border:' . $border . ';'
+            . '--nb-color-text:' . $text . ';'
+            . '--nb-color-text-muted:' . $muted . ';'
+            . '--nb-radius:' . $base_radius . ';'
+            . '--nb-radius-card:' . $card_radius . ';'
+            . '--nb-radius-btn:' . $button_radius . ';'
+            . '--nb-radius-media:' . $media_radius . ';'
+            . '--nb-shadow-card:' . $card_shadow . ';'
+            . '--nb-border-width:' . $card_border_width . 'px;'
+            . '--nb-section-py:' . $section_py . ';'
+            . '--nb-section-padding:' . $section_py . ';'
+            . '--nb-font-body:' . $font_body . ';'
+            . '--nb-font-head:' . $font_head . ';'
+            . '--nb-font-button:' . $font_button . ';'
+            . '--nb-btn-font-size:' . $button_size['font'] . ';'
+            . '--nb-btn-padding-y:' . $button_size['pad_y'] . ';'
+            . '--nb-btn-padding-x:' . $button_size['pad_x'] . ';'
+            . '--nb-btn-primary-bg:' . $primary_bg . ';'
+            . '--nb-btn-primary-text:' . $primary_text . ';'
+            . '--nb-btn-primary-border:' . $primary_border . ';'
+            . '--nb-btn-primary-bg-hover:' . $primary_bg_hover . ';'
+            . '--nb-btn-primary-text-hover:' . $primary_text . ';'
+            . '--nb-btn-primary-border-hover:' . $primary_border_hover . ';'
+            . '--nb-btn-primary-bg-active:' . $primary_bg_active . ';'
+            . '--nb-btn-primary-text-active:' . $primary_text . ';'
+            . '--nb-btn-primary-border-active:' . $primary_border_active . ';'
+            . '--nb-btn-outline-bg:transparent;'
+            . '--nb-btn-outline-text:' . $outline_text . ';'
+            . '--nb-btn-outline-border:' . $outline_border . ';'
+            . '--nb-btn-outline-bg-hover:' . $outline_bg_hover . ';'
+            . '--nb-btn-outline-text-hover:' . $primary_text . ';'
+            . '--nb-btn-outline-border-hover:' . $outline_border . ';'
+            . '--nb-btn-outline-bg-active:' . $outline_bg_active . ';'
+            . '--nb-btn-outline-text-active:' . $primary_text . ';'
+            . '--nb-btn-outline-border-active:' . $outline_bg_active . ';'
+            . '--nb-btn-ghost-bg:transparent;'
+            . '--nb-btn-ghost-text:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border:' . $ghost_border . ';'
+            . '--nb-btn-ghost-bg-hover:' . $ghost_bg_hover . ';'
+            . '--nb-btn-ghost-text-hover:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border-hover:' . $ghost_border . ';'
+            . '--nb-btn-ghost-bg-active:' . $ghost_bg_active . ';'
+            . '--nb-btn-ghost-text-active:' . $ghost_text . ';'
+            . '--nb-btn-ghost-border-active:' . $ghost_border . ';'
+            . '--nb-btn-hover-transform:' . $button_anim['transform'] . ';'
+            . '--nb-btn-hover-shadow:' . $button_anim['shadow'] . ';'
+            . '--nb-btn-active-transform:scale(.98);'
+            . '--nb-btn-glint-opacity:' . $button_anim['glint'] . ';'
+            . '--nb-btn-glint-color:' . $glint_color . ';'
+            . '--nb-btn-glint-duration:' . $glint_duration . 'ms;'
+            . '--nb-surface-motion-duration:' . $surface_motion_speed . ';'
+            . '--nb-focus-ring:' . $focus_ring . ';'
+            . '}';
+    }
+
+    public function normalizeDesignTokens(array $tokens) {
+        $defaults = $this->getDefaultTokens();
+
+        $is_legacy_flat = isset($tokens['color_accent']) || isset($tokens['font_body']) || isset($tokens['radius_preset']);
+        if ($is_legacy_flat) {
+            $tokens = [
+                'version'    => 2,
+                'colors'     => [
+                    'accent'                => $tokens['color_accent'] ?? null,
+                    'bg'                    => $tokens['color_bg'] ?? null,
+                    'bg_alt'                => $tokens['color_bg_alt'] ?? null,
+                    'surface'               => $tokens['color_surface'] ?? null,
+                    'border'                => $tokens['color_border'] ?? null,
+                    'text'                  => $tokens['color_text'] ?? null,
+                    'text_muted'            => $tokens['color_text_muted'] ?? null,
+                    'button_primary_bg'     => $tokens['button_primary_bg'] ?? ($tokens['color_accent'] ?? null),
+                    'button_primary_text'   => $tokens['button_primary_text'] ?? null,
+                    'button_primary_border' => $tokens['button_primary_border'] ?? ($tokens['color_accent'] ?? null),
+                    'button_outline_text'   => $tokens['button_outline_text'] ?? ($tokens['color_accent'] ?? null),
+                    'button_outline_border' => $tokens['button_outline_border'] ?? ($tokens['color_accent'] ?? null),
+                    'button_ghost_text'     => $tokens['button_ghost_text'] ?? ($tokens['color_text'] ?? null),
+                    'button_ghost_border'   => $tokens['button_ghost_border'] ?? ($tokens['color_border'] ?? null),
+                ],
+                'typography' => [
+                    'font_body'   => $tokens['font_body'] ?? null,
+                    'font_head'   => $tokens['font_head'] ?? null,
+                    'font_button' => $tokens['font_button'] ?? null,
+                ],
+                'layout'     => [
+                    'section_spacing' => $tokens['section_spacing'] ?? null,
+                ],
+                'radii'      => [
+                    'base'   => $tokens['radius_preset'] ?? null,
+                    'card'   => $tokens['card_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                    'button' => $tokens['button_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                    'media'  => $tokens['media_radius_preset'] ?? ($tokens['radius_preset'] ?? null),
+                ],
+                'buttons'    => [
+                    'style'           => $tokens['btn_style'] ?? null,
+                    'size'            => $tokens['btn_size'] ?? null,
+                    'hover_animation' => $tokens['btn_hover_animation'] ?? null,
+                    'glint_color'     => $tokens['btn_glint_color'] ?? null,
+                    'glint_duration'  => $tokens['btn_glint_duration'] ?? null,
+                ],
+                'cards'      => [
+                    'border_width'   => $tokens['card_border_width'] ?? null,
+                    'shadow_preset'  => $tokens['shadow_preset'] ?? null,
+                    'surface_motion' => $tokens['surface_motion'] ?? null,
+                ],
+            ];
+        }
+
+        $merged = array_replace_recursive($defaults, $tokens);
+
+        $merged['version'] = 2;
+
+        $merged['colors']['accent']                 = $this->sanitizeColor($merged['colors']['accent'] ?? $defaults['colors']['accent']);
+        $merged['colors']['bg']                     = $this->sanitizeColor($merged['colors']['bg'] ?? $defaults['colors']['bg'], $defaults['colors']['bg']);
+        $merged['colors']['bg_alt']                 = $this->sanitizeColor($merged['colors']['bg_alt'] ?? $defaults['colors']['bg_alt'], $defaults['colors']['bg_alt']);
+        $merged['colors']['surface']                = $this->sanitizeColor($merged['colors']['surface'] ?? $defaults['colors']['surface'], $defaults['colors']['surface']);
+        $merged['colors']['border']                 = $this->sanitizeColor($merged['colors']['border'] ?? $defaults['colors']['border'], $defaults['colors']['border']);
+        $merged['colors']['text']                   = $this->sanitizeColor($merged['colors']['text'] ?? $defaults['colors']['text'], $defaults['colors']['text']);
+        $merged['colors']['text_muted']             = $this->sanitizeColor($merged['colors']['text_muted'] ?? $defaults['colors']['text_muted'], $defaults['colors']['text_muted']);
+        $merged['colors']['button_primary_bg']      = $this->sanitizeColor($merged['colors']['button_primary_bg'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_primary_text']    = $this->sanitizeColor($merged['colors']['button_primary_text'] ?? '#ffffff', '#ffffff');
+        $merged['colors']['button_primary_border']  = $this->sanitizeColor($merged['colors']['button_primary_border'] ?? $merged['colors']['button_primary_bg'], $merged['colors']['button_primary_bg']);
+        $merged['colors']['button_outline_text']    = $this->sanitizeColor($merged['colors']['button_outline_text'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_outline_border']  = $this->sanitizeColor($merged['colors']['button_outline_border'] ?? $merged['colors']['accent'], $merged['colors']['accent']);
+        $merged['colors']['button_ghost_text']      = $this->sanitizeColor($merged['colors']['button_ghost_text'] ?? $merged['colors']['text'], $merged['colors']['text']);
+        $merged['colors']['button_ghost_border']    = $this->sanitizeColor($merged['colors']['button_ghost_border'] ?? $merged['colors']['border'], $merged['colors']['border']);
+
+        foreach (['font_body', 'font_head'] as $font_key) {
+            $merged['typography'][$font_key] = $this->sanitizeFontToken($merged['typography'][$font_key] ?? $defaults['typography'][$font_key]);
+        }
+
+        $button_font = trim((string) ($merged['typography']['font_button'] ?? ''));
+        $merged['typography']['font_button'] = $button_font !== '' ? $this->sanitizeFontToken($button_font) : '';
+
+        $merged['layout']['section_spacing'] = $this->sanitizeEnum(
+            $merged['layout']['section_spacing'] ?? $defaults['layout']['section_spacing'],
+            ['compact', 'comfortable', 'spacious'],
+            $defaults['layout']['section_spacing']
+        );
+
+        foreach (['base', 'card', 'button', 'media'] as $radius_key) {
+            $merged['radii'][$radius_key] = $this->sanitizeEnum(
+                $merged['radii'][$radius_key] ?? $defaults['radii'][$radius_key],
+                ['none', 'sm', 'md', 'lg', 'xl', 'pill'],
+                $defaults['radii'][$radius_key]
+            );
+        }
+
+        $merged['buttons']['style'] = $this->sanitizeEnum(
+            $merged['buttons']['style'] ?? $defaults['buttons']['style'],
+            ['primary', 'outline', 'ghost'],
+            $defaults['buttons']['style']
+        );
+        $merged['buttons']['size'] = $this->sanitizeEnum(
+            $merged['buttons']['size'] ?? $defaults['buttons']['size'],
+            ['sm', 'md', 'lg'],
+            $defaults['buttons']['size']
+        );
+        $merged['buttons']['hover_animation'] = $this->sanitizeEnum(
+            $merged['buttons']['hover_animation'] ?? $defaults['buttons']['hover_animation'],
+            ['none', 'lift', 'grow', 'glow', 'glint'],
+            $defaults['buttons']['hover_animation']
+        );
+        $merged['buttons']['glint_color'] = $this->sanitizeColor(
+            $merged['buttons']['glint_color'] ?? $defaults['buttons']['glint_color'],
+            $defaults['buttons']['glint_color']
+        );
+        $merged['buttons']['glint_duration'] = max(250, min(3000, (int) ($merged['buttons']['glint_duration'] ?? $defaults['buttons']['glint_duration'])));
+
+        $merged['cards']['border_width'] = max(0, min(6, (int) ($merged['cards']['border_width'] ?? $defaults['cards']['border_width'])));
+        $merged['cards']['shadow_preset'] = $this->sanitizeEnum(
+            $merged['cards']['shadow_preset'] ?? $defaults['cards']['shadow_preset'],
+            ['none', 'sm', 'md', 'lg'],
+            $defaults['cards']['shadow_preset']
+        );
+        $merged['cards']['surface_motion'] = $this->toBool($merged['cards']['surface_motion'] ?? $defaults['cards']['surface_motion']);
+
+        return $merged;
+    }
+
+    public function getTokenPath(array $tokens, array $path, $default = null) {
+        $cursor = $tokens;
+        foreach ($path as $segment) {
+            if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
+                return $default;
+            }
+            $cursor = $cursor[$segment];
+        }
+        return $cursor;
+    }
+
+    private function sanitizeFontToken($value) {
+        return $this->sanitizeEnum($value, ['sans', 'serif', 'mono', 'display'], 'sans');
+    }
+
+    private function sanitizeEnum($value, array $allowed, $default) {
+        $value = trim((string) $value);
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+
+    private function resolveFontFamilyCss($value, $fallback_css = null) {
+        $value = trim((string) $value);
+
+        if ($value === 'serif') {
+            return "'Playfair Display', Georgia, serif";
+        }
+        if ($value === 'mono') {
+            return "'JetBrains Mono', 'Courier New', monospace";
+        }
+        if ($value === 'display') {
+            return "'Montserrat', 'Arial', sans-serif";
+        }
+        if ($value === 'sans') {
+            return "'Inter', 'Helvetica Neue', Arial, sans-serif";
+        }
+
+        return $fallback_css ?: "'Inter', 'Helvetica Neue', Arial, sans-serif";
+    }
+
+    private function toBool($value) {
+        if (is_bool($value)) {
+            return $value;
+        }
+        return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function hexToRgba($hex, $alpha) {
+        $hex = ltrim($this->sanitizeColor($hex), '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $alpha = max(0, min(1, (float) $alpha));
+
+        return 'rgba(' . $r . ', ' . $g . ', ' . $b . ', ' . rtrim(rtrim(sprintf('%.3F', $alpha), '0'), '.') . ')';
     }
 
     public function getImagePresetOptions($with_params = true) {
@@ -740,12 +1065,12 @@ class modelNordicblocks extends cmsModel {
 
     // ── УТИЛИТЫ ───────────────────────────────────────────────────
 
-    private function sanitizeColor($hex) {
+    private function sanitizeColor($hex, $fallback = '#b42318') {
         $hex = preg_replace('/[^0-9a-fA-F#]/', '', (string) $hex);
         if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $hex)) {
             return $hex;
         }
-        return '#b42318';
+        return preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', (string) $fallback) ? $fallback : '#b42318';
     }
 
     private function darkenHex($hex, $amount = 20) {

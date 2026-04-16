@@ -250,22 +250,41 @@
 }
 
 .nb-hero-classic .nb-btn--primary {
-    background: var(--nb-hero-classic-button-bg, var(--nb-color-accent));
-    color: var(--nb-hero-classic-button-text, #fff);
-    border-color: var(--nb-hero-classic-button-border, var(--nb-color-accent));
+    background: var(--nb-hero-classic-button-bg, var(--nb-btn-primary-bg, var(--nb-color-accent)));
+    color: var(--nb-hero-classic-button-text, var(--nb-btn-primary-text, #fff));
+    border-color: var(--nb-hero-classic-button-border, var(--nb-btn-primary-border, var(--nb-color-accent)));
     border-radius: var(--nb-hero-classic-button-radius, var(--nb-radius-btn, .5rem));
 }
 
+.nb-hero-classic .nb-btn--primary:hover {
+    background: var(--nb-hero-classic-button-bg-hover, var(--nb-btn-primary-bg-hover, var(--nb-color-accent-alt)));
+    color: var(--nb-hero-classic-button-text-hover, var(--nb-btn-primary-text-hover, #fff));
+    border-color: var(--nb-hero-classic-button-border-hover, var(--nb-btn-primary-border-hover, var(--nb-color-accent-alt)));
+}
+
+.nb-hero-classic .nb-btn--primary:active {
+    background: var(--nb-hero-classic-button-bg-active, var(--nb-btn-primary-bg-active, var(--nb-color-accent-alt)));
+    color: var(--nb-hero-classic-button-text-active, var(--nb-btn-primary-text-active, #fff));
+    border-color: var(--nb-hero-classic-button-border-active, var(--nb-btn-primary-border-active, var(--nb-color-accent-alt)));
+}
+
 .nb-hero-classic .nb-btn--outline {
-    background: transparent;
-    color: var(--nb-hero-classic-button-text, var(--nb-color-accent));
-    border-color: var(--nb-hero-classic-button-border, var(--nb-color-accent));
+    background: var(--nb-hero-classic-button-outline-bg, var(--nb-btn-outline-bg, transparent));
+    color: var(--nb-hero-classic-button-outline-text, var(--nb-btn-outline-text, var(--nb-color-accent)));
+    border-color: var(--nb-hero-classic-button-outline-border, var(--nb-btn-outline-border, var(--nb-color-accent)));
     border-radius: var(--nb-hero-classic-button-radius, var(--nb-radius-btn, .5rem));
 }
 
 .nb-hero-classic .nb-btn--outline:hover {
-    background: var(--nb-hero-classic-button-bg, var(--nb-color-accent));
-    color: var(--nb-hero-classic-button-text, #fff);
+    background: var(--nb-hero-classic-button-outline-bg-hover, var(--nb-btn-outline-bg-hover, var(--nb-color-accent)));
+    color: var(--nb-hero-classic-button-outline-text-hover, var(--nb-btn-outline-text-hover, #fff));
+    border-color: var(--nb-hero-classic-button-outline-border-hover, var(--nb-btn-outline-border-hover, var(--nb-color-accent)));
+}
+
+.nb-hero-classic .nb-btn--outline:active {
+    background: var(--nb-hero-classic-button-outline-bg-active, var(--nb-btn-outline-bg-active, var(--nb-color-accent-alt)));
+    color: var(--nb-hero-classic-button-outline-text-active, var(--nb-btn-outline-text-active, #fff));
+    border-color: var(--nb-hero-classic-button-outline-border-active, var(--nb-btn-outline-border-active, var(--nb-color-accent-alt)));
 }
 
 .nb-hero-classic--left .nb-hero-classic__actions {
@@ -301,6 +320,27 @@
     background:    var(--nb-color-bg);
     color:         var(--nb-color-text);
 }
+.nb-surface,
+.nb-card {
+    background: var(--nb-color-surface, var(--nb-color-bg));
+    border: var(--nb-border-width, 1px) solid var(--nb-color-border, #e5e7eb);
+    border-radius: var(--nb-radius-card, .75rem);
+    box-shadow: var(--nb-shadow-card, none);
+    transition:
+        background-color var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease),
+        border-color var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease),
+        box-shadow var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease),
+        transform var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease);
+}
+
+.nb-media {
+    border-radius: var(--nb-radius-media, var(--nb-radius-card, .75rem));
+    overflow: hidden;
+    transition:
+        border-radius var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease),
+        transform var(--nb-surface-motion-duration, 0ms) var(--nb-ease, ease);
+}
+
 .nb-section--alt {
     background: var(--nb-color-bg-alt);
 }

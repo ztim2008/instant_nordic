@@ -26,13 +26,7 @@ class actionNordicblocksBlockCanvas extends cmsAction {
 html,body{margin:0;padding:0;font-family:var(--nb-font-body,system-ui,sans-serif);background:#fff;color:var(--nb-color-text,#1a1a1a)}
 img{max-width:100%;height:auto;display:block}
 a{color:inherit;text-decoration:none}
-.nb-container{width:min(100%,1200px);margin-inline:auto;padding-inline:clamp(1rem,4vw,2.5rem)}
-.nb-btn{display:inline-flex;align-items:center;gap:.4em;padding:.65em 1.5em;border-radius:var(--nb-radius-btn,.5rem);font-size:var(--nb-text-base,1rem);font-weight:600;cursor:pointer;border:2px solid transparent;transition:opacity .15s,transform .1s;text-decoration:none}
-.nb-btn:active{transform:scale(.97)}
-.nb-btn--primary{background:var(--nb-color-accent,#b42318);color:#fff;border-color:var(--nb-color-accent,#b42318)}
-.nb-btn--primary:hover{opacity:.9}
-.nb-btn--outline{background:transparent;color:var(--nb-color-accent,#b42318);border-color:var(--nb-color-accent,#b42318)}
-.nb-btn--outline:hover{background:var(--nb-color-accent,#b42318);color:#fff}
+        .nb-container{width:min(100%,1200px);margin-inline:auto;padding-inline:clamp(1rem,4vw,2.5rem)}
 ';
 
         $block_html = $this->renderSingleBlock($block);
