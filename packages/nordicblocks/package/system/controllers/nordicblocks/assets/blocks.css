@@ -428,6 +428,96 @@
 }
 
 /* ════════════════════════════════════
+   FAQ
+   ════════════════════════════════════ */
+
+.nb-faq__intro {
+    max-width: 720px;
+    margin: calc(var(--nb-space-sm, .75rem) * -1) auto var(--nb-space-2xl, 2rem);
+    font-size: var(--nb-text-lg, 1.125rem);
+    line-height: var(--nb-leading-relaxed, 1.65);
+    color: var(--nb-color-text-muted);
+    text-align: center;
+}
+
+.nb-faq__list {
+    display: grid;
+    gap: var(--nb-space-md, 1rem);
+}
+
+.nb-faq__item {
+    overflow: hidden;
+}
+
+.nb-faq__question {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem;
+    cursor: pointer;
+    font-family: var(--nb-font-head);
+    font-size: var(--nb-text-lg, 1.125rem);
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--nb-color-text);
+    transition: background-color .2s ease;
+}
+
+.nb-faq__question::-webkit-details-marker {
+    display: none;
+}
+
+.nb-faq__question:hover {
+    background: color-mix(in srgb, var(--nb-color-accent) 5%, transparent);
+}
+
+.nb-faq__icon {
+    position: relative;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--nb-color-accent) 18%, var(--nb-color-border));
+    background: color-mix(in srgb, var(--nb-color-accent) 10%, transparent);
+}
+
+.nb-faq__icon::before,
+.nb-faq__icon::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: .75rem;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--nb-color-accent);
+    transform: translate(-50%, -50%);
+    transition: transform .2s ease, opacity .2s ease;
+}
+
+.nb-faq__icon::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.nb-faq__item[open] .nb-faq__icon::after {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(90deg) scaleX(.2);
+}
+
+.nb-faq__answer {
+    padding: 0 1.25rem 1.25rem;
+    color: var(--nb-color-text-muted);
+    font-size: var(--nb-text-base, 1rem);
+    line-height: var(--nb-leading-relaxed, 1.7);
+}
+
+.nb-faq__answer p {
+    margin: 0;
+}
+
+/* ════════════════════════════════════
    TEXT SECTION
    ════════════════════════════════════ */
 

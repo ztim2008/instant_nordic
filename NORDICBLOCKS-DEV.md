@@ -163,6 +163,11 @@ blocks/
     { "key": "image",     "label": "Изображение", "type": "image",    "default": "" },
     { "key": "btn_url",   "label": "Ссылка",      "type": "url",      "default": "#" },
     { "key": "icon",      "label": "Иконка",      "type": "icon",     "default": "star" },
+    { "key": "items",     "label": "Элементы",    "type": "repeater", "default": [],
+      "fields": [
+        { "key": "title", "label": "Заголовок", "type": "text", "default": "..." },
+        { "key": "text",  "label": "Текст",      "type": "textarea", "default": "..." }
+      ] },
     { "key": "theme",     "label": "Тема",        "type": "select",   "default": "light",
       "options": [{ "value": "light", "label": "Светлая" }] }
   ]
@@ -180,7 +185,10 @@ blocks/
 | `image` | кнопка «Выбрать фото» → стандартный file picker InstantCMS | ⏳ |
 | `url` | `<input type="text">` с кнопкой «Страница CMS» | ⏳ |
 | `icon` | кнопка «Иконка» → сетка Font Awesome 5 Free | ⏳ |
+| `repeater` | список карточек с вложенными полями, хранится как массив в `props_json` | ✅ |
 | `richtext` | TinyMCE / встроенный WYS | 🔜 |
+
+Для `repeater` правило простое: повторяющиеся элементы (`items`, `questions`, `steps`) не размазываем по `item1_*`, `item2_*`, а храним одним массивом внутри `props_json`.
 
 ---
 
@@ -886,6 +894,10 @@ Legacy `pages` слой оставлен для совместимости, но
 - 🟡 В работе: Placement и базовый block editor уже есть.
 - 🟢 В документе зафиксированы Block Contract v3 и Adapter Contract v1.
 - ⚪ Следующее: утвердить Inspector IA v2 как отдельный формальный UI-контракт.
+
+Implementation-ready registry слой для этого этапа вынесен отдельно:
+
+- `docs/nordicblocks/INSPECTOR-V2-IMPLEMENTATION-REGISTRY.md`
 
 #### Этап 2
 

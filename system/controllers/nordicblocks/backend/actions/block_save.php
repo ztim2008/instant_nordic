@@ -63,23 +63,48 @@ class actionNordicblocksBlockSave extends cmsAction {
             return [];
         }
 
+        return $this->loadSchemaFieldDefinitions($definition['schema']['fields']);
+    }
+
+    private function loadSchemaFieldDefinitions(array $schema_fields) {
         $fields = [];
-        foreach ($definition['schema']['fields'] as $field) {
-            $key = (string) ($field['key'] ?? '');
-            if ($key === '') {
+
+        foreach ($schema_fields as $field) {
+            if (!is_array($field)) {
                 continue;
             }
-            $fields[] = [
-                'key'     => $key,
-                'type'    => (string) ($field['type'] ?? 'text'),
-                'default' => $field['default'] ?? '',
-                'options' => is_array($field['options'] ?? null) ? $field['options'] : [],
-                'min'     => $field['min'] ?? null,
-                'max'     => $field['max'] ?? null,
-            ];
+
+            $normalized = $this->buildSchemaFieldDefinition($field);
+            if ($normalized) {
+                $fields[] = $normalized;
+            }
         }
 
         return $fields;
+    }
+
+    private function buildSchemaFieldDefinition(array $field) {
+        $key = preg_replace('/[^a-z0-9_]/', '', strtolower((string) ($field['key'] ?? '')));
+        if ($key === '') {
+            return null;
+        }
+
+        $normalized = [
+            'key'       => $key,
+            'type'      => (string) ($field['type'] ?? 'text'),
+            'default'   => $field['default'] ?? '',
+            'options'   => is_array($field['options'] ?? null) ? $field['options'] : [],
+            'min'       => $field['min'] ?? null,
+            'max'       => $field['max'] ?? null,
+            'max_items' => $field['max_items'] ?? null,
+            'fields'    => [],
+        ];
+
+        if (strtolower($normalized['type']) === 'repeater' && !empty($field['fields']) && is_array($field['fields'])) {
+            $normalized['fields'] = $this->loadSchemaFieldDefinitions($field['fields']);
+        }
+
+        return $normalized;
     }
 
     private function sanitizeFallbackProps(array $incoming_props, array $stored_props) {
@@ -103,6 +128,11 @@ class actionNordicblocksBlockSave extends cmsAction {
     private function sanitizeFieldValue(array $field, $value) {
         $type    = strtolower((string) ($field['type'] ?? 'text'));
         $raw_default = $field['default'] ?? '';
+
+        if ($type === 'repeater') {
+            return $this->sanitizeRepeaterValue($field, $value);
+        }
+
         $default = (string) ($field['default'] ?? '');
 
         if (is_bool($value)) {
@@ -189,6 +219,51 @@ class actionNordicblocksBlockSave extends cmsAction {
         }
 
         return $this->limitString($value, 1000);
+    }
+
+    private function sanitizeRepeaterValue(array $field, $value) {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $value = is_array($field['default'] ?? null) ? $field['default'] : [];
+        }
+
+        $child_fields = is_array($field['fields'] ?? null) ? $field['fields'] : [];
+        $clean_items  = [];
+        $max_items    = is_numeric($field['max_items'] ?? null) ? max(0, (int) $field['max_items']) : 100;
+
+        foreach ($value as $item) {
+            if ($max_items > 0 && count($clean_items) >= $max_items) {
+                break;
+            }
+
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $clean_item = [];
+            foreach ($child_fields as $child_field) {
+                $child_key = (string) ($child_field['key'] ?? '');
+                if ($child_key === '') {
+                    continue;
+                }
+
+                $child_value = array_key_exists($child_key, $item)
+                    ? $item[$child_key]
+                    : ($child_field['default'] ?? '');
+
+                $clean_item[$child_key] = $this->sanitizeFieldValue($child_field, $child_value);
+            }
+
+            $clean_items[] = $clean_item;
+        }
+
+        return $clean_items;
     }
 
     private function limitString($value, $max) {

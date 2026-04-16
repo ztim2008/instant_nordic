@@ -28,6 +28,154 @@ foreach ($fields as $field) {
     $field_groups[$section_key]['fields'][] = $field;
 }
 
+function nbe_editor_truthy($value) {
+    return !is_array($value) && in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+}
+
+function nbe_editor_normalize_repeater_items($value) {
+    if (is_string($value) && $value !== '') {
+        $decoded = json_decode($value, true);
+        if (is_array($decoded)) {
+            $value = $decoded;
+        }
+    }
+
+    if (!is_array($value)) {
+        return [];
+    }
+
+    $items = [];
+    foreach ($value as $item) {
+        if (is_array($item)) {
+            $items[] = $item;
+        }
+    }
+
+    return $items;
+}
+
+function nbe_editor_repeater_default_item(array $fields) {
+    $item = [];
+
+    foreach ($fields as $field) {
+        if (!is_array($field)) {
+            continue;
+        }
+
+        $key = (string) ($field['key'] ?? '');
+        if ($key === '') {
+            continue;
+        }
+
+        $item[$key] = $field['default'] ?? '';
+    }
+
+    return $item;
+}
+
+function nbe_editor_render_repeater_field($parent_key, $item_index, array $field, $value) {
+    $field_key = (string) ($field['key'] ?? '');
+    if ($field_key === '') {
+        return '';
+    }
+
+    $field_id    = 'nbf-' . $parent_key . '-' . $item_index . '-' . $field_key;
+    $field_id_e  = htmlspecialchars($field_id, ENT_QUOTES, 'UTF-8');
+    $field_key_e = htmlspecialchars($field_key, ENT_QUOTES, 'UTF-8');
+    $field_label = htmlspecialchars((string) ($field['label'] ?? $field_key), ENT_QUOTES, 'UTF-8');
+    $field_type  = (string) ($field['type'] ?? 'text');
+    $field_rows  = (int) ($field['rows'] ?? 3);
+    $field_help  = htmlspecialchars((string) ($field['help'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $field_ph    = htmlspecialchars((string) ($field['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $field_min   = htmlspecialchars((string) ($field['min'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $field_max   = htmlspecialchars((string) ($field['max'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $field_step  = htmlspecialchars((string) ($field['step'] ?? ''), ENT_QUOTES, 'UTF-8');
+    $string_val  = is_array($value) ? '' : (string) $value;
+    $field_val   = htmlspecialchars($string_val, ENT_QUOTES, 'UTF-8');
+    $field_bool  = nbe_editor_truthy($value);
+
+    ob_start();
+    ?>
+    <div class="nbe-field nbe-field--nested">
+        <label for="<?= $field_id_e ?>"><?= $field_label ?></label>
+        <?php if ($field_type === 'textarea'): ?>
+            <textarea
+                id="<?= $field_id_e ?>"
+                data-repeater-field="<?= $field_key_e ?>"
+                rows="<?= $field_rows ?>"
+                placeholder="<?= $field_ph ?>"
+            ><?= $field_val ?></textarea>
+        <?php elseif ($field_type === 'select'): ?>
+            <select id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>">
+                <?php foreach (($field['options'] ?? []) as $opt): ?>
+                <option value="<?= htmlspecialchars($opt['value'] ?? '', ENT_QUOTES, 'UTF-8') ?>" <?= ($string_val === (string) ($opt['value'] ?? '')) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($opt['label'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        <?php elseif ($field_type === 'color'): ?>
+            <div class="nbe-color-row">
+                <div class="nbe-color-swatch" id="<?= $field_id_e ?>-swatch" style="--nbe-swatch-color: <?= $field_val ?: '#ffffff' ?>;">
+                    <input type="color" value="<?= $field_val ?: '#ffffff' ?>" data-repeater-color-for="<?= $field_id_e ?>">
+                </div>
+                <input type="text" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="<?= $field_val ?>" placeholder="#ffffff">
+            </div>
+        <?php elseif ($field_type === 'number'): ?>
+            <input
+                type="number"
+                id="<?= $field_id_e ?>"
+                data-repeater-field="<?= $field_key_e ?>"
+                value="<?= $field_val ?>"
+                <?= $field_min !== '' ? 'min="' . $field_min . '"' : '' ?>
+                <?= $field_max !== '' ? 'max="' . $field_max . '"' : '' ?>
+                <?= $field_step !== '' ? 'step="' . $field_step . '"' : '' ?>
+                placeholder="<?= $field_ph ?>"
+            >
+        <?php elseif ($field_type === 'boolean'): ?>
+            <label class="nbe-repeater-checkbox">
+                <input type="checkbox" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="1" <?= $field_bool ? 'checked' : '' ?>>
+                <span><?= $field_bool ? 'Включено' : 'Выключено' ?></span>
+            </label>
+        <?php else: ?>
+            <input type="text" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="<?= $field_val ?>" placeholder="<?= $field_ph ?>">
+        <?php endif; ?>
+        <?php if ($field_help): ?>
+        <div class="nbe-field-help"><?= $field_help ?></div>
+        <?php endif; ?>
+    </div>
+    <?php
+
+    return trim((string) ob_get_clean());
+}
+
+function nbe_editor_render_repeater_item($parent_key, $item_index, array $fields, array $item, $item_label) {
+    $item_label_e = htmlspecialchars($item_label, ENT_QUOTES, 'UTF-8');
+
+    ob_start();
+    ?>
+    <div class="nbe-repeater-item" data-repeater-item data-index="<?= htmlspecialchars((string) $item_index, ENT_QUOTES, 'UTF-8') ?>">
+        <div class="nbe-repeater-item__head">
+            <div>
+                <div class="nbe-repeater-item__badge" data-repeater-item-badge><?= $item_label_e ?></div>
+                <div class="nbe-repeater-item__title" data-repeater-item-title><?= $item_label_e ?></div>
+            </div>
+            <div class="nbe-repeater-item__actions">
+                <button type="button" class="nbe-repeater-action nbe-repeater-action--danger" data-repeater-action="remove">
+                    <i class="fa fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+        <div class="nbe-repeater-item__body">
+            <?php foreach ($fields as $child_field): ?>
+                <?= nbe_editor_render_repeater_field($parent_key, $item_index, $child_field, $item[$child_field['key'] ?? ''] ?? ($child_field['default'] ?? '')) ?>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+
+    return trim((string) ob_get_clean());
+}
+
 $this->setPageTitle('Редактор: ' . $block_title_esc);
 $this->addBreadcrumb('NordicBlocks', $back_url);
 $this->addBreadcrumb('Блоки', $back_url);
@@ -314,6 +462,117 @@ $this->addMenuItems('admin_toolbar', $menu);
     font-size: .7rem;
     line-height: 1.4;
     color: #64748b;
+}
+.nbe-field--nested {
+    margin-bottom: .75rem;
+}
+.nbe-field--nested:last-child {
+    margin-bottom: 0;
+}
+.nbe-repeater {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.nbe-repeater-items {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.nbe-repeater-empty {
+    padding: .85rem .95rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    font-size: .76rem;
+    line-height: 1.45;
+    color: #64748b;
+}
+.nbe-repeater-item {
+    border: 1px solid #dbe4ef;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+.nbe-repeater-item__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .8rem .9rem;
+    border-bottom: 1px solid #eef2f7;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+.nbe-repeater-item__badge {
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: .18rem;
+}
+.nbe-repeater-item__title {
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: #0f172a;
+}
+.nbe-repeater-item__actions {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+}
+.nbe-repeater-item__body {
+    padding: .85rem .9rem;
+}
+.nbe-repeater-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+.nbe-repeater-action {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    min-height: 34px;
+    padding: .45rem .75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #334155;
+    font-size: .76rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.nbe-repeater-action:hover {
+    border-color: #94a3b8;
+    background: #f8fafc;
+}
+.nbe-repeater-action--primary {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.nbe-repeater-action--primary:hover {
+    border-color: #60a5fa;
+    background: #dbeafe;
+}
+.nbe-repeater-action--danger {
+    color: #b91c1c;
+    border-color: #fecaca;
+    background: #fff5f5;
+}
+.nbe-repeater-action--danger:hover {
+    border-color: #fca5a5;
+    background: #fee2e2;
+}
+.nbe-repeater-checkbox {
+    display: inline-flex !important;
+    align-items: center;
+    gap: .55rem;
+    margin: 0 !important;
+    font-size: .8rem !important;
+    color: #374151 !important;
 }
 
 /* ════════════════════════════════════════════════════
@@ -766,6 +1025,46 @@ $this->addMenuItems('admin_toolbar', $menu);
                                     </button>
                                 </div>
                             </div>
+                        <?php elseif ($ftype === 'repeater'): ?>
+                            <?php
+                                $frepeater_fields = [];
+                                foreach (($f['fields'] ?? []) as $child_field) {
+                                    if (is_array($child_field) && !empty($child_field['key'])) {
+                                        $frepeater_fields[] = $child_field;
+                                    }
+                                }
+                                $frepeater_items = nbe_editor_normalize_repeater_items($fval);
+                                $frepeater_item_label = (string) ($f['item_label'] ?? 'Элемент');
+                                $frepeater_add_label  = (string) ($f['add_label'] ?? 'Добавить элемент');
+                                $frepeater_template_id = 'nbf-' . ($f['key'] ?? '') . '-template';
+                                $frepeater_next_index = count($frepeater_items);
+                                $frepeater_template_item = nbe_editor_repeater_default_item($frepeater_fields);
+                            ?>
+                            <div
+                                class="nbe-repeater"
+                                data-key="<?= $fkey ?>"
+                                data-field-type="repeater"
+                                data-item-label="<?= htmlspecialchars($frepeater_item_label, ENT_QUOTES, 'UTF-8') ?>"
+                                data-template-id="<?= htmlspecialchars($frepeater_template_id, ENT_QUOTES, 'UTF-8') ?>"
+                                data-next-index="<?= (int) $frepeater_next_index ?>"
+                            >
+                                <div class="nbe-repeater-items" data-repeater-items>
+                                    <?php foreach ($frepeater_items as $frepeater_index => $frepeater_item): ?>
+                                        <?= nbe_editor_render_repeater_item((string) ($f['key'] ?? ''), (string) $frepeater_index, $frepeater_fields, $frepeater_item, $frepeater_item_label) ?>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="nbe-repeater-empty" data-repeater-empty <?= $frepeater_items ? 'style="display:none"' : '' ?>>
+                                    Пока здесь пусто. Добавьте первый элемент и он сразу появится в блоке.
+                                </div>
+                                <div class="nbe-repeater-actions">
+                                    <button type="button" class="nbe-repeater-action nbe-repeater-action--primary" data-repeater-action="add">
+                                        <i class="fa fa-plus"></i> <?= htmlspecialchars($frepeater_add_label, ENT_QUOTES, 'UTF-8') ?>
+                                    </button>
+                                </div>
+                            </div>
+                            <template id="<?= htmlspecialchars($frepeater_template_id, ENT_QUOTES, 'UTF-8') ?>">
+                                <?= nbe_editor_render_repeater_item((string) ($f['key'] ?? ''), '__INDEX__', $frepeater_fields, $frepeater_template_item, $frepeater_item_label) ?>
+                            </template>
                         <?php elseif ($ftype === 'url'): ?>
                             <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
                                 placeholder="<?= $fph ?: 'https:// или /path/' ?>"
@@ -834,9 +1133,140 @@ var nbeFpItems   = [];
 function nbeGetProps() {
     var props = {};
     document.querySelectorAll('#nbe-inspector [data-key]').forEach(function(el) {
+        if (el.dataset.fieldType === 'repeater') {
+            props[el.dataset.key] = nbeSerializeRepeater(el);
+            return;
+        }
         props[el.dataset.key] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
     });
     return props;
+}
+
+function nbeSerializeRepeater(repeaterEl) {
+    var items = [];
+
+    repeaterEl.querySelectorAll('[data-repeater-item]').forEach(function(itemEl) {
+        var item = {};
+        itemEl.querySelectorAll('[data-repeater-field]').forEach(function(fieldEl) {
+            var key = fieldEl.dataset.repeaterField;
+            if (!key) {
+                return;
+            }
+
+            item[key] = fieldEl.type === 'checkbox'
+                ? (fieldEl.checked ? '1' : '0')
+                : fieldEl.value;
+        });
+        items.push(item);
+    });
+
+    return items;
+}
+
+function nbeGetRepeaterItemDisplayTitle(itemEl, index) {
+    var title = '';
+    itemEl.querySelectorAll('[data-repeater-field]').forEach(function(fieldEl) {
+        if (title || fieldEl.type === 'checkbox') {
+            return;
+        }
+
+        var value = String(fieldEl.value || '').trim();
+        if (value) {
+            title = value;
+        }
+    });
+
+    if (title.length > 56) {
+        title = title.slice(0, 53) + '...';
+    }
+
+    var repeater = itemEl.closest('.nbe-repeater');
+    var baseLabel = repeater && repeater.dataset.itemLabel ? repeater.dataset.itemLabel : 'Элемент';
+    return title || (baseLabel + ' ' + index);
+}
+
+function nbeRefreshRepeater(repeaterEl) {
+    if (!repeaterEl) {
+        return;
+    }
+
+    var items = repeaterEl.querySelectorAll('[data-repeater-item]');
+    var empty = repeaterEl.querySelector('[data-repeater-empty]');
+    var baseLabel = repeaterEl.dataset.itemLabel || 'Элемент';
+
+    if (empty) {
+        empty.style.display = items.length ? 'none' : '';
+    }
+
+    items.forEach(function(itemEl, index) {
+        var badge = itemEl.querySelector('[data-repeater-item-badge]');
+        var title = itemEl.querySelector('[data-repeater-item-title]');
+
+        if (badge) {
+            badge.textContent = baseLabel + ' ' + (index + 1);
+        }
+        if (title) {
+            title.textContent = nbeGetRepeaterItemDisplayTitle(itemEl, index + 1);
+        }
+    });
+}
+
+function nbeAddRepeaterItem(repeaterEl) {
+    if (!repeaterEl) {
+        return;
+    }
+
+    var templateId = repeaterEl.dataset.templateId || '';
+    var template = templateId ? document.getElementById(templateId) : null;
+    var itemsWrap = repeaterEl.querySelector('[data-repeater-items]');
+    if (!template || !itemsWrap) {
+        return;
+    }
+
+    var nextIndex = parseInt(repeaterEl.dataset.nextIndex || itemsWrap.children.length, 10);
+    if (isNaN(nextIndex)) {
+        nextIndex = itemsWrap.children.length;
+    }
+
+    itemsWrap.insertAdjacentHTML('beforeend', template.innerHTML.replace(/__INDEX__/g, String(nextIndex)));
+    repeaterEl.dataset.nextIndex = String(nextIndex + 1);
+    nbeRefreshRepeater(repeaterEl);
+    markDirty();
+    scheduleReload();
+}
+
+function nbeHandleRepeaterMutation(target) {
+    var repeaterEl = target.closest('.nbe-repeater');
+    if (!repeaterEl) {
+        return;
+    }
+
+    if (target.hasAttribute('data-repeater-color-for')) {
+        var colorField = document.getElementById(target.getAttribute('data-repeater-color-for'));
+        if (colorField) {
+            colorField.value = target.value;
+            target = colorField;
+        }
+    }
+
+    if (target.matches('input[type=text][data-repeater-field]') && /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(target.value || '')) {
+        var colorPicker = target.parentNode ? target.parentNode.querySelector('[data-repeater-color-for]') : null;
+        if (colorPicker) {
+            colorPicker.value = target.value;
+        }
+        nbeSyncColorSwatch(target.id, target.value);
+    }
+
+    if (target.type === 'checkbox') {
+        var stateLabel = target.nextElementSibling;
+        if (stateLabel) {
+            stateLabel.textContent = target.checked ? 'Включено' : 'Выключено';
+        }
+    }
+
+    nbeRefreshRepeater(repeaterEl);
+    markDirty();
+    scheduleReload();
 }
 
 function nbeParseImagePayload(raw) {
@@ -1326,5 +1756,50 @@ document.querySelectorAll('.nbe-color-row [data-key]').forEach(function(el) {
 
 document.querySelectorAll('.nbe-field-image-wrap input[type=hidden][data-key]').forEach(function(el) {
     nbeSetImageField(el.id, el.value, true);
+});
+
+document.querySelectorAll('.nbe-repeater').forEach(function(repeaterEl) {
+    nbeRefreshRepeater(repeaterEl);
+});
+
+document.getElementById('nbe-inspector').addEventListener('click', function(e) {
+    var actionButton = e.target.closest('[data-repeater-action]');
+    if (!actionButton) {
+        return;
+    }
+
+    var repeaterEl = actionButton.closest('.nbe-repeater');
+    if (!repeaterEl) {
+        return;
+    }
+
+    if (actionButton.dataset.repeaterAction === 'add') {
+        nbeAddRepeaterItem(repeaterEl);
+        return;
+    }
+
+    if (actionButton.dataset.repeaterAction === 'remove') {
+        var itemEl = actionButton.closest('[data-repeater-item]');
+        if (!itemEl) {
+            return;
+        }
+
+        itemEl.remove();
+        nbeRefreshRepeater(repeaterEl);
+        markDirty();
+        scheduleReload();
+    }
+});
+
+document.getElementById('nbe-inspector').addEventListener('input', function(e) {
+    if (e.target.matches('[data-repeater-field]') || e.target.matches('[data-repeater-color-for]')) {
+        nbeHandleRepeaterMutation(e.target);
+    }
+});
+
+document.getElementById('nbe-inspector').addEventListener('change', function(e) {
+    if (e.target.matches('[data-repeater-field]') || e.target.matches('[data-repeater-color-for]')) {
+        nbeHandleRepeaterMutation(e.target);
+    }
 });
 </script>
