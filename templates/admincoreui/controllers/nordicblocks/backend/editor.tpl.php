@@ -274,11 +274,20 @@ $this->addMenuItems('admin_toolbar', $menu);
     width: 32px; height: 32px; border-radius: 5px;
     border: 1px solid #d1d5db; overflow: hidden;
     position: relative; flex-shrink: 0; cursor: pointer;
+    background: var(--nbe-swatch-color, #ffffff);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
 }
 .nbe-color-swatch input[type=color] {
     position: absolute; inset: -4px;
     width: calc(100% + 8px); height: calc(100% + 8px);
     opacity: 0; cursor: pointer; border: none;
+}
+.nbe-image-preset { margin-bottom: .4rem; }
+.nbe-image-meta { display:flex; flex-direction:column; gap:.4rem; }
+.nbe-image-alt {
+    width: 100%; padding: .4rem .65rem;
+    border: 1px solid #d1d5db; border-radius: 6px;
+    font-size: .83rem; box-sizing: border-box;
 }
 .nbe-insp-section {
     background: #f8fafc;
@@ -537,7 +546,9 @@ $this->addMenuItems('admin_toolbar', $menu);
                         $flabel = htmlspecialchars($f['label'] ?? $f['key'] ?? '', ENT_QUOTES, 'UTF-8');
                         $ftype  = $f['type'] ?? 'text';
                         $fval   = $props[$f['key'] ?? ''] ?? ($f['default'] ?? '');
-                        $fval_e = htmlspecialchars((string)$fval, ENT_QUOTES, 'UTF-8');
+                        $fval_e = is_array($fval)
+                            ? htmlspecialchars(json_encode($fval, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8')
+                            : htmlspecialchars((string)$fval, ENT_QUOTES, 'UTF-8');
                         $fmin   = htmlspecialchars((string) ($f['min'] ?? ''), ENT_QUOTES, 'UTF-8');
                         $fmax   = htmlspecialchars((string) ($f['max'] ?? ''), ENT_QUOTES, 'UTF-8');
                         $fstep  = htmlspecialchars((string) ($f['step'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -563,12 +574,12 @@ $this->addMenuItems('admin_toolbar', $menu);
                             </select>
                         <?php elseif ($ftype === 'color'): ?>
                             <div class="nbe-color-row">
-                                <div class="nbe-color-swatch">
+                                <div class="nbe-color-swatch" id="nbf-<?= $fkey ?>-swatch" style="--nbe-swatch-color: <?= $fval_e ?>;">
                                     <input type="color" id="nbf-<?= $fkey ?>-picker" value="<?= $fval_e ?>"
-                                        oninput="document.getElementById('nbf-<?= $fkey ?>').value=this.value;markDirty();scheduleReload()">
+                                        oninput="document.getElementById('nbf-<?= $fkey ?>').value=this.value;nbeSyncColorSwatch('nbf-<?= $fkey ?>', this.value);markDirty();scheduleReload()">
                                 </div>
                                 <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
-                                    oninput="if(this.value.match(/^#[0-9a-fA-F]{3,6}$/)){document.getElementById('nbf-<?= $fkey ?>-picker').value=this.value;}markDirty();scheduleReload()">
+                                    oninput="if(this.value.match(/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/)){document.getElementById('nbf-<?= $fkey ?>-picker').value=this.value;nbeSyncColorSwatch('nbf-<?= $fkey ?>', this.value);}markDirty();scheduleReload()">
                             </div>
                         <?php elseif ($ftype === 'number'): ?>
                             <input type="number" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
@@ -585,15 +596,36 @@ $this->addMenuItems('admin_toolbar', $menu);
                                 <span><?= $fbool ? 'Включено' : 'Выключено' ?></span>
                             </label>
                         <?php elseif ($ftype === 'image'): ?>
+                            <?php
+                                $fimage       = is_array($fval) ? $fval : [];
+                                $fimage_url   = htmlspecialchars((string) ($fimage['display'] ?? $fimage['original'] ?? (!is_array($fval) ? $fval : '')), ENT_QUOTES, 'UTF-8');
+                                $fimage_alt   = htmlspecialchars((string) ($fimage['alt'] ?? ''), ENT_QUOTES, 'UTF-8');
+                                $fimage_preset = htmlspecialchars((string) ($fimage['preset'] ?? 'original'), ENT_QUOTES, 'UTF-8');
+                            ?>
                             <div class="nbe-field-image-wrap">
                                 <div class="nbe-field-image-preview" id="nbf-<?= $fkey ?>-preview">
-                                    <?php if ($fval): ?>
-                                        <img src="<?= $fval_e ?>" alt="">
+                                    <?php if ($fimage_url): ?>
+                                        <img src="<?= $fimage_url ?>" alt="<?= $fimage_alt ?>">
                                     <?php else: ?>
                                         <span style="color:#94a3b8;font-size:.75rem">Не выбрано</span>
                                     <?php endif; ?>
                                 </div>
                                 <input type="hidden" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>">
+                                <div class="nbe-image-meta">
+                                    <?php if (!empty($image_presets)): ?>
+                                    <select id="nbf-<?= $fkey ?>-preset" class="nbe-image-preset"
+                                        onchange="nbeUpdateImageField('nbf-<?= $fkey ?>', { preset: this.value })">
+                                        <?php foreach ($image_presets as $preset_key => $preset_label): ?>
+                                        <option value="<?= htmlspecialchars((string) $preset_key, ENT_QUOTES, 'UTF-8') ?>" <?= ((string) $preset_key === html_entity_decode($fimage_preset, ENT_QUOTES, 'UTF-8')) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars((string) $preset_label, ENT_QUOTES, 'UTF-8') ?>
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <?php endif; ?>
+                                    <input type="text" id="nbf-<?= $fkey ?>-alt" class="nbe-image-alt" value="<?= $fimage_alt ?>"
+                                        placeholder="Alt / описание изображения"
+                                        oninput="nbeUpdateImageField('nbf-<?= $fkey ?>', { alt: this.value })">
+                                </div>
                                 <div class="nbe-img-btns">
                                     <button type="button" onclick="nbeOpenFilePicker('nbf-<?= $fkey ?>')">
                                         <i class="fa fa-folder-open"></i> Выбрать
@@ -618,6 +650,7 @@ $this->addMenuItems('admin_toolbar', $menu);
                     </div>
                     <?php endforeach; ?>
                     </div>
+                    <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
             </div>
@@ -654,6 +687,8 @@ var nbeSaveUrl   = <?= json_encode($save_url,   JSON_UNESCAPED_UNICODE) ?>;
 var nbeCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbeDirty     = false;
 var nbeDebTimer  = null;
+var nbeQueueSave = false;
+var nbeQueueSilent = true;
 
 function nbeGetProps() {
     var props = {};
@@ -661,6 +696,121 @@ function nbeGetProps() {
         props[el.dataset.key] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
     });
     return props;
+}
+
+function nbeParseImagePayload(raw) {
+    if (!raw) {
+        return { mode: 'managed', original: '', original_path: '', display: '', display_path: '', preset: 'original', alt: '', variants: {} };
+    }
+
+    if (typeof raw === 'object') {
+        return raw;
+    }
+
+    try {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+            if (!parsed.variants || typeof parsed.variants !== 'object') {
+                parsed.variants = {};
+            }
+            return parsed;
+        }
+    } catch (e) {}
+
+    return {
+        mode: 'legacy',
+        original: raw,
+        original_path: '',
+        display: raw,
+        display_path: '',
+        preset: 'original',
+        alt: '',
+        variants: raw ? { original: raw } : {}
+    };
+}
+
+function nbeSyncColorSwatch(fieldId, value) {
+    var swatch = document.getElementById(fieldId + '-swatch');
+    if (!swatch) return;
+    if (/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(value || '')) {
+        swatch.style.setProperty('--nbe-swatch-color', value);
+    }
+}
+
+function nbeGetImagePreviewUrl(media) {
+    if (!media || typeof media !== 'object') {
+        return '';
+    }
+
+    if (media.preset && media.variants && media.variants[media.preset]) {
+        return media.variants[media.preset];
+    }
+
+    return media.display || media.original || '';
+}
+
+function nbeSetImageField(fieldId, media, silent) {
+    var input = document.getElementById(fieldId);
+    if (!input) return;
+
+    media = nbeParseImagePayload(media);
+
+    var presetInput = document.getElementById(fieldId + '-preset');
+    var altInput = document.getElementById(fieldId + '-alt');
+    var preview = document.getElementById(fieldId + '-preview');
+
+    if (presetInput) {
+        if (media.preset && presetInput.querySelector('option[value="' + media.preset + '"]')) {
+            presetInput.value = media.preset;
+        }
+        media.preset = presetInput.value || media.preset || 'original';
+    }
+
+    if (altInput) {
+        if (typeof media.alt === 'string' && media.alt !== altInput.value) {
+            altInput.value = media.alt;
+        }
+        media.alt = altInput.value || media.alt || '';
+    }
+
+    media.display = nbeGetImagePreviewUrl(media);
+    input.value = media.original || media.display ? JSON.stringify(media) : '';
+
+    if (preview) {
+        if (media.display) {
+            preview.innerHTML = '<img src="' + media.display + '" alt="' + (media.alt || '') + '" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:4px">';
+        } else {
+            preview.innerHTML = '<span style="color:#94a3b8;font-size:.75rem">Не выбрано</span>';
+        }
+    }
+
+    if (!silent) {
+        markDirty();
+        scheduleReload();
+    }
+}
+
+function nbeUpdateImageField(fieldId, patch) {
+    var input = document.getElementById(fieldId);
+    if (!input) return;
+
+    var media = nbeParseImagePayload(input.value);
+    Object.keys(patch || {}).forEach(function(key) {
+        media[key] = patch[key];
+    });
+
+    if (media.preset === 'original') {
+        media.display = media.original || media.display || '';
+        media.display_path = media.original_path || media.display_path || '';
+    } else if (media.variants && media.variants[media.preset]) {
+        media.display = media.variants[media.preset];
+        media.display_path = '';
+    } else if (media.original) {
+        media.display = media.original;
+        media.display_path = media.original_path || '';
+    }
+
+    nbeSetImageField(fieldId, media, false);
 }
 
 function markDirty() {
@@ -671,7 +821,7 @@ function markDirty() {
 
 function scheduleReload() {
     clearTimeout(nbeDebTimer);
-    nbeDebTimer = setTimeout(function() { saveBlock(true); }, 700);
+    nbeDebTimer = setTimeout(function() { saveBlock(true); }, 250);
 }
 
 function reloadCanvas() {
@@ -692,8 +842,13 @@ function setViewport(type) {
 
 var nbeSaving = false;
 function saveBlock(silent) {
-    if (nbeSaving) return;
     if (silent && !nbeDirty) return;
+
+    if (nbeSaving) {
+        nbeQueueSave = true;
+        nbeQueueSilent = nbeQueueSilent && silent;
+        return;
+    }
 
     nbeSaving = true;
     var btn   = document.getElementById('nbeSaveBtn');
@@ -717,7 +872,9 @@ function saveBlock(silent) {
         if (!silent && btn) btn.classList.remove('saving');
 
         if (d.ok) {
-            nbeDirty = false;
+            if (!nbeQueueSave) {
+                nbeDirty = false;
+            }
             reloadCanvas();
 
             if (!silent && btn) {
@@ -738,6 +895,13 @@ function saveBlock(silent) {
                 alert('Ошибка: ' + (d.error || '?'));
             }
         }
+
+        if (nbeQueueSave) {
+            var nextSilent = nbeQueueSilent;
+            nbeQueueSave = false;
+            nbeQueueSilent = true;
+            saveBlock(nextSilent);
+        }
     })
     .catch(function() {
         nbeSaving = false;
@@ -745,6 +909,13 @@ function saveBlock(silent) {
             btn.classList.remove('saving');
             btn.classList.add('dirty');
             btn.innerHTML = '<i class="fa fa-save"></i> Сохранить';
+        }
+
+        if (nbeQueueSave) {
+            var nextSilent = nbeQueueSilent;
+            nbeQueueSave = false;
+            nbeQueueSilent = true;
+            saveBlock(nextSilent);
         }
     });
 }
@@ -778,11 +949,12 @@ function nbeFpLoad() {
         }
         files.forEach(function(f) {
             var el = document.createElement('div');
-            el.style.cssText = 'border:2px solid #e5e7eb;border-radius:7px;overflow:hidden;cursor:pointer;aspect-ratio:1;background:#f8fafc;transition:border-color .15s';
-            el.innerHTML = '<img src="' + f.url + '" style="width:100%;height:100%;object-fit:cover">';
+            el.style.cssText = 'border:2px solid #e5e7eb;border-radius:7px;overflow:hidden;cursor:pointer;background:#f8fafc;transition:border-color .15s;display:flex;flex-direction:column';
+            el.innerHTML = '<div style="aspect-ratio:1;background:#eef2f7"><img src="' + (f.preview_url || '') + '" style="width:100%;height:100%;object-fit:cover"></div>'
+                + '<div style="padding:.35rem .45rem;font-size:.68rem;line-height:1.35;color:#334155;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (f.title || 'Изображение') + '</div>';
             el.addEventListener('mouseenter', function() { el.style.borderColor = '#3b82f6'; });
             el.addEventListener('mouseleave', function() { el.style.borderColor = '#e5e7eb'; });
-            el.addEventListener('click', function() { nbeFpSelect(f.url); });
+            el.addEventListener('click', function() { nbeFpSelect(f); });
             grid.appendChild(el);
         });
     })
@@ -791,33 +963,49 @@ function nbeFpLoad() {
     });
 }
 
-function nbeFpSelect(url) {
+function nbeFpSelect(selected) {
     if (!nbeFpTarget) return;
-    var input   = document.getElementById(nbeFpTarget);
-    var preview = document.getElementById(nbeFpTarget + '-preview');
-    if (input)   { input.value = url; markDirty(); scheduleReload(); }
-    if (preview) { preview.innerHTML = '<img src="' + url + '" style="max-width:100%;max-height:100%;object-fit:cover;border-radius:4px">'; }
+
+    var media = selected && selected.media ? selected.media : nbeParseImagePayload(selected || '');
+    var presetInput = document.getElementById(nbeFpTarget + '-preset');
+    var altInput = document.getElementById(nbeFpTarget + '-alt');
+
+    if (presetInput && presetInput.value) {
+        media.preset = presetInput.value;
+        if (media.variants && media.variants[media.preset]) {
+            media.display = media.variants[media.preset];
+        } else if (media.original) {
+            media.display = media.original;
+            media.display_path = media.original_path || '';
+        }
+    }
+
+    if (altInput && !media.alt) {
+        media.alt = altInput.value || selected.alt || selected.title || '';
+    }
+
+    nbeSetImageField(nbeFpTarget, media, false);
     nbeCloseFilePicker();
 }
 
 function nbeClearImage(fieldId) {
-    var input   = document.getElementById(fieldId);
-    var preview = document.getElementById(fieldId + '-preview');
-    if (input)   { input.value = ''; markDirty(); scheduleReload(); }
-    if (preview) { preview.innerHTML = '<span style="color:#94a3b8;font-size:.75rem">Не выбрано</span>'; }
+    nbeSetImageField(fieldId, '', false);
 }
 
 document.getElementById('nb-fp-file-input').addEventListener('change', function() {
     var file = this.files[0];
     if (!file) return;
     var status = document.getElementById('nb-fp-upload-status');
+    var presetInput = nbeFpTarget ? document.getElementById(nbeFpTarget + '-preset') : null;
+    var preset = presetInput ? presetInput.value : 'original';
     status.textContent = 'Загрузка...';
     var fd = new FormData();
     fd.append('file', file);
+    fd.append('preset', preset);
     fetch('/nordicblocks/media_upload', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(d) {
-        if (d.url) { status.textContent = 'Готово!'; nbeFpSelect(d.url); setTimeout(function(){ status.textContent=''; }, 2000); }
+        if (d.media || d.url) { status.textContent = 'Готово!'; nbeFpSelect(d.media || d.url); setTimeout(function(){ status.textContent=''; }, 2000); }
         else { status.textContent = 'Ошибка: ' + (d.error || '?'); }
     })
     .catch(function() { status.textContent = 'Ошибка сети'; });
@@ -840,5 +1028,13 @@ window.addEventListener('beforeunload', function(e) {
 document.getElementById('nbe-title-input').addEventListener('input', function() {
     markDirty();
     scheduleReload();
+});
+
+document.querySelectorAll('.nbe-color-row [data-key]').forEach(function(el) {
+    nbeSyncColorSwatch(el.id, el.value);
+});
+
+document.querySelectorAll('.nbe-field-image-wrap input[type=hidden][data-key]').forEach(function(el) {
+    nbeSetImageField(el.id, el.value, true);
 });
 </script>

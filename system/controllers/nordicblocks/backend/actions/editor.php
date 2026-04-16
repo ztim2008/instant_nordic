@@ -23,6 +23,7 @@ class actionNordicblocksEditor extends cmsAction {
             'menu'           => $this->controller->getBackendMenu(),
             'page'           => $page,
             'block_registry' => $block_registry,
+            'image_presets'  => $this->getImagePresetOptions(),
             'inline_css'     => $inline_css,
             'save_url'       => href_to($this->controller->root_url, 'editor_save', [$page_id]),
             'view_url'       => href_to('nordicblocks', $page['key']),
@@ -34,5 +35,10 @@ class actionNordicblocksEditor extends cmsAction {
      */
     private function loadBlockRegistry() {
         return $this->model->getBlockDefinitions();
+    }
+
+    private function getImagePresetOptions() {
+        $presets = cmsCore::getModel('images')->getPresetsList(true);
+        return ['original' => defined('LANG_PARSER_IMAGE_SIZE_ORIGINAL') ? LANG_PARSER_IMAGE_SIZE_ORIGINAL : 'Оригинал'] + $presets;
     }
 }

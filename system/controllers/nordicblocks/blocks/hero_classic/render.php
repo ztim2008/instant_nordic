@@ -32,6 +32,25 @@ $hex_to_rgba = function ($hex, $opacity_percent) {
     return sprintf('rgba(%d, %d, %d, %.3F)', $r, $g, $b, $opacity);
 };
 
+$extract_media = function ($value) {
+    if (is_string($value)) {
+        $decoded = json_decode($value, true);
+        if (is_array($decoded)) {
+            $value = $decoded;
+        }
+    }
+
+    if (!is_array($value)) {
+        $value = ['display' => (string) $value, 'original' => (string) $value, 'alt' => ''];
+    }
+
+    return [
+        'display'  => trim((string) ($value['display'] ?? $value['original'] ?? '')),
+        'original' => trim((string) ($value['original'] ?? '')),
+        'alt'      => trim((string) ($value['alt'] ?? '')),
+    ];
+};
+
 $title = $escape($props['title'] ?? '');
 if ($title === '') {
     $title = 'Hero Classic';
@@ -63,7 +82,8 @@ $bg_color            = $sanitize_color($props['bg_color'] ?? '#f4efe8', '#f4efe8
 $bg_gradient_start   = $sanitize_color($props['bg_gradient_start'] ?? '#111827', '#111827');
 $bg_gradient_end     = $sanitize_color($props['bg_gradient_end'] ?? '#334155', '#334155');
 $bg_gradient_angle   = $clamp_int($props['bg_gradient_angle'] ?? 135, 0, 360, 135);
-$bg_image            = trim((string) ($props['bg_image'] ?? ''));
+$bg_image_media      = $extract_media($props['bg_image'] ?? '');
+$bg_image            = $bg_image_media['display'];
 $bg_image_position   = trim((string) ($props['bg_image_position'] ?? 'center center'));
 $allowed_positions   = ['center center', 'center top', 'center bottom', 'left center', 'right center'];
 $bg_image_position   = in_array($bg_image_position, $allowed_positions, true) ? $bg_image_position : 'center center';
@@ -71,6 +91,8 @@ $bg_overlay_color    = $sanitize_color($props['bg_overlay_color'] ?? '#0f172a', 
 $bg_overlay_opacity  = $clamp_int($props['bg_overlay_opacity'] ?? 35, 0, 90, 35);
 
 $content_max_width   = $clamp_int($props['content_max_width'] ?? 980, 480, 1440, 980);
+$min_height_desktop  = $clamp_int($props['min_height_desktop'] ?? 0, 0, 1400, 0);
+$min_height_mobile   = $clamp_int($props['min_height_mobile'] ?? 0, 0, 1000, 0);
 $title_desktop_px    = $clamp_int($props['title_desktop_px'] ?? 96, 24, 200, 96);
 $title_mobile_px     = $clamp_int($props['title_mobile_px'] ?? 52, 18, 140, 52);
 $subtitle_desktop_px = $clamp_int($props['subtitle_desktop_px'] ?? 24, 10, 64, 24);
@@ -99,9 +121,11 @@ if ($background_mode === 'gradient') {
 
 $section_class = 'nb-section nb-hero-classic nb-hero-classic--' . $text_align;
 $section_style = $background_style . sprintf(
-    '--nb-hero-classic-align:%s;--nb-hero-classic-content-width:%dpx;--nb-hero-classic-title-desktop:%dpx;--nb-hero-classic-title-mobile:%dpx;--nb-hero-classic-subtitle-desktop:%dpx;--nb-hero-classic-subtitle-mobile:%dpx;--nb-hero-classic-badge-color:%s;--nb-hero-classic-title-color:%s;--nb-hero-classic-subtitle-color:%s;--nb-hero-classic-button-text:%s;--nb-hero-classic-button-bg:%s;--nb-hero-classic-button-border:%s;--nb-hero-classic-button-radius:%dpx;--nb-hero-classic-padding-top-desktop:%dpx;--nb-hero-classic-padding-bottom-desktop:%dpx;--nb-hero-classic-padding-top-mobile:%dpx;--nb-hero-classic-padding-bottom-mobile:%dpx;',
+    '--nb-hero-classic-align:%s;--nb-hero-classic-content-width:%dpx;--nb-hero-classic-min-height-desktop:%dpx;--nb-hero-classic-min-height-mobile:%dpx;--nb-hero-classic-title-desktop:%dpx;--nb-hero-classic-title-mobile:%dpx;--nb-hero-classic-subtitle-desktop:%dpx;--nb-hero-classic-subtitle-mobile:%dpx;--nb-hero-classic-badge-color:%s;--nb-hero-classic-title-color:%s;--nb-hero-classic-subtitle-color:%s;--nb-hero-classic-button-text:%s;--nb-hero-classic-button-bg:%s;--nb-hero-classic-button-border:%s;--nb-hero-classic-button-radius:%dpx;--nb-hero-classic-padding-top-desktop:%dpx;--nb-hero-classic-padding-bottom-desktop:%dpx;--nb-hero-classic-padding-top-mobile:%dpx;--nb-hero-classic-padding-bottom-mobile:%dpx;',
     $text_align,
     $content_max_width,
+    $min_height_desktop,
+    $min_height_mobile,
     $title_desktop_px,
     $title_mobile_px,
     $subtitle_desktop_px,

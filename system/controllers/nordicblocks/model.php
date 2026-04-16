@@ -378,6 +378,282 @@ class modelNordicblocks extends cmsModel {
             . "}";
     }
 
+    public function getImagePresetOptions($with_params = true) {
+        $presets = cmsCore::getModel('images')->getPresetsList($with_params);
+        return ['original' => defined('LANG_PARSER_IMAGE_SIZE_ORIGINAL') ? LANG_PARSER_IMAGE_SIZE_ORIGINAL : 'Оригинал'] + $presets;
+    }
+
+    public function normalizeImageFieldValue($value) {
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '') {
+                return '';
+            }
+
+            $decoded = json_decode($trimmed, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            } else {
+                $value = [
+                    'original' => $trimmed,
+                    'display'  => $trimmed,
+                    'preset'   => 'original',
+                    'alt'      => '',
+                    'variants' => ['original' => $trimmed],
+                ];
+            }
+        }
+
+        if (!is_array($value)) {
+            return '';
+        }
+
+        $allowed_presets = array_keys($this->getImagePresetOptions(false));
+        $preset          = (string) ($value['preset'] ?? 'original');
+        if (!in_array($preset, $allowed_presets, true)) {
+            $preset = 'original';
+        }
+
+        $alt = $this->limitMediaText($value['alt'] ?? '', 255);
+
+        $original_ref  = (string) ($value['original_path'] ?? $value['original'] ?? '');
+        $original_path = $this->resolveUploadRelativePath($original_ref);
+        $original_url  = $original_path ? $this->buildUploadUrl($original_path) : $this->sanitizeMediaUrl($value['original'] ?? '');
+
+        $variants = [];
+        if ($original_url) {
+            $variants['original'] = $original_url;
+        }
+
+        if (!empty($value['variants']) && is_array($value['variants'])) {
+            foreach ($value['variants'] as $variant_preset => $variant_ref) {
+                $variant_preset = (string) $variant_preset;
+                if (!in_array($variant_preset, $allowed_presets, true)) {
+                    continue;
+                }
+
+                $variant_path = $this->resolveUploadRelativePath($variant_ref);
+                $variant_url  = $variant_path ? $this->buildUploadUrl($variant_path) : $this->sanitizeMediaUrl($variant_ref);
+                if ($variant_url) {
+                    $variants[$variant_preset] = $variant_url;
+                }
+            }
+        }
+
+        $display_ref  = (string) ($value['display_path'] ?? $value['display'] ?? '');
+        $display_path = $this->resolveUploadRelativePath($display_ref);
+        $display_url  = $display_path ? $this->buildUploadUrl($display_path) : $this->sanitizeMediaUrl($value['display'] ?? '');
+
+        if ($original_path && $preset !== 'original') {
+            $variant = $this->ensureImagePresetVariant($original_path, $preset);
+            if ($variant) {
+                $display_path       = $variant['path'];
+                $display_url        = $variant['url'];
+                $variants[$preset]  = $variant['url'];
+            }
+        }
+
+        if (!$display_url) {
+            if (!empty($variants[$preset])) {
+                $display_url = $variants[$preset];
+            } elseif ($original_url) {
+                $display_url = $original_url;
+            }
+        }
+
+        if (!$display_path && $display_url === $original_url) {
+            $display_path = $original_path;
+        }
+
+        if (!$original_url && $display_url) {
+            $original_url = $display_url;
+        }
+
+        if (!$original_url && !$display_url) {
+            return '';
+        }
+
+        return [
+            'mode'         => $original_path ? 'managed' : 'external',
+            'original'     => $original_url,
+            'original_path' => $original_path ?: '',
+            'display'      => $display_url ?: $original_url,
+            'display_path' => $display_path ?: '',
+            'preset'       => $preset,
+            'alt'          => $alt,
+            'variants'     => $variants,
+        ];
+    }
+
+    public function getMediaLibraryItems($limit = 200) {
+        $upload_path = rtrim((string) cmsConfig::get('upload_path'), '/\\');
+        if (!$upload_path || !is_dir($upload_path)) {
+            return [];
+        }
+
+        $upload_path  = str_replace('\\', '/', $upload_path);
+        $preset_names = array_keys(cmsCore::getModel('images')->getPresetsList(false));
+        usort($preset_names, function ($a, $b) {
+            return strlen((string) $b) <=> strlen((string) $a);
+        });
+
+        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+        $groups      = [];
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($upload_path, FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file_info) {
+            if (!$file_info->isFile()) {
+                continue;
+            }
+
+            $ext = strtolower((string) pathinfo($file_info->getFilename(), PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed_ext, true)) {
+                continue;
+            }
+
+            $relative = $this->resolveUploadRelativePath($file_info->getPathname());
+            if (!$relative) {
+                continue;
+            }
+
+            $dirname = str_replace('\\', '/', dirname($relative));
+            $dirname = $dirname === '.' ? '' : $dirname;
+            $stem    = pathinfo($relative, PATHINFO_FILENAME);
+            list($base_stem, $variant_preset) = $this->splitMediaStemPreset($stem, $preset_names);
+
+            $group_key = ($dirname ? $dirname . '/' : '') . $base_stem;
+            if (!isset($groups[$group_key])) {
+                $title = $this->humanizeMediaLabel($base_stem);
+                $groups[$group_key] = [
+                    'title'         => $title,
+                    'alt'           => $title,
+                    'original_path' => '',
+                    'variant_paths' => [],
+                    'mtime'         => 0,
+                ];
+            }
+
+            $groups[$group_key]['variant_paths'][$variant_preset] = $relative;
+            if ($variant_preset === 'original' || !$groups[$group_key]['original_path']) {
+                $groups[$group_key]['original_path'] = $relative;
+            }
+            if ((int) $file_info->getMTime() > $groups[$group_key]['mtime']) {
+                $groups[$group_key]['mtime'] = (int) $file_info->getMTime();
+            }
+        }
+
+        usort($groups, function ($a, $b) {
+            return $b['mtime'] <=> $a['mtime'];
+        });
+
+        if ($limit > 0 && count($groups) > $limit) {
+            $groups = array_slice($groups, 0, $limit);
+        }
+
+        $items = [];
+        foreach ($groups as $group) {
+            $variants = [];
+            foreach ($group['variant_paths'] as $variant_preset => $variant_path) {
+                $variants[$variant_preset] = $this->buildUploadUrl($variant_path);
+            }
+
+            $preview_preset = 'original';
+            foreach (['small', 'normal', 'content_list_small', 'content_list', 'big', 'original'] as $candidate) {
+                if (!empty($variants[$candidate])) {
+                    $preview_preset = $candidate;
+                    break;
+                }
+            }
+
+            $media = $this->normalizeImageFieldValue([
+                'original_path' => $group['original_path'],
+                'preset'        => $preview_preset,
+                'alt'           => $group['alt'],
+                'variants'      => $variants,
+            ]);
+
+            if (!$media) {
+                continue;
+            }
+
+            $items[] = [
+                'title'       => $group['title'],
+                'alt'         => $group['alt'],
+                'preview_url' => $media['display'],
+                'media'       => $media,
+            ];
+        }
+
+        return $items;
+    }
+
+    public function ensureImagePresetVariant($original_relative_path, $preset_name) {
+        $preset_name = (string) $preset_name;
+        if ($preset_name === '' || $preset_name === 'original') {
+            $original_relative_path = $this->resolveUploadRelativePath($original_relative_path);
+            if (!$original_relative_path) {
+                return null;
+            }
+            return [
+                'path' => $original_relative_path,
+                'url'  => $this->buildUploadUrl($original_relative_path),
+            ];
+        }
+
+        $preset = cmsCore::getModel('images')->getPresetByName($preset_name);
+        if (!$preset) {
+            return null;
+        }
+
+        $original_relative_path = $this->resolveUploadRelativePath($original_relative_path);
+        if (!$original_relative_path) {
+            return null;
+        }
+
+        $original_abs = $this->buildUploadAbsolutePath($original_relative_path);
+        if (!$original_abs || !is_file($original_abs)) {
+            return null;
+        }
+
+        $dest_dir     = str_replace('\\', '/', dirname($original_abs)) . '/';
+        $base_name    = pathinfo($original_abs, PATHINFO_FILENAME) . ' ' . $preset['name'];
+        $dest_ext     = !empty($preset['convert_format']) ? (string) $preset['convert_format'] : strtolower((string) pathinfo($original_abs, PATHINFO_EXTENSION));
+        $expected_abs = $dest_dir . files_sanitize_name($base_name) . '.' . $dest_ext;
+
+        if (is_file($expected_abs)) {
+            $expected_rel = $this->resolveUploadRelativePath($expected_abs);
+            if ($expected_rel) {
+                return [
+                    'path' => $expected_rel,
+                    'url'  => $this->buildUploadUrl($expected_rel),
+                ];
+            }
+        }
+
+        try {
+            $image = new cmsImages($original_abs);
+        } catch (Exception $e) {
+            return null;
+        }
+
+        $generated_abs = $image
+            ->setDestinationDir($dest_dir)
+            ->resizeByPreset($preset, $base_name);
+
+        $generated_rel = $this->resolveUploadRelativePath($generated_abs);
+        if (!$generated_rel) {
+            return null;
+        }
+
+        return [
+            'path' => $generated_rel,
+            'url'  => $this->buildUploadUrl($generated_rel),
+        ];
+    }
+
     // ── SSR КЭШ ───────────────────────────────────────────────────
 
     public function getCachedBlock($cache_key) {
@@ -430,6 +706,116 @@ class modelNordicblocks extends cmsModel {
         $g = max(0, hexdec(substr($hex, 2, 2)) - $amount);
         $b = max(0, hexdec(substr($hex, 4, 2)) - $amount);
         return sprintf('#%02x%02x%02x', $r, $g, $b);
+    }
+
+    private function limitMediaText($value, $max) {
+        $value = trim(strip_tags((string) $value));
+        if ($max <= 0) {
+            return '';
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $max);
+        }
+        return substr($value, 0, $max);
+    }
+
+    private function sanitizeMediaUrl($value) {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return '';
+        }
+        if (preg_match('#^(\/|https?:\/\/)#i', $value)) {
+            return $value;
+        }
+        return '';
+    }
+
+    private function buildUploadUrl($relative_path) {
+        $relative_path = ltrim(str_replace('\\', '/', (string) $relative_path), '/');
+        if ($relative_path === '') {
+            return '';
+        }
+        $upload_host = rtrim((string) cmsConfig::get('upload_host'), '/');
+        if ($upload_host) {
+            return $upload_host . '/' . $relative_path;
+        }
+        return '/upload/' . $relative_path;
+    }
+
+    private function buildUploadAbsolutePath($relative_path) {
+        $relative_path = ltrim(str_replace('\\', '/', (string) $relative_path), '/');
+        if ($relative_path === '') {
+            return null;
+        }
+
+        $upload_path = realpath((string) cmsConfig::get('upload_path'));
+        if (!$upload_path) {
+            return null;
+        }
+
+        return str_replace('\\', '/', $upload_path) . '/' . $relative_path;
+    }
+
+    private function resolveUploadRelativePath($ref) {
+        $ref = trim((string) $ref);
+        if ($ref === '') {
+            return null;
+        }
+
+        $ref         = str_replace('\\', '/', $ref);
+        $upload_path = realpath((string) cmsConfig::get('upload_path'));
+        if (!$upload_path) {
+            return null;
+        }
+        $upload_path = str_replace('\\', '/', $upload_path);
+        $upload_host = rtrim((string) cmsConfig::get('upload_host'), '/');
+
+        if ($upload_host && strpos($ref, $upload_host . '/') === 0) {
+            $ref = substr($ref, strlen($upload_host) + 1);
+        } elseif (strpos($ref, '/upload/') === 0) {
+            $ref = substr($ref, 8);
+        } elseif (strpos($ref, 'upload/') === 0) {
+            $ref = substr($ref, 7);
+        } elseif (strpos($ref, $upload_path . '/') === 0) {
+            $ref = substr($ref, strlen($upload_path) + 1);
+        }
+
+        $ref = ltrim($ref, '/');
+        if ($ref === '') {
+            return null;
+        }
+
+        $absolute_guess = $upload_path . '/' . $ref;
+        $absolute_real  = realpath($absolute_guess);
+        if ($absolute_real) {
+            $absolute_real = str_replace('\\', '/', $absolute_real);
+            if (strpos($absolute_real, $upload_path . '/') === 0) {
+                return ltrim(substr($absolute_real, strlen($upload_path)), '/');
+            }
+        }
+
+        return $ref;
+    }
+
+    private function splitMediaStemPreset($stem, array $preset_names) {
+        foreach ($preset_names as $preset_name) {
+            $suffix = ' ' . $preset_name;
+            if ($preset_name && substr($stem, -strlen($suffix)) === $suffix) {
+                return [substr($stem, 0, -strlen($suffix)), $preset_name];
+            }
+        }
+
+        return [$stem, 'original'];
+    }
+
+    private function humanizeMediaLabel($base_stem) {
+        $label = str_replace(['-', '_'], ' ', (string) $base_stem);
+        $label = preg_replace('/\s+/', ' ', $label);
+        $label = trim($label);
+        if ($label === '') {
+            return 'Изображение';
+        }
+        return function_exists('mb_convert_case') ? mb_convert_case($label, MB_CASE_TITLE, 'UTF-8') : ucfirst($label);
     }
 
     private function normalizeBlockSchemaFields(array $schema) {

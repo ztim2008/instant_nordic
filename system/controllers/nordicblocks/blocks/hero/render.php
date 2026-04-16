@@ -19,8 +19,19 @@ $btn1_url   = htmlspecialchars(trim((string) ($props['btn_primary_url']     ?? '
 $btn2_label = htmlspecialchars(trim((string) ($props['btn_secondary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
 $btn2_url   = htmlspecialchars(trim((string) ($props['btn_secondary_url']   ?? '#')), ENT_QUOTES, 'UTF-8');
 
-$image     = htmlspecialchars(trim((string) ($props['image']     ?? '')), ENT_QUOTES, 'UTF-8');
-$image_alt = htmlspecialchars(trim((string) ($props['image_alt'] ?? '')), ENT_QUOTES, 'UTF-8');
+$image_value = $props['image'] ?? '';
+if (is_string($image_value)) {
+    $decoded = json_decode($image_value, true);
+    if (is_array($decoded)) {
+        $image_value = $decoded;
+    }
+}
+if (!is_array($image_value)) {
+    $image_value = ['display' => (string) $image_value, 'original' => (string) $image_value, 'alt' => ''];
+}
+
+$image     = htmlspecialchars(trim((string) ($image_value['display'] ?? $image_value['original'] ?? '')), ENT_QUOTES, 'UTF-8');
+$image_alt = htmlspecialchars(trim((string) ($image_value['alt'] ?? ($props['image_alt'] ?? ''))), ENT_QUOTES, 'UTF-8');
 
 // ── CSS-классы на основе опций ─────────────────────────────────────────────
 $section_class = 'nb-section nb-hero nb-hero--' . $layout;

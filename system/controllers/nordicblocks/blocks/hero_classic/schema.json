@@ -62,6 +62,32 @@
     "section_label": "Макет и позиционирование",
     "section_hint": "Позиция текста и ширина контентной колонки."
   },
+  "minHeightDesktop": {
+    "type": "number",
+    "label": "Мин. высота — desktop",
+    "default": 0,
+    "min": 0,
+    "max": 1400,
+    "step": 10,
+    "unit": "px",
+    "help": "0 = высота по контенту.",
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста, ширина контентной колонки и высота блока."
+  },
+  "minHeightMobile": {
+    "type": "number",
+    "label": "Мин. высота — mobile",
+    "default": 0,
+    "min": 0,
+    "max": 1000,
+    "step": 10,
+    "unit": "px",
+    "help": "0 = высота по контенту.",
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста, ширина контентной колонки и высота блока."
+  },
   "backgroundMode": {
     "type": "select",
     "label": "Тип фона",

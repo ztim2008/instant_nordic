@@ -101,11 +101,20 @@
 
 .nb-hero-classic {
     position: relative;
+    display: flex;
+    align-items: center;
     overflow: hidden;
+    min-height: var(--nb-hero-classic-min-height-desktop, 0px);
+    padding-top: var(--nb-hero-classic-padding-top-desktop, 96px);
+    padding-bottom: var(--nb-hero-classic-padding-bottom-desktop, 96px);
+}
+
+.nb-hero-classic .nb-container {
+    width: 100%;
 }
 
 .nb-hero-classic__inner {
-    width: min(100%, 980px);
+    width: min(100%, var(--nb-hero-classic-content-width, 980px));
     margin-inline: auto;
     text-align: var(--nb-hero-classic-align, center);
 }
@@ -117,8 +126,8 @@
     padding: .45rem .85rem;
     border-radius: 999px;
     margin-bottom: var(--nb-space-md, 1rem);
-    background: color-mix(in srgb, var(--nb-color-accent) 10%, transparent);
-    color: var(--nb-color-accent);
+    background: color-mix(in srgb, var(--nb-hero-classic-badge-color, var(--nb-color-accent)) 12%, transparent);
+    color: var(--nb-hero-classic-badge-color, var(--nb-color-accent));
     font-size: var(--nb-text-sm, .875rem);
     font-weight: 700;
     letter-spacing: .08em;
@@ -132,7 +141,7 @@
     line-height: .95;
     letter-spacing: -.04em;
     font-weight: var(--nb-weight-black, 800);
-    color: var(--nb-color-text);
+    color: var(--nb-hero-classic-title-color, var(--nb-color-text));
     text-wrap: balance;
 }
 
@@ -141,7 +150,7 @@
     height: 4px;
     border-radius: 999px;
     margin: var(--nb-space-lg, 1.5rem) auto;
-    background: var(--nb-color-accent);
+    background: var(--nb-hero-classic-badge-color, var(--nb-color-accent));
 }
 
 .nb-hero-classic--left .nb-hero-classic__divider {
@@ -157,7 +166,7 @@
     max-width: 720px;
     font-size: var(--nb-hero-classic-subtitle-desktop, clamp(1.125rem, 2vw, 1.5rem));
     line-height: 1.65;
-    color: var(--nb-color-text-muted);
+    color: var(--nb-hero-classic-subtitle-color, var(--nb-color-text-muted));
     text-wrap: pretty;
 }
 
@@ -177,6 +186,25 @@
     justify-content: center;
 }
 
+.nb-hero-classic .nb-btn--primary {
+    background: var(--nb-hero-classic-button-bg, var(--nb-color-accent));
+    color: var(--nb-hero-classic-button-text, #fff);
+    border-color: var(--nb-hero-classic-button-border, var(--nb-color-accent));
+    border-radius: var(--nb-hero-classic-button-radius, var(--nb-radius-btn, .5rem));
+}
+
+.nb-hero-classic .nb-btn--outline {
+    background: transparent;
+    color: var(--nb-hero-classic-button-text, var(--nb-color-accent));
+    border-color: var(--nb-hero-classic-button-border, var(--nb-color-accent));
+    border-radius: var(--nb-hero-classic-button-radius, var(--nb-radius-btn, .5rem));
+}
+
+.nb-hero-classic .nb-btn--outline:hover {
+    background: var(--nb-hero-classic-button-bg, var(--nb-color-accent));
+    color: var(--nb-hero-classic-button-text, #fff);
+}
+
 .nb-hero-classic--left .nb-hero-classic__actions {
     justify-content: flex-start;
 }
@@ -186,6 +214,12 @@
 }
 
 @media (max-width: 767px) {
+    .nb-hero-classic {
+        min-height: var(--nb-hero-classic-min-height-mobile, 0px);
+        padding-top: var(--nb-hero-classic-padding-top-mobile, 56px);
+        padding-bottom: var(--nb-hero-classic-padding-bottom-mobile, 56px);
+    }
+
     .nb-hero-classic__title {
         font-size: var(--nb-hero-classic-title-mobile, clamp(2.25rem, 12vw, 3.75rem));
     }

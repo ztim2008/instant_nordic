@@ -20,6 +20,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
             'menu'           => $this->controller->getBackendMenu(),
             'block'          => $block,
             'block_registry' => $block_registry,
+            'image_presets'  => $this->getImagePresetOptions(),
             'inline_css'     => $inline_css,
             'save_url'       => href_to($this->controller->root_url, 'block_save', [$block_id]),
             'canvas_url'     => $canvas_url,
@@ -31,5 +32,10 @@ class actionNordicblocksBlockEdit extends cmsAction {
 
     private function loadBlockRegistry() {
         return $this->model->getBlockDefinitions();
+    }
+
+    private function getImagePresetOptions() {
+        $presets = cmsCore::getModel('images')->getPresetsList(true);
+        return ['original' => defined('LANG_PARSER_IMAGE_SIZE_ORIGINAL') ? LANG_PARSER_IMAGE_SIZE_ORIGINAL : 'Оригинал'] + $presets;
     }
 }

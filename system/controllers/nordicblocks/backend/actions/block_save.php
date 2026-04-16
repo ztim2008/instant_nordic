@@ -167,11 +167,17 @@ class actionNordicblocksBlockSave extends cmsAction {
         }
 
         if ($type === 'image') {
-            // Allow relative upload paths and absolute URLs.
-            if ($value !== '' && !preg_match('#^(\/|https?:\/\/)#i', $value)) {
-                $value = $default;
+            $media = $this->model->normalizeImageFieldValue($value);
+            if ($media !== '') {
+                return $media;
             }
-            return $this->limitString($value, 2048);
+
+            $fallback = $default;
+            if ($fallback !== '' && !preg_match('#^(\/|https?:\/\/)#i', $fallback)) {
+                $fallback = '';
+            }
+
+            return $fallback ? $this->model->normalizeImageFieldValue($fallback) : '';
         }
 
         if ($type === 'url') {
