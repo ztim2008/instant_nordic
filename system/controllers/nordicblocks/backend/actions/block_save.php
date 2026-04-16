@@ -12,6 +12,17 @@ class actionNordicblocksBlockSave extends cmsAction {
             exit;
         }
 
+        if (!$this->cms_user->is_admin) {
+            echo json_encode(['ok' => false, 'error' => 'forbidden']);
+            exit;
+        }
+
+        $csrf_token = (string) $this->request->get('csrf_token', '');
+        if (!cmsForm::validateCSRFToken($csrf_token)) {
+            echo json_encode(['ok' => false, 'error' => 'invalid_csrf']);
+            exit;
+        }
+
         $block_id = (int) $block_id;
         $raw      = file_get_contents('php://input');
         $data     = json_decode($raw, true);
@@ -33,13 +44,13 @@ class actionNordicblocksBlockSave extends cmsAction {
         }
         $title = $this->limitString($title, 255);
 
-        if ((string) ($block['type'] ?? '') === 'hero' && isset($data['contract']) && is_array($data['contract'])) {
+        if (NordicblocksBlockContractNormalizer::supportsContractType((string) ($block['type'] ?? '')) && isset($data['contract']) && is_array($data['contract'])) {
             $contract = NordicblocksBlockContractNormalizer::normalize([
                 'id'     => (int) $block['id'],
                 'type'   => (string) $block['type'],
                 'title'  => $title,
                 'status' => (string) ($block['status'] ?? 'active'),
-                'props'  => NordicblocksBlockContractNormalizer::denormalizeProps((string) $block['type'], $data['contract']),
+                'props'  => $data['contract'],
             ]);
 
             $this->model->saveBlockContract($block_id, $title, $contract);

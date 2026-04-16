@@ -5,6 +5,7 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockCapabilityResolver.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/InspectorRegistryBuilder.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/InspectorStateBuilder.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DataSourceResolver.php';
 
 class actionNordicblocksBlockEditorState extends cmsAction {
 
@@ -24,7 +25,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
             exit;
         }
 
-        if ((string) ($block['type'] ?? '') !== 'hero') {
+        if (!NordicblocksBlockContractNormalizer::supportsContractType((string) ($block['type'] ?? ''))) {
             echo json_encode(['ok' => false, 'error' => 'unsupported_block_type']);
             exit;
         }
@@ -34,8 +35,9 @@ class actionNordicblocksBlockEditorState extends cmsAction {
 
         $resolved_entities = NordicblocksBlockEntityResolver::resolve((string) $block['type'], $contract, (array) $registry['entities']);
         $resolved_capabilities = NordicblocksBlockCapabilityResolver::resolve((string) $block['type'], (array) $registry['capabilityMatrix']);
+        $default_entity = ((string) ($block['type'] ?? '') === 'faq') ? 'items' : 'title';
         $ui_state = [
-            'selectedEntity'      => 'title',
+            'selectedEntity'      => $default_entity,
             'selectedRepeaterPath'=> null,
             'activeTab'           => 'content',
             'activeBreakpoint'    => 'desktop',
@@ -58,6 +60,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
                 'controlPresets' => $registry['controlPresets'],
                 'panels'       => $registry['panels'],
             ],
+            'dataOptions' => NordicblocksDataSourceResolver::buildEditorOptions((string) ($block['type'] ?? '')),
             'resolved' => [
                 'entities'     => $resolved_entities,
                 'capabilities' => $resolved_capabilities,

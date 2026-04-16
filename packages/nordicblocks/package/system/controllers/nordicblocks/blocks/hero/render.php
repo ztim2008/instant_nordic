@@ -34,16 +34,24 @@ if ($hero_contract) {
         ? (string) $hero_contract['layout']['desktop']['mode'] : 'centered';
     $theme = in_array($hero_contract['design']['section']['theme'] ?? '', ['light', 'dark', 'accent'], true)
         ? (string) $hero_contract['design']['section']['theme'] : 'light';
+    $background_mode = (string) ($hero_contract['design']['section']['background']['mode'] ?? 'theme');
+    $background_style = nb_block_build_background_style((array) ($hero_contract['design']['section']['background'] ?? []));
 
     $eyebrow = htmlspecialchars(trim((string) ($hero_contract['content']['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
     $heading = htmlspecialchars(trim((string) ($hero_contract['content']['title'] ?? 'Заголовок')), ENT_QUOTES, 'UTF-8');
     $subhead = htmlspecialchars(trim((string) ($hero_contract['content']['subtitle'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $title_visible = !array_key_exists('visible', (array) ($hero_contract['design']['entities']['title'] ?? [])) || !empty($hero_contract['design']['entities']['title']['visible']);
+    $subtitle_visible = !array_key_exists('visible', (array) ($hero_contract['design']['entities']['subtitle'] ?? [])) || !empty($hero_contract['design']['entities']['subtitle']['visible']);
     $heading_tag = htmlspecialchars((string) ($hero_contract['design']['entities']['title']['tag'] ?? 'h1'), ENT_QUOTES, 'UTF-8');
     $heading_weight = (int) ($hero_contract['design']['entities']['title']['weight'] ?? 900);
     $title_size_desktop = (int) ($hero_contract['design']['entities']['title']['desktop']['fontSize'] ?? 64);
     $title_size_mobile = (int) ($hero_contract['design']['entities']['title']['mobile']['fontSize'] ?? 40);
     $subtitle_size_desktop = (int) ($hero_contract['design']['entities']['subtitle']['desktop']['fontSize'] ?? 20);
     $subtitle_size_mobile = (int) ($hero_contract['design']['entities']['subtitle']['mobile']['fontSize'] ?? 18);
+    $title_margin_bottom_desktop = (int) ($hero_contract['design']['entities']['title']['desktop']['marginBottom'] ?? 16);
+    $title_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['title']['mobile']['marginBottom'] ?? 14);
+    $subtitle_margin_bottom_desktop = (int) ($hero_contract['design']['entities']['subtitle']['desktop']['marginBottom'] ?? 24);
+    $subtitle_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['subtitle']['mobile']['marginBottom'] ?? 20);
     $content_width = (int) ($hero_contract['layout']['desktop']['contentWidth'] ?? 640);
     $padding_top_desktop = (int) ($hero_contract['layout']['desktop']['paddingTop'] ?? 96);
     $padding_bottom_desktop = (int) ($hero_contract['layout']['desktop']['paddingBottom'] ?? 96);
@@ -72,16 +80,33 @@ if ($hero_contract) {
         ? $props['layout'] : 'centered';
     $theme = in_array($props['theme'] ?? '', ['light', 'dark', 'accent'], true)
         ? $props['theme'] : 'light';
+    $background_mode = (string) ($props['background_mode'] ?? 'theme');
+    $background_style = nb_block_build_background_style([
+        'mode' => $background_mode,
+        'color' => $props['background_color'] ?? '',
+        'gradientFrom' => $props['background_gradient_from'] ?? '',
+        'gradientTo' => $props['background_gradient_to'] ?? '',
+        'gradientAngle' => $props['background_gradient_angle'] ?? 135,
+        'image' => $props['background_image'] ?? '',
+        'overlayColor' => $props['background_overlay_color'] ?? '#0f172a',
+        'overlayOpacity' => $props['background_overlay_opacity'] ?? 45,
+    ]);
 
     $eyebrow = htmlspecialchars(trim((string) ($props['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
     $heading = htmlspecialchars(trim((string) ($props['heading'] ?? 'Заголовок')), ENT_QUOTES, 'UTF-8');
     $subhead = htmlspecialchars(trim((string) ($props['subheading'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $title_visible = !isset($props['title_visible']) || in_array(strtolower((string) $props['title_visible']), ['1', 'true', 'yes', 'on'], true);
+    $subtitle_visible = !isset($props['subtitle_visible']) || in_array(strtolower((string) $props['subtitle_visible']), ['1', 'true', 'yes', 'on'], true);
     $heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h1');
     $heading_weight = nb_block_get_font_weight((array) $props, 'heading', 900);
     $title_size_desktop = nb_hero_prop_int((array) $props, 'title_size_desktop', 64, 12, 240);
     $title_size_mobile = nb_hero_prop_int((array) $props, 'title_size_mobile', 40, 12, 240);
     $subtitle_size_desktop = nb_hero_prop_int((array) $props, 'subtitle_size_desktop', 20, 10, 120);
     $subtitle_size_mobile = nb_hero_prop_int((array) $props, 'subtitle_size_mobile', 18, 10, 120);
+    $title_margin_bottom_desktop = nb_hero_prop_int((array) $props, 'title_margin_bottom_desktop', 16, 0, 240);
+    $title_margin_bottom_mobile = nb_hero_prop_int((array) $props, 'title_margin_bottom_mobile', 14, 0, 240);
+    $subtitle_margin_bottom_desktop = nb_hero_prop_int((array) $props, 'subtitle_margin_bottom_desktop', 24, 0, 240);
+    $subtitle_margin_bottom_mobile = nb_hero_prop_int((array) $props, 'subtitle_margin_bottom_mobile', 20, 0, 240);
     $content_width = nb_hero_prop_int((array) $props, 'content_width', 640, 280, 1440);
     $padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', 96, 0, 300);
     $padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', 96, 0, 300);
@@ -130,9 +155,14 @@ $section_style = nb_block_append_style($section_style, '--nb-hero-title-size:' .
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-size-mobile:' . $title_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-size:' . $subtitle_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-size-mobile:' . $subtitle_size_mobile . 'px;');
-if ($theme === 'accent') {
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-bottom:' . $title_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom-mobile:' . $subtitle_margin_bottom_mobile . 'px;');
+if ($theme === 'accent' && $background_mode === 'theme') {
     $section_style = nb_block_append_style($section_style, 'background:var(--nb-color-accent);color:#fff;');
 }
+$section_style = nb_block_append_style($section_style, $background_style);
 $section_style = nb_block_append_style($section_style, $reveal['style']);
 
 $button_classes = [
@@ -172,9 +202,11 @@ $button_classes = [
             <p class="nb-hero__eyebrow" data-nb-entity="eyebrow"><?= $eyebrow ?></p>
             <?php endif; ?>
 
+            <?php if ($title_visible && $heading): ?>
             <<?= $heading_tag ?> class="nb-hero__heading" style="font-weight:<?= (int) $heading_weight ?>" data-nb-entity="title"><?= $heading ?></<?= $heading_tag ?>>
+            <?php endif; ?>
 
-            <?php if ($subhead): ?>
+            <?php if ($subtitle_visible && $subhead): ?>
             <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
             <?php endif; ?>
 

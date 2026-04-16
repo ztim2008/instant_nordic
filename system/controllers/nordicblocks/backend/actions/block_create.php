@@ -9,6 +9,16 @@ class actionNordicblocksBlockCreate extends cmsAction {
             return cmsCore::error404();
         }
 
+        if (!$this->cms_user->is_admin) {
+            return cmsCore::error404();
+        }
+
+        $csrf_token = (string) $this->request->get('csrf_token', '');
+        if (!cmsForm::validateCSRFToken($csrf_token)) {
+            cmsCore::addFlashMessage('error', 'Некорректный CSRF token');
+            return $this->redirect(href_to($this->controller->root_url, 'blocks'));
+        }
+
         $type  = preg_replace('/[^a-z0-9_\-]/', '', strtolower(trim((string) $this->request->get('type', ''))));
         $title = trim((string) $this->request->get('title', ''));
 
@@ -37,7 +47,7 @@ class actionNordicblocksBlockCreate extends cmsAction {
         $block_id = $this->model->createBlock($type, $title);
 
         if ($block_id && $default_props) {
-            if ($type === 'hero') {
+            if (NordicblocksBlockContractNormalizer::supportsContractType($type)) {
                 $contract = NordicblocksBlockContractNormalizer::normalize([
                     'id'     => (int) $block_id,
                     'type'   => $type,

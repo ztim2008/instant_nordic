@@ -1,6 +1,7 @@
 <?php
 
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockPayloadHydrator.php';
 
 class modelNordicblocks extends cmsModel {
 
@@ -109,6 +110,28 @@ class modelNordicblocks extends cmsModel {
 
         $row['props'] = $this->normalizeImagePropsByType((string) ($row['type'] ?? ''), (array) ($row['props'] ?? []));
         return $row;
+    }
+
+    public function hydrateBlockForRender(array $block, array $context = []) {
+        $type = $this->normalizeBlockType((string) ($block['type'] ?? ''));
+        if (!$type || !NordicblocksBlockContractNormalizer::supportsContractType($type)) {
+            return $block;
+        }
+
+        $contract = isset($block['contract']) && is_array($block['contract'])
+            ? $block['contract']
+            : NordicblocksBlockContractNormalizer::normalize([
+                'id'     => (int) ($block['id'] ?? 0),
+                'type'   => $type,
+                'title'  => (string) ($block['title'] ?? ''),
+                'status' => (string) ($block['status'] ?? 'active'),
+                'props'  => (array) ($block['props'] ?? []),
+            ]);
+
+        $block['contract'] = NordicblocksBlockPayloadHydrator::hydrate($contract, $context);
+        $block['props'] = $this->normalizeImagePropsByType($type, (array) NordicblocksBlockContractNormalizer::denormalizeProps($type, (array) $block['contract']));
+
+        return $block;
     }
 
     public function getBlockDefinition($type) {

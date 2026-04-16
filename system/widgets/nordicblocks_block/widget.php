@@ -19,6 +19,8 @@ class widgetNordicblocksBlock extends cmsWidget {
             return ['html' => '', 'inline_css' => '', 'blocks_css' => ''];
         }
 
+        $block = $model->hydrateBlockForRender($block, ['mode' => 'widget']);
+
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
         if (!$type) {
             return ['html' => '', 'inline_css' => '', 'blocks_css' => ''];

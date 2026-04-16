@@ -18,7 +18,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
 
         $canvas_url       = href_to($this->controller->root_url, 'block_canvas', $block_id);
         $editor_state_url = href_to($this->controller->root_url, 'block_editor_state', $block_id);
-        $template_name    = ((string) ($block['type'] ?? '') === 'hero') ? 'backend/editor_hero_v2' : 'backend/editor';
+        $template_name    = in_array((string) ($block['type'] ?? ''), ['hero', 'faq'], true) ? 'backend/editor_hero_v2' : 'backend/editor';
 
         return $this->cms_template->render($template_name, [
             'menu'           => $this->controller->getBackendMenu(),

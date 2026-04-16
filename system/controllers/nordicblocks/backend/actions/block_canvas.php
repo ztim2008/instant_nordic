@@ -93,12 +93,18 @@ a{color:inherit;text-decoration:none}
 
     document.addEventListener('click', function (event) {
         var entityNode = findEntityNode(event.target);
+        var clickTarget = event.target && event.target.nodeType === 1 ? event.target : event.target.parentNode;
+        var summaryNode = clickTarget && typeof clickTarget.closest === 'function' ? clickTarget.closest('summary') : null;
+        var allowNativeToggle = !!(summaryNode && summaryNode.closest('details'));
+
         if (!entityNode) {
             return;
         }
 
-        event.preventDefault();
-        event.stopPropagation();
+        if (!allowNativeToggle) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
 
         selectEntity(entityNode.getAttribute('data-nb-entity') || '', false);
 
@@ -149,6 +155,8 @@ JS;
         if (!$type) {
             return '';
         }
+
+        $block = $this->model->hydrateBlockForRender($block, ['mode' => 'backend_canvas']);
 
         $render_file = dirname(dirname(__DIR__)) . "/blocks/{$type}/render.php";
         if (!file_exists($render_file)) {

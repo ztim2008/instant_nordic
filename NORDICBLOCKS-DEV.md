@@ -79,6 +79,17 @@
 
 Важно: отдельный новый виджет для размещения не создаём.
 
+### Обновление 2026-04-16: Inspector Shell v2
+
+Зафиксировано для текущих contract-first блоков `hero` и `faq`:
+
+Подробный итог дня и список проверок вынесен в `docs/nordicblocks/WORKLOG-2026-04-16.md`.
+
+1. Правая панель Inspector Shell v2 теперь скроллится корректно по высоте окна и не уходит за нижнюю границу браузера.
+2. Для заголовка и подзаголовка добавлены реальные настройки показа/скрытия и отступа снизу отдельно для desktop и mobile.
+3. Фон секции поддерживает режимы `theme`, сплошной цвет, градиент и фото с затемняющим overlay.
+4. Эти настройки заведены в SSR-рендер preview/live, чтобы не было расхождения между редактором и боевым выводом.
+
 Используем один боевой виджет `nordicblocks_block` и один шаблон рендера блока `blocks/{type}/render.php` в трёх сценариях:
 
 1. Редактор (iframe preview)
@@ -289,6 +300,12 @@ blocks/
 | `backend/actions/block_save.php` | POST `/nordicblocks/block_save` (AJAX): сохранить `props_json`, `title` |
 | `backend/actions/block_delete.php` | POST `/nordicblocks/block_delete` (AJAX): удалить запись |
 
+Правило для боевого backend CRUD:
+
+1. `block_create`, `block_save`, `block_delete` принимаются только от admin-сессии.
+2. Все изменяющие запросы требуют валидный `csrf_token`.
+3. V2-shell редактор и список блоков должны передавать `csrf_token` явно, без неявных допущений.
+
 ---
 
 ## 9. Интеграция с InstantCMS
@@ -481,6 +498,23 @@ templates/admincoreui/controllers/nordicblocks/backend/
 3. Чтение блока после save
 4. Наличие виджета `nordicblocks_block` в реестре
 5. Очистку тестового блока
+
+### Smoke-проверка FAQ `content_list` adapter
+
+Скрипт: `scripts/nordicblocks-faq-content-list-smoke.php`
+
+```bash
+/opt/php84/bin/php scripts/nordicblocks-faq-content-list-smoke.php
+```
+
+Проверяет:
+1. Создание временного FAQ-блока
+2. Сохранение `data.listSource` в contract-first формате
+3. Повторное чтение блока после save
+4. Hydration через `DataSourceResolver + BindingMapper + BlockPayloadHydrator`
+5. Подмену ручного fallback-списка реальными записями InstantCMS
+6. SSR-рендер FAQ после hydration
+7. Очистку тестового блока
 
 ### Перед применением на проде
 
@@ -1991,6 +2025,44 @@ UI не должен знать конкретные ctype заранее. Он 
 6. ⚪ Preview и live рендерят один и тот же hydrated payload.
 7. ⚪ Первая donor-first волна из 2-3 hero-блоков работает без отдельной архитектуры под каждый блок.
 
+### 18.10 Что реально реализовано на 2026-04-16
+
+#### 🟢 Первый закрытый vertical slice
+
+Сейчас фактически закрыт первый рабочий data-driven repeater slice:
+
+1. блок: `faq`
+2. storage: contract-first через Block Contract v3
+3. repeater storage: `content.items[]`
+4. data source: `data.listSource`
+5. source type: `content_list`
+6. runtime: единый hydration pipeline до `render.php`
+
+#### 🟢 Что уже умеет FAQ adapter
+
+1. брать записи из любого доступного content type InstantCMS;
+2. ограничивать список через `limit`;
+3. сортировать через `date_pub_*`, `title_*`, `hits_*`, `comments_*`;
+4. маппить поля в `question` и `answer`;
+5. использовать системные поля вроде `title`, `date_pub`, `hits_count`, `comments_count`, `category.title`, `user.nickname`;
+6. оставлять ручной `content.items[]` как fallback, если `emptyBehavior = fallback`;
+7. показывать пустой список, если `emptyBehavior = empty`.
+
+#### 🟢 Где этот runtime уже работает одинаково
+
+1. backend preview iframe: `backend/actions/block_canvas.php`
+2. widget runtime: `system/widgets/nordicblocks_block/widget.php`
+3. legacy canvas: `actions/canvas.php`
+4. legacy public view: `actions/view.php`
+
+#### 🟡 Текущие сознательные ограничения
+
+1. пока поддержан только `faq` как первый adapter-backed repeater;
+2. пока поддержан только source `content_list`;
+3. пока поддержан только item-level mapping `question` и `answer`;
+4. `content_item` для hero ещё не поднят;
+5. для dynamic block в legacy public view пока используется безопасная стратегия без SSR-cache reuse, а не финальный adapter-aware cache key.
+
 ---
 
 ## 19. Design Block mode — свободный блок «как в Tilda», но без поломки продукта
@@ -2285,6 +2357,14 @@ Donor-first подход даёт:
 
 именно repeater-блок быстрее всего проверит правильность нового контракта, inspector UI и content list adapter.
 
+Текущий статус на 2026-04-16:
+
+1. 🟢 В качестве первого repeater-пилота уже поднят `faq`.
+2. 🟢 FAQ переведён на contract-first storage/runtime.
+3. 🟢 Вопросы и ответы хранятся канонически через `content.items[]`, а SSR-рендер и preview читают один и тот же контракт.
+4. 🟢 Для FAQ уже поднят первый data-driven repeater через `data.listSource` + `content_list` adapter.
+5. 🟡 Следующий шаг после этого — не второй FAQ-вариант, а расширение adapter-слоя: `content_item` для hero или более богатый repeater-блок с item-level mapping.
+
 ### 20.6 Практическая рекомендация
 
 #### 🟢 Ближайший рабочий курс
@@ -2302,4 +2382,6 @@ Donor-first подход даёт:
 2. ⚪ Они работают через единый Block Contract v3 и общий runtime.
 3. ⚪ Для них не создана отдельная архитектура под каждый шаблон.
 4. ⚪ Повторяющиеся элементы в новых блоках описываются только через repeater-массивы.
-5. ⚪ Следующий блок после hero-волны выбирается как один эталонный repeater-блок, а не массовый импорт библиотеки.
+5. 🟢 В роли первого эталонного repeater-блока уже выбран и поднят `faq`.
+6. 🟢 FAQ уже закрывает первый data-driven repeater-блок через `content_list` adapter.
+7. ⚪ Следующий шаг после этого — не массовый импорт библиотеки, а добивка второго adapter-сценария (`content_item`) и расширение mapping-слоя.

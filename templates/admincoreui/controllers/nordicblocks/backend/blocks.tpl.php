@@ -193,6 +193,7 @@ $this->addMenuItems('admin_toolbar', $menu);
     <div class="nb-modal">
         <h2>Создать блок</h2>
         <form method="post" action="<?= htmlspecialchars($create_block_url, ENT_QUOTES, 'UTF-8') ?>">
+            <?= html_csrf_token() ?>
             <label for="nb-block-type">Тип блока</label>
             <select id="nb-block-type" name="type" required>
                 <?php foreach ($block_types as $t_key => $t_label): ?>
@@ -215,6 +216,7 @@ $this->addMenuItems('admin_toolbar', $menu);
 
 <script>
 (function() {
+    var nbCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICODE) ?>;
     var overlay  = document.getElementById('nb-create-modal');
     var btnOpen  = document.getElementById('nb-open-create');
     var btnClose = document.getElementById('nb-close-create');
@@ -227,7 +229,7 @@ $this->addMenuItems('admin_toolbar', $menu);
         btn.addEventListener('click', function() {
             if (!confirm('Удалить блок «' + btn.dataset.title + '»? Это действие нельзя отменить.')) return;
             btn.disabled = true;
-            fetch(btn.dataset.url, {
+            fetch(btn.dataset.url + '?csrf_token=' + encodeURIComponent(nbCsrfToken), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: parseInt(btn.dataset.id) })

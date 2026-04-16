@@ -50,14 +50,24 @@ class actionNordicblocksView extends cmsAction {
                 continue;
             }
 
+            $block = $this->model->hydrateBlockForRender($block, [
+                'mode'    => 'legacy_view',
+                'page_id' => (int) ($page['id'] ?? 0),
+                'uid'     => $uid,
+            ]);
+
+            $is_dynamic = !empty($block['contract']['runtime']['adapter']['isDynamic']);
+
             // Пробуем SSR‑кэш
             $cache_key = 'page_' . $page['id'] . '_' . $uid . '_'
                 . substr(md5(json_encode($block)), 0, 8);
 
-            $cached = $this->model->getCachedBlock($cache_key);
-            if ($cached !== null) {
-                $html .= $cached;
-                continue;
+            if (!$is_dynamic) {
+                $cached = $this->model->getCachedBlock($cache_key);
+                if ($cached !== null) {
+                    $html .= $cached;
+                    continue;
+                }
             }
 
             // Рендерим блок через render.php
@@ -66,18 +76,21 @@ class actionNordicblocksView extends cmsAction {
                 continue;
             }
 
-            $props        = isset($block['props']) && is_array($block['props']) ? $block['props'] : [];
-            $block_html   = $this->renderBlock($render_file, $type, $uid, $props);
+            $props          = isset($block['props']) && is_array($block['props']) ? $block['props'] : [];
+            $block_contract = isset($block['contract']) && is_array($block['contract']) ? $block['contract'] : [];
+            $block_html     = $this->renderBlock($render_file, $type, $uid, $props, $block_contract);
 
             // Кэшируем на 1 час
-            $this->model->setCachedBlock($cache_key, $block_html, 3600);
+            if (!$is_dynamic) {
+                $this->model->setCachedBlock($cache_key, $block_html, 3600);
+            }
             $html .= $block_html;
         }
 
         return $html;
     }
 
-    private function renderBlock($render_file, $type, $uid, array $props) {
+    private function renderBlock($render_file, $type, $uid, array $props, array $block_contract = []) {
         // Каждый блок получает $props и $uid; возвращает HTML-строку
         ob_start();
         $block_type = $type;

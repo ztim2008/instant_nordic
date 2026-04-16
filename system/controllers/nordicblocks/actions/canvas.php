@@ -78,6 +78,8 @@ a{color:inherit;text-decoration:none}
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
         if (!$type) { return ''; }
 
+        $block = $this->model->hydrateBlockForRender($block, ['mode' => 'legacy_canvas_single']);
+
         $render_file = dirname(__DIR__) . "/blocks/{$type}/render.php";
         if (!file_exists($render_file)) { return ''; }
 
@@ -106,7 +108,14 @@ a{color:inherit;text-decoration:none}
             $render_file = "{$blocks_base}/{$type}/render.php";
             if (!file_exists($render_file)) { continue; }
 
+            $block = $this->model->hydrateBlockForRender($block, [
+                'mode'    => 'legacy_canvas_page',
+                'page_id' => (int) ($page['id'] ?? 0),
+                'uid'     => $uid,
+            ]);
+
             $props      = (array) ($block['props'] ?? []);
+            $block_contract = (array) ($block['contract'] ?? []);
             $block_type = $type;
             $block_uid  = $uid;
 

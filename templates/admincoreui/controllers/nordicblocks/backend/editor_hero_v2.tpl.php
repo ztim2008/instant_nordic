@@ -5,10 +5,11 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 <style>
 #nbh-shell {
     position: fixed;
-    inset: 0;
-    top: 55px;
+    inset: 55px 0 0 0;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
     background: #edf2f7;
     z-index: 100;
 }
@@ -95,6 +96,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     gap: 0;
     min-height: 0;
     flex: 1;
+    overflow: hidden;
 }
 #nbh-canvas-wrap {
     padding: 16px;
@@ -102,6 +104,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     display: flex;
     align-items: stretch;
     justify-content: center;
+    min-height: 0;
     background: radial-gradient(circle at top left, rgba(96,165,250,.10), transparent 30%), #e2e8f0;
 }
 #nbh-canvas-frame {
@@ -116,6 +119,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 
 #nbh-panel {
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     background: #ffffff;
@@ -188,6 +192,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 #nbh-panel-body {
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: .85rem;
     display: flex;
     flex-direction: column;
@@ -321,7 +326,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 
     <div id="nbh-body">
         <div id="nbh-canvas-wrap">
-            <iframe id="nbh-canvas-frame" src="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>" title="Hero preview" sandbox="allow-same-origin allow-scripts"></iframe>
+            <iframe id="nbh-canvas-frame" src="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>" title="Block preview" sandbox="allow-same-origin allow-scripts"></iframe>
         </div>
 
         <div id="nbh-panel">
@@ -343,6 +348,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 var nbhSaveUrl = <?= json_encode($save_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhEditorStateUrl = <?= json_encode($editor_state_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
+var nbhCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICODE) ?>;
 
 var nbhState = {
     loaded: false,
@@ -394,6 +400,95 @@ function nbhSet(obj, path, value) {
 function nbhHumanEntity(entityKey) {
     var registry = nbhState.server && nbhState.server.registry ? nbhState.server.registry.entities : null;
     return registry && registry[entityKey] ? registry[entityKey].label : entityKey;
+}
+
+function nbhBlockType() {
+    return nbhGet(nbhState.server, 'block.type', '');
+}
+
+function nbhRepeaterItems() {
+    var items = nbhGet(nbhState.draft, 'content.items', []);
+    return Array.isArray(items) ? items : [];
+}
+
+function nbhDataOptions() {
+    var options = nbhState.server && nbhState.server.dataOptions ? nbhState.server.dataOptions : null;
+    if (!options || typeof options !== 'object') {
+        return { contentTypes: [], fieldsByType: {}, listModes: [], sortOptions: [] };
+    }
+
+    options.contentTypes = Array.isArray(options.contentTypes) ? options.contentTypes : [];
+    options.fieldsByType = options.fieldsByType && typeof options.fieldsByType === 'object' ? options.fieldsByType : {};
+    options.listModes = Array.isArray(options.listModes) ? options.listModes : [];
+    options.sortOptions = Array.isArray(options.sortOptions) ? options.sortOptions : [];
+    return options;
+}
+
+function nbhFaqListSource() {
+    var source = nbhGet(nbhState.draft, 'data.listSource', null);
+    if (!source || typeof source !== 'object' || Array.isArray(source)) {
+        source = {};
+    }
+
+    if (!source.type) source.type = 'manual';
+    if (!source.ctype) source.ctype = '';
+    if (typeof source.limit !== 'number') source.limit = 3;
+    if (!source.sort) source.sort = 'date_pub_desc';
+    if (!source.map || typeof source.map !== 'object' || Array.isArray(source.map)) {
+        source.map = {};
+    }
+    if (typeof source.map.question !== 'string') source.map.question = 'title';
+    if (typeof source.map.answer !== 'string') source.map.answer = '';
+    if (!source.emptyBehavior) source.emptyBehavior = 'fallback';
+
+    nbhSet(nbhState.draft, 'data.listSource', source);
+    return source;
+}
+
+function nbhEscapeAttr(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;');
+}
+
+function nbhEscapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function nbhAddRepeaterItem() {
+    var items = nbhRepeaterItems().slice();
+    items.push({ question: 'Новый вопрос', answer: 'Короткий ответ на вопрос.' });
+    nbhSet(nbhState.draft, 'content.items', items);
+    nbhMarkDirty();
+    nbhRenderPanels();
+    nbhScheduleSave();
+}
+
+function nbhRemoveRepeaterItem(index) {
+    var items = nbhRepeaterItems().slice();
+    if (index < 0 || index >= items.length) {
+        return;
+    }
+    items.splice(index, 1);
+    nbhSet(nbhState.draft, 'content.items', items);
+    nbhMarkDirty();
+    nbhRenderPanels();
+    nbhScheduleSave();
+}
+
+function nbhUpdateRepeaterItem(index, field, value) {
+    var items = nbhRepeaterItems().slice();
+    if (!items[index] || typeof items[index] !== 'object') {
+        items[index] = { question: '', answer: '' };
+    }
+    items[index][field] = value;
+    nbhSet(nbhState.draft, 'content.items', items);
+    nbhMarkDirty();
+    nbhScheduleSave();
 }
 
 function nbhMarkDirty() {
@@ -562,7 +657,7 @@ function nbhSave(silent) {
     btn.classList.add('is-saving');
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Сохранение...';
 
-    fetch(nbhSaveUrl, {
+    fetch(nbhSaveUrl + '?csrf_token=' + encodeURIComponent(nbhCsrfToken), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -633,14 +728,61 @@ function nbhTextarea(path, fallback) {
 }
 
 function nbhSelect(path, options, fallback) {
-    var value = String(nbhGet(nbhState.draft, path, fallback || ''));
+    var value = nbhGet(nbhState.draft, path, fallback || '');
+    if (typeof value === 'boolean') {
+        value = value ? '1' : '0';
+    }
+    value = String(value);
     return '<select data-path="' + path + '">' + options.map(function(option) {
         return '<option value="' + option.value + '"' + (value === option.value ? ' selected' : '') + '>' + option.label + '</option>';
     }).join('') + '</select>';
 }
 
+function nbhShouldRerenderPanels(path) {
+    return path.indexOf('data.listSource.') === 0 || path.indexOf('design.section.background.') === 0;
+}
+
+function nbhYesNoOptions() {
+    return [
+        { value: '1', label: 'Показывать' },
+        { value: '0', label: 'Скрыть' }
+    ];
+}
+
 function nbhBreakpointToggle() {
     return '<div class="nbh-breakpoints"><button type="button" data-breakpoint="desktop" class="' + (nbhState.activeBreakpoint === 'desktop' ? 'is-active' : '') + '">Desktop</button><button type="button" data-breakpoint="mobile" class="' + (nbhState.activeBreakpoint === 'mobile' ? 'is-active' : '') + '">Mobile</button></div>';
+}
+
+function nbhRepeaterEditor() {
+    var items = nbhRepeaterItems();
+    var listSource = nbhFaqListSource();
+    var cards = items.map(function(item, index) {
+        var question = item && item.question ? item.question : '';
+        var answer = item && item.answer ? item.answer : '';
+        return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
+            + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
+            + '<strong>Вопрос ' + (index + 1) + '</strong>'
+            + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
+            + '</div>'
+            + nbhField('Вопрос', '<input type="text" data-item-field="question" data-item-index="' + index + '" value="' + nbhEscapeAttr(question) + '">')
+            + nbhField('Ответ', '<textarea data-item-field="answer" data-item-index="' + index + '">' + nbhEscapeHtml(answer) + '</textarea>')
+            + '</div>';
+    }).join('');
+
+    if (!cards) {
+        cards = '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
+    }
+
+    if (listSource.type === 'content_list') {
+        cards = '<div class="nbh-note">Ручные вопросы ниже остаются fallback-списком, если data adapter не вернёт записей.</div>' + cards;
+    }
+
+    return nbhField('Первый вопрос открыт', nbhSelect('runtime.disclosure.openFirst', [
+        { value: '1', label: 'Да' },
+        { value: '0', label: 'Нет' }
+    ], '1'))
+        + cards
+        + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить вопрос</button>';
 }
 
 var nbhPresetRenderers = {
@@ -649,10 +791,12 @@ var nbhPresetRenderers = {
             return nbhField('Текст', nbhInput('content.eyebrow'));
         }
         if (panel.entityScope === 'title') {
-            return nbhField('Текст', nbhTextarea('content.title', ''));
+            return nbhField('Отображение', nbhSelect('design.entities.title.visible', nbhYesNoOptions(), '1'))
+                + nbhField('Текст', nbhTextarea('content.title', ''));
         }
         if (panel.entityScope === 'subtitle') {
-            return nbhField('Текст', nbhTextarea('content.subtitle', ''));
+            return nbhField('Отображение', nbhSelect('design.entities.subtitle.visible', nbhYesNoOptions(), '1'))
+                + nbhField('Текст', nbhTextarea('content.subtitle', ''));
         }
         return '<div class="nbh-note">Нет text mapping для сущности ' + panel.entityScope + '.</div>';
     },
@@ -669,20 +813,58 @@ var nbhPresetRenderers = {
             + nbhField('Alt', nbhInput('content.media.alt'));
     },
     sectionBackground: function() {
-        return nbhField('Тема секции', nbhSelect('design.section.theme', [
-            { value: 'light', label: 'Светлая' },
-            { value: 'dark', label: 'Темная' },
-            { value: 'accent', label: 'Accent' }
-        ], 'light'));
+        var backgroundMode = String(nbhGet(nbhState.draft, 'design.section.background.mode', 'theme') || 'theme');
+        var options = nbhBlockType() === 'faq'
+            ? [
+                { value: 'light', label: 'Светлая' },
+                { value: 'alt', label: 'Серый фон' },
+                { value: 'dark', label: 'Темная' }
+            ]
+            : [
+                { value: 'light', label: 'Светлая' },
+                { value: 'dark', label: 'Темная' },
+                { value: 'accent', label: 'Accent' }
+            ];
+        var body = nbhField('Тема блока', nbhSelect('design.section.theme', options, 'light'));
+        body += nbhField('Режим фона', nbhSelect('design.section.background.mode', [
+            { value: 'theme', label: 'Из темы блока' },
+            { value: 'color', label: 'Сплошной цвет' },
+            { value: 'gradient', label: 'Градиент' },
+            { value: 'image', label: 'Фото + затемнение' }
+        ], 'theme'));
+
+        if (backgroundMode === 'color') {
+            body += nbhField('Цвет фона', nbhInput('design.section.background.color', { inputType: 'color', fallback: '#f8fafc' }));
+        }
+
+        if (backgroundMode === 'gradient') {
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Цвет 1', nbhInput('design.section.background.gradientFrom', { inputType: 'color', fallback: '#f8fafc' }))
+                + nbhField('Цвет 2', nbhInput('design.section.background.gradientTo', { inputType: 'color', fallback: '#dbeafe' }))
+                + nbhField('Угол', nbhInput('design.section.background.gradientAngle', { inputType: 'number', type: 'number', fallback: 135 }))
+                + '</div>';
+        }
+
+        if (backgroundMode === 'image') {
+            body += nbhField('Путь к фото', nbhInput('design.section.background.image'));
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Цвет затемнения', nbhInput('design.section.background.overlayColor', { inputType: 'color', fallback: '#0f172a' }))
+                + nbhField('Сила затемнения, %', nbhInput('design.section.background.overlayOpacity', { inputType: 'number', type: 'number', fallback: 45 }))
+                + '</div>';
+        }
+
+        return body;
     },
     sectionContainer: function() {
-        return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }));
+        return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }));
     },
     typographyText: function(panel, bp) {
         var body = nbhBreakpointToggle();
+        var blockType = nbhBlockType();
         if (panel.entityScope === 'title') {
             body += '<div class="nbh-grid-2">'
-                + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 64 : 40 }))
+                + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 48 : 64) : (blockType === 'faq' ? 32 : 40) }))
+                + nbhField('Отступ снизу', nbhInput('design.entities.title.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 0 : 16) : (blockType === 'faq' ? 0 : 14) }))
                 + (bp === 'desktop'
                     ? nbhField('Жирность', nbhSelect('design.entities.title.weight', [
                         { value: '400', label: '400' },
@@ -691,7 +873,7 @@ var nbhPresetRenderers = {
                         { value: '700', label: '700' },
                         { value: '800', label: '800' },
                         { value: '900', label: '900' }
-                    ], '900'))
+                    ], blockType === 'faq' ? '800' : '900'))
                     : '')
                 + '</div>';
             if (bp === 'desktop') {
@@ -700,12 +882,31 @@ var nbhPresetRenderers = {
                     { value: 'h1', label: 'H1' },
                     { value: 'h2', label: 'H2' },
                     { value: 'h3', label: 'H3' }
-                ], 'h1'));
+                ], blockType === 'faq' ? 'h2' : 'h1'));
             }
             return body;
         }
         if (panel.entityScope === 'subtitle') {
-            return body + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 20 : 18 }));
+            return body + '<div class="nbh-grid-2">'
+                + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 18 : 20) : (blockType === 'faq' ? 16 : 18) }))
+                + nbhField('Отступ снизу', nbhInput('design.entities.subtitle.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 32 : 24) : (blockType === 'faq' ? 24 : 20) }))
+                + '</div>';
+        }
+        if (panel.entityScope === 'items' && blockType === 'faq') {
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Размер вопроса', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 18 : 17 }))
+                + nbhField('Размер ответа', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 16 : 15 }))
+                + '</div>';
+            if (bp === 'desktop') {
+                body += nbhField('Жирность вопроса', nbhSelect('design.entities.itemTitle.weight', [
+                    { value: '400', label: '400' },
+                    { value: '500', label: '500' },
+                    { value: '600', label: '600' },
+                    { value: '700', label: '700' },
+                    { value: '800', label: '800' }
+                ], '700'));
+            }
+            return body;
         }
         return body + '<div class="nbh-note">Этот preset уже зарезервирован для item/entity typography и будет расширен следующим этапом.</div>';
     },
@@ -724,25 +925,37 @@ var nbhPresetRenderers = {
             + '</div>';
     },
     surfaceStyle: function() {
+        if (nbhBlockType() === 'faq') {
+            return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
+                { value: 'card', label: 'Card' },
+                { value: 'plain', label: 'Plain' }
+            ], 'card'));
+        }
         return '<div class="nbh-note">Surface controls пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
     },
     spacingLayout: function(panel, bp) {
         var body = nbhBreakpointToggle();
         if (bp === 'desktop') {
             return body + '<div class="nbh-grid-2">'
-                + nbhField('Padding top', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: 96 }))
-                + nbhField('Padding bottom', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: 96 }))
-                + nbhField('Min height', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
-                + nbhField('Content width', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: 640 }))
+                + nbhField('Padding top', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
+                + nbhField('Padding bottom', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
+                + (nbhBlockType() === 'faq' ? '' : nbhField('Min height', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
+                + nbhField('Content width', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }))
                 + '</div>';
         }
         return body + '<div class="nbh-grid-2">'
             + nbhField('Padding top', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
             + nbhField('Padding bottom', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
-            + nbhField('Min height', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 }))
+            + (nbhBlockType() === 'faq' ? '' : nbhField('Min height', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
             + '</div>';
     },
     alignmentLayout: function() {
+        if (nbhBlockType() === 'faq') {
+            return nbhField('Выравнивание', nbhSelect('layout.desktop.align', [
+                { value: 'center', label: 'Center' },
+                { value: 'left', label: 'Left' }
+            ], 'center'));
+        }
         return nbhField('Режим hero', nbhSelect('layout.desktop.mode', [
             { value: 'centered', label: 'Centered' },
             { value: 'left', label: 'Left' },
@@ -753,9 +966,62 @@ var nbhPresetRenderers = {
         return '<div class="nbh-note">Источник данных и slot bindings уже предусмотрены state layer, но в hero prototype эта вкладка пока read-only. Следующий шаг — вывести source selector и compatible slot mapping.</div>';
     },
     dataBindingRepeater: function() {
-        return '<div class="nbh-note">Repeater bindings появятся после первого dynamic list runtime.</div>';
+        if (nbhBlockType() !== 'faq') {
+            return '<div class="nbh-note">Repeater bindings подключены пока только для FAQ как первого content_list adapter.</div>';
+        }
+
+        var options = nbhDataOptions();
+        var listSource = nbhFaqListSource();
+        var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
+        var ctypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(options.contentTypes.map(function(ctype) {
+            return { value: ctype.name, label: ctype.title };
+        }));
+        var fieldOptions = [{ value: '', label: 'Не выбрано' }].concat(fields.map(function(field) {
+            return { value: field.name, label: field.label + ' [' + field.type + ']' };
+        }));
+        var body = nbhField('Источник списка', nbhSelect('data.listSource.type', options.listModes.length ? options.listModes : [
+            { value: 'manual', label: 'Ручной список' },
+            { value: 'content_list', label: 'Список записей InstantCMS' }
+        ], 'manual'));
+
+        if (listSource.type !== 'content_list') {
+            return body + '<div class="nbh-note">Сейчас FAQ использует ручной список из вкладки Контент. Переключите источник на список записей InstantCMS, чтобы content.items[] собирался автоматически.</div>';
+        }
+
+        if (!options.contentTypes.length) {
+            return body + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому content_list пока выбрать нельзя.</div>';
+        }
+
+        body += nbhField('Тип контента', nbhSelect('data.listSource.ctype', ctypeOptions, ''));
+        body += '<div class="nbh-grid-2">'
+            + nbhField('Лимит записей', nbhInput('data.listSource.limit', { inputType: 'number', type: 'number', fallback: 3 }))
+            + nbhField('Сортировка', nbhSelect('data.listSource.sort', options.sortOptions.length ? options.sortOptions : [{ value: 'date_pub_desc', label: 'Сначала новые' }], 'date_pub_desc'))
+            + '</div>';
+
+        if (!listSource.ctype) {
+            return body + '<div class="nbh-note">Сначала выберите тип контента, после этого появятся совместимые поля для вопроса и ответа.</div>';
+        }
+
+        if (!fields.length) {
+            return body + '<div class="nbh-note">У выбранного типа контента не найдено текстовых полей для маппинга. Можно использовать системный title или выбрать другой ctype.</div>';
+        }
+
+        body += '<div class="nbh-grid-2">'
+            + nbhField('Поле вопроса', nbhSelect('data.listSource.map.question', fieldOptions, 'title'))
+            + nbhField('Поле ответа', nbhSelect('data.listSource.map.answer', fieldOptions, ''))
+            + '</div>';
+        body += nbhField('Если записей нет', nbhSelect('data.listSource.emptyBehavior', [
+            { value: 'fallback', label: 'Показать ручной fallback' },
+            { value: 'empty', label: 'Показать пустой список' }
+        ], 'fallback'));
+        body += '<div class="nbh-note">Ручные элементы из вкладки Контент остаются fallback-списком. Preview и live уже используют один и тот же SSR adapter pipeline.</div>';
+
+        return body;
     },
     repeaterItems: function() {
+        if (nbhBlockType() === 'faq') {
+            return nbhRepeaterEditor();
+        }
         return '<div class="nbh-note">Редактор repeater items будет подключён следующим этапом, после стабилизации hero contract runtime.</div>';
     },
     __default: function(panel) {
@@ -823,6 +1089,10 @@ document.getElementById('nbhEntityList').addEventListener('click', function(even
 document.getElementById('nbh-panel-body').addEventListener('input', function(event) {
     var target = event.target;
     if (target.closest('[data-breakpoint]')) return;
+    if (target.dataset.itemField) {
+        nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
+        return;
+    }
     var path = target.dataset.path;
     if (!path) return;
 
@@ -833,6 +1103,9 @@ document.getElementById('nbh-panel-body').addEventListener('input', function(eve
     }
 
     nbhSet(nbhState.draft, path, value);
+    if (nbhShouldRerenderPanels(path)) {
+        nbhRenderPanels();
+    }
     nbhMarkDirty();
     nbhScheduleSave();
 });
@@ -846,6 +1119,10 @@ document.getElementById('nbh-panel-body').addEventListener('change', function(ev
     }
 
     var target = event.target;
+    if (target.dataset.itemField) {
+        nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
+        return;
+    }
     var path = target.dataset.path;
     if (!path) return;
 
@@ -856,11 +1133,25 @@ document.getElementById('nbh-panel-body').addEventListener('change', function(ev
     }
 
     nbhSet(nbhState.draft, path, value);
+    if (nbhShouldRerenderPanels(path)) {
+        nbhRenderPanels();
+    }
     nbhMarkDirty();
     nbhScheduleSave();
 });
 
 document.getElementById('nbh-panel-body').addEventListener('click', function(event) {
+    var repeaterAction = event.target.closest('[data-repeater-action]');
+    if (repeaterAction) {
+        if (repeaterAction.dataset.repeaterAction === 'add') {
+            nbhAddRepeaterItem();
+        }
+        if (repeaterAction.dataset.repeaterAction === 'remove') {
+            nbhRemoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10));
+        }
+        return;
+    }
+
     var target = event.target.closest('[data-breakpoint]');
     if (!target) return;
     nbhState.activeBreakpoint = target.dataset.breakpoint;
@@ -892,6 +1183,6 @@ window.addEventListener('beforeunload', function(event) {
 });
 
 nbhLoadState().catch(function(error) {
-    document.getElementById('nbh-panel-body').innerHTML = '<div class="nbh-empty">Не удалось загрузить hero editor state: ' + (error && error.message ? error.message : 'unknown') + '</div>';
+    document.getElementById('nbh-panel-body').innerHTML = '<div class="nbh-empty">Не удалось загрузить block editor state: ' + (error && error.message ? error.message : 'unknown') + '</div>';
 });
 </script>
