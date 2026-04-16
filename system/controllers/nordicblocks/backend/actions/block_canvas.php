@@ -43,6 +43,92 @@ a{color:inherit;text-decoration:none}
         header('Content-Type: text/html; charset=utf-8');
         header('X-Frame-Options: SAMEORIGIN');
 
+        $bridge_css = '
+[data-nb-entity]{position:relative;cursor:pointer}
+[data-nb-entity]:hover{outline:2px solid rgba(37,99,235,.35);outline-offset:4px}
+.nb-editor-selected{outline:2px solid #2563eb !important;outline-offset:4px}
+        ';
+
+        $bridge_js = <<<'JS'
+<script>
+(function () {
+    var selectedNode = null;
+
+    function findEntityNode(target) {
+        while (target && target !== document.body) {
+            if (target.nodeType === 1 && target.hasAttribute('data-nb-entity')) {
+                return target;
+            }
+            target = target.parentNode;
+        }
+        return null;
+    }
+
+    function clearSelection() {
+        if (selectedNode) {
+            selectedNode.classList.remove('nb-editor-selected');
+        }
+    }
+
+    function selectEntity(entityKey, shouldScroll) {
+        var safeKey;
+
+        if (!entityKey) {
+            return;
+        }
+
+        clearSelection();
+
+        safeKey = String(entityKey).replace(/"/g, '\\"');
+        selectedNode = document.querySelector('[data-nb-entity="' + safeKey + '"]');
+        if (!selectedNode) {
+            return;
+        }
+
+        selectedNode.classList.add('nb-editor-selected');
+        if (shouldScroll && typeof selectedNode.scrollIntoView === 'function') {
+            selectedNode.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        var entityNode = findEntityNode(event.target);
+        if (!entityNode) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        selectEntity(entityNode.getAttribute('data-nb-entity') || '', false);
+
+        if (window.parent) {
+            window.parent.postMessage({
+                source: 'nordicblocks-canvas',
+                type: 'entity:selected',
+                entity: entityNode.getAttribute('data-nb-entity') || ''
+            }, '*');
+        }
+    }, true);
+
+    window.addEventListener('message', function (event) {
+        var data = event.data || {};
+        if (data.source !== 'nordicblocks-editor') {
+            return;
+        }
+
+        if (data.type === 'entity:select') {
+            selectEntity(data.entity || '', true);
+        }
+    });
+
+    if (window.parent) {
+        window.parent.postMessage({ source: 'nordicblocks-canvas', type: 'canvas:ready' }, '*');
+    }
+})();
+</script>
+JS;
+
         echo '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">';
         echo '<meta name="viewport" content="width=device-width,initial-scale=1">';
         echo '<title>Preview</title>';
@@ -50,8 +136,10 @@ a{color:inherit;text-decoration:none}
         echo '<style>' . $inline_css . '</style>';
         echo '<style>' . $base_css . '</style>';
         echo '<style>' . $blocks_css . '</style>';
+        echo '<style>' . $bridge_css . '</style>';
         echo '</head><body>';
         echo $content;
+        echo $bridge_js;
         echo '</body></html>';
         exit;
     }

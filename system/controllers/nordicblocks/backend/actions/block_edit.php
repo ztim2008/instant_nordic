@@ -16,15 +16,18 @@ class actionNordicblocksBlockEdit extends cmsAction {
         $tokens         = $this->model->getDesignTokens();
         $inline_css     = $this->model->buildInlineCss($tokens);
 
-        $canvas_url = href_to($this->controller->root_url, 'block_canvas', $block_id);
+        $canvas_url       = href_to($this->controller->root_url, 'block_canvas', $block_id);
+        $editor_state_url = href_to($this->controller->root_url, 'block_editor_state', $block_id);
+        $template_name    = ((string) ($block['type'] ?? '') === 'hero') ? 'backend/editor_hero_v2' : 'backend/editor';
 
-        return $this->cms_template->render('backend/editor', [
+        return $this->cms_template->render($template_name, [
             'menu'           => $this->controller->getBackendMenu(),
             'block'          => $block,
             'block_registry' => $block_registry,
             'image_presets'  => $this->getImagePresetOptions(),
             'inline_css'     => $inline_css,
             'save_url'       => href_to($this->controller->root_url, 'block_save', [$block_id]),
+            'editor_state_url' => $editor_state_url,
             'canvas_url'     => $canvas_url,
             'place_url'      => href_to($this->controller->root_url, 'block_place', $block_id),
             'back_url'       => href_to($this->controller->root_url, 'blocks'),
