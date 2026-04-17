@@ -189,6 +189,8 @@
 1. Введён отдельный shared `controls` registry как слой между panel definition и render shell.
 2. Панели начали описываться через `control`, а не только через legacy `controlPreset`.
 3. Editor shell уже умеет рендерить панель по `panel.control` с мягким fallback на старый ключ, что позволяет двигаться дальше без остановки UI.
+4. Dispatcher внутри shell переведён ещё на один слой глубже: теперь выбор client renderer идёт через `registry.controls[control].component`, а не через локальный hardcoded map по ключам panel control.
+5. `InspectorStateBuilder` начал поднимать `controlKey`, `controlLabel` и `controlComponent` прямо в `availablePanels`, чтобы shell читал уже готовую panel metadata, а не склеивал её заново на клиенте.
 
 ### Какие результаты должны быть к концу дня
 

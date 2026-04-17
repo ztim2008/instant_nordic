@@ -10,7 +10,9 @@ class NordicblocksInspectorStateBuilder {
         $available_panels = self::getAvailablePanels(
             (array) ($registry['panels'] ?? []),
             $resolved_entities,
-            $resolved_capabilities
+            $resolved_capabilities,
+            (array) ($registry['controls'] ?? []),
+            (array) ($registry['controlPresets'] ?? [])
         );
 
         $visible_panels = self::filterPanelsBySelection(
@@ -43,7 +45,7 @@ class NordicblocksInspectorStateBuilder {
         ];
     }
 
-    private static function getAvailablePanels(array $panels, array $resolved_entities, array $resolved_capabilities) {
+    private static function getAvailablePanels(array $panels, array $resolved_entities, array $resolved_capabilities, array $controls, array $control_presets) {
         $available = [];
 
         foreach ($panels as $panel) {
@@ -51,6 +53,7 @@ class NordicblocksInspectorStateBuilder {
                 continue;
             }
 
+            $panel = self::attachControlDefinition($panel, $controls, $control_presets);
             $available[] = $panel;
         }
 
@@ -59,6 +62,17 @@ class NordicblocksInspectorStateBuilder {
         });
 
         return $available;
+    }
+
+    private static function attachControlDefinition(array $panel, array $controls, array $control_presets) {
+        $control_key = (string) ($panel['control'] ?? $panel['controlPreset'] ?? '');
+        $control = (array) ($controls[$control_key] ?? $control_presets[$control_key] ?? []);
+
+        $panel['controlKey'] = $control_key;
+        $panel['controlLabel'] = (string) ($control['label'] ?? $control_key);
+        $panel['controlComponent'] = (string) ($control['component'] ?? '');
+
+        return $panel;
     }
 
     private static function isPanelAvailable(array $panel, array $resolved_entities, array $resolved_capabilities) {

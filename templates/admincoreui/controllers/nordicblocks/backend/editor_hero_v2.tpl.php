@@ -1307,7 +1307,7 @@ function nbhPanelControlKey(panel) {
         return '';
     }
 
-    return panel.control || panel.controlPreset || '';
+    return panel.controlKey || panel.control || panel.controlPreset || '';
 }
 
 function nbhLoadState() {
@@ -1637,8 +1637,41 @@ function nbhRepeaterEditor() {
         + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить вопрос</button>';
 }
 
-var nbhControlRenderers = {
-    textContent: function(panel) {
+function nbhDefaultControlComponent(controlKey) {
+    var componentMap = {
+        textContent: 'text-content-panel',
+        buttonContent: 'button-content-panel',
+        mediaContent: 'media-content-panel',
+        sectionBackground: 'section-background-panel',
+        sectionContainer: 'section-container-panel',
+        typographyText: 'typography-text-panel',
+        buttonStyle: 'button-style-panel',
+        surfaceStyle: 'surface-style-panel',
+        spacingLayout: 'spacing-layout-panel',
+        alignmentLayout: 'alignment-layout-panel',
+        dataSource: 'data-source-panel',
+        dataCollection: 'data-collection-panel',
+        repeaterItems: 'repeater-items-panel'
+    };
+
+    return componentMap[controlKey] || '';
+}
+
+function nbhResolveControlDefinition(panel) {
+    var controlKey = nbhPanelControlKey(panel);
+    var controls = nbhState.inspector && nbhState.inspector.controls ? nbhState.inspector.controls : {};
+    var controlPresets = nbhState.inspector && nbhState.inspector.controlPresets ? nbhState.inspector.controlPresets : {};
+    var definition = controls[controlKey] || controlPresets[controlKey] || {};
+
+    return {
+        key: controlKey,
+        label: panel && panel.controlLabel ? panel.controlLabel : (definition.label || controlKey),
+        component: panel && panel.controlComponent ? panel.controlComponent : (definition.component || nbhDefaultControlComponent(controlKey))
+    };
+}
+
+var nbhControlComponentRenderers = {
+    'text-content-panel': function(panel) {
         if (panel.entityScope === 'eyebrow') {
             return nbhField('Текст', nbhInput('content.eyebrow'));
         }
@@ -1652,7 +1685,7 @@ var nbhControlRenderers = {
         }
         return '<div class="nbh-note">Для сущности ' + panel.entityScope + ' пока не подключена отдельная контентная панель.</div>';
     },
-    buttonContent: function() {
+    'button-content-panel': function() {
         return '<div class="nbh-grid-2">'
             + nbhField('Текст основной кнопки', nbhInput('content.primaryButton.label'))
             + nbhField('Ссылка основной кнопки', nbhInput('content.primaryButton.url'))
@@ -1660,11 +1693,11 @@ var nbhControlRenderers = {
             + nbhField('Ссылка вторичной кнопки', nbhInput('content.secondaryButton.url'))
             + '</div>';
     },
-    mediaContent: function() {
+    'media-content-panel': function() {
         return nbhField('Путь к изображению', nbhInput('content.media.image', { picker: 'image' }))
             + nbhField('Alt-текст', nbhInput('content.media.alt'));
     },
-    sectionBackground: function() {
+    'section-background-panel': function() {
         var profile = nbhBlockUiProfile();
         var backgroundMode = String(nbhGet(nbhState.draft, 'design.section.background.mode', 'theme') || 'theme');
         var body = nbhField('Тема блока', nbhSelect('design.section.theme', profile.themeOptions, 'light'));
@@ -1721,11 +1754,11 @@ var nbhControlRenderers = {
 
         return body;
     },
-    sectionContainer: function() {
+    'section-container-panel': function() {
         var profile = nbhBlockUiProfile();
         return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }));
     },
-    typographyText: function(panel, bp) {
+    'typography-text-panel': function(panel, bp) {
         var profile = nbhBlockUiProfile();
         var body = nbhBreakpointToggle();
         if (panel.entityScope === 'title') {
@@ -1802,7 +1835,7 @@ var nbhControlRenderers = {
         }
         return body + '<div class="nbh-note">Этот набор настроек зарезервирован под типографику сущностей и будет расширен следующим этапом.</div>';
     },
-    buttonStyle: function() {
+    'button-style-panel': function() {
         return '<div class="nbh-grid-2">'
             + nbhField('Стиль основной кнопки', nbhSelect('design.entities.primaryButton.style', [
                 { value: 'primary', label: 'Основная' },
@@ -1816,7 +1849,7 @@ var nbhControlRenderers = {
             ], 'outline'))
             + '</div>';
     },
-    surfaceStyle: function() {
+    'surface-style-panel': function() {
         if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
             return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
                 { value: 'card', label: 'Карточки' },
@@ -1825,7 +1858,7 @@ var nbhControlRenderers = {
         }
         return '<div class="nbh-note">Настройки поверхности пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
     },
-    spacingLayout: function(panel, bp) {
+    'spacing-layout-panel': function(panel, bp) {
         var profile = nbhBlockUiProfile();
         var body = nbhBreakpointToggle();
         if (bp === 'desktop') {
@@ -1842,7 +1875,7 @@ var nbhControlRenderers = {
             + (profile.layout.supportsMinHeight ? nbhField('Мин. высота', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })) : '')
             + '</div>';
     },
-    alignmentLayout: function() {
+    'alignment-layout-panel': function() {
         var profile = nbhBlockUiProfile();
         if (profile.layout.primaryControl === 'align') {
             return nbhField('Выравнивание', nbhSelect('layout.desktop.align', [
@@ -1856,7 +1889,7 @@ var nbhControlRenderers = {
             { value: 'split', label: 'Текст и медиа' }
         ], 'centered'));
     },
-    dataSource: function() {
+    'data-source-panel': function() {
         if (nbhUsesCollectionData()) {
             var listOptions = nbhDataOptions();
             var listSource = nbhListSource();
@@ -1958,7 +1991,7 @@ var nbhControlRenderers = {
 
         return body;
     },
-    dataCollection: function() {
+    'data-collection-panel': function() {
         var options = nbhDataOptions();
         var listSource = nbhListSource();
         var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
@@ -1997,22 +2030,22 @@ var nbhControlRenderers = {
 
         return body;
     },
-    repeaterItems: function() {
+    'repeater-items-panel': function() {
         if (nbhHasCapability('repeaterContent') && nbhHasEntity('items')) {
             return nbhRepeaterEditor();
         }
         return '<div class="nbh-note">Редактор повторяющихся элементов будет подключён следующим этапом, после стабилизации hero runtime.</div>';
     },
-    __default: function(panel) {
-        return '<div class="nbh-note">Панель ' + nbhPanelControlKey(panel) + ' пока не подключена.</div>';
+    __default: function(panel, bp, control) {
+        return '<div class="nbh-note">Панель ' + (control && control.label ? control.label : nbhPanelControlKey(panel)) + ' пока не подключена.</div>';
     }
 };
 
 function nbhRenderPanel(panel) {
     var bp = nbhState.activeBreakpoint;
-    var controlKey = nbhPanelControlKey(panel);
-    var renderer = nbhControlRenderers[controlKey] || nbhControlRenderers.__default;
-    var body = renderer(panel, bp);
+    var control = nbhResolveControlDefinition(panel);
+    var renderer = nbhControlComponentRenderers[control.component] || nbhControlComponentRenderers.__default;
+    var body = renderer(panel, bp, control);
 
     return '<section class="nbh-section" data-panel="' + panel.key + '">' +
         '<div class="nbh-section-head"><strong>' + panel.label + '</strong><span>' + nbhHumanSection(panel.section) + '</span></div>' +
