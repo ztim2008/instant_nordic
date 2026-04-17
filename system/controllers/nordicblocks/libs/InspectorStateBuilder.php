@@ -21,6 +21,7 @@ class NordicblocksInspectorStateBuilder {
 
         return [
             'entityGroups'   => self::getResolvedEntityGroups((array) ($registry['entityGroups'] ?? []), $resolved_entities),
+            'controls'       => (array) ($registry['controls'] ?? $registry['controlPresets'] ?? []),
             'controlPresets' => (array) ($registry['controlPresets'] ?? []),
             'availablePanels'=> $available_panels,
             'visiblePanels'  => array_values(array_filter($visible_panels, function ($panel) use ($active_tab) {

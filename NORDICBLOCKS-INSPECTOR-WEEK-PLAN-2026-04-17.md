@@ -154,6 +154,8 @@
 2. `InspectorRegistryBuilder` начал собирать `entities`, `entityGroups`, `capabilities` и `panels` из block manifest, сохраняя legacy fallback как аварийную сетку.
 3. В `block_editor_state` начал отдаваться `registry.manifest`, чтобы было видно, что редактор работает уже от декларативного описания.
 4. Старый page-editor registry тоже сужен до первой волны, чтобы legacy-типы не мешались в активном редакторском потоке.
+5. Shared entities, groups, capabilities, panels и controls вынесены из `InspectorRegistryBuilder` в отдельный `InspectorDefinitionRegistry`, так что builder перестал быть контейнером жёсткого registry-хардкода.
+6. Inspector shell начал работать с новым `panel.control` и отдельным `controls` registry, сохраняя `controlPreset` только как мягкий compatibility fallback.
 
 ### Какие результаты должны быть к концу дня
 
@@ -174,13 +176,19 @@
 
 ## День 4. Control registry
 
-**Статус:** ⚪ Запланировано
+**Статус:** 🟡 В работе
 
 ### Что делаем
 
 1. Собираем общий набор controls: `text`, `textarea`, `select`, `toggle`, `color`, `number`, `range`, `media`, `url`, `repeater`.
 2. Убираем знания о конкретном block type из самих controls.
 3. Выделяем слой control rendering внутри одного общего shell.
+
+### Что уже сделано
+
+1. Введён отдельный shared `controls` registry как слой между panel definition и render shell.
+2. Панели начали описываться через `control`, а не только через legacy `controlPreset`.
+3. Editor shell уже умеет рендерить панель по `panel.control` с мягким fallback на старый ключ, что позволяет двигаться дальше без остановки UI.
 
 ### Какие результаты должны быть к концу дня
 

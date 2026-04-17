@@ -648,6 +648,88 @@ function nbhBlockType() {
     return nbhGet(nbhState.server, 'block.type', '');
 }
 
+function nbhBlockUiProfile() {
+    if (nbhHasEntity('items') && nbhHasCapability('repeaterContent')) {
+        return {
+            kind: 'collection',
+            themeOptions: [
+                { value: 'light', label: 'Светлая' },
+                { value: 'alt', label: 'Серый фон' },
+                { value: 'dark', label: 'Темная' }
+            ],
+            contentWidth: 760,
+            title: {
+                desktopFontSize: 48,
+                mobileFontSize: 32,
+                desktopMarginBottom: 0,
+                mobileMarginBottom: 0,
+                weight: '800',
+                tag: 'h2',
+                desktopExtras: true,
+            },
+            subtitle: {
+                desktopFontSize: 18,
+                mobileFontSize: 16,
+                desktopMarginBottom: 32,
+                mobileMarginBottom: 24,
+                desktopExtras: true,
+            },
+            itemTypography: {
+                enabled: true,
+                questionDesktopSize: 18,
+                questionMobileSize: 17,
+                answerDesktopSize: 16,
+                answerMobileSize: 15,
+            },
+            layout: {
+                desktopPaddingTop: 88,
+                desktopPaddingBottom: 88,
+                mobilePaddingTop: 56,
+                mobilePaddingBottom: 56,
+                supportsMinHeight: false,
+                primaryControl: 'align',
+            },
+        };
+    }
+
+    return {
+        kind: 'hero',
+        themeOptions: [
+            { value: 'light', label: 'Светлая' },
+            { value: 'dark', label: 'Темная' },
+            { value: 'accent', label: 'Акцентная' }
+        ],
+        contentWidth: 640,
+        title: {
+            desktopFontSize: 64,
+            mobileFontSize: 40,
+            desktopMarginBottom: 16,
+            mobileMarginBottom: 14,
+            weight: '900',
+            tag: 'h1',
+            desktopExtras: false,
+        },
+        subtitle: {
+            desktopFontSize: 20,
+            mobileFontSize: 18,
+            desktopMarginBottom: 24,
+            mobileMarginBottom: 20,
+            desktopExtras: false,
+        },
+        itemTypography: {
+            enabled: false,
+        },
+        layout: {
+            desktopPaddingTop: 96,
+            desktopPaddingBottom: 96,
+            mobilePaddingTop: 56,
+            mobilePaddingBottom: 56,
+            supportsMinHeight: true,
+            primaryControl: 'mode',
+        },
+    };
+}
+
 function nbhRepeaterItems() {
     var items = nbhGet(nbhState.draft, 'content.items', []);
     return Array.isArray(items) ? items : [];
@@ -1212,11 +1294,20 @@ function nbhSetViewport(mode) {
 function nbhBuildInspectorState(payload) {
     return {
         entityGroups: nbhGet(payload, 'inspector.entityGroups', {}),
+        controls: nbhGet(payload, 'inspector.controls', nbhGet(payload, 'registry.controls', nbhGet(payload, 'inspector.controlPresets', {}))),
         controlPresets: nbhGet(payload, 'inspector.controlPresets', {}),
         availablePanels: nbhGet(payload, 'inspector.availablePanels', nbhGet(payload, 'registry.panels', [])),
         tabs: nbhGet(payload, 'inspector.tabs', nbhGet(payload, 'registry.tabs', [])),
         selectionModel: nbhGet(payload, 'inspector.selectionModel', {})
     };
+}
+
+function nbhPanelControlKey(panel) {
+    if (!panel) {
+        return '';
+    }
+
+    return panel.control || panel.controlPreset || '';
 }
 
 function nbhLoadState() {
@@ -1546,7 +1637,7 @@ function nbhRepeaterEditor() {
         + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить вопрос</button>';
 }
 
-var nbhPresetRenderers = {
+var nbhControlRenderers = {
     textContent: function(panel) {
         if (panel.entityScope === 'eyebrow') {
             return nbhField('Текст', nbhInput('content.eyebrow'));
@@ -1574,19 +1665,9 @@ var nbhPresetRenderers = {
             + nbhField('Alt-текст', nbhInput('content.media.alt'));
     },
     sectionBackground: function() {
+        var profile = nbhBlockUiProfile();
         var backgroundMode = String(nbhGet(nbhState.draft, 'design.section.background.mode', 'theme') || 'theme');
-        var options = nbhBlockType() === 'faq'
-            ? [
-                { value: 'light', label: 'Светлая' },
-                { value: 'alt', label: 'Серый фон' },
-                { value: 'dark', label: 'Темная' }
-            ]
-            : [
-                { value: 'light', label: 'Светлая' },
-                { value: 'dark', label: 'Темная' },
-                { value: 'accent', label: 'Акцентная' }
-            ];
-        var body = nbhField('Тема блока', nbhSelect('design.section.theme', options, 'light'));
+        var body = nbhField('Тема блока', nbhSelect('design.section.theme', profile.themeOptions, 'light'));
         body += nbhField('Режим фона', nbhSelect('design.section.background.mode', [
             { value: 'theme', label: 'Из темы блока' },
             { value: 'color', label: 'Сплошной цвет' },
@@ -1641,15 +1722,16 @@ var nbhPresetRenderers = {
         return body;
     },
     sectionContainer: function() {
-        return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }));
+        var profile = nbhBlockUiProfile();
+        return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }));
     },
     typographyText: function(panel, bp) {
+        var profile = nbhBlockUiProfile();
         var body = nbhBreakpointToggle();
-        var blockType = nbhBlockType();
         if (panel.entityScope === 'title') {
             body += '<div class="nbh-grid-2">'
-                + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 48 : 64) : (blockType === 'faq' ? 32 : 40) }))
-                + nbhField('Отступ снизу', nbhInput('design.entities.title.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 0 : 16) : (blockType === 'faq' ? 0 : 14) }))
+                + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.title.desktopFontSize : profile.title.mobileFontSize }))
+                + nbhField('Отступ снизу', nbhInput('design.entities.title.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.title.desktopMarginBottom : profile.title.mobileMarginBottom }))
                 + (bp === 'desktop'
                     ? nbhField('Жирность', nbhSelect('design.entities.title.weight', [
                         { value: '400', label: '400' },
@@ -1658,10 +1740,10 @@ var nbhPresetRenderers = {
                         { value: '700', label: '700' },
                         { value: '800', label: '800' },
                         { value: '900', label: '900' }
-                    ], blockType === 'faq' ? '800' : '900'))
+                    ], profile.title.weight))
                     : '')
                 + '</div>';
-            if (blockType === 'faq' && bp === 'desktop') {
+            if (profile.title.desktopExtras && bp === 'desktop') {
                 body += '<div class="nbh-grid-2">'
                     + nbhField('Цвет', nbhInput('design.entities.title.color', { inputType: 'color', fallback: '#0f172a' }))
                     + nbhField('Высота строки, %', nbhInput('design.entities.title.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 110 }))
@@ -1675,16 +1757,16 @@ var nbhPresetRenderers = {
                     { value: 'h1', label: 'H1' },
                     { value: 'h2', label: 'H2' },
                     { value: 'h3', label: 'H3' }
-                ], blockType === 'faq' ? 'h2' : 'h1'));
+                ], profile.title.tag));
             }
             return body;
         }
         if (panel.entityScope === 'subtitle') {
             body += '<div class="nbh-grid-2">'
-                + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 18 : 20) : (blockType === 'faq' ? 16 : 18) }))
-                + nbhField('Отступ снизу', nbhInput('design.entities.subtitle.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 32 : 24) : (blockType === 'faq' ? 24 : 20) }))
+                + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.subtitle.desktopFontSize : profile.subtitle.mobileFontSize }))
+                + nbhField('Отступ снизу', nbhInput('design.entities.subtitle.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.subtitle.desktopMarginBottom : profile.subtitle.mobileMarginBottom }))
                 + '</div>';
-            if (blockType === 'faq' && bp === 'desktop') {
+            if (profile.subtitle.desktopExtras && bp === 'desktop') {
                 body += '<div class="nbh-grid-2">'
                     + nbhField('Цвет', nbhInput('design.entities.subtitle.color', { inputType: 'color', fallback: '#475569' }))
                     + nbhField('Высота строки, %', nbhInput('design.entities.subtitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 165 }))
@@ -1694,10 +1776,10 @@ var nbhPresetRenderers = {
             }
             return body;
         }
-        if (panel.entityScope === 'items' && blockType === 'faq') {
+        if (panel.entityScope === 'items' && profile.itemTypography.enabled) {
             body += '<div class="nbh-grid-2">'
-                + nbhField('Размер вопроса', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 18 : 17 }))
-                + nbhField('Размер ответа', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? 16 : 15 }))
+                + nbhField('Размер вопроса', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.itemTypography.questionDesktopSize : profile.itemTypography.questionMobileSize }))
+                + nbhField('Размер ответа', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.itemTypography.answerDesktopSize : profile.itemTypography.answerMobileSize }))
                 + '</div>';
             if (bp === 'desktop') {
                 body += nbhField('Жирность вопроса', nbhSelect('design.entities.itemTitle.weight', [
@@ -1735,7 +1817,7 @@ var nbhPresetRenderers = {
             + '</div>';
     },
     surfaceStyle: function() {
-        if (nbhBlockType() === 'faq') {
+        if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
             return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
                 { value: 'card', label: 'Карточки' },
                 { value: 'plain', label: 'Без карточек' }
@@ -1744,23 +1826,25 @@ var nbhPresetRenderers = {
         return '<div class="nbh-note">Настройки поверхности пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
     },
     spacingLayout: function(panel, bp) {
+        var profile = nbhBlockUiProfile();
         var body = nbhBreakpointToggle();
         if (bp === 'desktop') {
             return body + '<div class="nbh-grid-2">'
-                + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
-                + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
-                + (nbhBlockType() === 'faq' ? '' : nbhField('Мин. высота', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
-                + nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }))
+                + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
+                + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))
+                + (profile.layout.supportsMinHeight ? nbhField('Мин. высота', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })) : '')
+                + nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }))
                 + '</div>';
         }
         return body + '<div class="nbh-grid-2">'
-            + nbhField('Отступ сверху', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
-            + nbhField('Отступ снизу', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
-            + (nbhBlockType() === 'faq' ? '' : nbhField('Мин. высота', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
+            + nbhField('Отступ сверху', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingTop }))
+            + nbhField('Отступ снизу', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingBottom }))
+            + (profile.layout.supportsMinHeight ? nbhField('Мин. высота', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })) : '')
             + '</div>';
     },
     alignmentLayout: function() {
-        if (nbhBlockType() === 'faq') {
+        var profile = nbhBlockUiProfile();
+        if (profile.layout.primaryControl === 'align') {
             return nbhField('Выравнивание', nbhSelect('layout.desktop.align', [
                 { value: 'center', label: 'По центру' },
                 { value: 'left', label: 'Слева' }
@@ -1914,19 +1998,20 @@ var nbhPresetRenderers = {
         return body;
     },
     repeaterItems: function() {
-        if (nbhBlockType() === 'faq') {
+        if (nbhHasCapability('repeaterContent') && nbhHasEntity('items')) {
             return nbhRepeaterEditor();
         }
         return '<div class="nbh-note">Редактор повторяющихся элементов будет подключён следующим этапом, после стабилизации hero runtime.</div>';
     },
     __default: function(panel) {
-        return '<div class="nbh-note">Панель ' + panel.controlPreset + ' пока не подключена.</div>';
+        return '<div class="nbh-note">Панель ' + nbhPanelControlKey(panel) + ' пока не подключена.</div>';
     }
 };
 
 function nbhRenderPanel(panel) {
     var bp = nbhState.activeBreakpoint;
-    var renderer = nbhPresetRenderers[panel.controlPreset] || nbhPresetRenderers.__default;
+    var controlKey = nbhPanelControlKey(panel);
+    var renderer = nbhControlRenderers[controlKey] || nbhControlRenderers.__default;
     var body = renderer(panel, bp);
 
     return '<section class="nbh-section" data-panel="' + panel.key + '">' +

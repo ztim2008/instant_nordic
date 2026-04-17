@@ -72,6 +72,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
                 'entities'     => $registry['entities'],
                 'entityGroups' => $registry['entityGroups'],
                 'capabilities' => $registry['capabilities'],
+                'controls'     => $registry['controls'] ?? $registry['controlPresets'],
                 'controlPresets' => $registry['controlPresets'],
                 'panels'       => $registry['panels'],
                 'manifest'     => $registry['manifest'] ?? null,
