@@ -3,18 +3,26 @@
 class actionNordicblocksBlocks extends cmsAction {
 
     public function run() {
-        $blocks = $this->model->getBlocks();
-        $block_definitions = $this->model->getBlockDefinitions();
-        $block_types       = [];
-        $widgets_url       = href_to('admin', 'widgets');
-        $template_name     = (string) cmsConfig::get('template');
+        $blocks                  = $this->model->getBlocks();
+        $block_definitions       = $this->model->getFirstWaveBlockDefinitions();
+        $block_types             = [];
+        $visible_blocks          = [];
+        $hidden_legacy_count     = 0;
+        $widgets_url             = href_to('admin', 'widgets');
+        $template_name           = (string) cmsConfig::get('template');
 
         foreach ($block_definitions as $block_name => $definition) {
             $block_types[$block_name] = $definition['title'];
         }
 
-        foreach ($blocks as &$block) {
+        foreach ($blocks as $block) {
             $block_type = (string) ($block['type'] ?? '');
+
+            if (!$this->model->isFirstWaveBlockType($block_type)) {
+                $hidden_legacy_count++;
+                continue;
+            }
+
             $block['editor_url'] = href_to($this->controller->root_url, 'block_edit', (int) $block['id']);
             $block['place_url']  = $widgets_url . '?' . http_build_query([
                 'template_name'               => $template_name,
@@ -25,13 +33,14 @@ class actionNordicblocksBlocks extends cmsAction {
                 'nb_block_title'              => (string) ($block['title'] ?? ''),
             ]);
             $block['definition'] = $block_definitions[$block_type] ?? null;
+            $visible_blocks[] = $block;
         }
-        unset($block);
 
         return $this->cms_template->render('backend/blocks', [
             'menu'             => $this->controller->getBackendMenu(),
-            'blocks'           => $blocks,
+            'blocks'           => $visible_blocks,
             'block_types'      => $block_types,
+            'hidden_legacy_count' => $hidden_legacy_count,
             'create_block_url' => href_to($this->controller->root_url, 'block_create'),
             'delete_block_url' => href_to($this->controller->root_url, 'block_delete'),
             'widgets_url'      => $widgets_url,

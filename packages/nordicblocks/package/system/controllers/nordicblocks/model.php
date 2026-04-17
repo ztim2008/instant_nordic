@@ -6,6 +6,8 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 
 class modelNordicblocks extends cmsModel {
 
+    private static $first_wave_block_types = ['hero', 'faq'];
+
     const TBL_PAGES  = 'nordicblocks_pages';
     const TBL_BLOCKS = 'nordicblocks_blocks';
     const TBL_DESIGN = 'nordicblocks_design';
@@ -252,6 +254,29 @@ class modelNordicblocks extends cmsModel {
         ksort($definitions);
 
         return $definitions;
+    }
+
+    public function getFirstWaveBlockDefinitions() {
+        $definitions = [];
+
+        foreach ($this->getBlockDefinitions() as $block_name => $definition) {
+            if (!$this->isFirstWaveBlockType($block_name)) {
+                continue;
+            }
+
+            $definitions[$block_name] = $definition;
+        }
+
+        return $definitions;
+    }
+
+    public function getFirstWaveBlockTypes() {
+        return self::$first_wave_block_types;
+    }
+
+    public function isFirstWaveBlockType($type) {
+        $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
+        return in_array($type, self::$first_wave_block_types, true);
     }
 
     public function createBlock($type, $title) {

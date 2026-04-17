@@ -299,6 +299,13 @@ $this->addMenuItems('admin_toolbar', $menu);
     </span>
 </div>
 
+<?php if (!empty($hidden_legacy_count)): ?>
+<div style="margin-top:.85rem;padding:.9rem 1rem;border:1px solid #f5d0fe;background:#fdf4ff;border-radius:14px;color:#6b21a8;font-size:.9rem;line-height:1.5">
+    Первая волна продукта сейчас ограничена блоками <strong>hero</strong> и <strong>faq</strong>.
+    Скрыто legacy-блоков из старого потока: <strong><?= (int) $hidden_legacy_count ?></strong>.
+</div>
+<?php endif; ?>
+
 <div class="nb-admin-grid">
 <?php foreach ($blocks as $block):
     $title_esc  = htmlspecialchars($block['title'],    ENT_QUOTES, 'UTF-8');

@@ -10,6 +10,11 @@ class actionNordicblocksBlockEdit extends cmsAction {
             return cmsCore::error404();
         }
 
+        if (!$this->model->isFirstWaveBlockType((string) ($block['type'] ?? ''))) {
+            cmsCore::addFlashMessage('info', 'Этот тип блока выведен из активного потока первой волны. Сейчас редактор поддерживается только для hero и faq.');
+            return $this->redirect(href_to($this->controller->root_url, 'blocks'));
+        }
+
         $block['props'] = $this->model->normalizeImagePropsByType((string) ($block['type'] ?? ''), (array) ($block['props'] ?? []));
 
         $block_registry = $this->loadBlockRegistry();
@@ -19,7 +24,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
 
         $canvas_url       = href_to($this->controller->root_url, 'block_canvas', $block_id);
         $editor_state_url = href_to($this->controller->root_url, 'block_editor_state', $block_id);
-        $template_name_view = in_array((string) ($block['type'] ?? ''), ['hero', 'faq'], true) ? 'backend/editor_hero_v2' : 'backend/editor';
+        $template_name_view = 'backend/editor_hero_v2';
         $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
             'template_name'               => $template_name,
             'open_tab'                    => 'all-widgets',
@@ -45,7 +50,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
     }
 
     private function loadBlockRegistry() {
-        return $this->model->getBlockDefinitions();
+        return $this->model->getFirstWaveBlockDefinitions();
     }
 
     private function getImagePresetOptions() {
