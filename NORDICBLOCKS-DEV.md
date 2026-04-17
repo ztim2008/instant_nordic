@@ -766,6 +766,10 @@ NordicBlocks v3 = почти уровень nordic-builder.ru по качест�
 - ⚪ Desktop/mobile типографика управляется отдельно.
 - ⚪ Поверхности и карточки оформляются через единый контракт, а не вручную в каждом render-файле.
 
+Дополнительный зафиксированный вектор по локальному design-layer вынесен отдельно:
+
+- `docs/nordicblocks/BLOCK-DESIGN-MANIFEST-V1.md`
+
 ### 15.7 Responsive и mobile overrides
 
 #### 🔴 Проблема
