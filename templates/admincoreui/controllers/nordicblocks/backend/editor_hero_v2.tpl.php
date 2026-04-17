@@ -414,17 +414,19 @@ function nbhRepeaterItems() {
 function nbhDataOptions() {
     var options = nbhState.server && nbhState.server.dataOptions ? nbhState.server.dataOptions : null;
     if (!options || typeof options !== 'object') {
-        return { contentTypes: [], fieldsByType: {}, listModes: [], sortOptions: [] };
+        return { contentTypes: [], fieldsByType: {}, sourceModes: [], itemResolverModes: [], listModes: [], sortOptions: [] };
     }
 
     options.contentTypes = Array.isArray(options.contentTypes) ? options.contentTypes : [];
     options.fieldsByType = options.fieldsByType && typeof options.fieldsByType === 'object' ? options.fieldsByType : {};
+    options.sourceModes = Array.isArray(options.sourceModes) ? options.sourceModes : [];
+    options.itemResolverModes = Array.isArray(options.itemResolverModes) ? options.itemResolverModes : [];
     options.listModes = Array.isArray(options.listModes) ? options.listModes : [];
     options.sortOptions = Array.isArray(options.sortOptions) ? options.sortOptions : [];
     return options;
 }
 
-function nbhFaqListSource() {
+function nbhListSource() {
     var source = nbhGet(nbhState.draft, 'data.listSource', null);
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
         source = {};
@@ -443,6 +445,79 @@ function nbhFaqListSource() {
 
     nbhSet(nbhState.draft, 'data.listSource', source);
     return source;
+}
+
+function nbhSingleSource() {
+    var source = nbhGet(nbhState.draft, 'data.source', null);
+    if (!source || typeof source !== 'object' || Array.isArray(source)) {
+        source = {};
+    }
+
+    if (!source.type) source.type = 'manual';
+    if (!source.ctype) source.ctype = '';
+    if (!source.resolver || typeof source.resolver !== 'object' || Array.isArray(source.resolver)) {
+        source.resolver = {};
+    }
+    if (!source.resolver.mode) source.resolver.mode = 'current';
+
+    var resolvedId = parseInt(source.resolver.id || source.resolver.itemId || source.resolver.item_id || 0, 10);
+    source.resolver.id = isNaN(resolvedId) ? 0 : resolvedId;
+
+    nbhSet(nbhState.draft, 'data.source', source);
+    return source;
+}
+
+function nbhSingleBindings() {
+    var defaults = {
+        title: { mode: 'bound', formatter: 'plain_text', emptyBehavior: 'fallback' },
+        subtitle: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
+        image: { mode: 'mixed', formatter: 'image_url', emptyBehavior: 'fallback' },
+        imageAlt: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
+        date: { mode: 'bound', formatter: 'date_human', emptyBehavior: 'hide' },
+        views: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },
+        comments: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },
+        primaryButtonUrl: { mode: 'mixed', formatter: 'record_url', emptyBehavior: 'fallback' }
+    };
+    var bindings = nbhGet(nbhState.draft, 'data.bindings', null);
+    if (!bindings || typeof bindings !== 'object' || Array.isArray(bindings)) {
+        bindings = {};
+    }
+
+    Object.keys(defaults).forEach(function(key) {
+        var binding = bindings[key];
+        if (!binding || typeof binding !== 'object' || Array.isArray(binding)) {
+            binding = {};
+        }
+        if (!binding.mode) binding.mode = defaults[key].mode;
+        if (typeof binding.field !== 'string') binding.field = '';
+        if (!binding.formatter) binding.formatter = defaults[key].formatter;
+        if (!binding.emptyBehavior) binding.emptyBehavior = defaults[key].emptyBehavior;
+        bindings[key] = binding;
+    });
+
+    nbhSet(nbhState.draft, 'data.bindings', bindings);
+    return bindings;
+}
+
+function nbhUsesCollectionData() {
+    return nbhHasCapability('repeaterBindings') && nbhHasEntity('items');
+}
+
+function nbhFieldMatchesKinds(field, kinds) {
+    var fieldKinds = Array.isArray(field && field.kinds) ? field.kinds : ['text'];
+    var allowedKinds = Array.isArray(kinds) ? kinds : ['text'];
+    return allowedKinds.some(function(kind) {
+        return fieldKinds.indexOf(kind) !== -1;
+    });
+}
+
+function nbhFieldOptionsByKinds(fields, kinds, emptyLabel) {
+    fields = Array.isArray(fields) ? fields : [];
+    return [{ value: '', label: emptyLabel || 'Не выбрано' }].concat(fields.filter(function(field) {
+        return nbhFieldMatchesKinds(field, kinds);
+    }).map(function(field) {
+        return { value: field.name, label: field.label + ' [' + field.type + ']' };
+    }));
 }
 
 function nbhEscapeAttr(value) {
@@ -739,7 +814,10 @@ function nbhSelect(path, options, fallback) {
 }
 
 function nbhShouldRerenderPanels(path) {
-    return path.indexOf('data.listSource.') === 0 || path.indexOf('design.section.background.') === 0;
+    return path.indexOf('data.listSource.') === 0
+        || path.indexOf('data.source.') === 0
+        || path.indexOf('data.bindings.') === 0
+        || path.indexOf('design.section.background.') === 0;
 }
 
 function nbhYesNoOptions() {
@@ -755,7 +833,7 @@ function nbhBreakpointToggle() {
 
 function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
-    var listSource = nbhFaqListSource();
+    var listSource = nbhListSource();
     var cards = items.map(function(item, index) {
         var question = item && item.question ? item.question : '';
         var answer = item && item.answer ? item.answer : '';
@@ -962,54 +1040,139 @@ var nbhPresetRenderers = {
             { value: 'split', label: 'Split' }
         ], 'centered'));
     },
-    dataBindingSingle: function() {
-        return '<div class="nbh-note">Источник данных и slot bindings уже предусмотрены state layer, но в hero prototype эта вкладка пока read-only. Следующий шаг — вывести source selector и compatible slot mapping.</div>';
-    },
-    dataBindingRepeater: function() {
-        if (nbhBlockType() !== 'faq') {
-            return '<div class="nbh-note">Repeater bindings подключены пока только для FAQ как первого content_list adapter.</div>';
+    dataSource: function() {
+        if (nbhUsesCollectionData()) {
+            var listOptions = nbhDataOptions();
+            var listSource = nbhListSource();
+            var listCtypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(listOptions.contentTypes.map(function(ctype) {
+                return { value: ctype.name, label: ctype.title };
+            }));
+            var listBody = nbhField('Источник данных', nbhSelect('data.listSource.type', listOptions.listModes.length ? listOptions.listModes : [
+                { value: 'manual', label: 'Ручной список' },
+                { value: 'content_list', label: 'Список записей InstantCMS' }
+            ], 'manual'));
+
+            if (listSource.type !== 'content_list') {
+                return listBody + '<div class="nbh-note">Сейчас блок использует ручной список из вкладки Контент. Переключите источник на список записей InstantCMS, если коллекция должна собираться автоматически.</div>';
+            }
+
+            if (!listOptions.contentTypes.length) {
+                return listBody + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому content_list пока выбрать нельзя.</div>';
+            }
+
+            listBody += nbhField('Тип контента', nbhSelect('data.listSource.ctype', listCtypeOptions, ''));
+            listBody += '<div class="nbh-grid-2">'
+                + nbhField('Лимит записей', nbhInput('data.listSource.limit', { inputType: 'number', type: 'number', fallback: 3 }))
+                + nbhField('Сортировка', nbhSelect('data.listSource.sort', listOptions.sortOptions.length ? listOptions.sortOptions : [{ value: 'date_pub_desc', label: 'Сначала новые' }], 'date_pub_desc'))
+                + '</div>';
+
+            if (!listSource.ctype) {
+                return listBody + '<div class="nbh-note">Сначала выберите тип контента. После этого на соседней панели появятся совместимые поля для привязки элементов коллекции.</div>';
+            }
+
+            return listBody + '<div class="nbh-note">Ручные элементы из вкладки Контент остаются fallback-слоем. Preview и live продолжают использовать один и тот же SSR adapter pipeline.</div>';
         }
 
         var options = nbhDataOptions();
-        var listSource = nbhFaqListSource();
-        var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
-        var ctypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(options.contentTypes.map(function(ctype) {
-            return { value: ctype.name, label: ctype.title };
-        }));
-        var fieldOptions = [{ value: '', label: 'Не выбрано' }].concat(fields.map(function(field) {
-            return { value: field.name, label: field.label + ' [' + field.type + ']' };
-        }));
-        var body = nbhField('Источник списка', nbhSelect('data.listSource.type', options.listModes.length ? options.listModes : [
-            { value: 'manual', label: 'Ручной список' },
-            { value: 'content_list', label: 'Список записей InstantCMS' }
+        var source = nbhSingleSource();
+        nbhSingleBindings();
+
+        var body = nbhField('Источник данных', nbhSelect('data.source.type', options.sourceModes.length ? options.sourceModes : [
+            { value: 'manual', label: 'Ручной контент' },
+            { value: 'content_item', label: 'Одна запись InstantCMS' }
         ], 'manual'));
 
-        if (listSource.type !== 'content_list') {
-            return body + '<div class="nbh-note">Сейчас FAQ использует ручной список из вкладки Контент. Переключите источник на список записей InstantCMS, чтобы content.items[] собирался автоматически.</div>';
+        if (source.type !== 'content_item') {
+            return body + '<div class="nbh-note">Сейчас блок использует ручной контент из вкладки Контент. Переключите источник на запись InstantCMS, если заголовок, подзаголовок, медиа и мета должны подтягиваться из системы.</div>';
         }
 
         if (!options.contentTypes.length) {
-            return body + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому content_list пока выбрать нельзя.</div>';
+            return body + '<div class="nbh-note">В системе не найдено доступных типов контента, поэтому content_item пока выбрать нельзя.</div>';
         }
 
-        body += nbhField('Тип контента', nbhSelect('data.listSource.ctype', ctypeOptions, ''));
+        var ctypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(options.contentTypes.map(function(ctype) {
+            return { value: ctype.name, label: ctype.title };
+        }));
+
+        body += nbhField('Тип контента', nbhSelect('data.source.ctype', ctypeOptions, ''));
+        body += nbhField('Режим выборки', nbhSelect('data.source.resolver.mode', options.itemResolverModes.length ? options.itemResolverModes : [
+            { value: 'current', label: 'Текущая запись страницы' },
+            { value: 'by_id', label: 'Запись по ID' },
+            { value: 'latest', label: 'Последняя запись' }
+        ], 'current'));
+
+        if (source.resolver.mode === 'by_id') {
+            body += nbhField('ID записи', nbhInput('data.source.resolver.id', { inputType: 'number', type: 'number', fallback: 0 }));
+        }
+
+        if (source.resolver.mode === 'current') {
+            body += '<div class="nbh-note">Режим current работает на реальной странице записи. В админском preview без контекста записи блок останется на ручных fallback-значениях.</div>';
+        }
+
+        if (!source.ctype) {
+            return body + '<div class="nbh-note">Сначала выберите тип контента, после этого появятся совместимые поля для привязки слотов.</div>';
+        }
+
+        var fields = options.fieldsByType[source.ctype] || [];
+        if (!fields.length) {
+            return body + '<div class="nbh-note">У выбранного типа контента не найдено доступных полей для привязки. Выберите другой ctype или оставьте блок в manual режиме.</div>';
+        }
+
+        var textOptions = nbhFieldOptionsByKinds(fields, ['text'], 'Оставить ручное значение');
+        var imageOptions = nbhFieldOptionsByKinds(fields, ['image'], 'Оставить ручное изображение');
+        var dateOptions = nbhFieldOptionsByKinds(fields, ['date', 'text'], 'Скрыть дату');
+        var numberOptions = nbhFieldOptionsByKinds(fields, ['number', 'text'], 'Скрыть метрику');
+        var urlOptions = nbhFieldOptionsByKinds(fields, ['url', 'text'], 'Оставить ручной URL');
+
         body += '<div class="nbh-grid-2">'
-            + nbhField('Лимит записей', nbhInput('data.listSource.limit', { inputType: 'number', type: 'number', fallback: 3 }))
-            + nbhField('Сортировка', nbhSelect('data.listSource.sort', options.sortOptions.length ? options.sortOptions : [{ value: 'date_pub_desc', label: 'Сначала новые' }], 'date_pub_desc'))
+            + nbhField('Заголовок', nbhSelect('data.bindings.title.field', textOptions, ''))
+            + nbhField('Подзаголовок', nbhSelect('data.bindings.subtitle.field', textOptions, ''))
+            + nbhField('Изображение', nbhSelect('data.bindings.image.field', imageOptions, ''))
+            + nbhField('Alt изображения', nbhSelect('data.bindings.imageAlt.field', textOptions, ''))
             + '</div>';
 
+        body += '<div class="nbh-grid-2">'
+            + nbhField('Дата', nbhSelect('data.bindings.date.field', dateOptions, ''))
+            + nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, ''))
+            + nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, ''))
+            + nbhField('Primary button URL', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
+            + '</div>';
+
+        body += '<div class="nbh-note">Ручные поля остаются fallback-слоем. Если binding не выбран или запись не найдена, preview/live продолжают работать на контенте из вкладки Контент.</div>';
+
+        return body;
+    },
+    dataCollection: function() {
+        var options = nbhDataOptions();
+        var listSource = nbhListSource();
+        var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
+
+        if (listSource.type !== 'content_list') {
+            return '<div class="nbh-note">Коллекция сейчас использует ручные элементы из вкладки Контент. Когда источник переключён на content_list, здесь появляются привязки item-level полей.</div>';
+        }
+
         if (!listSource.ctype) {
-            return body + '<div class="nbh-note">Сначала выберите тип контента, после этого появятся совместимые поля для вопроса и ответа.</div>';
+            return '<div class="nbh-note">Сначала выберите тип контента на панели источника данных, после этого появятся совместимые поля для привязки элементов.</div>';
         }
 
         if (!fields.length) {
-            return body + '<div class="nbh-note">У выбранного типа контента не найдено текстовых полей для маппинга. Можно использовать системный title или выбрать другой ctype.</div>';
+            return '<div class="nbh-note">У выбранного типа контента не найдено текстовых полей для маппинга элементов. Можно использовать системный title или выбрать другой ctype.</div>';
         }
 
-        body += '<div class="nbh-grid-2">'
-            + nbhField('Поле вопроса', nbhSelect('data.listSource.map.question', fieldOptions, 'title'))
-            + nbhField('Поле ответа', nbhSelect('data.listSource.map.answer', fieldOptions, ''))
-            + '</div>';
+        var fieldOptions = [{ value: '', label: 'Не выбрано' }].concat(fields.map(function(field) {
+            return { value: field.name, label: field.label + ' [' + field.type + ']' };
+        }));
+        var body = '<div class="nbh-grid-2">';
+
+        if (nbhHasEntity('itemTitle')) {
+            body += nbhField('Заголовок элемента', nbhSelect('data.listSource.map.question', fieldOptions, 'title'));
+        }
+        if (nbhHasEntity('itemText')) {
+            body += nbhField('Текст элемента', nbhSelect('data.listSource.map.answer', fieldOptions, ''));
+        }
+
+        body += '</div>';
+
         body += nbhField('Если записей нет', nbhSelect('data.listSource.emptyBehavior', [
             { value: 'fallback', label: 'Показать ручной fallback' },
             { value: 'empty', label: 'Показать пустой список' }

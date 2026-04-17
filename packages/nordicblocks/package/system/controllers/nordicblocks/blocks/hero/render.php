@@ -75,6 +75,9 @@ if ($hero_contract) {
 
     $image = htmlspecialchars(trim((string) ($hero_contract['content']['media']['image'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($hero_contract['content']['media']['alt'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $meta_date = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['date'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $meta_views = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['views'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $meta_comments = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['comments'] ?? '')), ENT_QUOTES, 'UTF-8');
 } else {
     $layout = in_array($props['layout'] ?? '', ['centered', 'left', 'split'], true)
         ? $props['layout'] : 'centered';
@@ -138,6 +141,9 @@ if ($hero_contract) {
 
     $image = htmlspecialchars(trim((string) ($image_value['display'] ?? $image_value['original'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($image_value['alt'] ?? ($props['image_alt'] ?? ''))), ENT_QUOTES, 'UTF-8');
+    $meta_date = '';
+    $meta_views = '';
+    $meta_comments = '';
 }
 
 $section_class = 'nb-section nb-hero nb-hero--' . $layout;
@@ -208,6 +214,20 @@ $button_classes = [
 
             <?php if ($subtitle_visible && $subhead): ?>
             <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
+            <?php endif; ?>
+
+            <?php if ($meta_date || $meta_views || $meta_comments): ?>
+            <div class="nb-hero__meta" data-nb-entity="meta">
+                <?php if ($meta_date): ?>
+                <span class="nb-hero__meta-item"><?= $meta_date ?></span>
+                <?php endif; ?>
+                <?php if ($meta_views): ?>
+                <span class="nb-hero__meta-item"><?= $meta_views ?> просмотров</span>
+                <?php endif; ?>
+                <?php if ($meta_comments): ?>
+                <span class="nb-hero__meta-item"><?= $meta_comments ?> комментариев</span>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
 
             <?php if ($btn1_label || $btn2_label): ?>

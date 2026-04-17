@@ -87,6 +87,11 @@ class NordicblocksBlockContractNormalizer {
                     'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
                     'alt'   => (string) ($image['alt'] ?? ($props['image_alt'] ?? '')),
                 ],
+                'meta' => [
+                    'date'     => '',
+                    'views'    => '',
+                    'comments' => '',
+                ],
             ],
             'design' => [
                 'section' => [
@@ -428,7 +433,7 @@ class NordicblocksBlockContractNormalizer {
     private static function normalizeDataLayer($type, array $data) {
         $normalized = [
             'source'    => self::normalizeSourceConfig($data['source'] ?? 'manual'),
-            'bindings'  => is_array($data['bindings'] ?? null) ? $data['bindings'] : [],
+            'bindings'  => self::normalizeBindings($type, is_array($data['bindings'] ?? null) ? $data['bindings'] : []),
             'fallbacks' => is_array($data['fallbacks'] ?? null) ? $data['fallbacks'] : [],
             'meta'      => is_array($data['meta'] ?? null) ? $data['meta'] : [],
         ];
@@ -474,7 +479,66 @@ class NordicblocksBlockContractNormalizer {
             }
         }
 
+        if ($type === 'content_item') {
+            $resolver = is_array($normalized['resolver'] ?? null) ? $normalized['resolver'] : [];
+            $mode = self::normalizeSelect((string) ($resolver['mode'] ?? 'current'), ['current', 'by_id', 'latest'], 'current');
+            $normalized['resolver'] = ['mode' => $mode];
+
+            if ($mode === 'by_id') {
+                $item_id = (int) ($resolver['id'] ?? $resolver['itemId'] ?? $resolver['item_id'] ?? 0);
+                if ($item_id > 0) {
+                    $normalized['resolver']['id'] = $item_id;
+                }
+            }
+        }
+
         return $normalized;
+    }
+
+    private static function normalizeBindings($type, array $bindings) {
+        if ($type !== 'hero') {
+            return $bindings;
+        }
+
+        $defaults = self::getHeroBindingDefaults();
+        $normalized = [];
+
+        foreach ($defaults as $key => $config) {
+            $binding = [];
+            if (isset($bindings[$key]) && is_array($bindings[$key])) {
+                $binding = $bindings[$key];
+            } elseif ($key === 'primaryButtonUrl' && isset($bindings['primaryButton']['url']) && is_array($bindings['primaryButton']['url'])) {
+                $binding = $bindings['primaryButton']['url'];
+            }
+
+            $normalized[$key] = self::normalizeBindingConfig($binding, $config);
+        }
+
+        return $normalized;
+    }
+
+    private static function normalizeBindingConfig(array $binding, array $defaults) {
+        $formatters = ['plain_text', 'image_url', 'record_url', 'date_human', 'number'];
+
+        return [
+            'mode'          => self::normalizeSelect((string) ($binding['mode'] ?? $defaults['mode']), ['manual', 'bound', 'mixed'], $defaults['mode']),
+            'field'         => self::normalizeFieldReference($binding['field'] ?? ''),
+            'formatter'     => self::normalizeSelect((string) ($binding['formatter'] ?? $defaults['formatter']), $formatters, $defaults['formatter']),
+            'emptyBehavior' => self::normalizeSelect((string) ($binding['emptyBehavior'] ?? $defaults['emptyBehavior']), ['fallback', 'hide', 'empty'], $defaults['emptyBehavior']),
+        ];
+    }
+
+    private static function getHeroBindingDefaults() {
+        return [
+            'title' => ['mode' => 'bound', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
+            'subtitle' => ['mode' => 'mixed', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
+            'image' => ['mode' => 'mixed', 'formatter' => 'image_url', 'emptyBehavior' => 'fallback'],
+            'imageAlt' => ['mode' => 'mixed', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
+            'date' => ['mode' => 'bound', 'formatter' => 'date_human', 'emptyBehavior' => 'hide'],
+            'views' => ['mode' => 'bound', 'formatter' => 'number', 'emptyBehavior' => 'hide'],
+            'comments' => ['mode' => 'bound', 'formatter' => 'number', 'emptyBehavior' => 'hide'],
+            'primaryButtonUrl' => ['mode' => 'mixed', 'formatter' => 'record_url', 'emptyBehavior' => 'fallback'],
+        ];
     }
 
     private static function normalizeListSource(array $config) {

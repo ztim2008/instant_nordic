@@ -189,8 +189,8 @@ class NordicblocksInspectorRegistryBuilder {
             'alignmentLayout'     => ['key' => 'alignmentLayout', 'label' => 'Alignment', 'tab' => 'layout', 'default' => true],
             'responsiveTypography'=> ['key' => 'responsiveTypography', 'label' => 'Responsive typography', 'tab' => 'layout', 'default' => false],
             'responsiveSpacing'   => ['key' => 'responsiveSpacing', 'label' => 'Responsive spacing', 'tab' => 'layout', 'default' => false],
-            'dataBindings'        => ['key' => 'dataBindings', 'label' => 'Привязки данных', 'tab' => 'data', 'default' => false],
-            'repeaterBindings'    => ['key' => 'repeaterBindings', 'label' => 'Привязки repeater', 'tab' => 'data', 'default' => false],
+            'dataBindings'        => ['key' => 'dataBindings', 'label' => 'Источник данных', 'tab' => 'data', 'default' => false],
+            'repeaterBindings'    => ['key' => 'repeaterBindings', 'label' => 'Привязки коллекции', 'tab' => 'data', 'default' => false],
         ];
     }
 
@@ -246,15 +246,15 @@ class NordicblocksInspectorRegistryBuilder {
                 'component' => 'alignment-layout-panel',
                 'label'     => 'Alignment layout',
             ],
-            'dataBindingSingle' => [
-                'key'       => 'dataBindingSingle',
-                'component' => 'data-binding-single-panel',
-                'label'     => 'Data binding',
+            'dataSource' => [
+                'key'       => 'dataSource',
+                'component' => 'data-source-panel',
+                'label'     => 'Data source',
             ],
-            'dataBindingRepeater' => [
-                'key'       => 'dataBindingRepeater',
-                'component' => 'data-binding-repeater-panel',
-                'label'     => 'Repeater binding',
+            'dataCollection' => [
+                'key'       => 'dataCollection',
+                'component' => 'data-collection-panel',
+                'label'     => 'Data collection',
             ],
             'repeaterItems' => [
                 'key'       => 'repeaterItems',
@@ -340,8 +340,8 @@ class NordicblocksInspectorRegistryBuilder {
             ['key' => 'itemTypography', 'label' => 'Типографика элементов', 'tab' => 'design', 'section' => 'typography', 'group' => 'items', 'order' => 430, 'requiresCapabilities' => ['itemTypography'], 'requiresAnyEntities' => ['itemTitle', 'itemText'], 'entityScope' => 'items', 'controlPreset' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'spacingLayout', 'label' => 'Отступы', 'tab' => 'layout', 'section' => 'spacing', 'group' => 'spacing', 'order' => 110, 'requiresCapabilities' => ['spacingLayout'], 'entityScope' => 'section', 'controlPreset' => 'spacingLayout', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'alignmentLayout', 'label' => 'Выравнивание', 'tab' => 'layout', 'section' => 'alignment', 'group' => 'alignment', 'order' => 120, 'requiresCapabilities' => ['alignmentLayout'], 'entityScope' => 'section', 'controlPreset' => 'alignmentLayout', 'breakpointAware' => false, 'repeatable' => false],
-            ['key' => 'dataBindings', 'label' => 'Привязки', 'tab' => 'data', 'section' => 'bindings', 'group' => 'single', 'order' => 110, 'requiresCapabilities' => ['dataBindings'], 'entityScope' => 'block', 'controlPreset' => 'dataBindingSingle', 'breakpointAware' => false, 'repeatable' => false],
-            ['key' => 'repeaterBindings', 'label' => 'Привязки списка', 'tab' => 'data', 'section' => 'bindings', 'group' => 'repeaters', 'order' => 120, 'requiresCapabilities' => ['repeaterBindings'], 'requiresEntities' => ['items'], 'entityScope' => 'items', 'controlPreset' => 'dataBindingRepeater', 'breakpointAware' => false, 'repeatable' => true],
+            ['key' => 'dataBindings', 'label' => 'Источник данных', 'tab' => 'data', 'section' => 'bindings', 'group' => 'source', 'order' => 110, 'requiresCapabilities' => ['dataBindings'], 'entityScope' => 'block', 'controlPreset' => 'dataSource', 'breakpointAware' => false, 'repeatable' => false],
+            ['key' => 'repeaterBindings', 'label' => 'Привязки коллекции', 'tab' => 'data', 'section' => 'bindings', 'group' => 'collection', 'order' => 120, 'requiresCapabilities' => ['repeaterBindings'], 'requiresEntities' => ['items'], 'entityScope' => 'items', 'controlPreset' => 'dataCollection', 'breakpointAware' => false, 'repeatable' => true],
         ];
     }
 }
