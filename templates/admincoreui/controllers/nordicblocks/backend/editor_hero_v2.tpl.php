@@ -6,6 +6,8 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 #nbh-shell {
     position: fixed;
     inset: 55px 0 0 0;
+    height: calc(100vh - 55px);
+    max-height: calc(100vh - 55px);
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -94,6 +96,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     display: grid;
     grid-template-columns: minmax(0, 1fr) 360px;
     gap: 0;
+    height: 100%;
     min-height: 0;
     flex: 1;
     overflow: hidden;
@@ -122,6 +125,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     background: #ffffff;
     border-left: 1px solid #dbe4ef;
 }
@@ -190,10 +194,12 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 .nbh-tab.is-active { background: #eff6ff; color: #1d4ed8; }
 
 #nbh-panel-body {
+    flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: .85rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     gap: .85rem;
@@ -211,6 +217,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     border: 1px solid #e5edf5;
     border-radius: 14px;
     overflow: hidden;
+    flex: 0 0 auto;
     background: #fff;
 }
 .nbh-section-head {
@@ -316,8 +323,8 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
         </div>
         <div class="nbh-spacer"></div>
         <div class="nbh-vp">
-            <button type="button" class="is-active" id="nbhVpDesktop">Desktop</button>
-            <button type="button" id="nbhVpMobile">Mobile</button>
+            <button type="button" class="is-active" id="nbhVpDesktop">Компьютер</button>
+            <button type="button" id="nbhVpMobile">Мобильный</button>
         </div>
         <div class="nbh-sep"></div>
         <a class="nbh-btn nbh-btn--ghost" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>"><i class="fa fa-thumb-tack"></i> Разместить</a>
@@ -326,14 +333,14 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 
     <div id="nbh-body">
         <div id="nbh-canvas-wrap">
-            <iframe id="nbh-canvas-frame" src="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>" title="Block preview" sandbox="allow-same-origin allow-scripts"></iframe>
+            <iframe id="nbh-canvas-frame" src="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>" title="Предпросмотр блока" sandbox="allow-same-origin allow-scripts"></iframe>
         </div>
 
         <div id="nbh-panel">
             <div class="nbh-panel-head">
                 <div class="nbh-panel-title">
-                    <strong>Inspector Shell v2</strong>
-                    <span class="nbh-selection" id="nbhSelectionLabel">Entity: title</span>
+                    <strong>Инспектор v2</strong>
+                    <span class="nbh-selection" id="nbhSelectionLabel">Сущность: заголовок</span>
                 </div>
                 <div class="nbh-entity-list" id="nbhEntityList"></div>
             </div>
@@ -400,6 +407,22 @@ function nbhSet(obj, path, value) {
 function nbhHumanEntity(entityKey) {
     var registry = nbhState.server && nbhState.server.registry ? nbhState.server.registry.entities : null;
     return registry && registry[entityKey] ? registry[entityKey].label : entityKey;
+}
+
+function nbhHumanSection(sectionKey) {
+    var labels = {
+        text: 'Текст',
+        actions: 'Действия',
+        media: 'Медиа',
+        repeaters: 'Повторы',
+        section: 'Секция',
+        typography: 'Типографика',
+        surfaces: 'Поверхности',
+        spacing: 'Отступы',
+        alignment: 'Выравнивание',
+        bindings: 'Данные'
+    };
+    return labels[sectionKey] || sectionKey;
 }
 
 function nbhBlockType() {
@@ -588,7 +611,7 @@ function nbhSelectEntity(entityKey, fromCanvas) {
     nbhState.selectedEntity = entityKey;
     var label = document.getElementById('nbhSelectionLabel');
     if (label) {
-        label.textContent = 'Entity: ' + nbhHumanEntity(entityKey);
+        label.textContent = 'Сущность: ' + nbhHumanEntity(entityKey);
     }
     document.querySelectorAll('.nbh-entity-chip').forEach(function(chip) {
         chip.classList.toggle('is-active', chip.dataset.entity === entityKey);
@@ -828,7 +851,7 @@ function nbhYesNoOptions() {
 }
 
 function nbhBreakpointToggle() {
-    return '<div class="nbh-breakpoints"><button type="button" data-breakpoint="desktop" class="' + (nbhState.activeBreakpoint === 'desktop' ? 'is-active' : '') + '">Desktop</button><button type="button" data-breakpoint="mobile" class="' + (nbhState.activeBreakpoint === 'mobile' ? 'is-active' : '') + '">Mobile</button></div>';
+    return '<div class="nbh-breakpoints"><button type="button" data-breakpoint="desktop" class="' + (nbhState.activeBreakpoint === 'desktop' ? 'is-active' : '') + '">Компьютер</button><button type="button" data-breakpoint="mobile" class="' + (nbhState.activeBreakpoint === 'mobile' ? 'is-active' : '') + '">Мобильный</button></div>';
 }
 
 function nbhRepeaterEditor() {
@@ -852,7 +875,7 @@ function nbhRepeaterEditor() {
     }
 
     if (listSource.type === 'content_list') {
-        cards = '<div class="nbh-note">Ручные вопросы ниже остаются fallback-списком, если data adapter не вернёт записей.</div>' + cards;
+        cards = '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>' + cards;
     }
 
     return nbhField('Первый вопрос открыт', nbhSelect('runtime.disclosure.openFirst', [
@@ -876,19 +899,19 @@ var nbhPresetRenderers = {
             return nbhField('Отображение', nbhSelect('design.entities.subtitle.visible', nbhYesNoOptions(), '1'))
                 + nbhField('Текст', nbhTextarea('content.subtitle', ''));
         }
-        return '<div class="nbh-note">Нет text mapping для сущности ' + panel.entityScope + '.</div>';
+        return '<div class="nbh-note">Для сущности ' + panel.entityScope + ' пока не подключена отдельная контентная панель.</div>';
     },
     buttonContent: function() {
         return '<div class="nbh-grid-2">'
-            + nbhField('Primary label', nbhInput('content.primaryButton.label'))
-            + nbhField('Primary URL', nbhInput('content.primaryButton.url'))
-            + nbhField('Secondary label', nbhInput('content.secondaryButton.label'))
-            + nbhField('Secondary URL', nbhInput('content.secondaryButton.url'))
+            + nbhField('Текст основной кнопки', nbhInput('content.primaryButton.label'))
+            + nbhField('Ссылка основной кнопки', nbhInput('content.primaryButton.url'))
+            + nbhField('Текст вторичной кнопки', nbhInput('content.secondaryButton.label'))
+            + nbhField('Ссылка вторичной кнопки', nbhInput('content.secondaryButton.url'))
             + '</div>';
     },
     mediaContent: function() {
         return nbhField('Путь к изображению', nbhInput('content.media.image'))
-            + nbhField('Alt', nbhInput('content.media.alt'));
+            + nbhField('Alt-текст', nbhInput('content.media.alt'));
     },
     sectionBackground: function() {
         var backgroundMode = String(nbhGet(nbhState.draft, 'design.section.background.mode', 'theme') || 'theme');
@@ -901,7 +924,7 @@ var nbhPresetRenderers = {
             : [
                 { value: 'light', label: 'Светлая' },
                 { value: 'dark', label: 'Темная' },
-                { value: 'accent', label: 'Accent' }
+                { value: 'accent', label: 'Акцентная' }
             ];
         var body = nbhField('Тема блока', nbhSelect('design.section.theme', options, 'light'));
         body += nbhField('Режим фона', nbhSelect('design.section.background.mode', [
@@ -986,58 +1009,58 @@ var nbhPresetRenderers = {
             }
             return body;
         }
-        return body + '<div class="nbh-note">Этот preset уже зарезервирован для item/entity typography и будет расширен следующим этапом.</div>';
+        return body + '<div class="nbh-note">Этот набор настроек зарезервирован под типографику сущностей и будет расширен следующим этапом.</div>';
     },
     buttonStyle: function() {
         return '<div class="nbh-grid-2">'
-            + nbhField('Primary style', nbhSelect('design.entities.primaryButton.style', [
-                { value: 'primary', label: 'Primary' },
-                { value: 'outline', label: 'Outline' },
-                { value: 'ghost', label: 'Ghost' }
+            + nbhField('Стиль основной кнопки', nbhSelect('design.entities.primaryButton.style', [
+                { value: 'primary', label: 'Основная' },
+                { value: 'outline', label: 'Контурная' },
+                { value: 'ghost', label: 'Прозрачная' }
             ], 'primary'))
-            + nbhField('Secondary style', nbhSelect('design.entities.secondaryButton.style', [
-                { value: 'primary', label: 'Primary' },
-                { value: 'outline', label: 'Outline' },
-                { value: 'ghost', label: 'Ghost' }
+            + nbhField('Стиль вторичной кнопки', nbhSelect('design.entities.secondaryButton.style', [
+                { value: 'primary', label: 'Основная' },
+                { value: 'outline', label: 'Контурная' },
+                { value: 'ghost', label: 'Прозрачная' }
             ], 'outline'))
             + '</div>';
     },
     surfaceStyle: function() {
         if (nbhBlockType() === 'faq') {
             return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
-                { value: 'card', label: 'Card' },
-                { value: 'plain', label: 'Plain' }
+                { value: 'card', label: 'Карточки' },
+                { value: 'plain', label: 'Без карточек' }
             ], 'card'));
         }
-        return '<div class="nbh-note">Surface controls пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
+        return '<div class="nbh-note">Настройки поверхности пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
     },
     spacingLayout: function(panel, bp) {
         var body = nbhBreakpointToggle();
         if (bp === 'desktop') {
             return body + '<div class="nbh-grid-2">'
-                + nbhField('Padding top', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
-                + nbhField('Padding bottom', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
-                + (nbhBlockType() === 'faq' ? '' : nbhField('Min height', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
-                + nbhField('Content width', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }))
+                + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
+                + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 88 : 96 }))
+                + (nbhBlockType() === 'faq' ? '' : nbhField('Мин. высота', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
+                + nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: nbhBlockType() === 'faq' ? 760 : 640 }))
                 + '</div>';
         }
         return body + '<div class="nbh-grid-2">'
-            + nbhField('Padding top', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
-            + nbhField('Padding bottom', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
-            + (nbhBlockType() === 'faq' ? '' : nbhField('Min height', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
+            + nbhField('Отступ сверху', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: 56 }))
+            + nbhField('Отступ снизу', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: 56 }))
+            + (nbhBlockType() === 'faq' ? '' : nbhField('Мин. высота', nbhInput('layout.mobile.minHeight', { inputType: 'number', type: 'number', fallback: 0 })))
             + '</div>';
     },
     alignmentLayout: function() {
         if (nbhBlockType() === 'faq') {
             return nbhField('Выравнивание', nbhSelect('layout.desktop.align', [
-                { value: 'center', label: 'Center' },
-                { value: 'left', label: 'Left' }
+                { value: 'center', label: 'По центру' },
+                { value: 'left', label: 'Слева' }
             ], 'center'));
         }
-        return nbhField('Режим hero', nbhSelect('layout.desktop.mode', [
-            { value: 'centered', label: 'Centered' },
-            { value: 'left', label: 'Left' },
-            { value: 'split', label: 'Split' }
+        return nbhField('Компоновка блока', nbhSelect('layout.desktop.mode', [
+            { value: 'centered', label: 'По центру' },
+            { value: 'left', label: 'Слева' },
+            { value: 'split', label: 'Текст и медиа' }
         ], 'centered'));
     },
     dataSource: function() {
@@ -1057,7 +1080,7 @@ var nbhPresetRenderers = {
             }
 
             if (!listOptions.contentTypes.length) {
-                return listBody + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому content_list пока выбрать нельзя.</div>';
+                return listBody + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому режим списка записей пока недоступен.</div>';
             }
 
             listBody += nbhField('Тип контента', nbhSelect('data.listSource.ctype', listCtypeOptions, ''));
@@ -1070,7 +1093,7 @@ var nbhPresetRenderers = {
                 return listBody + '<div class="nbh-note">Сначала выберите тип контента. После этого на соседней панели появятся совместимые поля для привязки элементов коллекции.</div>';
             }
 
-            return listBody + '<div class="nbh-note">Ручные элементы из вкладки Контент остаются fallback-слоем. Preview и live продолжают использовать один и тот же SSR adapter pipeline.</div>';
+            return listBody + '<div class="nbh-note">Ручные элементы из вкладки Контент остаются резервным слоем. Предпросмотр и публичный вывод продолжают использовать один и тот же SSR-конвейер данных.</div>';
         }
 
         var options = nbhDataOptions();
@@ -1087,7 +1110,7 @@ var nbhPresetRenderers = {
         }
 
         if (!options.contentTypes.length) {
-            return body + '<div class="nbh-note">В системе не найдено доступных типов контента, поэтому content_item пока выбрать нельзя.</div>';
+            return body + '<div class="nbh-note">В системе не найдено доступных типов контента, поэтому режим одной записи пока недоступен.</div>';
         }
 
         var ctypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(options.contentTypes.map(function(ctype) {
@@ -1106,7 +1129,7 @@ var nbhPresetRenderers = {
         }
 
         if (source.resolver.mode === 'current') {
-            body += '<div class="nbh-note">Режим current работает на реальной странице записи. В админском preview без контекста записи блок останется на ручных fallback-значениях.</div>';
+            body += '<div class="nbh-note">Режим текущей записи работает на реальной странице материала. В админском предпросмотре без контекста записи блок останется на ручных резервных значениях.</div>';
         }
 
         if (!source.ctype) {
@@ -1115,7 +1138,7 @@ var nbhPresetRenderers = {
 
         var fields = options.fieldsByType[source.ctype] || [];
         if (!fields.length) {
-            return body + '<div class="nbh-note">У выбранного типа контента не найдено доступных полей для привязки. Выберите другой ctype или оставьте блок в manual режиме.</div>';
+            return body + '<div class="nbh-note">У выбранного типа контента не найдено доступных полей для привязки. Выберите другой тип контента или оставьте блок в ручном режиме.</div>';
         }
 
         var textOptions = nbhFieldOptionsByKinds(fields, ['text'], 'Оставить ручное значение');
@@ -1135,10 +1158,10 @@ var nbhPresetRenderers = {
             + nbhField('Дата', nbhSelect('data.bindings.date.field', dateOptions, ''))
             + nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, ''))
             + nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, ''))
-            + nbhField('Primary button URL', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
+            + nbhField('Ссылка основной кнопки', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
             + '</div>';
 
-        body += '<div class="nbh-note">Ручные поля остаются fallback-слоем. Если binding не выбран или запись не найдена, preview/live продолжают работать на контенте из вкладки Контент.</div>';
+        body += '<div class="nbh-note">Ручные поля остаются резервным слоем. Если привязка не выбрана или запись не найдена, предпросмотр и публичный вывод продолжают работать на контенте из вкладки Контент.</div>';
 
         return body;
     },
@@ -1148,7 +1171,7 @@ var nbhPresetRenderers = {
         var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
 
         if (listSource.type !== 'content_list') {
-            return '<div class="nbh-note">Коллекция сейчас использует ручные элементы из вкладки Контент. Когда источник переключён на content_list, здесь появляются привязки item-level полей.</div>';
+            return '<div class="nbh-note">Коллекция сейчас использует ручные элементы из вкладки Контент. Когда источник переключён на список записей, здесь появляются привязки полей элементов.</div>';
         }
 
         if (!listSource.ctype) {
@@ -1156,7 +1179,7 @@ var nbhPresetRenderers = {
         }
 
         if (!fields.length) {
-            return '<div class="nbh-note">У выбранного типа контента не найдено текстовых полей для маппинга элементов. Можно использовать системный title или выбрать другой ctype.</div>';
+            return '<div class="nbh-note">У выбранного типа контента не найдено текстовых полей для привязки элементов. Можно использовать системный заголовок или выбрать другой тип контента.</div>';
         }
 
         var fieldOptions = [{ value: '', label: 'Не выбрано' }].concat(fields.map(function(field) {
@@ -1174,10 +1197,10 @@ var nbhPresetRenderers = {
         body += '</div>';
 
         body += nbhField('Если записей нет', nbhSelect('data.listSource.emptyBehavior', [
-            { value: 'fallback', label: 'Показать ручной fallback' },
+            { value: 'fallback', label: 'Показать ручной резерв' },
             { value: 'empty', label: 'Показать пустой список' }
         ], 'fallback'));
-        body += '<div class="nbh-note">Ручные элементы из вкладки Контент остаются fallback-списком. Preview и live уже используют один и тот же SSR adapter pipeline.</div>';
+        body += '<div class="nbh-note">Ручные элементы из вкладки Контент остаются резервным списком. Предпросмотр и публичный вывод уже используют один и тот же SSR-конвейер данных.</div>';
 
         return body;
     },
@@ -1185,10 +1208,10 @@ var nbhPresetRenderers = {
         if (nbhBlockType() === 'faq') {
             return nbhRepeaterEditor();
         }
-        return '<div class="nbh-note">Редактор repeater items будет подключён следующим этапом, после стабилизации hero contract runtime.</div>';
+        return '<div class="nbh-note">Редактор повторяющихся элементов будет подключён следующим этапом, после стабилизации hero runtime.</div>';
     },
     __default: function(panel) {
-        return '<div class="nbh-note">Preset ' + panel.controlPreset + ' пока не подключен.</div>';
+        return '<div class="nbh-note">Панель ' + panel.controlPreset + ' пока не подключена.</div>';
     }
 };
 
@@ -1198,7 +1221,7 @@ function nbhRenderPanel(panel) {
     var body = renderer(panel, bp);
 
     return '<section class="nbh-section" data-panel="' + panel.key + '">' +
-        '<div class="nbh-section-head"><strong>' + panel.label + '</strong><span>' + panel.section + '</span></div>' +
+        '<div class="nbh-section-head"><strong>' + panel.label + '</strong><span>' + nbhHumanSection(panel.section) + '</span></div>' +
         '<div class="nbh-section-body">' + body + '</div>' +
     '</section>';
 }
