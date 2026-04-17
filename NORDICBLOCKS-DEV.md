@@ -1005,6 +1005,7 @@ Implementation-ready registry слой для этого этапа вынесе
   - cache key с учётом adapter context;
   - одинаковый preview/live merge pipeline;
   - smoke для single-record и list-record сценария.
+- Подробный отдельный контур этапа зафиксирован в `docs/nordicblocks/STAGE-3-RUNTIME-HARDENING.md`.
 
 #### Этап 4
 
