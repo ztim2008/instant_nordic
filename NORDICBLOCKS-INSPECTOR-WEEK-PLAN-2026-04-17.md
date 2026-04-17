@@ -222,8 +222,10 @@
 ### Что уже сделано
 
 1. Control renderers вынесены из монолитного `editor_hero_v2.tpl.php` в отдельные partial-слои: `content`, `design`, `layout`, `data`, `repeater`.
-2. Основной shell теперь в основном собирает renderer registry через include + `Object.assign(...)`, а не хранит весь renderer-код внутри одного большого объекта.
-3. Runtime и package mirror держатся синхронно на одной и той же partial-структуре, так что следующий проход уже можно делать как чистку generic panel runtime, а не giant tpl.
+2. Control dispatch и panel rendering тоже вынесены в отдельный partial, так что основной shell больше не держит resolver/dispatcher и секционную отрисовку панелей внутри себя.
+3. DOM event bindings и bootstrap загрузки вынесены в отдельный shell-events partial, поэтому `editor_hero_v2.tpl.php` стал почти чистой сборкой runtime-слоёв.
+4. Panel selection helpers и control UI helpers тоже вынесены в отдельные partial-слои, так что main shell теперь в основном держит только state/load/save и общие runtime utilities.
+5. Runtime и package mirror держатся синхронно на одной и той же partial-структуре, так что следующий проход уже можно делать как чистку generic panel runtime, а не giant tpl.
 
 ### Какие результаты должны быть к концу дня
 

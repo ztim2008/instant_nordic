@@ -1,0 +1,156 @@
+document.getElementById('nbhSaveBtn').addEventListener('click', function() {
+    nbhSave(false);
+});
+
+document.getElementById('nbh-title-input').addEventListener('input', function() {
+    nbhState.blockTitle = this.value;
+    if (nbhState.draft && nbhState.draft.meta) {
+        nbhState.draft.meta.label = this.value;
+    }
+    nbhMarkDirty();
+    nbhScheduleSave();
+});
+
+document.getElementById('nbhTabs').addEventListener('click', function(event) {
+    var target = event.target.closest('[data-tab]');
+    if (!target) return;
+    nbhState.activeTab = target.dataset.tab;
+    nbhRenderTabs();
+    nbhRenderPanels();
+});
+
+document.getElementById('nbhEntityList').addEventListener('click', function(event) {
+    var target = event.target.closest('[data-entity]');
+    if (!target) return;
+    nbhSelectEntity(target.dataset.entity, false);
+});
+
+document.getElementById('nbh-panel-body').addEventListener('input', function(event) {
+    var target = event.target;
+    if (target.closest('[data-breakpoint]')) return;
+    if (target.dataset.itemField) {
+        nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
+        return;
+    }
+    var path = target.dataset.path;
+    if (!path) return;
+
+    var value = target.value;
+    if (target.dataset.type === 'number') {
+        value = parseInt(value || '0', 10);
+        if (isNaN(value)) value = 0;
+    }
+
+    nbhSet(nbhState.draft, path, value);
+    if (nbhShouldRerenderPanels(path)) {
+        nbhRenderPanels();
+    }
+    nbhMarkDirty();
+    nbhScheduleSave();
+});
+
+document.getElementById('nbh-panel-body').addEventListener('change', function(event) {
+    var breakpointTarget = event.target.closest('[data-breakpoint]');
+    if (breakpointTarget) {
+        nbhState.activeBreakpoint = breakpointTarget.dataset.breakpoint;
+        nbhRenderPanels();
+        return;
+    }
+
+    var target = event.target;
+    if (target.dataset.itemField) {
+        nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
+        return;
+    }
+    var path = target.dataset.path;
+    if (!path) return;
+
+    var value = target.value;
+    if (target.dataset.type === 'number') {
+        value = parseInt(value || '0', 10);
+        if (isNaN(value)) value = 0;
+    }
+
+    nbhCommitPathValue(path, value, false);
+});
+
+document.getElementById('nbh-panel-body').addEventListener('click', function(event) {
+    var pickerAction = event.target.closest('[data-picker-action]');
+    if (pickerAction) {
+        event.preventDefault();
+        var pickerPath = pickerAction.dataset.path || '';
+        if (pickerAction.dataset.pickerAction === 'clear') {
+            nbhCommitPathValue(pickerPath, '', true);
+            return;
+        }
+
+        if (pickerAction.dataset.pickerKind === 'image') {
+            nbhOpenImagePicker(pickerPath);
+            return;
+        }
+
+        if (pickerAction.dataset.pickerKind === 'icon') {
+            nbhOpenIconPicker(pickerPath);
+            return;
+        }
+    }
+
+    var repeaterAction = event.target.closest('[data-repeater-action]');
+    if (repeaterAction) {
+        if (repeaterAction.dataset.repeaterAction === 'add') {
+            nbhAddRepeaterItem();
+        }
+        if (repeaterAction.dataset.repeaterAction === 'remove') {
+            nbhRemoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10));
+        }
+        return;
+    }
+
+    var accordionToggle = event.target.closest('[data-accordion-key]');
+    if (accordionToggle) {
+        nbhState.openAccordionByTab[nbhState.activeTab] = accordionToggle.dataset.accordionKey || '';
+        nbhRenderPanels();
+        return;
+    }
+
+    var target = event.target.closest('[data-breakpoint]');
+    if (!target) return;
+    nbhState.activeBreakpoint = target.dataset.breakpoint;
+    nbhRenderPanels();
+});
+
+document.getElementById('nbhVpDesktop').addEventListener('click', function() { nbhSetViewport('desktop'); });
+document.getElementById('nbhVpMobile').addEventListener('click', function() { nbhSetViewport('mobile'); });
+
+document.getElementById('nbh-canvas-frame').addEventListener('load', function() {
+    setTimeout(nbhSyncCanvasHeightFromFrame, 20);
+});
+
+window.addEventListener('message', function(event) {
+    var data = event.data || {};
+    if (data.source !== 'nordicblocks-canvas') return;
+    if (data.type === 'canvas:metrics') {
+        nbhApplyCanvasHeight(data.height);
+        return;
+    }
+    if (data.type === 'entity:selected' && data.entity) {
+        nbhSelectEntity(data.entity, true);
+    }
+});
+
+document.addEventListener('keydown', function(event) {
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        nbhSave(false);
+    }
+});
+
+window.addEventListener('beforeunload', function(event) {
+    if (!nbhState.dirty) return;
+    event.preventDefault();
+    event.returnValue = '';
+});
+
+nbhLoadState().catch(function(error) {
+    document.getElementById('nbh-panel-body').innerHTML = '<div class="nbh-empty">Не удалось загрузить block editor state: ' + (error && error.message ? error.message : 'unknown') + '</div>';
+});
