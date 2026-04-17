@@ -39,8 +39,9 @@ class actionNordicblocksView extends cmsAction {
             return '';
         }
 
-        $html        = '';
-        $blocks_base = dirname(__DIR__) . '/blocks';
+        $html           = '';
+        $blocks_base    = dirname(__DIR__) . '/blocks';
+        $design_version = $this->model->getDesignCacheVersion();
 
         foreach ($blocks as $block) {
             $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
@@ -55,14 +56,16 @@ class actionNordicblocksView extends cmsAction {
                 'uid'     => $uid,
             ]);
 
-            $is_dynamic = !empty($block['contract']['runtime']['adapter']['isDynamic']);
+            $cache_profile = $this->model->buildRenderCacheProfile($block, [
+                'surface'        => 'legacy_view',
+                'mode'           => 'legacy_view',
+                'page_id'        => (int) ($page['id'] ?? 0),
+                'uid'            => $uid,
+                'design_version' => $design_version,
+            ]);
 
-            // Пробуем SSR‑кэш
-            $cache_key = 'page_' . $page['id'] . '_' . $uid . '_'
-                . substr(md5(json_encode($block)), 0, 8);
-
-            if (!$is_dynamic) {
-                $cached = $this->model->getCachedBlock($cache_key);
+            if (!empty($cache_profile['cacheEligible'])) {
+                $cached = $this->model->getCachedBlock((string) $cache_profile['cacheKey']);
                 if ($cached !== null) {
                     $html .= $cached;
                     continue;
@@ -79,9 +82,8 @@ class actionNordicblocksView extends cmsAction {
             $block_contract = isset($block['contract']) && is_array($block['contract']) ? $block['contract'] : [];
             $block_html     = $this->renderBlock($render_file, $type, $uid, $props, $block_contract);
 
-            // Кэшируем на 1 час
-            if (!$is_dynamic) {
-                $this->model->setCachedBlock($cache_key, $block_html, 3600);
+            if (!empty($cache_profile['cacheEligible'])) {
+                $this->model->setCachedBlock((string) $cache_profile['cacheKey'], $block_html, 3600);
             }
             $html .= $block_html;
         }

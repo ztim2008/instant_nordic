@@ -1001,11 +1001,12 @@ Implementation-ready registry слой для этого этапа вынесе
 
 #### Этап 3
 
-- ⚪ Дожать adapter-aware runtime hardening:
-  - cache key с учётом adapter context;
-  - одинаковый preview/live merge pipeline;
-  - smoke для single-record и list-record сценария.
-- Подробный отдельный контур этапа зафиксирован в `docs/nordicblocks/STAGE-3-RUNTIME-HARDENING.md`.
+- 🟢 Дожат adapter-aware runtime hardening:
+  - cache key теперь учитывает adapter context;
+  - widget и legacy view используют единый render cache profile;
+  - preview/live остаются на одном hydration/merge pipeline;
+  - добавлен smoke для cache-context isolation, single-record и list-record сценариев.
+- Подробный отдельный контур и итог этапа зафиксированы в `docs/nordicblocks/STAGE-3-RUNTIME-HARDENING.md`.
 
 #### Этап 4
 

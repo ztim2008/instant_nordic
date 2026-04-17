@@ -2,6 +2,7 @@
 
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockPayloadHydrator.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/RenderCacheContext.php';
 
 class modelNordicblocks extends cmsModel {
 
@@ -132,6 +133,50 @@ class modelNordicblocks extends cmsModel {
         $block['props'] = $this->normalizeImagePropsByType($type, (array) NordicblocksBlockContractNormalizer::denormalizeProps($type, (array) $block['contract']));
 
         return $block;
+    }
+
+    public function getDesignCacheVersion() {
+        $row = $this->db->getRow(self::TBL_DESIGN, '1', 'updated_at, tokens_json', 'id ASC');
+        if (!$row) {
+            return 'default';
+        }
+
+        $updated_at = trim((string) ($row['updated_at'] ?? ''));
+        if ($updated_at !== '') {
+            return $updated_at;
+        }
+
+        return substr(md5((string) ($row['tokens_json'] ?? '')), 0, 16);
+    }
+
+    public function buildRenderCacheProfile(array $block, array $context = []) {
+        $surface = trim((string) ($context['surface'] ?? $context['mode'] ?? 'runtime'));
+        if ($surface === '') {
+            $surface = 'runtime';
+        }
+
+        $adapter_context = NordicblocksRenderCacheContext::build($block, $context);
+        $design_version = trim((string) ($context['design_version'] ?? ''));
+        if ($design_version === '') {
+            $design_version = $this->getDesignCacheVersion();
+        }
+
+        $namespace = $this->buildRenderCacheNamespace($block, $surface, $context);
+        $payload = [
+            'surface'        => $surface,
+            'blockFingerprint'=> $this->buildRenderBlockFingerprint($block),
+            'designVersion'  => $design_version,
+            'adapterHash'    => (string) ($adapter_context['hash'] ?? 'manual'),
+        ];
+
+        return [
+            'surface'        => $surface,
+            'namespace'      => $namespace,
+            'cacheKey'       => $namespace . '_' . substr(md5($this->stableJsonEncode($payload)), 0, 16),
+            'cacheEligible'  => $surface !== 'backend_canvas' && !empty($namespace) && !empty($adapter_context['cacheEligible']),
+            'designVersion'  => $design_version,
+            'adapterContext' => $adapter_context,
+        ];
     }
 
     public function getBlockDefinition($type) {
@@ -1144,6 +1189,79 @@ class modelNordicblocks extends cmsModel {
     }
 
     // ── УТИЛИТЫ ───────────────────────────────────────────────────
+
+    private function buildRenderCacheNamespace(array $block, $surface, array $context = []) {
+        $block_id = (int) ($block['id'] ?? 0);
+        $page_id  = (int) ($context['page_id'] ?? 0);
+        $uid      = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string) ($context['uid'] ?? $block['uid'] ?? ''));
+        $surface  = preg_replace('/[^a-z0-9_\-]/i', '', (string) $surface);
+
+        if ($block_id > 0) {
+            return 'block_' . $block_id . '_' . $surface;
+        }
+
+        if ($page_id > 0) {
+            return 'page_' . $page_id . '_' . ($uid !== '' ? $uid : 'block');
+        }
+
+        return 'runtime_' . ($surface !== '' ? $surface : 'generic');
+    }
+
+    private function buildRenderBlockFingerprint(array $block) {
+        $block_id = (int) ($block['id'] ?? 0);
+        $updated_at = trim((string) ($block['updated_at'] ?? ''));
+
+        if ($block_id > 0 && $updated_at !== '') {
+            return [
+                'blockId'    => $block_id,
+                'type'       => (string) ($block['type'] ?? ''),
+                'status'     => (string) ($block['status'] ?? 'active'),
+                'updatedAt'  => $updated_at,
+            ];
+        }
+
+        return [
+            'type'        => (string) ($block['type'] ?? ''),
+            'uid'         => (string) ($block['uid'] ?? ''),
+            'payloadHash' => substr(md5($this->stableJsonEncode([
+                'title'    => (string) ($block['title'] ?? ''),
+                'status'   => (string) ($block['status'] ?? 'active'),
+                'props'    => (array) ($block['props'] ?? []),
+                'contract' => (array) ($block['contract'] ?? []),
+            ])), 0, 16),
+        ];
+    }
+
+    private function stableJsonEncode($value) {
+        $normalized = $this->normalizeValueForCache($value);
+        $json = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return is_string($json) ? $json : '';
+    }
+
+    private function normalizeValueForCache($value) {
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $normalized = [];
+        foreach ($value as $key => $item) {
+            $normalized[$key] = $this->normalizeValueForCache($item);
+        }
+
+        if ($this->isAssocArray($normalized)) {
+            ksort($normalized);
+        }
+
+        return $normalized;
+    }
+
+    private function isAssocArray(array $value) {
+        if (!$value) {
+            return false;
+        }
+
+        return array_keys($value) !== range(0, count($value) - 1);
+    }
 
     private function sanitizeColor($hex, $fallback = '#b42318') {
         $hex = preg_replace('/[^0-9a-fA-F#]/', '', (string) $hex);

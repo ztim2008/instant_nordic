@@ -1,6 +1,6 @@
 # NordicBlocks — Этап 3: adapter-aware runtime hardening
 
-> Статус: следующий отдельный рабочий этап после закрытия `hero + content_item` и общего UI вкладки `Данные`.
+> Статус: реализовано 2026-04-17 как отдельный runtime-слой после закрытия `hero + content_item` и общего UI вкладки `Данные`.
 
 ---
 
@@ -47,13 +47,24 @@
 
 ## 3. Цель Этапа 3
 
-Этап 3 считается выполненным только тогда, когда runtime начинает одинаково и предсказуемо работать не только по hydration, но и по cache semantics.
+Этап 3 считался выполненным только тогда, когда runtime начинает одинаково и предсказуемо работать не только по hydration, но и по cache semantics.
 
-Нужно получить 3 результата одновременно:
+В коде для этого были закрыты 3 результата одновременно:
 
 1. cache key учитывает adapter context и не может переиспользовать чужие данные на другой странице;
 2. preview и live проходят один и тот же merge pipeline без расхождения правил;
 3. smoke закрывают single-record и list-record сценарии не только на hydration, но и на уровне runtime context.
+
+### Что реально реализовано
+
+1. Добавлен отдельный helper `RenderCacheContext`, который собирает adapter-aware context для `manual`, `content_item` и `content_list`.
+2. `modelNordicblocks` получил единый `buildRenderCacheProfile()` с расчётом namespace, block fingerprint, design version и adapter context hash.
+3. `system/widgets/nordicblocks_block/widget.php` переведён на persistent SSR-cache с тем же cache profile.
+4. `system/controllers/nordicblocks/actions/view.php` больше не использует старый safe bypass как основную схему и теперь строит cache key через тот же profile.
+5. Runtime metadata для adapter-блоков расширена:
+   - `content_item` теперь отдаёт `resolverMode`;
+   - `content_list` теперь отдаёт `itemIds`, `sort`, `limit`.
+6. Добавлен smoke `scripts/nordicblocks-runtime-cache-smoke.php`, который проверяет cache-context isolation и отсутствие регрессии для manual-first блока.
 
 ---
 

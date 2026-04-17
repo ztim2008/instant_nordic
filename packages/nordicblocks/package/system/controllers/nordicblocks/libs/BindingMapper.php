@@ -50,7 +50,10 @@ class NordicblocksBindingMapper {
             'isDynamic' => true,
             'source'    => 'content_list',
             'ctype'     => (string) ($list_source['ctype'] ?? ''),
+            'sort'      => (string) ($list_source['sort'] ?? 'date_pub_desc'),
+            'limit'     => (int) ($list_source['limit'] ?? 0),
             'count'     => count($items),
+            'itemIds'   => self::extractRecordIds((array) ($resolved_sources['listItems'] ?? [])),
         ];
 
         return $mapped;
@@ -65,6 +68,7 @@ class NordicblocksBindingMapper {
                     'isDynamic' => true,
                     'source'    => 'content_item',
                     'ctype'     => (string) (($resolved_sources['source']['ctype'] ?? '')),
+                    'resolverMode' => (string) (($resolved_sources['source']['resolver']['mode'] ?? 'current')),
                     'recordId'  => (int) (($resolved_sources['record']['id'] ?? 0)),
                     'resolved'  => !empty($resolved_sources['record']),
                 ],
@@ -131,6 +135,23 @@ class NordicblocksBindingMapper {
         }
 
         return $items;
+    }
+
+    private static function extractRecordIds(array $records) {
+        $ids = [];
+
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+
+            $record_id = (int) ($record['id'] ?? 0);
+            if ($record_id > 0) {
+                $ids[] = $record_id;
+            }
+        }
+
+        return $ids;
     }
 
     private static function extractValue(array $record, $path) {
