@@ -211,13 +211,19 @@
 
 ## День 5. Generic panel renderer
 
-**Статус:** ⚪ Запланировано
+**Статус:** 🟡 В работе
 
 ### Что делаем
 
 1. Собираем общую механику вкладок `content`, `design`, `layout`, `data`.
 2. Отделяем логику доступности/видимости панелей от их отрисовки.
 3. Делаем shell тонким renderer-слоем.
+
+### Что уже сделано
+
+1. Control renderers вынесены из монолитного `editor_hero_v2.tpl.php` в отдельные partial-слои: `content`, `design`, `layout`, `data`, `repeater`.
+2. Основной shell теперь в основном собирает renderer registry через include + `Object.assign(...)`, а не хранит весь renderer-код внутри одного большого объекта.
+3. Runtime и package mirror держатся синхронно на одной и той же partial-структуре, так что следующий проход уже можно делать как чистку generic panel runtime, а не giant tpl.
 
 ### Какие результаты должны быть к концу дня
 
