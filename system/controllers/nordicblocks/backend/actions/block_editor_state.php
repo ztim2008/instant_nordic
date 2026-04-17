@@ -74,6 +74,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
                 'capabilities' => $registry['capabilities'],
                 'controlPresets' => $registry['controlPresets'],
                 'panels'       => $registry['panels'],
+                'manifest'     => $registry['manifest'] ?? null,
             ],
             'contractMeta' => $contract_meta,
             'dataOptions' => NordicblocksDataSourceResolver::buildEditorOptions((string) ($block['type'] ?? '')),

@@ -1,0 +1,57 @@
+<?php
+
+return [
+    'title' => 'Hero inspector manifest',
+    'entities' => [
+        'eyebrow' => [],
+        'title' => [],
+        'subtitle' => [],
+        'primaryButton' => [],
+        'secondaryButton' => [],
+        'media' => [],
+        'mediaSurface' => [],
+    ],
+    'entityGroups' => [
+        'buttons' => [
+            'label' => 'Кнопки',
+            'entities' => ['primaryButton', 'secondaryButton'],
+        ],
+        'media' => [
+            'label' => 'Медиа',
+            'entities' => ['media', 'mediaSurface'],
+        ],
+    ],
+    'capabilities' => [
+        'sectionBackground' => true,
+        'sectionContainer' => true,
+        'titleContent' => true,
+        'subtitleContent' => true,
+        'buttonsContent' => true,
+        'mediaContent' => true,
+        'titleTypography' => true,
+        'subtitleTypography' => true,
+        'buttonsStyle' => true,
+        'mediaSurface' => true,
+        'spacingLayout' => true,
+        'alignmentLayout' => true,
+        'responsiveTypography' => true,
+        'responsiveSpacing' => true,
+        'dataBindings' => true,
+    ],
+    'panels' => [
+        'textEyebrowContent' => [],
+        'textTitleContent' => [],
+        'textSubtitleContent' => [],
+        'buttonsContent' => [],
+        'mediaContent' => [],
+        'sectionBackground' => [],
+        'sectionContainer' => [],
+        'titleTypography' => [],
+        'subtitleTypography' => [],
+        'buttonsStyle' => [],
+        'mediaSurface' => [],
+        'spacingLayout' => [],
+        'alignmentLayout' => [],
+        'dataBindings' => [],
+    ],
+];

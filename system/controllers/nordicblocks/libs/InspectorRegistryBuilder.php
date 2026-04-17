@@ -3,12 +3,19 @@
 class NordicblocksInspectorRegistryBuilder {
 
     public static function build($block_type = '') {
-        $entities = self::getEntityRegistry();
-        $panels = self::getPanelRegistry();
+        $block_type = self::normalizeBlockType($block_type);
+        $manifest   = self::loadBlockManifest($block_type);
+
+        if ($manifest) {
+            return self::buildFromManifest($block_type, $manifest);
+        }
+
+        $entities        = self::getEntityRegistry();
+        $panels          = self::getPanelRegistry();
         $label_overrides = self::getLabelOverrides($block_type);
 
         $entities = self::applyEntityLabelOverrides($entities, (array) ($label_overrides['entities'] ?? []));
-        $panels = self::applyPanelLabelOverrides($panels, (array) ($label_overrides['panels'] ?? []));
+        $panels   = self::applyPanelLabelOverrides($panels, (array) ($label_overrides['panels'] ?? []));
 
         return [
             'tabs'             => self::getTabs(),
@@ -19,7 +26,165 @@ class NordicblocksInspectorRegistryBuilder {
             'controlPresets'   => self::getControlPresets(),
             'panels'           => $panels,
             'labelOverrides'   => $label_overrides,
+            'manifest'         => null,
         ];
+    }
+
+    private static function normalizeBlockType($block_type) {
+        return preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $block_type));
+    }
+
+    private static function loadBlockManifest($block_type) {
+        if ($block_type === '') {
+            return [];
+        }
+
+        $manifest_file = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks/' . $block_type . '/manifest.php';
+        if (!is_file($manifest_file)) {
+            return [];
+        }
+
+        $manifest = require $manifest_file;
+        if (!is_array($manifest)) {
+            return [];
+        }
+
+        $manifest['__file'] = $manifest_file;
+
+        return $manifest;
+    }
+
+    private static function buildFromManifest($block_type, array $manifest) {
+        $entities     = self::buildManifestEntities((array) ($manifest['entities'] ?? []));
+        $entity_groups= self::buildManifestEntityGroups((array) ($manifest['entityGroups'] ?? []));
+        $panels       = self::buildManifestPanels((array) ($manifest['panels'] ?? []));
+        $capabilities = self::buildManifestCapabilities((array) ($manifest['capabilities'] ?? []));
+
+        return [
+            'tabs'             => self::getTabs(),
+            'entities'         => $entities,
+            'entityGroups'     => $entity_groups,
+            'capabilities'     => self::getCapabilityRegistry(),
+            'capabilityMatrix' => [
+                $block_type => [
+                    'entities'     => array_keys($entities),
+                    'capabilities' => $capabilities,
+                ],
+            ],
+            'controlPresets'   => self::getControlPresets(),
+            'panels'           => $panels,
+            'labelOverrides'   => [
+                'entities' => self::extractManifestLabels($entities),
+                'panels'   => self::extractPanelLabels($panels),
+            ],
+            'manifest'         => [
+                'blockType'      => $block_type,
+                'title'          => (string) ($manifest['title'] ?? $block_type),
+                'entityKeys'     => array_keys($entities),
+                'panelKeys'      => array_values(array_map(function ($panel) {
+                    return (string) ($panel['key'] ?? '');
+                }, $panels)),
+                'capabilityKeys' => array_keys(array_filter($capabilities)),
+                'source'         => (string) ($manifest['__file'] ?? ''),
+            ],
+        ];
+    }
+
+    private static function buildManifestEntities(array $manifest_entities) {
+        $shared_entities = self::getEntityRegistry();
+        $entities = [];
+
+        foreach ($manifest_entities as $entity_key => $overrides) {
+            if (!isset($shared_entities[$entity_key])) {
+                continue;
+            }
+
+            $entities[$entity_key] = array_merge($shared_entities[$entity_key], is_array($overrides) ? $overrides : []);
+        }
+
+        return $entities;
+    }
+
+    private static function buildManifestEntityGroups(array $manifest_groups) {
+        $shared_groups = self::getEntityGroups();
+        $groups = [];
+
+        foreach ($manifest_groups as $group_key => $group) {
+            $base_group = isset($shared_groups[$group_key]) && is_array($shared_groups[$group_key])
+                ? $shared_groups[$group_key]
+                : ['key' => $group_key, 'label' => $group_key, 'entities' => []];
+
+            $group = is_array($group) ? $group : [];
+            $entities = array_values(array_filter((array) ($group['entities'] ?? $base_group['entities']), function ($entity_key) {
+                return is_string($entity_key) && $entity_key !== '';
+            }));
+
+            if (!$entities) {
+                continue;
+            }
+
+            $groups[$group_key] = array_merge($base_group, $group, [
+                'key'      => $group_key,
+                'entities' => $entities,
+            ]);
+        }
+
+        return $groups;
+    }
+
+    private static function buildManifestPanels(array $manifest_panels) {
+        $shared_panels = self::getPanelRegistryMap();
+        $panels = [];
+
+        foreach ($manifest_panels as $panel_key => $overrides) {
+            if (!isset($shared_panels[$panel_key])) {
+                continue;
+            }
+
+            $panels[] = array_merge($shared_panels[$panel_key], is_array($overrides) ? $overrides : [], [
+                'key' => $panel_key,
+            ]);
+        }
+
+        return $panels;
+    }
+
+    private static function buildManifestCapabilities(array $manifest_capabilities) {
+        $shared_capabilities = self::getCapabilityRegistry();
+        $resolved = [];
+
+        foreach ($shared_capabilities as $capability_key => $definition) {
+            $resolved[$capability_key] = !empty($manifest_capabilities[$capability_key]);
+        }
+
+        return $resolved;
+    }
+
+    private static function extractManifestLabels(array $entities) {
+        $labels = [];
+
+        foreach ($entities as $entity_key => $entity) {
+            if (!empty($entity['label'])) {
+                $labels[$entity_key] = (string) $entity['label'];
+            }
+        }
+
+        return $labels;
+    }
+
+    private static function extractPanelLabels(array $panels) {
+        $labels = [];
+
+        foreach ($panels as $panel) {
+            $panel_key = (string) ($panel['key'] ?? '');
+            if ($panel_key === '' || empty($panel['label'])) {
+                continue;
+            }
+
+            $labels[$panel_key] = (string) $panel['label'];
+        }
+
+        return $labels;
     }
 
     private static function applyEntityLabelOverrides(array $entities, array $overrides) {
@@ -398,5 +563,20 @@ class NordicblocksInspectorRegistryBuilder {
             ['key' => 'dataBindings', 'label' => 'Источник данных', 'tab' => 'data', 'section' => 'bindings', 'group' => 'source', 'order' => 110, 'requiresCapabilities' => ['dataBindings'], 'entityScope' => 'block', 'controlPreset' => 'dataSource', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'repeaterBindings', 'label' => 'Привязки коллекции', 'tab' => 'data', 'section' => 'bindings', 'group' => 'collection', 'order' => 120, 'requiresCapabilities' => ['repeaterBindings'], 'requiresEntities' => ['items'], 'entityScope' => 'items', 'controlPreset' => 'dataCollection', 'breakpointAware' => false, 'repeatable' => true],
         ];
+    }
+
+    private static function getPanelRegistryMap() {
+        $map = [];
+
+        foreach (self::getPanelRegistry() as $panel) {
+            $panel_key = (string) ($panel['key'] ?? '');
+            if ($panel_key === '') {
+                continue;
+            }
+
+            $map[$panel_key] = $panel;
+        }
+
+        return $map;
     }
 }

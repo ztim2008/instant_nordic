@@ -1,0 +1,53 @@
+<?php
+
+return [
+    'title' => 'FAQ inspector manifest',
+    'entities' => [
+        'eyebrow' => [],
+        'title' => [],
+        'subtitle' => [],
+        'items' => ['label' => 'FAQ'],
+        'itemSurface' => ['label' => 'Карточка вопроса'],
+        'itemTitle' => ['label' => 'Вопрос'],
+        'itemText' => ['label' => 'Ответ'],
+    ],
+    'entityGroups' => [
+        'items' => [
+            'label' => 'FAQ',
+            'entities' => ['items', 'itemSurface', 'itemTitle', 'itemText'],
+        ],
+    ],
+    'capabilities' => [
+        'sectionBackground' => true,
+        'sectionContainer' => true,
+        'titleContent' => true,
+        'subtitleContent' => true,
+        'repeaterContent' => true,
+        'titleTypography' => true,
+        'subtitleTypography' => true,
+        'itemSurface' => true,
+        'itemTypography' => true,
+        'spacingLayout' => true,
+        'alignmentLayout' => true,
+        'responsiveTypography' => true,
+        'responsiveSpacing' => true,
+        'dataBindings' => true,
+        'repeaterBindings' => true,
+    ],
+    'panels' => [
+        'textEyebrowContent' => [],
+        'textTitleContent' => [],
+        'textSubtitleContent' => [],
+        'repeaterItems' => ['label' => 'Вопросы'],
+        'sectionBackground' => [],
+        'sectionContainer' => [],
+        'titleTypography' => [],
+        'subtitleTypography' => [],
+        'itemSurface' => ['label' => 'Карточка вопроса'],
+        'itemTypography' => ['label' => 'Вопрос и ответ'],
+        'spacingLayout' => [],
+        'alignmentLayout' => [],
+        'dataBindings' => [],
+        'repeaterBindings' => ['label' => 'Поля FAQ'],
+    ],
+];

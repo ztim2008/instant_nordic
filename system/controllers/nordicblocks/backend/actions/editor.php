@@ -31,10 +31,10 @@ class actionNordicblocksEditor extends cmsAction {
     }
 
     /**
-     * Сканирует /blocks/ и возвращает массив метаданных блоков.
+     * Возвращает только первую волну блоков для активного редакторского потока.
      */
     private function loadBlockRegistry() {
-        return $this->model->getBlockDefinitions();
+        return $this->model->getFirstWaveBlockDefinitions();
     }
 
     private function getImagePresetOptions() {
