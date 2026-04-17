@@ -681,12 +681,42 @@ function nbhListSource() {
     if (!source.map || typeof source.map !== 'object' || Array.isArray(source.map)) {
         source.map = {};
     }
-    if (typeof source.map.question !== 'string') source.map.question = 'title';
-    if (typeof source.map.answer !== 'string') source.map.answer = '';
+    if (typeof source.map.title !== 'string') source.map.title = typeof source.map.question === 'string' ? source.map.question : 'title';
+    if (typeof source.map.text !== 'string') source.map.text = typeof source.map.answer === 'string' ? source.map.answer : '';
+    source.map.question = source.map.title;
+    source.map.answer = source.map.text;
     if (!source.emptyBehavior) source.emptyBehavior = 'fallback';
 
     nbhSet(nbhState.draft, 'data.listSource', source);
     return source;
+}
+
+function nbhBuildFaqItem(title, text) {
+    title = typeof title === 'string' ? title : '';
+    text = typeof text === 'string' ? text : '';
+
+    return {
+        title: title,
+        text: text,
+        question: title,
+        answer: text
+    };
+}
+
+function nbhFaqItemValue(item, key) {
+    if (!item || typeof item !== 'object') {
+        return '';
+    }
+
+    if (key === 'title') {
+        return typeof item.title === 'string' ? item.title : (typeof item.question === 'string' ? item.question : '');
+    }
+
+    if (key === 'text') {
+        return typeof item.text === 'string' ? item.text : (typeof item.answer === 'string' ? item.answer : '');
+    }
+
+    return typeof item[key] === 'string' ? item[key] : '';
 }
 
 function nbhSingleSource() {
@@ -1048,7 +1078,7 @@ function nbhOpenIconPicker(path) {
 
 function nbhAddRepeaterItem() {
     var items = nbhRepeaterItems().slice();
-    items.push({ question: 'Новый вопрос', answer: 'Короткий ответ на вопрос.' });
+    items.push(nbhBuildFaqItem('Новый вопрос', 'Короткий ответ на вопрос.'));
     nbhSet(nbhState.draft, 'content.items', items);
     nbhMarkDirty();
     nbhRenderPanels();
@@ -1070,9 +1100,27 @@ function nbhRemoveRepeaterItem(index) {
 function nbhUpdateRepeaterItem(index, field, value) {
     var items = nbhRepeaterItems().slice();
     if (!items[index] || typeof items[index] !== 'object') {
-        items[index] = { question: '', answer: '' };
+        items[index] = nbhBuildFaqItem('', '');
     }
-    items[index][field] = value;
+
+    var item = items[index];
+    if (field === 'question') field = 'title';
+    if (field === 'answer') field = 'text';
+
+    item[field] = value;
+
+    if (field === 'title') {
+        item.question = value;
+    }
+    if (field === 'text') {
+        item.answer = value;
+    }
+
+    if (typeof item.title !== 'string') item.title = typeof item.question === 'string' ? item.question : '';
+    if (typeof item.text !== 'string') item.text = typeof item.answer === 'string' ? item.answer : '';
+    item.question = item.title;
+    item.answer = item.text;
+
     nbhSet(nbhState.draft, 'content.items', items);
     nbhMarkDirty();
     nbhScheduleSave();
@@ -1470,15 +1518,15 @@ function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
     var cards = items.map(function(item, index) {
-        var question = item && item.question ? item.question : '';
-        var answer = item && item.answer ? item.answer : '';
+        var question = nbhFaqItemValue(item, 'title');
+        var answer = nbhFaqItemValue(item, 'text');
         return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
             + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
             + '<strong>Вопрос ' + (index + 1) + '</strong>'
             + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
             + '</div>'
-            + nbhField('Вопрос', '<input type="text" data-item-field="question" data-item-index="' + index + '" value="' + nbhEscapeAttr(question) + '">')
-            + nbhField('Ответ', '<textarea data-item-field="answer" data-item-index="' + index + '">' + nbhEscapeHtml(answer) + '</textarea>')
+            + nbhField('Вопрос', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(question) + '">')
+            + nbhField('Ответ', '<textarea data-item-field="text" data-item-index="' + index + '">' + nbhEscapeHtml(answer) + '</textarea>')
             + '</div>';
     }).join('');
 
@@ -1849,10 +1897,10 @@ var nbhPresetRenderers = {
         var body = '<div class="nbh-grid-2">';
 
         if (nbhHasEntity('itemTitle')) {
-            body += nbhField('Заголовок элемента', nbhSelect('data.listSource.map.question', fieldOptions, 'title'));
+            body += nbhField('Заголовок элемента', nbhSelect('data.listSource.map.title', fieldOptions, 'title'));
         }
         if (nbhHasEntity('itemText')) {
-            body += nbhField('Текст элемента', nbhSelect('data.listSource.map.answer', fieldOptions, ''));
+            body += nbhField('Текст элемента', nbhSelect('data.listSource.map.text', fieldOptions, ''));
         }
 
         body += '</div>';

@@ -171,7 +171,7 @@ class NordicblocksBlockContractNormalizer {
             ],
         ];
 
-        return $contract;
+        return self::mergeStoredContract($contract, $stored_contract);
     }
 
     private static function normalizeFaq(array $block, array $stored_contract = []) {
@@ -289,7 +289,7 @@ class NordicblocksBlockContractNormalizer {
             ],
         ];
 
-        return $contract;
+        return self::mergeStoredContract($contract, $stored_contract);
     }
 
     private static function normalizeStoredContract(array $block, array $contract) {
@@ -313,7 +313,7 @@ class NordicblocksBlockContractNormalizer {
             ], $contract);
         }
 
-        return $contract + self::normalizeFallback($block, $type);
+        return self::mergeStoredContract(self::normalizeFallback($block, $type), $contract);
     }
 
     public static function denormalizeProps($type, array $contract) {
@@ -436,13 +436,52 @@ class NordicblocksBlockContractNormalizer {
             'bindings'  => self::normalizeBindings($type, is_array($data['bindings'] ?? null) ? $data['bindings'] : []),
             'fallbacks' => is_array($data['fallbacks'] ?? null) ? $data['fallbacks'] : [],
             'meta'      => is_array($data['meta'] ?? null) ? $data['meta'] : [],
+            'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if ($type === 'faq') {
-            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []));
+        if ($type !== 'faq') {
+            $normalized['listSource'] = self::normalizeListSource([]);
         }
 
         return $normalized;
+    }
+
+    private static function mergeStoredContract(array $normalized, array $stored) {
+        if (!$stored) {
+            return $normalized;
+        }
+
+        return self::mergeContractArrays($stored, $normalized);
+    }
+
+    private static function mergeContractArrays($base, $overlay) {
+        if (!is_array($base) || !is_array($overlay)) {
+            return $overlay;
+        }
+
+        if (self::isListArray($base) || self::isListArray($overlay)) {
+            return $overlay;
+        }
+
+        $merged = $base;
+
+        foreach ($overlay as $key => $value) {
+            if (array_key_exists($key, $merged)) {
+                $merged[$key] = self::mergeContractArrays($merged[$key], $value);
+            } else {
+                $merged[$key] = $value;
+            }
+        }
+
+        return $merged;
+    }
+
+    private static function isListArray(array $value) {
+        if ($value === []) {
+            return false;
+        }
+
+        return array_keys($value) === range(0, count($value) - 1);
     }
 
     private static function normalizeSourceConfig($source) {
@@ -608,20 +647,29 @@ class NordicblocksBlockContractNormalizer {
                 continue;
             }
 
-            $question = trim((string) ($item['question'] ?? ''));
-            $answer   = trim((string) ($item['answer'] ?? ''));
+            $question = trim((string) ($item['title'] ?? ($item['question'] ?? '')));
+            $answer   = trim((string) ($item['text'] ?? ($item['answer'] ?? '')));
 
             if ($question === '' && $answer === '') {
                 continue;
             }
 
-            $items[] = [
-                'question' => $question,
-                'answer'   => $answer,
-            ];
+            $items[] = self::buildFaqItemPayload($question, $answer);
         }
 
         return $items;
+    }
+
+    private static function buildFaqItemPayload($title, $text) {
+        $title = trim((string) $title);
+        $text  = trim((string) $text);
+
+        return [
+            'title'    => $title,
+            'text'     => $text,
+            'question' => $title,
+            'answer'   => $text,
+        ];
     }
 
     private static function normalizeBoolean($value, $fallback) {

@@ -29,6 +29,27 @@ if (!function_exists('nb_faq_prop_int')) {
     }
 }
 
+if (!function_exists('nb_faq_normalize_item')) {
+    function nb_faq_normalize_item(array $item) {
+        $title = trim((string) ($item['title'] ?? ($item['question'] ?? '')));
+        $text  = trim((string) ($item['text'] ?? ($item['answer'] ?? '')));
+
+        if ($title === '' && $text === '') {
+            return null;
+        }
+
+        $title_escaped = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
+        $text_html = $text !== '' ? nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8')) : '';
+
+        return [
+            'title'    => $title_escaped,
+            'text'     => $text_html,
+            'question' => $title_escaped,
+            'answer'   => $text_html,
+        ];
+    }
+}
+
 if ($faq_contract) {
     $eyebrow = htmlspecialchars(trim((string) ($faq_contract['content']['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
     $heading = htmlspecialchars(trim((string) ($faq_contract['content']['title'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -155,16 +176,12 @@ if ($items_source) {
             continue;
         }
 
-        $question = trim((string) ($item['question'] ?? ''));
-        $answer   = trim((string) ($item['answer'] ?? ''));
-        if ($question === '' && $answer === '') {
+        $normalized_item = nb_faq_normalize_item($item);
+        if (!$normalized_item) {
             continue;
         }
 
-        $items[] = [
-            'question' => htmlspecialchars($question, ENT_QUOTES, 'UTF-8'),
-            'answer'   => $answer !== '' ? nl2br(htmlspecialchars($answer, ENT_QUOTES, 'UTF-8')) : '',
-        ];
+        $items[] = $normalized_item;
     }
 }
 
@@ -238,12 +255,12 @@ $item_class = $item_surface_variant === 'plain' ? 'nb-faq__item nb-faq__item--pl
             <?php foreach ($items as $index => $item): ?>
             <details class="<?= $item_class ?>" data-nb-entity="itemSurface" <?= ($open_first && $index === 0) ? 'open' : '' ?>>
                 <summary class="nb-faq__question">
-                    <span data-nb-entity="itemTitle"><?= $item['question'] ?></span>
+                    <span data-nb-entity="itemTitle"><?= $item['title'] ?></span>
                     <span class="nb-faq__icon" aria-hidden="true"></span>
                 </summary>
-                <?php if ($item['answer']): ?>
+                <?php if ($item['text']): ?>
                 <div class="nb-faq__answer" data-nb-entity="itemText">
-                    <p><?= $item['answer'] ?></p>
+                    <p><?= $item['text'] ?></p>
                 </div>
                 <?php endif; ?>
             </details>

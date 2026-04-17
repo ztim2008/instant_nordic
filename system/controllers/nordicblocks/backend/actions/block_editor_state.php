@@ -35,6 +35,19 @@ class actionNordicblocksBlockEditorState extends cmsAction {
 
         $resolved_entities = NordicblocksBlockEntityResolver::resolve((string) $block['type'], $contract, (array) $registry['entities']);
         $resolved_capabilities = NordicblocksBlockCapabilityResolver::resolve((string) $block['type'], (array) $registry['capabilityMatrix']);
+        $contract_meta = [
+            'contractVersion' => (int) ($contract['meta']['contractVersion'] ?? 0),
+            'schemaVersion'   => (int) ($contract['meta']['schemaVersion'] ?? 0),
+            'blockType'       => (string) ($contract['meta']['blockType'] ?? ($block['type'] ?? '')),
+            'rootKeys'        => array_keys($contract),
+            'dataKeys'        => array_keys((array) ($contract['data'] ?? [])),
+            'itemFieldAliases'=> ((string) ($block['type'] ?? '') === 'faq')
+                ? [
+                    'primary' => ['title', 'text'],
+                    'legacy'  => ['question', 'answer'],
+                ]
+                : null,
+        ];
         $default_entity = !empty($resolved_entities['title'])
             ? 'title'
             : (!empty($resolved_entities['items']) ? 'items' : (string) array_key_first($resolved_entities));
@@ -62,6 +75,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
                 'controlPresets' => $registry['controlPresets'],
                 'panels'       => $registry['panels'],
             ],
+            'contractMeta' => $contract_meta,
             'dataOptions' => NordicblocksDataSourceResolver::buildEditorOptions((string) ($block['type'] ?? '')),
             'resolved' => [
                 'entities'     => $resolved_entities,

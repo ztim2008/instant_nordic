@@ -112,8 +112,8 @@ class NordicblocksBindingMapper {
 
     private static function mapFaqItems(array $records, array $list_source) {
         $map = is_array($list_source['map'] ?? null) ? $list_source['map'] : [];
-        $question_field = (string) ($map['question'] ?? 'title');
-        $answer_field   = (string) ($map['answer'] ?? '');
+        $question_field = (string) ($map['title'] ?? ($map['question'] ?? 'title'));
+        $answer_field   = (string) ($map['text'] ?? ($map['answer'] ?? ''));
 
         $items = [];
         foreach ($records as $record) {
@@ -128,13 +128,22 @@ class NordicblocksBindingMapper {
                 continue;
             }
 
-            $items[] = [
-                'question' => $question,
-                'answer'   => $answer,
-            ];
+            $items[] = self::buildFaqItemPayload($question, $answer);
         }
 
         return $items;
+    }
+
+    private static function buildFaqItemPayload($title, $text) {
+        $title = self::normalizeText($title);
+        $text  = self::normalizeText($text);
+
+        return [
+            'title'    => $title,
+            'text'     => $text,
+            'question' => $title,
+            'answer'   => $text,
+        ];
     }
 
     private static function extractRecordIds(array $records) {

@@ -44,7 +44,7 @@
 
 ### 🟡 В работе сейчас
 
-1. День 1: freeze первой волны и закрытие старого block-flow editor path.
+1. День 3: manifest-слой редактора как следующая точка недели.
 
 ### ⚪ Ещё не начато
 
@@ -99,7 +99,7 @@
 
 ## День 2. Единый block contract
 
-**Статус:** ⚪ Запланировано
+**Статус:** 🟢 Сделано
 
 ### Что делаем
 
@@ -113,11 +113,23 @@
 2. Editor state и runtime больше не спорят о shape данных.
 3. Контракт можно описать отдельно от admin HTML.
 
+### Что уже сделано
+
+1. `data`-root выровнен для `hero` и `faq`: оба контракта теперь отдают одинаковые ключи `source`, `bindings`, `fallbacks`, `meta`, `listSource`.
+2. Повторная нормализация сохранённого contract payload больше не съедает неизвестные будущие ключи и override-ветки.
+3. Для FAQ введён bridge-слой items: контракт и binding теперь держат одновременно `title/text` и legacy `question/answer`.
+4. `block_editor_state` теперь явно отдаёт `contractMeta` с описанием roots, data keys и FAQ item aliases.
+5. FAQ editor shell выровнен на primary-ключи `title/text`, сохраняя legacy aliases только как совместимость.
+6. FAQ runtime render и schema переведены на `title/text` как канон, а `question/answer` оставлены как fallback для старых сохранённых данных.
+
 ### Что трогаем
 
 1. `system/controllers/nordicblocks/libs/BlockContractNormalizer.php`
 2. `system/controllers/nordicblocks/backend/actions/block_editor_state.php`
 3. `system/controllers/nordicblocks/libs/BindingMapper.php`
+4. `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2.tpl.php`
+5. `system/controllers/nordicblocks/blocks/faq/render.php`
+6. `system/controllers/nordicblocks/blocks/faq/schema.json`
 
 ### Риск дня
 
