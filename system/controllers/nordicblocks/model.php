@@ -274,6 +274,7 @@ class modelNordicblocks extends cmsModel {
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $this->db->update(self::TBL_BLOCKS, "`id` = {$id}", $data, true);
+        $this->syncBlockWidgetBindingTitles($id, (string) $data['title']);
         $this->invalidateBlockCache($id);
     }
 
@@ -286,13 +287,93 @@ class modelNordicblocks extends cmsModel {
         ];
 
         $this->db->update(self::TBL_BLOCKS, "`id` = {$id}", $data, true);
+        $this->syncBlockWidgetBindingTitles($id, (string) $data['title']);
         $this->invalidateBlockCache($id);
     }
 
     public function deleteBlock($id) {
         $id = (int) $id;
+        $removed_widget_binds = $this->deleteBlockWidgetBindings($id);
         $this->db->delete(self::TBL_BLOCKS, "`id` = {$id}");
         $this->invalidateBlockCache($id);
+
+        return [
+            'removed_widget_binds' => $removed_widget_binds,
+        ];
+    }
+
+    private function syncBlockWidgetBindingTitles($block_id, $title) {
+        $block_id = (int) $block_id;
+        $title    = trim((string) $title);
+
+        if ($block_id < 1 || $title === '') {
+            return 0;
+        }
+
+        $bind_ids = $this->findBlockWidgetBindingIds($block_id);
+        if (!$bind_ids) {
+            return 0;
+        }
+
+        foreach ($bind_ids as $bind_id) {
+            $this->db->update('widgets_bind', "`id` = {$bind_id}", ['title' => $title], true);
+        }
+
+        cmsCache::getInstance()->clean('widgets.bind');
+
+        return count($bind_ids);
+    }
+
+    private function deleteBlockWidgetBindings($block_id) {
+        $bind_ids = $this->findBlockWidgetBindingIds((int) $block_id);
+        if (!$bind_ids) {
+            return 0;
+        }
+
+        $bind_ids_sql = implode(',', array_map('intval', $bind_ids));
+
+        $this->db->query("DELETE FROM `{#}widgets_bind_pages` WHERE `bind_id` IN ({$bind_ids_sql})");
+        $this->db->query("DELETE FROM `{#}widgets_bind` WHERE `id` IN ({$bind_ids_sql})");
+
+        $cache = cmsCache::getInstance();
+        $cache->clean('widgets.bind_pages');
+        $cache->clean('widgets.bind');
+        $cache->clean('widgets.pages');
+
+        return count($bind_ids);
+    }
+
+    private function findBlockWidgetBindingIds($block_id) {
+        $block_id = (int) $block_id;
+        if ($block_id < 1) {
+            return [];
+        }
+
+        $result = $this->db->query(
+            "SELECT wb.`id`, wb.`options`
+             FROM `{#}widgets_bind` wb
+             INNER JOIN `{#}widgets` w ON w.id = wb.widget_id
+             WHERE w.`name` = 'nordicblocks_block' AND (w.`controller` IS NULL OR w.`controller` = '')",
+            [],
+            true
+        );
+
+        if (!$result || $result->num_rows < 1) {
+            return [];
+        }
+
+        $bind_ids = [];
+
+        while ($row = $result->fetch_assoc()) {
+            $options = cmsModel::yamlToArray((string) ($row['options'] ?? ''));
+            if ((int) ($options['block_id'] ?? 0) !== $block_id) {
+                continue;
+            }
+
+            $bind_ids[] = (int) $row['id'];
+        }
+
+        return array_values(array_unique($bind_ids));
     }
 
     public function invalidateBlockCache($block_id) {
@@ -1045,7 +1126,7 @@ class modelNordicblocks extends cmsModel {
             }
 
             $preview_preset = 'original';
-            foreach (['small', 'normal', 'content_list_small', 'content_list', 'big', 'original'] as $candidate) {
+            foreach (['normal', 'content_list_small', 'content_list', 'small', 'big', 'original'] as $candidate) {
                 if (!empty($variants[$candidate])) {
                     $preview_preset = $candidate;
                     break;
@@ -1079,7 +1160,8 @@ class modelNordicblocks extends cmsModel {
                 'title'             => $group['title'],
                 'alt'               => $group['alt'],
                 'original_path'     => $group['original_path'],
-                'preview_url'       => $media['display'],
+                'preview_url'       => $variants[$preview_preset] ?? ($media['display'] ?: $media['original']),
+                'preview_fallback_url' => $media['original'],
                 'available_presets' => $available_presets,
                 'generated_presets' => $generated_presets,
                 'generated_count'   => count($generated_presets),

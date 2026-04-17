@@ -206,6 +206,7 @@ $this->addMenuItems('admin_toolbar', $menu);
     flex-direction: column;
     background: #f1f5f9;
     z-index: 100;
+    overflow: hidden;
 }
 
 /* ── Top Bar ─────────────────────────────────────── */
@@ -293,6 +294,7 @@ $this->addMenuItems('admin_toolbar', $menu);
     flex: 1;
     display: flex;
     overflow: hidden;
+    min-height: 0;
 }
 
 /* ── Canvas ──────────────────────────────────────── */
@@ -301,22 +303,29 @@ $this->addMenuItems('admin_toolbar', $menu);
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow: hidden;
+    overflow: auto;
     background: #e2e8f0;
     padding: 16px;
     position: relative;
+    min-height: 0;
 }
 #nbe-canvas-frame {
-    flex: 1;
+    flex: 0 0 auto;
     width: 100%;
+    min-width: 0;
     max-width: 1280px;
+    min-height: calc(100vh - 170px);
     background: #fff;
     border: none;
     border-radius: 8px;
     box-shadow: 0 4px 24px rgba(0,0,0,.15);
-    transition: max-width .3s;
+    transition: max-width .3s, height .18s ease;
 }
-#nbe-canvas-frame.mobile { max-width: 390px; }
+#nbe-canvas-frame.mobile {
+    flex: 0 0 390px;
+    width: 390px;
+    max-width: 100%;
+}
 
 /* ── Right Panel ─────────────────────────────────── */
 #nbe-panel {
@@ -1503,7 +1512,52 @@ function scheduleReload() {
 
 function reloadCanvas() {
     var f = document.getElementById('nbe-canvas-frame');
-    if (f) f.src = nbeCanvasUrl + '?t=' + Date.now();
+    if (!f) {
+        return;
+    }
+
+    f.style.height = '';
+    f.src = nbeCanvasUrl + '?t=' + Date.now();
+}
+
+function nbeApplyCanvasHeight(height) {
+    var frame = document.getElementById('nbe-canvas-frame');
+    var numericHeight = parseInt(height, 10);
+
+    if (!frame || !numericHeight || numericHeight < 320) {
+        return;
+    }
+
+    frame.style.height = numericHeight + 'px';
+}
+
+function nbeSyncCanvasHeightFromFrame() {
+    var frame = document.getElementById('nbe-canvas-frame');
+    var frameDoc;
+    var body;
+    var html;
+    var height;
+
+    if (!frame) {
+        return;
+    }
+
+    try {
+        frameDoc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+        body = frameDoc && frameDoc.body;
+        html = frameDoc && frameDoc.documentElement;
+        height = Math.max(
+            body ? body.scrollHeight : 0,
+            body ? body.offsetHeight : 0,
+            html ? html.scrollHeight : 0,
+            html ? html.offsetHeight : 0,
+            html ? html.clientHeight : 0
+        );
+    } catch (error) {
+        return;
+    }
+
+    nbeApplyCanvasHeight(height);
 }
 
 function setViewport(type) {
@@ -1511,10 +1565,18 @@ function setViewport(type) {
     var btnD = document.getElementById('nbeVpDesktop');
     var btnM = document.getElementById('nbeVpMobile');
     if (type === 'mobile') {
+        f.style.flex = '0 0 390px';
+        f.style.width = '390px';
+        f.style.maxWidth = '100%';
         f.classList.add('mobile'); btnM.classList.add('active'); btnD.classList.remove('active');
     } else {
+        f.style.flex = '';
+        f.style.width = '';
+        f.style.maxWidth = '';
         f.classList.remove('mobile'); btnD.classList.add('active'); btnM.classList.remove('active');
     }
+
+    setTimeout(nbeSyncCanvasHeightFromFrame, 30);
 }
 
 var nbeSaving = false;
@@ -1804,13 +1866,28 @@ function nbeRenderFilePicker() {
 
     items.forEach(function(item) {
         var el = document.createElement('div');
+        var previewUrl = item.preview_url || (item.media && (item.media.display || item.media.original)) || '';
+        var fallbackUrl = item.preview_fallback_url || (item.media && item.media.original) || '';
         el.className = 'nbe-media-card';
-        el.innerHTML = '<div class="nbe-media-card__thumb"><img src="' + nbeEscapeHtml(item.preview_url || '') + '" alt="' + nbeEscapeHtml(item.alt || item.title || '') + '"></div>'
+        el.innerHTML = '<div class="nbe-media-card__thumb">'
+            + (previewUrl
+                ? '<img src="' + nbeEscapeHtml(previewUrl) + '" alt="' + nbeEscapeHtml(item.alt || item.title || '') + '" loading="lazy" decoding="async">'
+                : '<div class="nbe-media-card__empty"><i class="fa fa-image"></i><span>Нет preview</span></div>')
+            + '</div>'
             + '<div class="nbe-media-card__body">'
             + '<div class="nbe-media-card__title">' + nbeEscapeHtml(item.title || 'Изображение') + '</div>'
             + '<div class="nbe-media-card__path">' + nbeEscapeHtml(item.original_path || '') + '</div>'
             + '<div class="nbe-media-card__badges">' + nbeBuildMediaCardBadges(item) + '</div>'
             + '</div>';
+
+        var img = el.querySelector('img');
+        if (img && fallbackUrl && fallbackUrl !== previewUrl) {
+            img.addEventListener('error', function onError() {
+                img.removeEventListener('error', onError);
+                img.src = fallbackUrl;
+            });
+        }
+
         el.addEventListener('click', function() { nbeFpSelect(item); });
         grid.appendChild(el);
     });
@@ -1848,6 +1925,22 @@ document.getElementById('nb-fp-filter').addEventListener('change', function() {
 /* ── Keyboard shortcuts ── */
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveBlock(false); }
+});
+
+document.getElementById('nbe-canvas-frame').addEventListener('load', function() {
+    setTimeout(nbeSyncCanvasHeightFromFrame, 20);
+});
+
+window.addEventListener('message', function(event) {
+    var data = event.data || {};
+
+    if (data.source !== 'nordicblocks-canvas') {
+        return;
+    }
+
+    if (data.type === 'canvas:metrics') {
+        nbeApplyCanvasHeight(data.height);
+    }
 });
 
 window.addEventListener('beforeunload', function(e) {

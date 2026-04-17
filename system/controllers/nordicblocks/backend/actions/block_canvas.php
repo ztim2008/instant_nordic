@@ -53,6 +53,7 @@ a{color:inherit;text-decoration:none}
 <script>
 (function () {
     var selectedNode = null;
+    var resizeFrameTimer = null;
 
     function findEntityNode(target) {
         while (target && target !== document.body) {
@@ -68,6 +69,35 @@ a{color:inherit;text-decoration:none}
         if (selectedNode) {
             selectedNode.classList.remove('nb-editor-selected');
         }
+    }
+
+    function emitCanvasMetrics() {
+        var body = document.body;
+        var html = document.documentElement;
+        var height = 0;
+
+        if (body) {
+            height = Math.max(height, body.scrollHeight, body.offsetHeight);
+        }
+        if (html) {
+            height = Math.max(height, html.scrollHeight, html.offsetHeight, html.clientHeight);
+        }
+
+        if (window.parent) {
+            window.parent.postMessage({
+                source: 'nordicblocks-canvas',
+                type: 'canvas:metrics',
+                height: height
+            }, '*');
+        }
+    }
+
+    function scheduleCanvasMetrics() {
+        if (resizeFrameTimer) {
+            clearTimeout(resizeFrameTimer);
+        }
+
+        resizeFrameTimer = setTimeout(emitCanvasMetrics, 16);
     }
 
     function selectEntity(entityKey, shouldScroll) {
@@ -128,9 +158,36 @@ a{color:inherit;text-decoration:none}
         }
     });
 
+    if (typeof ResizeObserver === 'function') {
+        var resizeObserver = new ResizeObserver(function () {
+            scheduleCanvasMetrics();
+        });
+
+        if (document.body) {
+            resizeObserver.observe(document.body);
+        }
+        if (document.documentElement) {
+            resizeObserver.observe(document.documentElement);
+        }
+    }
+
+    window.addEventListener('load', scheduleCanvasMetrics);
+    window.addEventListener('resize', scheduleCanvasMetrics);
+
+    Array.prototype.forEach.call(document.images || [], function (img) {
+        if (!img || img.complete) {
+            return;
+        }
+
+        img.addEventListener('load', scheduleCanvasMetrics, { once: true });
+        img.addEventListener('error', scheduleCanvasMetrics, { once: true });
+    });
+
     if (window.parent) {
         window.parent.postMessage({ source: 'nordicblocks-canvas', type: 'canvas:ready' }, '*');
     }
+
+    scheduleCanvasMetrics();
 })();
 </script>
 JS;

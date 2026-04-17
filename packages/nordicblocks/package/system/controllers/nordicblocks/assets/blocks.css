@@ -1186,6 +1186,7 @@
     }
 
     .nb-hero-panels__rail {
+        flex-wrap: wrap;
         min-height: var(--nb-hero-panels-min-height-mobile, 0px);
     }
 

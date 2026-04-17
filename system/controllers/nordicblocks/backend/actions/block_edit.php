@@ -15,12 +15,21 @@ class actionNordicblocksBlockEdit extends cmsAction {
         $block_registry = $this->loadBlockRegistry();
         $tokens         = $this->model->getDesignTokens();
         $inline_css     = $this->model->buildInlineCss($tokens);
+        $template_name  = (string) cmsConfig::get('template');
 
         $canvas_url       = href_to($this->controller->root_url, 'block_canvas', $block_id);
         $editor_state_url = href_to($this->controller->root_url, 'block_editor_state', $block_id);
-        $template_name    = in_array((string) ($block['type'] ?? ''), ['hero', 'faq'], true) ? 'backend/editor_hero_v2' : 'backend/editor';
+        $template_name_view = in_array((string) ($block['type'] ?? ''), ['hero', 'faq'], true) ? 'backend/editor_hero_v2' : 'backend/editor';
+        $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
+            'template_name'               => $template_name,
+            'open_tab'                    => 'all-widgets',
+            'highlight_widget'            => 'nordicblocks_block',
+            'highlight_widget_controller' => '',
+            'nb_block_id'                 => $block_id,
+            'nb_block_title'              => (string) ($block['title'] ?? ''),
+        ]);
 
-        return $this->cms_template->render($template_name, [
+        return $this->cms_template->render($template_name_view, [
             'menu'           => $this->controller->getBackendMenu(),
             'block'          => $block,
             'block_registry' => $block_registry,
@@ -29,7 +38,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
             'save_url'       => href_to($this->controller->root_url, 'block_save', [$block_id]),
             'editor_state_url' => $editor_state_url,
             'canvas_url'     => $canvas_url,
-            'place_url'      => href_to($this->controller->root_url, 'block_place', $block_id),
+            'place_url'      => $place_url,
             'back_url'       => href_to($this->controller->root_url, 'blocks'),
             'widgets_url'    => href_to('admin', 'widgets'),
         ]);

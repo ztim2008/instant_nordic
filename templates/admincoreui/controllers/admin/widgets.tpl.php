@@ -143,7 +143,7 @@
                                             </a>
                                             <ul class="mt-3 px-2 list-unstyled collapse <?php echo !$controller_name ? 'show' : ''; ?>" id="w-<?php echo $controller_name; ?>" data-parent="#accordion">
                                                 <?php foreach($widgets as $widget){ ?>
-                                                <li rel="new" data-id="<?php echo $widget['id']; ?>">
+                                                <li rel="new" data-id="<?php echo $widget['id']; ?>" data-widget-name="<?php html($widget['name']); ?>" data-widget-controller="<?php html((string) ($widget['controller'] ?? '')); ?>">
                                                         <span class="title">
                                                             <?php echo $widget['title']; ?>
                                                             <?php if($widget['is_external']){ ?>
@@ -249,7 +249,55 @@
     window.nordicCsrfToken = '<?php echo cmsForm::getCSRFToken(); ?>';
     <?php } ?>
     $(function(){
+        var params = new URLSearchParams(window.location.search);
+        var openTab = params.get('open_tab') || '';
+        var highlightWidget = params.get('highlight_widget') || '';
+        var highlightController = params.get('highlight_widget_controller') || '';
+        var nbBlockTitle = params.get('nb_block_title') || '';
+        var nbBlockId = params.get('nb_block_id') || '';
+
         icms.admin.introJsInit({page: 'widgets', steps: <?php echo json_encode($intro_lang); ?>});
+
+        if (openTab === 'all-widgets') {
+            $('a[data-toggle="tab"][href="#all-widgets"]').tab('show');
+        }
+
+        if (highlightWidget) {
+            var selector = '#cp-widgets-list li[rel="new"][data-widget-name="' + highlightWidget + '"][data-widget-controller="' + highlightController + '"]';
+            var targetWidget = $(selector).first();
+
+            if (targetWidget.length) {
+                var targetCollapse = targetWidget.closest('.collapse');
+                if (targetCollapse.length) {
+                    targetCollapse.collapse('show');
+                }
+
+                targetWidget.css({
+                    boxShadow: '0 0 0 3px rgba(14, 165, 233, .28), 0 14px 28px rgba(14, 165, 233, .14)',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, rgba(224,242,254,.8), rgba(255,255,255,1))',
+                    padding: '.65rem .75rem'
+                });
+
+                var hintHtml = '<div class="alert alert-primary mb-3" id="nb-place-hint">'
+                    + '<strong>Размещение NordicBlocks.</strong> '
+                    + 'Перетащите виджет <strong>NordicBlocks Block</strong> в нужную колонку, затем откройте его настройки и выберите '
+                    + (nbBlockTitle ? 'блок <strong>«' + $('<div>').text(nbBlockTitle).html() + '»</strong>' : 'нужный блок')
+                    + (nbBlockId ? ' <span class="text-muted">#' + $('<div>').text(nbBlockId).html() + '</span>' : '')
+                    + '.</div>';
+
+                if (!$('#nb-place-hint').length) {
+                    $('#all-widgets').prepend(hintHtml);
+                }
+
+                setTimeout(function() {
+                    $('html, body').animate({
+                        scrollTop: Math.max(targetWidget.offset().top - 180, 0)
+                    }, 450);
+                }, 160);
+            }
+        }
+
         <?php if($scroll_to) { ?>
             $(function(){
                 let el = $("#<?php html($scroll_to); ?>").addClass('shadow');

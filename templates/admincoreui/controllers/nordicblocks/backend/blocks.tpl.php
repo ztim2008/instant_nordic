@@ -16,19 +16,153 @@ $this->addMenuItems('admin_toolbar', $menu);
     background: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 1.25rem 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    transition: transform .18s ease, box-shadow .2s;
+}
+.nb-block-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .12);
+}
+.nb-block-card__preview {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border-bottom: 1px solid #edf2f7;
+    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 45%, #f8fafc 100%);
+}
+.nb-block-card__preview img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+.nb-block-card__preview-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    padding: .3rem .6rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    color: #fff;
+    background: rgba(15, 23, 42, .78);
+    backdrop-filter: blur(10px);
+}
+.nb-block-card__preview::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, rgba(15, 23, 42, .28) 100%);
+    pointer-events: none;
+}
+.nb-block-card__preview--fallback {
+    color: #0f172a;
+}
+.nb-block-card__schematic {
+    position: absolute;
+    inset: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+}
+.nb-block-card__schematic-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+}
+.nb-block-card__schematic-eyebrow {
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #1d4ed8;
+}
+.nb-block-card__schematic-title {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.1;
+    max-width: 190px;
+}
+.nb-block-card__wire {
+    display: grid;
+    gap: 8px;
+    margin-top: auto;
+}
+.nb-block-card__wire-box,
+.nb-block-card__wire-line,
+.nb-block-card__wire-dot {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(148, 163, 184, .34);
+    box-shadow: 0 8px 18px rgba(148, 163, 184, .12);
+}
+.nb-block-card__wire--hero {
+    grid-template-columns: 1.2fr .9fr;
+    grid-template-rows: 1fr .7fr;
+    min-height: 112px;
+}
+.nb-block-card__wire--hero .nb-block-card__wire-box:first-child { grid-row: 1 / span 2; min-height: 112px; }
+.nb-block-card__wire--hero .nb-block-card__wire-box:nth-child(2) { min-height: 52px; }
+.nb-block-card__wire--hero .nb-block-card__wire-box:nth-child(3) { min-height: 52px; }
+.nb-block-card__wire--features {
+    grid-template-columns: repeat(3, 1fr);
+    min-height: 112px;
+}
+.nb-block-card__wire--features .nb-block-card__wire-box { min-height: 70px; }
+.nb-block-card__wire--faq {
+    min-height: 112px;
+}
+.nb-block-card__wire--faq .nb-block-card__wire-line { height: 20px; }
+.nb-block-card__wire--content {
+    min-height: 112px;
+}
+.nb-block-card__wire--content .nb-block-card__wire-line:first-child { height: 54px; }
+.nb-block-card__wire--content .nb-block-card__wire-line:nth-child(2) { width: 82%; height: 16px; }
+.nb-block-card__wire--content .nb-block-card__wire-line:nth-child(3) { width: 68%; height: 16px; }
+.nb-block-card__schematic-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.nb-block-card__schematic-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: .24rem .55rem;
+    border-radius: 999px;
+    font-size: .68rem;
+    font-weight: 700;
+    color: #334155;
+    background: rgba(255, 255, 255, .78);
+    border: 1px solid rgba(148, 163, 184, .34);
+}
+.nb-block-card__body {
     display: flex;
     flex-direction: column;
     gap: .75rem;
-    box-shadow: 0 1px 4px rgba(0,0,0,.05);
-    transition: box-shadow .2s;
+    padding: 1rem 1.1rem 1.1rem;
+    flex: 1 1 auto;
 }
-.nb-block-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.10); }
 .nb-block-card__title {
     font-size: 1.05rem;
     font-weight: 600;
     color: #1a202c;
     margin: 0;
+}
+.nb-block-card__subtitle {
+    margin: -.2rem 0 0;
+    font-size: .84rem;
+    color: #64748b;
+    line-height: 1.45;
 }
 .nb-block-card__meta {
     font-size: .8rem;
@@ -36,6 +170,7 @@ $this->addMenuItems('admin_toolbar', $menu);
     display: flex;
     align-items: center;
     gap: .75rem;
+    flex-wrap: wrap;
 }
 .nb-badge {
     display: inline-block;
@@ -85,6 +220,7 @@ $this->addMenuItems('admin_toolbar', $menu);
 .nb-btn-sm--place:hover { background: #059669; color: #fff; }
 .nb-btn-sm--del   { background: #fff; color: #ef4444; border-color: #fca5a5; }
 .nb-btn-sm--del:hover { background: #fef2f2; border-color: #ef4444; }
+.nb-btn-sm--del i { margin-right: .15rem; }
 
 .nb-empty-state {
     text-align: center;
@@ -127,6 +263,16 @@ $this->addMenuItems('admin_toolbar', $menu);
 .nb-modal select:focus, .nb-modal input[type="text"]:focus { border-color: #3b82f6; }
 .nb-modal__footer { display: flex; gap: .75rem; justify-content: flex-end; margin-top: .5rem; }
 .nb-modal__footer .btn { padding: .5rem 1.25rem; }
+
+@media (max-width: 640px) {
+    .nb-block-card__body {
+        padding: .95rem;
+    }
+    .nb-block-card__schematic-title {
+        max-width: 150px;
+        font-size: .92rem;
+    }
+}
 </style>
 
 <?php if (!$blocks): ?>
@@ -160,12 +306,86 @@ $this->addMenuItems('admin_toolbar', $menu);
     $editor_url = htmlspecialchars($block['editor_url'], ENT_QUOTES, 'UTF-8');
     $place_url  = htmlspecialchars($block['place_url'], ENT_QUOTES, 'UTF-8');
     $status     = $block['status'] === 'active' ? 'active' : 'disabled';
+    $definition = is_array($block['definition'] ?? null) ? $block['definition'] : [];
+    $definition_title = trim((string) ($definition['title'] ?? $block['type'] ?? 'Блок'));
+    $definition_title_esc = htmlspecialchars($definition_title, ENT_QUOTES, 'UTF-8');
+    $definition_description = trim((string) ($definition['description'] ?? ''));
+    if ($definition_description !== '' && mb_strlen($definition_description) > 120) {
+        $definition_description = rtrim(mb_substr($definition_description, 0, 117)) . '...';
+    }
+    $definition_description_esc = htmlspecialchars($definition_description, ENT_QUOTES, 'UTF-8');
+    $definition_preview = trim((string) ($definition['preview'] ?? ''));
+    $definition_preview_esc = htmlspecialchars($definition_preview, ENT_QUOTES, 'UTF-8');
+    $definition_category = trim((string) ($definition['category'] ?? 'content'));
+    $definition_category_label = $definition_category !== '' ? str_replace(['_', '-'], ' ', $definition_category) : 'content';
+    $definition_category_label_esc = htmlspecialchars($definition_category_label, ENT_QUOTES, 'UTF-8');
+    $definition_fields = is_array($definition['schema']['fields'] ?? null) ? $definition['schema']['fields'] : [];
+    $definition_fields_count = count($definition_fields);
+    $definition_tags = array_values(array_filter(array_map('trim', (array) ($definition['meta']['tags'] ?? []))));
+    $definition_tags = array_slice($definition_tags, 0, 3);
+    $wire_class = 'content';
+    if ($definition_category === 'hero') {
+        $wire_class = 'hero';
+    } elseif ($definition_category === 'features' || $definition_category === 'cta') {
+        $wire_class = 'features';
+    } elseif ($definition_category === 'faq') {
+        $wire_class = 'faq';
+    }
 ?>
 <div class="nb-block-card">
-    <h3 class="nb-block-card__title"><?= $title_esc ?></h3>
-    <div class="nb-block-card__meta">
-        <span class="nb-type-tag"><?= $type_esc ?></span>
-        <span class="nb-badge nb-badge--<?= $status ?>"><?= $status === 'active' ? 'активен' : 'отключён' ?></span>
+    <div class="nb-block-card__preview <?= $definition_preview !== '' ? 'nb-block-card__preview--image' : 'nb-block-card__preview--fallback' ?>">
+        <span class="nb-block-card__preview-badge"><?= $definition_preview !== '' ? 'Preview' : 'Схема' ?></span>
+        <?php if ($definition_preview !== ''): ?>
+            <img src="<?= $definition_preview_esc ?>" alt="<?= $definition_title_esc ?>" loading="lazy" decoding="async">
+        <?php else: ?>
+            <div class="nb-block-card__schematic">
+                <div class="nb-block-card__schematic-top">
+                    <div>
+                        <div class="nb-block-card__schematic-eyebrow"><?= $definition_category_label_esc ?></div>
+                        <div class="nb-block-card__schematic-title"><?= $definition_title_esc ?></div>
+                    </div>
+                </div>
+                <div class="nb-block-card__wire nb-block-card__wire--<?= htmlspecialchars($wire_class, ENT_QUOTES, 'UTF-8') ?>">
+                    <?php if ($wire_class === 'hero'): ?>
+                        <div class="nb-block-card__wire-box"></div>
+                        <div class="nb-block-card__wire-box"></div>
+                        <div class="nb-block-card__wire-box"></div>
+                    <?php elseif ($wire_class === 'features'): ?>
+                        <div class="nb-block-card__wire-box"></div>
+                        <div class="nb-block-card__wire-box"></div>
+                        <div class="nb-block-card__wire-box"></div>
+                    <?php elseif ($wire_class === 'faq'): ?>
+                        <div class="nb-block-card__wire-line"></div>
+                        <div class="nb-block-card__wire-line"></div>
+                        <div class="nb-block-card__wire-line"></div>
+                        <div class="nb-block-card__wire-line"></div>
+                    <?php else: ?>
+                        <div class="nb-block-card__wire-line"></div>
+                        <div class="nb-block-card__wire-line"></div>
+                        <div class="nb-block-card__wire-line"></div>
+                    <?php endif; ?>
+                </div>
+                <?php if ($definition_tags): ?>
+                    <div class="nb-block-card__schematic-tags">
+                        <?php foreach ($definition_tags as $tag): ?>
+                            <span class="nb-block-card__schematic-tag"><?= htmlspecialchars($tag, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+    <div class="nb-block-card__body">
+        <h3 class="nb-block-card__title"><?= $title_esc ?></h3>
+        <?php if ($definition_description_esc !== ''): ?>
+            <p class="nb-block-card__subtitle"><?= $definition_description_esc ?></p>
+        <?php endif; ?>
+        <div class="nb-block-card__meta">
+            <span class="nb-type-tag"><?= $type_esc ?></span>
+            <span class="nb-badge nb-badge--<?= $status ?>"><?= $status === 'active' ? 'активен' : 'отключён' ?></span>
+            <span><?= (int) $definition_fields_count ?> полей</span>
+            <span><?= $definition_category_label_esc ?></span>
+        </div>
     </div>
     <div class="nb-block-card__actions">
         <a href="<?= $place_url ?>" class="nb-btn-sm nb-btn-sm--place">
@@ -180,7 +400,7 @@ $this->addMenuItems('admin_toolbar', $menu);
             data-title="<?= $title_esc ?>"
             data-url="<?= htmlspecialchars($delete_block_url, ENT_QUOTES, 'UTF-8') ?>"
             title="Удалить блок"
-        ><i class="fa fa-trash"></i></button>
+        ><i class="fa fa-trash"></i> Удалить</button>
     </div>
 </div>
 <?php endforeach; ?>

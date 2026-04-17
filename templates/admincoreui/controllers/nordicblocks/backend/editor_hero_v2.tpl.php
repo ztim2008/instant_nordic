@@ -103,20 +103,23 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 }
 #nbh-canvas-wrap {
     padding: 16px;
-    overflow: hidden;
+    overflow: auto;
     display: flex;
-    align-items: stretch;
+    align-items: flex-start;
     justify-content: center;
     min-height: 0;
     background: radial-gradient(circle at top left, rgba(96,165,250,.10), transparent 30%), #e2e8f0;
 }
 #nbh-canvas-frame {
+    flex: 0 0 auto;
     width: 100%;
     max-width: 1280px;
+    min-height: calc(100vh - 170px);
     border: none;
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 18px 40px rgba(15,23,42,.16);
+    transition: max-width .2s ease, height .18s ease;
 }
 #nbh-canvas-frame.is-mobile { max-width: 390px; }
 
@@ -1089,7 +1092,46 @@ function nbhScheduleSave() {
 
 function nbhReloadCanvas() {
     var frame = document.getElementById('nbh-canvas-frame');
+    frame.style.height = '';
     frame.src = nbhCanvasUrl + (nbhCanvasUrl.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+}
+
+function nbhApplyCanvasHeight(height) {
+    var frame = document.getElementById('nbh-canvas-frame');
+    var numericHeight = parseInt(height, 10);
+
+    if (!frame || !numericHeight || numericHeight < 320) {
+        return;
+    }
+
+    frame.style.height = numericHeight + 'px';
+}
+
+function nbhSyncCanvasHeightFromFrame() {
+    var frame = document.getElementById('nbh-canvas-frame');
+    var frameDoc;
+    var body;
+    var html;
+    var height;
+
+    if (!frame) return;
+
+    try {
+        frameDoc = frame.contentDocument || (frame.contentWindow && frame.contentWindow.document);
+        body = frameDoc && frameDoc.body;
+        html = frameDoc && frameDoc.documentElement;
+        height = Math.max(
+            body ? body.scrollHeight : 0,
+            body ? body.offsetHeight : 0,
+            html ? html.scrollHeight : 0,
+            html ? html.offsetHeight : 0,
+            html ? html.clientHeight : 0
+        );
+    } catch (error) {
+        return;
+    }
+
+    nbhApplyCanvasHeight(height);
 }
 
 function nbhSelectEntity(entityKey, fromCanvas) {
@@ -1116,6 +1158,7 @@ function nbhSetViewport(mode) {
     document.getElementById('nbhVpDesktop').classList.toggle('is-active', mode === 'desktop');
     document.getElementById('nbhVpMobile').classList.toggle('is-active', mode === 'mobile');
     frame.classList.toggle('is-mobile', mode === 'mobile');
+    setTimeout(nbhSyncCanvasHeightFromFrame, 30);
 }
 
 function nbhBuildInspectorState(payload) {
@@ -1993,9 +2036,17 @@ document.getElementById('nbh-panel-body').addEventListener('click', function(eve
 document.getElementById('nbhVpDesktop').addEventListener('click', function() { nbhSetViewport('desktop'); });
 document.getElementById('nbhVpMobile').addEventListener('click', function() { nbhSetViewport('mobile'); });
 
+document.getElementById('nbh-canvas-frame').addEventListener('load', function() {
+    setTimeout(nbhSyncCanvasHeightFromFrame, 20);
+});
+
 window.addEventListener('message', function(event) {
     var data = event.data || {};
     if (data.source !== 'nordicblocks-canvas') return;
+    if (data.type === 'canvas:metrics') {
+        nbhApplyCanvasHeight(data.height);
+        return;
+    }
     if (data.type === 'entity:selected' && data.entity) {
         nbhSelectEntity(data.entity, true);
     }

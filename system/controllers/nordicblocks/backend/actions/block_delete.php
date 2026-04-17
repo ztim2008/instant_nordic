@@ -36,8 +36,12 @@ class actionNordicblocksBlockDelete extends cmsAction {
             exit;
         }
 
-        $this->model->deleteBlock($id);
-        echo json_encode(['ok' => true]);
+        $delete_result = $this->model->deleteBlock($id);
+
+        echo json_encode([
+            'ok'                    => true,
+            'removed_widget_binds'  => (int) ($delete_result['removed_widget_binds'] ?? 0)
+        ]);
         exit;
     }
 }
