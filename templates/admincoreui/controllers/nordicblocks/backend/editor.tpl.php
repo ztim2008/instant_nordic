@@ -120,6 +120,18 @@ function nbe_editor_render_repeater_field($parent_key, $item_index, array $field
                 </div>
                 <input type="text" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="<?= $field_val ?>" placeholder="#ffffff">
             </div>
+        <?php elseif ($field_type === 'icon'): ?>
+            <div class="nbe-picker-row">
+                <input type="text" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="<?= $field_val ?>" placeholder="<?= $field_ph ?: 'solid:star или fa-bolt' ?>">
+                <button type="button" class="nbe-picker-btn" onclick="nbeOpenIconPicker('<?= $field_id_e ?>'); return false;">Выбрать</button>
+                <button type="button" class="nbe-picker-btn nbe-picker-btn--danger" onclick="nbeSetTextFieldValue('<?= $field_id_e ?>', ''); return false;">Очистить</button>
+            </div>
+        <?php elseif ($field_type === 'image'): ?>
+            <div class="nbe-picker-row">
+                <input type="text" id="<?= $field_id_e ?>" data-repeater-field="<?= $field_key_e ?>" value="<?= $field_val ?>" placeholder="<?= $field_ph ?: '/upload/... или https://' ?>">
+                <button type="button" class="nbe-picker-btn" onclick="nbeOpenFilePicker('<?= $field_id_e ?>', 'simple'); return false;">Выбрать</button>
+                <button type="button" class="nbe-picker-btn nbe-picker-btn--danger" onclick="nbeSetTextFieldValue('<?= $field_id_e ?>', ''); return false;">Очистить</button>
+            </div>
         <?php elseif ($field_type === 'number'): ?>
             <input
                 type="number"
@@ -734,6 +746,38 @@ $this->addMenuItems('admin_toolbar', $menu);
     background: #f8fafc; font-size: .75rem; cursor: pointer; color: #4b5563; transition: background .15s;
 }
 .nbe-img-btns button:hover { background: #f1f5f9; }
+.nbe-picker-row {
+    display: flex;
+    gap: .45rem;
+    align-items: stretch;
+}
+.nbe-picker-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.nbe-picker-btn {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: .42rem .72rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: .75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.nbe-picker-btn:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.nbe-picker-btn--danger:hover {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #b91c1c;
+}
 .nbe-filepicker-toolbar {
     padding: .75rem 1rem;
     border-bottom: 1px solid #f1f5f9;
@@ -985,6 +1029,18 @@ $this->addMenuItems('admin_toolbar', $menu);
                                     onchange="this.nextElementSibling.textContent=this.checked?'Включено':'Выключено';markDirty();scheduleReload()">
                                 <span><?= $fbool ? 'Включено' : 'Выключено' ?></span>
                             </label>
+                        <?php elseif ($ftype === 'icon'): ?>
+                            <div class="nbe-picker-row">
+                                <input type="text" id="nbf-<?= $fkey ?>" data-key="<?= $fkey ?>" value="<?= $fval_e ?>"
+                                    placeholder="<?= $fph ?: 'solid:star или fa-bolt' ?>"
+                                    oninput="markDirty();scheduleReload()">
+                                <button type="button" class="nbe-picker-btn" onclick="nbeOpenIconPicker('nbf-<?= $fkey ?>'); return false;">
+                                    <i class="fa fa-icons"></i> Выбрать
+                                </button>
+                                <button type="button" class="nbe-picker-btn nbe-picker-btn--danger" onclick="nbeSetTextFieldValue('nbf-<?= $fkey ?>', ''); return false;">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
                         <?php elseif ($ftype === 'image'): ?>
                             <?php
                                 $fimage       = is_array($fval) ? $fval : [];
@@ -1124,11 +1180,14 @@ $this->addMenuItems('admin_toolbar', $menu);
 var nbeSaveUrl   = <?= json_encode($save_url,   JSON_UNESCAPED_UNICODE) ?>;
 var nbeCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbeImagePresets = <?= json_encode($image_presets ?? [], JSON_UNESCAPED_UNICODE) ?>;
+var nbeIconPickerUrl = <?= json_encode(href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']), JSON_UNESCAPED_UNICODE) ?>;
+var nbeCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICODE) ?>;
 var nbeDirty     = false;
 var nbeDebTimer  = null;
 var nbeQueueSave = false;
 var nbeQueueSilent = true;
 var nbeFpItems   = [];
+var nbeFpTargetMode = 'managed';
 
 function nbeGetProps() {
     var props = {};
@@ -1308,6 +1367,45 @@ function nbeEscapeHtml(value) {
         .replace(/"/g, '&quot;');
 }
 
+function nbeSetTextFieldValue(fieldId, value, silent) {
+    var input = document.getElementById(fieldId);
+    if (!input) {
+        return;
+    }
+
+    input.value = value == null ? '' : String(value);
+
+    if (input.hasAttribute('data-repeater-field')) {
+        nbeHandleRepeaterMutation(input);
+        return;
+    }
+
+    if (!silent) {
+        markDirty();
+        scheduleReload();
+    }
+}
+
+function nbeOpenIconPicker(fieldId) {
+    if (!window.icms || !icms.modal || typeof icms.modal.openAjax !== 'function') {
+        window.open(nbeIconPickerUrl, '_blank');
+        return;
+    }
+
+    icms.modal.openAjax(nbeIconPickerUrl, {}, function() {
+        Array.prototype.forEach.call(document.querySelectorAll('.icon-select'), function(icon) {
+            icon.addEventListener('click', function(event) {
+                event.preventDefault();
+                nbeSetTextFieldValue(fieldId, icon.getAttribute('data-name') || '', false);
+                if (icms.modal && typeof icms.modal.close === 'function') {
+                    icms.modal.close();
+                }
+                return false;
+            }, { once: true });
+        });
+    }, 'Выбрать иконку');
+}
+
 function nbeSyncColorSwatch(fieldId, value) {
     var swatch = document.getElementById(fieldId + '-swatch');
     if (!swatch) return;
@@ -1443,7 +1541,7 @@ function saveBlock(silent) {
     fetch(nbeSaveUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title, props: props })
+        body: JSON.stringify({ title: title, props: props, csrf_token: nbeCsrfToken })
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
@@ -1502,8 +1600,9 @@ function saveBlock(silent) {
 /* ── File Picker ── */
 var nbeFpTarget = null;
 
-function nbeOpenFilePicker(fieldId) {
+function nbeOpenFilePicker(fieldId, mode) {
     nbeFpTarget = fieldId;
+    nbeFpTargetMode = mode || 'managed';
     var overlay = document.getElementById('nb-filepicker-overlay');
     overlay.style.display = 'flex';
     nbeFpLoad();
@@ -1512,6 +1611,7 @@ function nbeOpenFilePicker(fieldId) {
 function nbeCloseFilePicker() {
     document.getElementById('nb-filepicker-overlay').style.display = 'none';
     nbeFpTarget = null;
+    nbeFpTargetMode = 'managed';
 }
 
 function nbeFpLoad() {
@@ -1539,6 +1639,14 @@ function nbeFpLoad() {
 
 function nbeFpSelect(selected) {
     if (!nbeFpTarget) return;
+
+    if (nbeFpTargetMode === 'simple') {
+        var simpleMedia = selected && selected.media ? selected.media : nbeParseImagePayload(selected || '');
+        var simpleUrl = simpleMedia.original || simpleMedia.display || (selected && selected.url ? selected.url : '');
+        nbeSetTextFieldValue(nbeFpTarget, simpleUrl, false);
+        nbeCloseFilePicker();
+        return;
+    }
 
     var media = selected && selected.media ? selected.media : nbeParseImagePayload(selected || '');
     var presetInput = document.getElementById(nbeFpTarget + '-preset');
@@ -1718,6 +1826,7 @@ document.getElementById('nb-fp-file-input').addEventListener('change', function(
     var fd = new FormData();
     fd.append('file', file);
     fd.append('preset', preset);
+    fd.append('csrf_token', nbeCsrfToken);
     fetch('/nordicblocks/media_upload', { method: 'POST', body: fd })
     .then(function(r) { return r.json(); })
     .then(function(d) {

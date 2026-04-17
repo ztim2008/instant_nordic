@@ -20,7 +20,7 @@ for ($i = 1; $i <= 4; $i++) {
     $title = trim((string) ($props["item{$i}_title"] ?? ''));
     if ($title === '') { continue; }
     $items[] = [
-        'icon'  => preg_replace('/[^a-z0-9\-_]/', '', strtolower((string) ($props["item{$i}_icon"] ?? 'fa-check'))),
+        'icon'  => trim((string) ($props["item{$i}_icon"] ?? 'fa-check')),
         'title' => htmlspecialchars($title, ENT_QUOTES, 'UTF-8'),
         'text'  => htmlspecialchars(trim((string) ($props["item{$i}_text"] ?? '')), ENT_QUOTES, 'UTF-8'),
     ];
@@ -53,9 +53,10 @@ $bg_class  .= $reveal['class'];
         <div class="nb-features__grid nb-features__grid--cols-<?= $cols ?>">
             <?php foreach ($items as $item): ?>
             <div class="nb-feature-card">
-                <?php if ($item['icon']): ?>
+                <?php $icon_markup = nb_block_render_icon_markup($item['icon']); ?>
+                <?php if ($icon_markup): ?>
                 <div class="nb-feature-card__icon">
-                    <i class="fa <?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                    <?= $icon_markup ?>
                 </div>
                 <?php endif; ?>
                 <h3 class="nb-feature-card__title"><?= $item['title'] ?></h3>

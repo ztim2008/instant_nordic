@@ -91,6 +91,9 @@ if ($hero_contract) {
         'gradientTo' => $props['background_gradient_to'] ?? '',
         'gradientAngle' => $props['background_gradient_angle'] ?? 135,
         'image' => $props['background_image'] ?? '',
+        'imagePosition' => $props['background_image_position'] ?? 'center center',
+        'imageSize' => $props['background_image_size'] ?? 'cover',
+        'imageRepeat' => $props['background_image_repeat'] ?? 'no-repeat',
         'overlayColor' => $props['background_overlay_color'] ?? '#0f172a',
         'overlayOpacity' => $props['background_overlay_opacity'] ?? 45,
     ]);

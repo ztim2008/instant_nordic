@@ -108,6 +108,45 @@ if (!function_exists('nb_block_css_color')) {
     }
 }
 
+if (!function_exists('nb_block_render_icon_markup')) {
+    function nb_block_render_icon_markup($icon, $fallback = '') {
+        $icon = trim((string) $icon);
+        if ($icon === '') {
+            $icon = trim((string) $fallback);
+        }
+
+        if ($icon === '') {
+            return '';
+        }
+
+        if (strpos($icon, ':') !== false) {
+            list($sprite, $name) = array_pad(explode(':', $icon, 2), 2, '');
+            $sprite = preg_replace('/[^a-z0-9_\-]/i', '', strtolower($sprite));
+            $name   = preg_replace('/[^a-z0-9_\-]/i', '', strtolower($name));
+
+            if ($sprite !== '' && $name !== '' && function_exists('html_svg_icon')) {
+                return html_svg_icon($sprite, $name, 20, false);
+            }
+        }
+
+        $classes = preg_replace('/[^a-z0-9_\-\s]/i', '', $icon);
+        $classes = trim(preg_replace('/\s+/', ' ', $classes));
+        if ($classes === '') {
+            return '';
+        }
+
+        if (strpos($classes, 'fa ') !== 0) {
+            if (strpos($classes, 'fa-') === 0) {
+                $classes = 'fa ' . $classes;
+            } elseif (strpos($classes, 'fa-') === false) {
+                $classes = 'fa fa-' . $classes;
+            }
+        }
+
+        return '<i class="' . htmlspecialchars($classes, ENT_QUOTES, 'UTF-8') . '"></i>';
+    }
+}
+
 if (!function_exists('nb_block_build_background_style')) {
     function nb_block_build_background_style(array $background) {
         $mode = strtolower(trim((string) ($background['mode'] ?? $background['type'] ?? 'theme')));

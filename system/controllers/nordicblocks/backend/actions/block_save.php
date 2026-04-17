@@ -17,15 +17,20 @@ class actionNordicblocksBlockSave extends cmsAction {
             exit;
         }
 
+        $raw      = file_get_contents('php://input');
+        $data     = json_decode($raw, true);
+
         $csrf_token = (string) $this->request->get('csrf_token', '');
+        if ($csrf_token === '' && is_array($data)) {
+            $csrf_token = (string) ($data['csrf_token'] ?? '');
+        }
+
         if (!cmsForm::validateCSRFToken($csrf_token)) {
             echo json_encode(['ok' => false, 'error' => 'invalid_csrf']);
             exit;
         }
 
         $block_id = (int) $block_id;
-        $raw      = file_get_contents('php://input');
-        $data     = json_decode($raw, true);
 
         if (!$block_id || !is_array($data)) {
             echo json_encode(['ok' => false, 'error' => 'bad_request']);
@@ -220,7 +225,8 @@ class actionNordicblocksBlockSave extends cmsAction {
         }
 
         if ($type === 'icon') {
-            $value = preg_replace('/[^a-z0-9\-\s]/i', '', $value);
+            $value = strtolower($value);
+            $value = preg_replace('/[^a-z0-9:_\-\s]/', '', $value);
             return $this->limitString($value, 120);
         }
 

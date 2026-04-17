@@ -1445,6 +1445,7 @@ class modelNordicblocks extends cmsModel {
                 }
 
                 $field['key'] = $key;
+                $field = $this->normalizeSchemaEditorField($field);
                 $fields[]     = $field;
             }
 
@@ -1462,10 +1463,68 @@ class modelNordicblocks extends cmsModel {
             }
 
             $field['key'] = $key;
+            $field = $this->normalizeSchemaEditorField($field);
             $fields[]     = $field;
         }
 
         return $this->enhanceBlockSchemaFields($fields, $block_type);
+    }
+
+    private function normalizeSchemaEditorField(array $field) {
+        $field_type = strtolower((string) ($field['type'] ?? 'text'));
+        if ($field_type === '') {
+            $field_type = 'text';
+        }
+
+        if ($field_type === 'text' && $this->isLikelyIconField($field)) {
+            $field_type = 'icon';
+        }
+
+        $field['type'] = $field_type;
+
+        if ($field_type === 'repeater' && !empty($field['fields']) && is_array($field['fields'])) {
+            $normalized_children = [];
+
+            foreach ($field['fields'] as $child_field) {
+                if (!is_array($child_field)) {
+                    continue;
+                }
+
+                $child_key = $this->normalizeFieldKey($child_field['key'] ?? '');
+                if (!$child_key) {
+                    continue;
+                }
+
+                $child_field['key'] = $child_key;
+                $normalized_children[] = $this->normalizeSchemaEditorField($child_field);
+            }
+
+            $field['fields'] = $normalized_children;
+        }
+
+        return $field;
+    }
+
+    private function isLikelyIconField(array $field) {
+        $key = strtolower((string) ($field['key'] ?? ''));
+        if ($key !== '' && preg_match('/(^|_)(icon|ico)$/', $key)) {
+            return true;
+        }
+
+        $haystacks = [
+            (string) ($field['label'] ?? ''),
+            (string) ($field['help'] ?? ''),
+            (string) ($field['placeholder'] ?? ''),
+        ];
+
+        foreach ($haystacks as $haystack) {
+            $haystack = function_exists('mb_strtolower') ? mb_strtolower($haystack, 'UTF-8') : strtolower($haystack);
+            if ($haystack !== '' && (strpos($haystack, 'икон') !== false || strpos($haystack, 'font awesome') !== false || strpos($haystack, 'sprite:icon') !== false)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function enhanceBlockSchemaFields(array $fields, $block_type = '') {

@@ -40,7 +40,8 @@
         {
             "key":     "item1_icon",
             "label":   "Иконка 1 (Font Awesome, напр. fa-bolt)",
-            "type":    "text",
+            "type":    "icon",
+            "help":    "Поддерживает native InstantCMS sprite:icon и legacy fa-* значения.",
             "default": "fa-bolt"
         },
         {
@@ -58,7 +59,8 @@
         {
             "key":     "item2_icon",
             "label":   "Иконка 2",
-            "type":    "text",
+            "type":    "icon",
+            "help":    "Поддерживает native InstantCMS sprite:icon и legacy fa-* значения.",
             "default": "fa-paint-brush"
         },
         {
@@ -76,7 +78,8 @@
         {
             "key":     "item3_icon",
             "label":   "Иконка 3",
-            "type":    "text",
+            "type":    "icon",
+            "help":    "Поддерживает native InstantCMS sprite:icon и legacy fa-* значения.",
             "default": "fa-shield-alt"
         },
         {
@@ -94,7 +97,8 @@
         {
             "key":     "item4_icon",
             "label":   "Иконка 4 (необязательно)",
-            "type":    "text",
+            "type":    "icon",
+            "help":    "Поддерживает native InstantCMS sprite:icon и legacy fa-* значения.",
             "default": ""
         },
         {

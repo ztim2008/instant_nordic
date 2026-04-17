@@ -478,6 +478,13 @@
     justify-content: center;
 }
 
+.nb-feature-card__icon .icms-svg-icon,
+.nb-feature-card__icon svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: block;
+}
+
 .nb-feature-card__title {
     font-family:   var(--nb-font-head);
     font-size:     var(--nb-text-lg, 1.125rem);
