@@ -163,10 +163,10 @@ class modelNordicblocks extends cmsModel {
 
         $namespace = $this->buildRenderCacheNamespace($block, $surface, $context);
         $payload = [
-            'surface'         => $surface,
+            'surface'        => $surface,
             'blockFingerprint'=> $this->buildRenderBlockFingerprint($block),
-            'designVersion'   => $design_version,
-            'adapterHash'     => (string) ($adapter_context['hash'] ?? 'manual'),
+            'designVersion'  => $design_version,
+            'adapterHash'    => (string) ($adapter_context['hash'] ?? 'manual'),
         ];
 
         return [
@@ -205,7 +205,14 @@ class modelNordicblocks extends cmsModel {
         $title       = (string) ($meta['name'] ?? $schema['title'] ?? $type);
         $category    = (string) ($meta['category'] ?? $schema['category'] ?? 'content');
         $description = (string) ($meta['description'] ?? $schema['description'] ?? '');
-        $preview     = file_exists($block_dir . '/preview.png') ? '/nordicblocks/blocks/' . $type . '/preview.png' : '';
+        $preview     = '';
+
+        foreach (['png', 'jpg', 'jpeg', 'webp', 'svg'] as $preview_ext) {
+            if (file_exists($block_dir . '/preview.' . $preview_ext)) {
+                $preview = href_to('nordicblocks', 'block_preview', $type);
+                break;
+            }
+        }
 
         return [
             'name'        => $type,
@@ -1568,10 +1575,19 @@ class modelNordicblocks extends cmsModel {
         return null;
     }
 
+    private function isHeroLikeBlockType($block_type) {
+        $block_type = strtolower(trim((string) $block_type));
+
+        return $block_type === 'hero'
+            || $block_type === 'hero_classic'
+            || strpos($block_type, 'hero-') === 0
+            || strpos($block_type, 'hero_') === 0;
+    }
+
     private function buildHeadingTagField(array $source_field, $block_type) {
         $base_key     = (string) ($source_field['key'] ?? 'heading');
         $field_label  = (string) ($source_field['label'] ?? 'Заголовок');
-        $default_tag  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? 'h1' : 'h2';
+        $default_tag  = $this->isHeroLikeBlockType($block_type) ? 'h1' : 'h2';
 
         return [
             'key'           => $base_key . '_tag',
@@ -1594,7 +1610,7 @@ class modelNordicblocks extends cmsModel {
     private function buildHeadingWeightField(array $source_field, $block_type) {
         $base_key        = (string) ($source_field['key'] ?? 'heading');
         $field_label     = (string) ($source_field['label'] ?? 'Заголовок');
-        $default_weight  = in_array((string) $block_type, ['hero', 'hero_classic'], true) ? '900' : '800';
+        $default_weight  = $this->isHeroLikeBlockType($block_type) ? '900' : '800';
 
         return [
             'key'           => $base_key . '_weight',

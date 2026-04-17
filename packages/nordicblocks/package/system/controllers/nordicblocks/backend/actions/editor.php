@@ -52,7 +52,7 @@ class actionNordicblocksEditor extends cmsAction {
             if (!is_array($schema)) {
                 continue;
             }
-            $preview = "/nordicblocks/blocks/{$block_name}/preview.png";
+            $preview = href_to('nordicblocks', 'block_preview', $block_name);
             $registry[$block_name] = [
                 'name'    => $block_name,
                 'title'   => $schema['title']    ?? $block_name,

@@ -147,6 +147,33 @@ if (!function_exists('nb_block_render_icon_markup')) {
     }
 }
 
+if (!function_exists('nb_block_extract_media')) {
+    function nb_block_extract_media($value, $fallback_alt = '') {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $string_value = trim((string) $value);
+
+            return [
+                'display'  => $string_value,
+                'original' => $string_value,
+                'alt'      => trim((string) $fallback_alt),
+            ];
+        }
+
+        return [
+            'display'  => trim((string) ($value['display'] ?? $value['original'] ?? '')),
+            'original' => trim((string) ($value['original'] ?? '')),
+            'alt'      => trim((string) ($value['alt'] ?? $fallback_alt)),
+        ];
+    }
+}
+
 if (!function_exists('nb_block_build_background_style')) {
     function nb_block_build_background_style(array $background) {
         $mode = strtolower(trim((string) ($background['mode'] ?? $background['type'] ?? 'theme')));

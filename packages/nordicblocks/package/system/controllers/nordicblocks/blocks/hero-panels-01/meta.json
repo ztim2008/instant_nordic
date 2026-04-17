@@ -1,0 +1,11 @@
+{
+  "id": "hero-panels-01",
+  "name": "Hero: фото + панели",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Manual-first hero с фото, красной контентной панелью и темным текстовым блоком.",
+  "tags": ["hero", "manual", "editorial", "panels"],
+  "author": "NORDIC",
+  "created": "2026-04-17"
+}
