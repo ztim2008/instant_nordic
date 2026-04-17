@@ -246,6 +246,64 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     flex-direction: column;
     gap: .8rem;
 }
+.nbh-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+.nbh-accordion-group {
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    overflow: hidden;
+}
+.nbh-accordion-group.is-open {
+    border-color: #93c5fd;
+    box-shadow: 0 0 0 1px rgba(147,197,253,.18);
+}
+.nbh-accordion-toggle {
+    width: 100%;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .85rem .95rem;
+    cursor: pointer;
+    text-align: left;
+}
+.nbh-accordion-toggle strong {
+    display: block;
+    font-size: .8rem;
+    color: #0f172a;
+}
+.nbh-accordion-toggle span {
+    display: block;
+    margin-top: .12rem;
+    font-size: .68rem;
+    font-weight: 700;
+    color: #64748b;
+}
+.nbh-accordion-icon {
+    color: #64748b;
+    transition: transform .16s ease, color .16s ease;
+}
+.nbh-accordion-group.is-open .nbh-accordion-icon {
+    transform: rotate(180deg);
+    color: #1d4ed8;
+}
+.nbh-accordion-body {
+    display: none;
+    padding: 0 .75rem .75rem;
+    border-top: 1px solid #edf2f7;
+    background: #f8fafc;
+}
+.nbh-accordion-group.is-open .nbh-accordion-body {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
 .nbh-field {
     display: flex;
     flex-direction: column;
@@ -276,6 +334,160 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 .nbh-field select:focus {
     border-color: #60a5fa;
     box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+.nbh-input-row {
+    display: flex;
+    gap: .45rem;
+    align-items: stretch;
+}
+.nbh-input-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.nbh-picker-btn {
+    flex: 0 0 auto;
+    border: 1px solid #d1d9e6;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #334155;
+    padding: 0 .75rem;
+    font-size: .74rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+}
+.nbh-picker-btn:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+.nbh-picker-btn--clear:hover {
+    border-color: #fca5a5;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+.nbh-media-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .52);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    z-index: 3000;
+}
+.nbh-media-modal.is-open {
+    display: flex;
+}
+.nbh-media-modal__dialog {
+    width: min(920px, 100%);
+    max-height: min(82vh, 760px);
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 30px 70px rgba(15, 23, 42, .28);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.nbh-media-modal__head,
+.nbh-media-modal__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .9rem 1rem;
+}
+.nbh-media-modal__head {
+    border-bottom: 1px solid #e5edf5;
+}
+.nbh-media-modal__head strong {
+    font-size: .95rem;
+    color: #0f172a;
+}
+.nbh-media-modal__toolbar {
+    border-bottom: 1px solid #eef2f7;
+    flex-wrap: wrap;
+}
+.nbh-media-modal__pager,
+.nbh-media-modal__actions {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+}
+.nbh-media-modal__status {
+    font-size: .76rem;
+    font-weight: 700;
+    color: #475569;
+    min-width: 110px;
+    text-align: center;
+}
+.nbh-media-modal__body {
+    position: relative;
+    min-height: 320px;
+    padding: 1rem;
+    overflow: auto;
+    background: #f8fafc;
+}
+.nbh-media-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: .85rem;
+}
+.nbh-media-card {
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.nbh-media-card:hover {
+    transform: translateY(-1px);
+    border-color: #93c5fd;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, .12);
+}
+.nbh-media-card__thumb {
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+    overflow: hidden;
+}
+.nbh-media-card__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.nbh-media-card__name {
+    display: block;
+    padding: .7rem .75rem .8rem;
+    font-size: .74rem;
+    line-height: 1.4;
+    color: #334155;
+    word-break: break-word;
+}
+.nbh-media-modal__loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(248, 250, 252, .82);
+    color: #334155;
+    font-size: .86rem;
+    font-weight: 700;
+}
+.nbh-media-modal__loading.is-hidden,
+.nbh-media-modal__empty.is-hidden {
+    display: none;
+}
+.nbh-media-modal__empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #64748b;
+    font-size: .82rem;
 }
 .nbh-grid-2 {
     display: grid;
@@ -356,6 +568,9 @@ var nbhSaveUrl = <?= json_encode($save_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhEditorStateUrl = <?= json_encode($editor_state_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhCanvasUrl = <?= json_encode($canvas_url, JSON_UNESCAPED_UNICODE) ?>;
 var nbhCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICODE) ?>;
+var nbhIconPickerUrl = <?= json_encode(href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']), JSON_UNESCAPED_UNICODE) ?>;
+var nbhImagePickerListUrl = <?= json_encode(href_to('nordicblocks', 'media_list'), JSON_UNESCAPED_UNICODE) ?>;
+var nbhImagePickerUploadUrl = <?= json_encode(href_to('nordicblocks', 'media_upload'), JSON_UNESCAPED_UNICODE) ?>;
 
 var nbhState = {
     loaded: false,
@@ -370,7 +585,8 @@ var nbhState = {
     saving: false,
     queuedSave: false,
     queuedSilent: true,
-    debounceTimer: null
+    debounceTimer: null,
+    openAccordionByTab: {}
 };
 
 function nbhClone(value) {
@@ -557,6 +773,276 @@ function nbhEscapeHtml(value) {
         .replace(/>/g, '&gt;');
 }
 
+function nbhNormalizeColor(value, fallback) {
+    var normalized = String(value == null ? '' : value).trim();
+    var safeFallback = String(fallback == null ? '#000000' : fallback).trim();
+
+    if (/^#[0-9a-f]{6}$/i.test(normalized)) {
+        return normalized;
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(normalized)) {
+        return '#' + normalized.charAt(1) + normalized.charAt(1)
+            + normalized.charAt(2) + normalized.charAt(2)
+            + normalized.charAt(3) + normalized.charAt(3);
+    }
+
+    if (/^#[0-9a-f]{3}$/i.test(safeFallback)) {
+        return '#' + safeFallback.charAt(1) + safeFallback.charAt(1)
+            + safeFallback.charAt(2) + safeFallback.charAt(2)
+            + safeFallback.charAt(3) + safeFallback.charAt(3);
+    }
+
+    if (/^#[0-9a-f]{6}$/i.test(safeFallback)) {
+        return safeFallback;
+    }
+
+    return '#000000';
+}
+
+function nbhCommitPathValue(path, value, forceRerender) {
+    nbhSet(nbhState.draft, path, value);
+    if (forceRerender || nbhShouldRerenderPanels(path)) {
+        nbhRenderPanels();
+    }
+    nbhMarkDirty();
+    nbhScheduleSave();
+}
+
+var nbhImagePickerState = {
+    path: '',
+    page: 1,
+    total: 0,
+    perPage: 0
+};
+
+function nbhEnsureImagePickerModal() {
+    if (document.getElementById('nbhImagePickerModal')) {
+        return document.getElementById('nbhImagePickerModal');
+    }
+
+    var modal = document.createElement('div');
+    modal.id = 'nbhImagePickerModal';
+    modal.className = 'nbh-media-modal';
+    modal.innerHTML = ''
+        + '<div class="nbh-media-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="nbhImagePickerTitle">'
+        + '<div class="nbh-media-modal__head">'
+        + '<strong id="nbhImagePickerTitle">Выбрать изображение</strong>'
+        + '<button type="button" class="nbh-picker-btn" data-media-close="1">Закрыть</button>'
+        + '</div>'
+        + '<div class="nbh-media-modal__toolbar">'
+        + '<div class="nbh-media-modal__pager">'
+        + '<button type="button" class="nbh-picker-btn" data-media-prev="1">Назад</button>'
+        + '<span class="nbh-media-modal__status" data-media-status="1">Страница 1</span>'
+        + '<button type="button" class="nbh-picker-btn" data-media-next="1">Вперед</button>'
+        + '</div>'
+        + '<div class="nbh-media-modal__actions">'
+        + '<input type="file" accept="image/*" data-media-file="1" style="display:none;">'
+        + '<button type="button" class="nbh-picker-btn" data-media-upload="1">Загрузить</button>'
+        + '</div>'
+        + '</div>'
+        + '<div class="nbh-media-modal__body">'
+        + '<div class="nbh-media-modal__loading is-hidden" data-media-loading="1"><span><i class="fa fa-spinner fa-spin"></i> Загружаем изображения...</span></div>'
+        + '<div class="nbh-media-modal__empty is-hidden" data-media-empty="1">В библиотеке пока нет изображений.</div>'
+        + '<div class="nbh-media-modal__grid" data-media-grid="1"></div>'
+        + '</div>'
+        + '</div>';
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function(event) {
+        var selectButton = event.target.closest('[data-media-select]');
+        if (selectButton) {
+            event.preventDefault();
+            nbhCommitPathValue(nbhImagePickerState.path, selectButton.getAttribute('data-media-select') || '', true);
+            nbhCloseImagePicker();
+            return;
+        }
+
+        if (event.target === modal || event.target.closest('[data-media-close]')) {
+            event.preventDefault();
+            nbhCloseImagePicker();
+            return;
+        }
+
+        if (event.target.closest('[data-media-prev]')) {
+            event.preventDefault();
+            if (nbhImagePickerState.page > 1) {
+                nbhLoadImagePickerPage(nbhImagePickerState.page - 1);
+            }
+            return;
+        }
+
+        if (event.target.closest('[data-media-next]')) {
+            event.preventDefault();
+            var totalPages = Math.max(1, Math.ceil((nbhImagePickerState.total || 0) / (nbhImagePickerState.perPage || 1)));
+            if (nbhImagePickerState.page < totalPages) {
+                nbhLoadImagePickerPage(nbhImagePickerState.page + 1);
+            }
+            return;
+        }
+
+        if (event.target.closest('[data-media-upload]')) {
+            event.preventDefault();
+            modal.querySelector('[data-media-file]').click();
+        }
+    });
+
+    modal.querySelector('[data-media-file]').addEventListener('change', function() {
+        var file = this.files && this.files[0] ? this.files[0] : null;
+        if (!file) {
+            return;
+        }
+
+        nbhSetImagePickerLoading(true, 'Загружаем изображение...');
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        fetch(nbhImagePickerUploadUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('upload_failed');
+            }
+            return response.json();
+        })
+        .then(function(result) {
+            var uploadedUrl = result && result.media && result.media.original ? result.media.original : (result && result.url ? result.url : '');
+            if (!uploadedUrl) {
+                throw new Error(result && result.error ? result.error : 'upload_failed');
+            }
+            nbhCommitPathValue(nbhImagePickerState.path, uploadedUrl, true);
+            nbhCloseImagePicker();
+        })
+        .catch(function(error) {
+            alert(error && error.message ? error.message : 'Не удалось загрузить изображение.');
+        })
+        .finally(function() {
+            modal.querySelector('[data-media-file]').value = '';
+            nbhSetImagePickerLoading(false);
+        });
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('is-open')) {
+            nbhCloseImagePicker();
+        }
+    });
+
+    return modal;
+}
+
+function nbhSetImagePickerLoading(isLoading, message) {
+    var modal = nbhEnsureImagePickerModal();
+    var loading = modal.querySelector('[data-media-loading]');
+    if (message) {
+        loading.innerHTML = '<span><i class="fa fa-spinner fa-spin"></i> ' + nbhEscapeHtml(message) + '</span>';
+    }
+    loading.classList.toggle('is-hidden', !isLoading);
+}
+
+function nbhRenderImagePickerResult(result) {
+    var modal = nbhEnsureImagePickerModal();
+    var grid = modal.querySelector('[data-media-grid]');
+    var empty = modal.querySelector('[data-media-empty]');
+    var status = modal.querySelector('[data-media-status]');
+    var prev = modal.querySelector('[data-media-prev]');
+    var next = modal.querySelector('[data-media-next]');
+    var images = result && Array.isArray(result.files) ? result.files : (result && Array.isArray(result.images) ? result.images : []);
+
+    nbhImagePickerState.total = images.length;
+    nbhImagePickerState.perPage = images.length || 1;
+
+    status.textContent = images.length + ' изображений';
+    prev.disabled = true;
+    next.disabled = true;
+
+    if (!images.length) {
+        grid.innerHTML = '';
+        empty.classList.remove('is-hidden');
+        return;
+    }
+
+    empty.classList.add('is-hidden');
+    grid.innerHTML = images.map(function(image) {
+        var title = image && image.title ? image.title : 'Изображение';
+        var url = image && image.media && image.media.original ? image.media.original : (image && image.url ? image.url : (image && image.preview_url ? image.preview_url : ''));
+        var previewUrl = image && image.preview_url ? image.preview_url : url;
+        return ''
+            + '<button type="button" class="nbh-media-card" data-media-select="' + nbhEscapeAttr(url) + '">'
+            + '<span class="nbh-media-card__thumb"><img src="' + nbhEscapeAttr(previewUrl) + '" alt="' + nbhEscapeAttr(title) + '"></span>'
+            + '<span class="nbh-media-card__name">' + nbhEscapeHtml(title) + '</span>'
+            + '</button>';
+    }).join('');
+}
+
+function nbhLoadImagePickerPage(page) {
+    nbhImagePickerState.page = Math.max(1, page || 1);
+    nbhSetImagePickerLoading(true, 'Загружаем изображения...');
+
+    fetch(nbhImagePickerListUrl, {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            throw new Error('list_failed');
+        }
+        return response.json();
+    })
+    .then(function(result) {
+        nbhRenderImagePickerResult(result || {});
+    })
+    .catch(function() {
+        var modal = nbhEnsureImagePickerModal();
+        modal.querySelector('[data-media-grid]').innerHTML = '';
+        modal.querySelector('[data-media-empty]').textContent = 'Не удалось загрузить системную библиотеку изображений.';
+        modal.querySelector('[data-media-empty]').classList.remove('is-hidden');
+    })
+    .finally(function() {
+        nbhSetImagePickerLoading(false);
+    });
+}
+
+function nbhOpenImagePicker(path) {
+    var modal = nbhEnsureImagePickerModal();
+    nbhImagePickerState.path = path;
+    nbhImagePickerState.page = 1;
+    modal.classList.add('is-open');
+    nbhLoadImagePickerPage(1);
+}
+
+function nbhCloseImagePicker() {
+    nbhEnsureImagePickerModal().classList.remove('is-open');
+}
+
+function nbhOpenIconPicker(path) {
+    if (!window.icms || !icms.modal || typeof icms.modal.openAjax !== 'function') {
+        window.open(nbhIconPickerUrl, '_blank');
+        return;
+    }
+
+    icms.modal.openAjax(nbhIconPickerUrl, {}, function() {
+        Array.prototype.forEach.call(document.querySelectorAll('.icon-select'), function(icon) {
+            icon.addEventListener('click', function(event) {
+                event.preventDefault();
+                nbhCommitPathValue(path, icon.getAttribute('data-name') || '', true);
+                if (icms.modal && typeof icms.modal.close === 'function') {
+                    icms.modal.close();
+                }
+                return false;
+            }, { once: true });
+        });
+    }, 'Выбрать иконку');
+}
+
 function nbhAddRepeaterItem() {
     var items = nbhRepeaterItems().slice();
     items.push({ question: 'Новый вопрос', answer: 'Короткий ответ на вопрос.' });
@@ -733,6 +1219,73 @@ function nbhPanelsForTab() {
     });
 }
 
+function nbhPanelSectionGroups(panels) {
+    var groups = {};
+
+    panels.forEach(function(panel) {
+        var sectionKey = panel.section || 'general';
+        if (!groups[sectionKey]) {
+            groups[sectionKey] = {
+                key: sectionKey,
+                label: nbhHumanSection(sectionKey),
+                panels: [],
+                order: panel.order || 0
+            };
+        }
+
+        groups[sectionKey].panels.push(panel);
+        if ((panel.order || 0) < groups[sectionKey].order) {
+            groups[sectionKey].order = panel.order || 0;
+        }
+    });
+
+    return Object.keys(groups).map(function(key) { return groups[key]; }).sort(function(a, b) {
+        return a.order - b.order;
+    });
+}
+
+function nbhPreferredAccordionKey(groups) {
+    var selected = nbhState.selectedEntity;
+    var preferred = groups.find(function(group) {
+        return group.panels.some(function(panel) {
+            return panel.entityScope === selected;
+        });
+    });
+
+    if (preferred) {
+        return preferred.key;
+    }
+
+    return groups.length ? groups[0].key : '';
+}
+
+function nbhActiveAccordionKey(groups) {
+    var tab = nbhState.activeTab || 'content';
+    var current = nbhState.openAccordionByTab[tab] || '';
+    var exists = groups.some(function(group) { return group.key === current; });
+
+    if (exists) {
+        return current;
+    }
+
+    current = nbhPreferredAccordionKey(groups);
+    nbhState.openAccordionByTab[tab] = current;
+    return current;
+}
+
+function nbhRenderAccordionGroup(group, activeKey) {
+    var isOpen = group.key === activeKey;
+    var panelCountLabel = group.panels.length === 1 ? '1 панель' : (group.panels.length + ' панелей');
+
+    return '<section class="nbh-accordion-group' + (isOpen ? ' is-open' : '') + '" data-section="' + group.key + '">'
+        + '<button type="button" class="nbh-accordion-toggle" data-accordion-key="' + group.key + '">'
+        + '<span><strong>' + group.label + '</strong><span>' + panelCountLabel + '</span></span>'
+        + '<i class="fa fa-chevron-down nbh-accordion-icon"></i>'
+        + '</button>'
+        + '<div class="nbh-accordion-body">' + group.panels.map(nbhRenderPanel).join('') + '</div>'
+        + '</section>';
+}
+
 function nbhEntityChipList() {
     var resolved = nbhState.server.resolved.entities || {};
     return Object.keys(resolved).map(function(key) {
@@ -814,10 +1367,26 @@ function nbhField(label, controlHtml) {
 
 function nbhInput(path, options) {
     options = options || {};
-    var value = nbhGet(nbhState.draft, path, options.fallback || '');
+    var fallback = Object.prototype.hasOwnProperty.call(options, 'fallback') ? options.fallback : '';
+    var value = nbhGet(nbhState.draft, path, fallback);
     var attrs = 'data-path="' + path + '"';
+    var inputType = options.inputType || 'text';
     if (options.type) attrs += ' data-type="' + options.type + '"';
-    return '<input ' + attrs + ' type="' + (options.inputType || 'text') + '" value="' + String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '">';
+    if (inputType === 'color') {
+        value = nbhNormalizeColor(value, fallback || '#000000');
+    }
+
+    var inputHtml = '<input ' + attrs + ' type="' + inputType + '" value="' + nbhEscapeAttr(value) + '">';
+
+    if (options.picker === 'image' || options.picker === 'icon') {
+        return '<div class="nbh-input-row">'
+            + inputHtml
+            + '<button type="button" class="nbh-picker-btn" data-picker-action="pick" data-picker-kind="' + options.picker + '" data-path="' + path + '">Выбрать</button>'
+            + '<button type="button" class="nbh-picker-btn nbh-picker-btn--clear" data-picker-action="clear" data-path="' + path + '">Очистить</button>'
+            + '</div>';
+    }
+
+    return inputHtml;
 }
 
 function nbhTextarea(path, fallback) {
@@ -910,7 +1479,7 @@ var nbhPresetRenderers = {
             + '</div>';
     },
     mediaContent: function() {
-        return nbhField('Путь к изображению', nbhInput('content.media.image'))
+        return nbhField('Путь к изображению', nbhInput('content.media.image', { picker: 'image' }))
             + nbhField('Alt-текст', nbhInput('content.media.alt'));
     },
     sectionBackground: function() {
@@ -947,11 +1516,35 @@ var nbhPresetRenderers = {
         }
 
         if (backgroundMode === 'image') {
-            body += nbhField('Путь к фото', nbhInput('design.section.background.image'));
+            body += nbhField('Путь к фото', nbhInput('design.section.background.image', { picker: 'image' }));
             body += '<div class="nbh-grid-2">'
                 + nbhField('Цвет затемнения', nbhInput('design.section.background.overlayColor', { inputType: 'color', fallback: '#0f172a' }))
                 + nbhField('Сила затемнения, %', nbhInput('design.section.background.overlayOpacity', { inputType: 'number', type: 'number', fallback: 45 }))
                 + '</div>';
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Позиция фото', nbhSelect('design.section.background.imagePosition', [
+                    { value: 'center center', label: 'Центр' },
+                    { value: 'top center', label: 'Сверху по центру' },
+                    { value: 'bottom center', label: 'Снизу по центру' },
+                    { value: 'center left', label: 'Слева по центру' },
+                    { value: 'center right', label: 'Справа по центру' },
+                    { value: 'top left', label: 'Левый верх' },
+                    { value: 'top right', label: 'Правый верх' },
+                    { value: 'bottom left', label: 'Левый низ' },
+                    { value: 'bottom right', label: 'Правый низ' }
+                ], 'center center'))
+                + nbhField('Масштаб', nbhSelect('design.section.background.imageSize', [
+                    { value: 'cover', label: 'Заполнить' },
+                    { value: 'contain', label: 'Уместить целиком' },
+                    { value: 'auto', label: 'Оригинал' }
+                ], 'cover'))
+                + '</div>';
+            body += nbhField('Повтор', nbhSelect('design.section.background.imageRepeat', [
+                { value: 'no-repeat', label: 'Без повтора' },
+                { value: 'repeat', label: 'Повторять' },
+                { value: 'repeat-x', label: 'Только по горизонтали' },
+                { value: 'repeat-y', label: 'Только по вертикали' }
+            ], 'no-repeat'));
         }
 
         return body;
@@ -977,6 +1570,14 @@ var nbhPresetRenderers = {
                     ], blockType === 'faq' ? '800' : '900'))
                     : '')
                 + '</div>';
+            if (blockType === 'faq' && bp === 'desktop') {
+                body += '<div class="nbh-grid-2">'
+                    + nbhField('Цвет', nbhInput('design.entities.title.color', { inputType: 'color', fallback: '#0f172a' }))
+                    + nbhField('Высота строки, %', nbhInput('design.entities.title.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 110 }))
+                    + nbhField('Трекинг, px', nbhInput('design.entities.title.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
+                    + nbhField('Макс. ширина, px', nbhInput('design.entities.title.maxWidth', { inputType: 'number', type: 'number', fallback: 600 }))
+                    + '</div>';
+            }
             if (bp === 'desktop') {
                 body += nbhField('HTML тег', nbhSelect('design.entities.title.tag', [
                     { value: 'div', label: 'DIV' },
@@ -988,10 +1589,19 @@ var nbhPresetRenderers = {
             return body;
         }
         if (panel.entityScope === 'subtitle') {
-            return body + '<div class="nbh-grid-2">'
+            body += '<div class="nbh-grid-2">'
                 + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 18 : 20) : (blockType === 'faq' ? 16 : 18) }))
                 + nbhField('Отступ снизу', nbhInput('design.entities.subtitle.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? (blockType === 'faq' ? 32 : 24) : (blockType === 'faq' ? 24 : 20) }))
                 + '</div>';
+            if (blockType === 'faq' && bp === 'desktop') {
+                body += '<div class="nbh-grid-2">'
+                    + nbhField('Цвет', nbhInput('design.entities.subtitle.color', { inputType: 'color', fallback: '#475569' }))
+                    + nbhField('Высота строки, %', nbhInput('design.entities.subtitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 165 }))
+                    + nbhField('Трекинг, px', nbhInput('design.entities.subtitle.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
+                    + nbhField('Макс. ширина, px', nbhInput('design.entities.subtitle.maxWidth', { inputType: 'number', type: 'number', fallback: 720 }))
+                    + '</div>';
+            }
+            return body;
         }
         if (panel.entityScope === 'items' && blockType === 'faq') {
             body += '<div class="nbh-grid-2">'
@@ -1006,6 +1616,14 @@ var nbhPresetRenderers = {
                     { value: '700', label: '700' },
                     { value: '800', label: '800' }
                 ], '700'));
+                body += '<div class="nbh-grid-2">'
+                    + nbhField('Цвет вопроса', nbhInput('design.entities.itemTitle.color', { inputType: 'color', fallback: '#0f172a' }))
+                    + nbhField('Высота строки вопроса, %', nbhInput('design.entities.itemTitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 135 }))
+                    + nbhField('Трекинг вопроса, px', nbhInput('design.entities.itemTitle.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
+                    + nbhField('Цвет ответа', nbhInput('design.entities.itemText.color', { inputType: 'color', fallback: '#475569' }))
+                    + nbhField('Высота строки ответа, %', nbhInput('design.entities.itemText.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 170 }))
+                    + nbhField('Трекинг ответа, px', nbhInput('design.entities.itemText.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
+                    + '</div>';
             }
             return body;
         }
@@ -1229,13 +1847,19 @@ function nbhRenderPanel(panel) {
 function nbhRenderPanels() {
     var panels = nbhPanelsForTab();
     var body = document.getElementById('nbh-panel-body');
+    var groups;
+    var activeKey;
 
     if (!panels.length) {
         body.innerHTML = '<div class="nbh-empty">Для текущего блока и выбранной сущности в этой вкладке нет активных панелей.</div>';
         return;
     }
 
-    body.innerHTML = panels.map(nbhRenderPanel).join('');
+    groups = nbhPanelSectionGroups(panels);
+    activeKey = nbhActiveAccordionKey(groups);
+    body.innerHTML = '<div class="nbh-accordion">' + groups.map(function(group) {
+        return nbhRenderAccordionGroup(group, activeKey);
+    }).join('') + '</div>';
 }
 
 function nbhRender() {
@@ -1318,15 +1942,30 @@ document.getElementById('nbh-panel-body').addEventListener('change', function(ev
         if (isNaN(value)) value = 0;
     }
 
-    nbhSet(nbhState.draft, path, value);
-    if (nbhShouldRerenderPanels(path)) {
-        nbhRenderPanels();
-    }
-    nbhMarkDirty();
-    nbhScheduleSave();
+    nbhCommitPathValue(path, value, false);
 });
 
 document.getElementById('nbh-panel-body').addEventListener('click', function(event) {
+    var pickerAction = event.target.closest('[data-picker-action]');
+    if (pickerAction) {
+        event.preventDefault();
+        var pickerPath = pickerAction.dataset.path || '';
+        if (pickerAction.dataset.pickerAction === 'clear') {
+            nbhCommitPathValue(pickerPath, '', true);
+            return;
+        }
+
+        if (pickerAction.dataset.pickerKind === 'image') {
+            nbhOpenImagePicker(pickerPath);
+            return;
+        }
+
+        if (pickerAction.dataset.pickerKind === 'icon') {
+            nbhOpenIconPicker(pickerPath);
+            return;
+        }
+    }
+
     var repeaterAction = event.target.closest('[data-repeater-action]');
     if (repeaterAction) {
         if (repeaterAction.dataset.repeaterAction === 'add') {
@@ -1335,6 +1974,13 @@ document.getElementById('nbh-panel-body').addEventListener('click', function(eve
         if (repeaterAction.dataset.repeaterAction === 'remove') {
             nbhRemoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10));
         }
+        return;
+    }
+
+    var accordionToggle = event.target.closest('[data-accordion-key]');
+    if (accordionToggle) {
+        nbhState.openAccordionByTab[nbhState.activeTab] = accordionToggle.dataset.accordionKey || '';
+        nbhRenderPanels();
         return;
     }
 

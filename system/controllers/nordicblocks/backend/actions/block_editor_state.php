@@ -31,11 +31,13 @@ class actionNordicblocksBlockEditorState extends cmsAction {
         }
 
         $contract = (array) ($block['contract'] ?? NordicblocksBlockContractNormalizer::normalize($block));
-        $registry = NordicblocksInspectorRegistryBuilder::build();
+        $registry = NordicblocksInspectorRegistryBuilder::build((string) ($block['type'] ?? ''));
 
         $resolved_entities = NordicblocksBlockEntityResolver::resolve((string) $block['type'], $contract, (array) $registry['entities']);
         $resolved_capabilities = NordicblocksBlockCapabilityResolver::resolve((string) $block['type'], (array) $registry['capabilityMatrix']);
-        $default_entity = ((string) ($block['type'] ?? '') === 'faq') ? 'items' : 'title';
+        $default_entity = !empty($resolved_entities['title'])
+            ? 'title'
+            : (!empty($resolved_entities['items']) ? 'items' : (string) array_key_first($resolved_entities));
         $ui_state = [
             'selectedEntity'      => $default_entity,
             'selectedRepeaterPath'=> null,

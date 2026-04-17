@@ -87,6 +87,27 @@ if (!function_exists('nb_block_color_with_opacity')) {
     }
 }
 
+if (!function_exists('nb_block_css_color')) {
+    function nb_block_css_color($color, $fallback = '') {
+        $color = trim((string) $color);
+
+        if ($color === '') {
+            return $fallback;
+        }
+
+        if (preg_match('/^#([0-9a-f]{3})$/i', $color, $matches)) {
+            $hex = $matches[1];
+            return '#' . $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+
+        if (preg_match('/^#([0-9a-f]{6})$/i', $color)) {
+            return strtolower($color);
+        }
+
+        return $fallback;
+    }
+}
+
 if (!function_exists('nb_block_build_background_style')) {
     function nb_block_build_background_style(array $background) {
         $mode = strtolower(trim((string) ($background['mode'] ?? $background['type'] ?? 'theme')));
@@ -117,15 +138,30 @@ if (!function_exists('nb_block_build_background_style')) {
         if ($mode === 'image') {
             $image = trim((string) ($background['image'] ?? ''));
             if ($image !== '') {
+                $position = strtolower(trim((string) ($background['imagePosition'] ?? 'center center')));
+                if (!in_array($position, ['center center', 'top center', 'bottom center', 'center left', 'center right', 'top left', 'top right', 'bottom left', 'bottom right'], true)) {
+                    $position = 'center center';
+                }
+
+                $size = strtolower(trim((string) ($background['imageSize'] ?? 'cover')));
+                if (!in_array($size, ['cover', 'contain', 'auto'], true)) {
+                    $size = 'cover';
+                }
+
+                $repeat = strtolower(trim((string) ($background['imageRepeat'] ?? 'no-repeat')));
+                if (!in_array($repeat, ['no-repeat', 'repeat', 'repeat-x', 'repeat-y'], true)) {
+                    $repeat = 'no-repeat';
+                }
+
                 $overlay_color = nb_block_color_with_opacity(
                     $background['overlayColor'] ?? '#0f172a',
                     ((int) ($background['overlayOpacity'] ?? 45)) / 100,
                     'rgba(15,23,42,0.45)'
                 );
                 $style = nb_block_append_style($style, 'background-image:linear-gradient(' . $overlay_color . ', ' . $overlay_color . '), ' . nb_block_css_url($image) . ';');
-                $style = nb_block_append_style($style, 'background-size:cover;');
-                $style = nb_block_append_style($style, 'background-position:center;');
-                $style = nb_block_append_style($style, 'background-repeat:no-repeat;');
+                $style = nb_block_append_style($style, 'background-size:' . $size . ';');
+                $style = nb_block_append_style($style, 'background-position:' . $position . ';');
+                $style = nb_block_append_style($style, 'background-repeat:' . $repeat . ';');
             }
         }
 

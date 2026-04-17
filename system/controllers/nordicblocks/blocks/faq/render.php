@@ -43,8 +43,16 @@ if ($faq_contract) {
     $heading_weight = (int) ($faq_contract['design']['entities']['title']['weight'] ?? 800);
     $title_size_desktop = (int) ($faq_contract['design']['entities']['title']['desktop']['fontSize'] ?? 48);
     $title_size_mobile = (int) ($faq_contract['design']['entities']['title']['mobile']['fontSize'] ?? 32);
+    $title_color = nb_block_css_color((string) ($faq_contract['design']['entities']['title']['color'] ?? ''));
+    $title_line_height = ((float) ($faq_contract['design']['entities']['title']['lineHeightPercent'] ?? 110)) / 100;
+    $title_letter_spacing = (float) ($faq_contract['design']['entities']['title']['letterSpacing'] ?? 0);
+    $title_max_width = (int) ($faq_contract['design']['entities']['title']['maxWidth'] ?? 600);
     $subtitle_size_desktop = (int) ($faq_contract['design']['entities']['subtitle']['desktop']['fontSize'] ?? 18);
     $subtitle_size_mobile = (int) ($faq_contract['design']['entities']['subtitle']['mobile']['fontSize'] ?? 16);
+    $subtitle_color = nb_block_css_color((string) ($faq_contract['design']['entities']['subtitle']['color'] ?? ''));
+    $subtitle_line_height = ((float) ($faq_contract['design']['entities']['subtitle']['lineHeightPercent'] ?? 165)) / 100;
+    $subtitle_letter_spacing = (float) ($faq_contract['design']['entities']['subtitle']['letterSpacing'] ?? 0);
+    $subtitle_max_width = (int) ($faq_contract['design']['entities']['subtitle']['maxWidth'] ?? 720);
     $title_margin_bottom_desktop = (int) ($faq_contract['design']['entities']['title']['desktop']['marginBottom'] ?? 0);
     $title_margin_bottom_mobile = (int) ($faq_contract['design']['entities']['title']['mobile']['marginBottom'] ?? 0);
     $subtitle_margin_bottom_desktop = (int) ($faq_contract['design']['entities']['subtitle']['desktop']['marginBottom'] ?? 32);
@@ -52,8 +60,14 @@ if ($faq_contract) {
     $item_title_size_desktop = (int) ($faq_contract['design']['entities']['itemTitle']['desktop']['fontSize'] ?? 18);
     $item_title_size_mobile = (int) ($faq_contract['design']['entities']['itemTitle']['mobile']['fontSize'] ?? 17);
     $item_title_weight = (int) ($faq_contract['design']['entities']['itemTitle']['weight'] ?? 700);
+    $item_title_color = nb_block_css_color((string) ($faq_contract['design']['entities']['itemTitle']['color'] ?? ''));
+    $item_title_line_height = ((float) ($faq_contract['design']['entities']['itemTitle']['lineHeightPercent'] ?? 135)) / 100;
+    $item_title_letter_spacing = (float) ($faq_contract['design']['entities']['itemTitle']['letterSpacing'] ?? 0);
     $item_text_size_desktop = (int) ($faq_contract['design']['entities']['itemText']['desktop']['fontSize'] ?? 16);
     $item_text_size_mobile = (int) ($faq_contract['design']['entities']['itemText']['mobile']['fontSize'] ?? 15);
+    $item_text_color = nb_block_css_color((string) ($faq_contract['design']['entities']['itemText']['color'] ?? ''));
+    $item_text_line_height = ((float) ($faq_contract['design']['entities']['itemText']['lineHeightPercent'] ?? 170)) / 100;
+    $item_text_letter_spacing = (float) ($faq_contract['design']['entities']['itemText']['letterSpacing'] ?? 0);
     $item_surface_variant = in_array($faq_contract['design']['entities']['itemSurface']['variant'] ?? 'card', ['card', 'plain'], true)
         ? (string) $faq_contract['design']['entities']['itemSurface']['variant'] : 'card';
     $content_width = (int) ($faq_contract['layout']['desktop']['contentWidth'] ?? 760);
@@ -82,6 +96,9 @@ if ($faq_contract) {
         'gradientTo' => $props['background_gradient_to'] ?? '',
         'gradientAngle' => $props['background_gradient_angle'] ?? 135,
         'image' => $props['background_image'] ?? '',
+        'imagePosition' => $props['background_image_position'] ?? 'center center',
+        'imageSize' => $props['background_image_size'] ?? 'cover',
+        'imageRepeat' => $props['background_image_repeat'] ?? 'no-repeat',
         'overlayColor' => $props['background_overlay_color'] ?? '#0f172a',
         'overlayOpacity' => $props['background_overlay_opacity'] ?? 45,
     ]);
@@ -92,8 +109,16 @@ if ($faq_contract) {
     $heading_weight = nb_block_get_font_weight((array) $props, 'heading', 800);
     $title_size_desktop = nb_faq_prop_int((array) $props, 'title_size_desktop', 48, 12, 160);
     $title_size_mobile = nb_faq_prop_int((array) $props, 'title_size_mobile', 32, 12, 160);
+    $title_color = nb_block_css_color((string) ($props['title_color'] ?? ''));
+    $title_line_height = nb_faq_prop_int((array) $props, 'title_line_height_percent', 110, 80, 220) / 100;
+    $title_letter_spacing = nb_faq_prop_int((array) $props, 'title_letter_spacing', 0, -40, 80);
+    $title_max_width = nb_faq_prop_int((array) $props, 'title_max_width', 600, 240, 1440);
     $subtitle_size_desktop = nb_faq_prop_int((array) $props, 'subtitle_size_desktop', 18, 10, 80);
     $subtitle_size_mobile = nb_faq_prop_int((array) $props, 'subtitle_size_mobile', 16, 10, 80);
+    $subtitle_color = nb_block_css_color((string) ($props['subtitle_color'] ?? ''));
+    $subtitle_line_height = nb_faq_prop_int((array) $props, 'subtitle_line_height_percent', 165, 80, 240) / 100;
+    $subtitle_letter_spacing = nb_faq_prop_int((array) $props, 'subtitle_letter_spacing', 0, -40, 80);
+    $subtitle_max_width = nb_faq_prop_int((array) $props, 'subtitle_max_width', 720, 240, 1440);
     $title_margin_bottom_desktop = nb_faq_prop_int((array) $props, 'title_margin_bottom_desktop', 0, 0, 240);
     $title_margin_bottom_mobile = nb_faq_prop_int((array) $props, 'title_margin_bottom_mobile', 0, 0, 240);
     $subtitle_margin_bottom_desktop = nb_faq_prop_int((array) $props, 'subtitle_margin_bottom_desktop', 32, 0, 240);
@@ -101,8 +126,14 @@ if ($faq_contract) {
     $item_title_size_desktop = nb_faq_prop_int((array) $props, 'item_title_size_desktop', 18, 10, 80);
     $item_title_size_mobile = nb_faq_prop_int((array) $props, 'item_title_size_mobile', 17, 10, 80);
     $item_title_weight = nb_faq_prop_int((array) $props, 'item_title_weight', 700, 100, 900);
+    $item_title_color = nb_block_css_color((string) ($props['item_title_color'] ?? ''));
+    $item_title_line_height = nb_faq_prop_int((array) $props, 'item_title_line_height_percent', 135, 80, 220) / 100;
+    $item_title_letter_spacing = nb_faq_prop_int((array) $props, 'item_title_letter_spacing', 0, -40, 80);
     $item_text_size_desktop = nb_faq_prop_int((array) $props, 'item_text_size_desktop', 16, 10, 80);
     $item_text_size_mobile = nb_faq_prop_int((array) $props, 'item_text_size_mobile', 15, 10, 80);
+    $item_text_color = nb_block_css_color((string) ($props['item_text_color'] ?? ''));
+    $item_text_line_height = nb_faq_prop_int((array) $props, 'item_text_line_height_percent', 170, 80, 260) / 100;
+    $item_text_letter_spacing = nb_faq_prop_int((array) $props, 'item_text_letter_spacing', 0, -40, 80);
     $item_surface_variant = in_array($props['item_surface_variant'] ?? 'card', ['card', 'plain'], true) ? (string) $props['item_surface_variant'] : 'card';
     $content_width = nb_faq_prop_int((array) $props, 'content_width', 760, 320, 1440);
     $padding_top_desktop = nb_faq_prop_int((array) $props, 'padding_top_desktop', 88, 0, 300);
@@ -149,8 +180,16 @@ $section_style = nb_block_append_style($section_style, '--nb-faq-mobile-padding-
 $section_style = nb_block_append_style($section_style, '--nb-faq-mobile-padding-bottom:' . $padding_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-title-size:' . $title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-title-size-mobile:' . $title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-faq-title-line-height:' . max(0.8, min(2.2, $title_line_height)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-faq-title-letter-spacing:' . $title_letter_spacing . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-faq-title-max-width:' . $title_max_width . 'px;');
+$section_style = $title_color !== '' ? nb_block_append_style($section_style, '--nb-faq-title-color:' . $title_color . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-size:' . $subtitle_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-size-mobile:' . $subtitle_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-line-height:' . max(0.8, min(2.4, $subtitle_line_height)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-letter-spacing:' . $subtitle_letter_spacing . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-max-width:' . $subtitle_max_width . 'px;');
+$section_style = $subtitle_color !== '' ? nb_block_append_style($section_style, '--nb-faq-subtitle-color:' . $subtitle_color . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-section-title-margin-bottom:' . $title_margin_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-section-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-margin-top:' . ($title_visible ? 'calc(var(--nb-space-sm, .75rem) * -1)' : '0px') . ';');
@@ -159,8 +198,14 @@ $section_style = nb_block_append_style($section_style, '--nb-faq-subtitle-margin
 $section_style = nb_block_append_style($section_style, '--nb-faq-item-title-size:' . $item_title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-item-title-size-mobile:' . $item_title_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-item-title-weight:' . $item_title_weight . ';');
+$section_style = nb_block_append_style($section_style, '--nb-faq-item-title-line-height:' . max(0.8, min(2.2, $item_title_line_height)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-faq-item-title-letter-spacing:' . $item_title_letter_spacing . 'px;');
+$section_style = $item_title_color !== '' ? nb_block_append_style($section_style, '--nb-faq-item-title-color:' . $item_title_color . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-faq-item-text-size:' . $item_text_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-faq-item-text-size-mobile:' . $item_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-faq-item-text-line-height:' . max(0.8, min(2.6, $item_text_line_height)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-faq-item-text-letter-spacing:' . $item_text_letter_spacing . 'px;');
+$section_style = $item_text_color !== '' ? nb_block_append_style($section_style, '--nb-faq-item-text-color:' . $item_text_color . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, $background_style);
 $section_style = nb_block_append_style($section_style, $reveal['style']);
 $item_class = $item_surface_variant === 'plain' ? 'nb-faq__item nb-faq__item--plain' : 'nb-faq__item nb-card';

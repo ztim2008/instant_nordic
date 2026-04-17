@@ -2,16 +2,71 @@
 
 class NordicblocksInspectorRegistryBuilder {
 
-    public static function build() {
+    public static function build($block_type = '') {
+        $entities = self::getEntityRegistry();
+        $panels = self::getPanelRegistry();
+        $label_overrides = self::getLabelOverrides($block_type);
+
+        $entities = self::applyEntityLabelOverrides($entities, (array) ($label_overrides['entities'] ?? []));
+        $panels = self::applyPanelLabelOverrides($panels, (array) ($label_overrides['panels'] ?? []));
+
         return [
             'tabs'             => self::getTabs(),
-            'entities'         => self::getEntityRegistry(),
+            'entities'         => $entities,
             'entityGroups'     => self::getEntityGroups(),
             'capabilities'     => self::getCapabilityRegistry(),
             'capabilityMatrix' => self::getCapabilityMatrix(),
             'controlPresets'   => self::getControlPresets(),
-            'panels'           => self::getPanelRegistry(),
+            'panels'           => $panels,
+            'labelOverrides'   => $label_overrides,
         ];
+    }
+
+    private static function applyEntityLabelOverrides(array $entities, array $overrides) {
+        foreach ($overrides as $entity_key => $label) {
+            if (!isset($entities[$entity_key])) {
+                continue;
+            }
+
+            $entities[$entity_key]['label'] = (string) $label;
+        }
+
+        return $entities;
+    }
+
+    private static function applyPanelLabelOverrides(array $panels, array $overrides) {
+        foreach ($panels as &$panel) {
+            $panel_key = (string) ($panel['key'] ?? '');
+            if ($panel_key !== '' && isset($overrides[$panel_key])) {
+                $panel['label'] = (string) $overrides[$panel_key];
+            }
+        }
+        unset($panel);
+
+        return $panels;
+    }
+
+    private static function getLabelOverrides($block_type) {
+        $block_type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $block_type));
+
+        if ($block_type === 'faq') {
+            return [
+                'entities' => [
+                    'items' => 'FAQ',
+                    'itemSurface' => 'Карточка вопроса',
+                    'itemTitle' => 'Вопрос',
+                    'itemText' => 'Ответ',
+                ],
+                'panels' => [
+                    'repeaterItems' => 'Вопросы',
+                    'itemSurface' => 'Карточка вопроса',
+                    'itemTypography' => 'Вопрос и ответ',
+                    'repeaterBindings' => 'Поля FAQ',
+                ],
+            ];
+        }
+
+        return ['entities' => [], 'panels' => []];
     }
 
     private static function getTabs() {

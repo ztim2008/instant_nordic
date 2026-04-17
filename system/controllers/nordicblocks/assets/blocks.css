@@ -508,6 +508,10 @@
 
 .nb-faq .nb-section-title {
     font-size: var(--nb-faq-title-size, var(--nb-text-3xl, clamp(1.5rem, 3vw, 2.25rem)));
+    max-width: var(--nb-faq-title-max-width, none);
+    line-height: var(--nb-faq-title-line-height, 1.1);
+    letter-spacing: var(--nb-faq-title-letter-spacing, 0);
+    color: var(--nb-faq-title-color, var(--nb-color-text));
 }
 
 .nb-faq--align-left .nb-section-header,
@@ -516,17 +520,26 @@
     margin-inline: 0;
 }
 
+.nb-faq--align-left .nb-section-title {
+    margin-inline: 0;
+}
+
 .nb-faq--align-center .nb-section-header,
 .nb-faq--align-center .nb-faq__intro {
     text-align: center;
 }
 
+.nb-faq--align-center .nb-section-title {
+    margin-inline: auto;
+}
+
 .nb-faq__intro {
-    max-width: 720px;
+    max-width: var(--nb-faq-subtitle-max-width, 720px);
     margin: var(--nb-faq-subtitle-margin-top, calc(var(--nb-space-sm, .75rem) * -1)) auto var(--nb-faq-subtitle-margin-bottom, var(--nb-space-2xl, 2rem));
     font-size: var(--nb-faq-subtitle-size, var(--nb-text-lg, 1.125rem));
-    line-height: var(--nb-leading-relaxed, 1.65);
-    color: var(--nb-color-text-muted);
+    line-height: var(--nb-faq-subtitle-line-height, var(--nb-leading-relaxed, 1.65));
+    letter-spacing: var(--nb-faq-subtitle-letter-spacing, 0);
+    color: var(--nb-faq-subtitle-color, var(--nb-color-text-muted));
 }
 
 .nb-faq__list {
@@ -555,8 +568,9 @@
     font-family: var(--nb-font-head);
     font-size: var(--nb-faq-item-title-size, var(--nb-text-lg, 1.125rem));
     font-weight: var(--nb-faq-item-title-weight, 700);
-    line-height: 1.35;
-    color: var(--nb-color-text);
+    line-height: var(--nb-faq-item-title-line-height, 1.35);
+    letter-spacing: var(--nb-faq-item-title-letter-spacing, 0);
+    color: var(--nb-faq-item-title-color, var(--nb-color-text));
     transition: background-color .2s ease;
 }
 
@@ -603,9 +617,10 @@
 
 .nb-faq__answer {
     padding: 0 1.25rem 1.25rem;
-    color: var(--nb-color-text-muted);
+    color: var(--nb-faq-item-text-color, var(--nb-color-text-muted));
     font-size: var(--nb-faq-item-text-size, var(--nb-text-base, 1rem));
-    line-height: var(--nb-leading-relaxed, 1.7);
+    line-height: var(--nb-faq-item-text-line-height, var(--nb-leading-relaxed, 1.7));
+    letter-spacing: var(--nb-faq-item-text-letter-spacing, 0);
 }
 
 .nb-faq__answer p {
