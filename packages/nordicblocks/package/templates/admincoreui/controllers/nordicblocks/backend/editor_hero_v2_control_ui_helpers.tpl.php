@@ -71,7 +71,7 @@ function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
     var cards = items.map(function(item, index) {
-        if (nbhCollectionBlockKind() === 'content_feed') {
+        if (nbhIsCardCollectionBlock()) {
             var category = nbhCollectionItemValue(item, 'category');
             var title = nbhCollectionItemValue(item, 'title');
             var excerpt = nbhCollectionItemValue(item, 'excerpt');
@@ -116,18 +116,18 @@ function nbhRepeaterEditor() {
     }).join('');
 
     if (!cards) {
-        cards = nbhCollectionBlockKind() === 'content_feed'
+        cards = nbhIsCardCollectionBlock()
             ? '<div class="nbh-note">Лента пока пустая. Добавьте первую карточку.</div>'
             : '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
     }
 
     if (listSource.type === 'content_list') {
-        cards = (nbhCollectionBlockKind() === 'content_feed'
+        cards = (nbhIsCardCollectionBlock()
             ? '<div class="nbh-note">Ручные карточки ниже остаются резервной лентой, если источник данных не вернёт записей.</div>'
             : '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>') + cards;
     }
 
-    if (nbhCollectionBlockKind() === 'content_feed') {
+    if (nbhIsCardCollectionBlock()) {
         return '<div class="nbh-grid-2">'
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))
             + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))

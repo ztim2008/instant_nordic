@@ -17,6 +17,22 @@
                 "live_smoke": true
             },
             "notes": "v1 block type поднят. Live smoke пройден: create, editor, manual repeater, content_list switch и save/reload подтверждены; временные smoke-блоки удалены."
+        },
+        "category_cards": {
+            "title": "Рубрика с карточками",
+            "family": "news-family-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260418-112025",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": true,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": true
+            },
+            "notes": "v1 второго news-блока собран поверх card-runtime из content_feed: отдельный type category_cards с compact grid и тем же manual/content_list data mode. Live smoke пройден полностью: create через админку, editor preview и инспектор загрузились, save/reload для manual подтвержден, а content_list для news после фикса normalizer сохраняется и переживает reload с реальными URL /news/...html; временные smoke-блоки удалены после проверки."
         }
     }
 }

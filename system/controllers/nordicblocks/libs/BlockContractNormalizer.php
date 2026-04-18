@@ -5,9 +5,13 @@ class NordicblocksBlockContractNormalizer {
     private static $allowed_source_types = ['manual', 'content_item', 'content_list'];
     private static $allowed_list_sorts = ['date_pub_desc', 'date_pub_asc', 'title_asc', 'title_desc', 'hits_desc', 'hits_asc', 'comments_desc', 'comments_asc'];
 
+    private static function isCardCollectionType($type) {
+        return in_array($type, ['content_feed', 'category_cards'], true);
+    }
+
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq', 'content_feed'], true);
+        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards'], true);
     }
 
     public static function isContractPayload($payload) {
@@ -51,6 +55,10 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'content_feed') {
             return self::normalizeContentFeed($block);
+        }
+
+        if ($type === 'category_cards') {
+            return self::normalizeCategoryCards($block);
         }
 
         return self::normalizeFallback($block, $type);
@@ -579,6 +587,97 @@ class NordicblocksBlockContractNormalizer {
         return self::mergeStoredContract($contract, $stored_contract);
     }
 
+    private static function normalizeCategoryCards(array $block, array $stored_contract = []) {
+        $block['props'] = array_merge([
+            'eyebrow' => 'Раздел',
+            'heading' => 'Рубрика недели',
+            'intro' => 'Компактная секция раздела для главной: четыре карточки на desktop, две на mobile и тот же manual/data режим без отдельного runtime.',
+            'more_link_label' => 'Открыть раздел',
+            'more_link_url' => '/news',
+            'content_width' => 1280,
+            'padding_top_desktop' => 72,
+            'padding_bottom_desktop' => 72,
+            'padding_top_mobile' => 48,
+            'padding_bottom_mobile' => 48,
+            'columns_desktop' => 4,
+            'columns_mobile' => 2,
+            'card_gap_desktop' => 20,
+            'card_gap_mobile' => 14,
+            'header_gap_desktop' => 18,
+            'header_gap_mobile' => 14,
+            'title_size_desktop' => 34,
+            'title_size_mobile' => 26,
+            'subtitle_size_desktop' => 16,
+            'subtitle_size_mobile' => 15,
+            'subtitle_max_width' => 860,
+            'media_aspect_ratio' => '4:3',
+            'media_radius' => 20,
+            'item_surface_radius' => 20,
+            'item_surface_border_width' => 1,
+            'item_surface_border_color' => '#dbe4ef',
+            'item_surface_shadow' => 'sm',
+            'item_title_size_desktop' => 20,
+            'item_title_size_mobile' => 18,
+            'item_title_weight' => 800,
+            'item_text_size_desktop' => 15,
+            'item_text_size_mobile' => 14,
+            'meta_size_desktop' => 13,
+            'meta_size_mobile' => 12,
+            'eyebrow_size_desktop' => 13,
+            'eyebrow_size_mobile' => 12,
+            'eyebrow_margin_bottom_desktop' => 10,
+            'eyebrow_margin_bottom_mobile' => 8,
+            'eyebrow_weight_desktop' => '700',
+            'eyebrow_weight_mobile' => '700',
+            'eyebrow_color_desktop' => '#0f766e',
+            'eyebrow_color_mobile' => '#0f766e',
+            'eyebrow_line_height_percent_desktop' => 140,
+            'eyebrow_line_height_percent_mobile' => 140,
+            'eyebrow_letter_spacing_desktop' => 1,
+            'eyebrow_letter_spacing_mobile' => 1,
+            'eyebrow_text_transform' => 'uppercase',
+        ], (array) ($block['props'] ?? []));
+
+        $props = (array) $block['props'];
+        $contract = self::normalizeContentFeed([
+            'type'   => 'content_feed',
+            'title'  => (string) ($block['title'] ?? 'Рубрика с карточками'),
+            'status' => (string) ($block['status'] ?? 'active'),
+            'props'  => $props,
+        ], $stored_contract);
+
+        $contract['meta']['blockType'] = 'category_cards';
+        $contract['meta']['label'] = (string) ($block['title'] ?? 'Рубрика с карточками');
+        $contract['content']['eyebrow'] = (string) ($props['eyebrow'] ?? 'Раздел');
+        $contract['design']['entities']['eyebrow'] = self::mergeContractArrays(
+            [
+                'desktop' => [
+                    'fontSize' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_size_desktop'], 13), 10, 120, 13),
+                    'marginBottom' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_margin_bottom_desktop'], 10), 0, 240, 10),
+                    'weight' => self::normalizeSelect((string) self::coalesceProp($props, ['eyebrow_weight_desktop', 'eyebrow_weight'], '700'), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString(self::coalesceProp($props, ['eyebrow_color_desktop', 'eyebrow_color'], '')),
+                    'lineHeightPercent' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_line_height_percent_desktop', 'eyebrow_line_height_percent'], 140), 80, 240, 140),
+                    'letterSpacing' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_letter_spacing_desktop', 'eyebrow_letter_spacing'], 1), -40, 80, 1),
+                ],
+                'mobile' => [
+                    'fontSize' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_size_mobile'], 12), 10, 120, 12),
+                    'marginBottom' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_margin_bottom_mobile'], 8), 0, 240, 8),
+                    'weight' => self::normalizeSelect((string) self::coalesceProp($props, ['eyebrow_weight_mobile', 'eyebrow_weight'], '700'), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString(self::coalesceProp($props, ['eyebrow_color_mobile', 'eyebrow_color'], '')),
+                    'lineHeightPercent' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_line_height_percent_mobile', 'eyebrow_line_height_percent'], 140), 80, 240, 140),
+                    'letterSpacing' => self::normalizeNumber(self::coalesceProp($props, ['eyebrow_letter_spacing_mobile', 'eyebrow_letter_spacing'], 1), -40, 80, 1),
+                ],
+                'textTransform' => self::normalizeSelect((string) self::coalesceProp($props, ['eyebrow_text_transform'], 'uppercase'), ['uppercase', 'none'], 'uppercase'),
+            ],
+            is_array($stored_contract['design']['entities']['eyebrow'] ?? null) ? $stored_contract['design']['entities']['eyebrow'] : []
+        );
+        $contract['entities'] = array_merge([
+            'eyebrow' => ['kind' => 'text', 'styleSlot' => 'eyebrow'],
+        ], (array) ($contract['entities'] ?? []));
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
     private static function normalizeStoredContract(array $block, array $contract) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? ($contract['meta']['blockType'] ?? ''))));
 
@@ -606,6 +705,15 @@ class NordicblocksBlockContractNormalizer {
                 'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Лента новостей')),
                 'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
                 'props'  => self::denormalizeProps('content_feed', $contract),
+            ], $contract);
+        }
+
+        if ($type === 'category_cards') {
+            return self::normalizeCategoryCards([
+                'type'   => 'category_cards',
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Рубрика с карточками')),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeProps('category_cards', $contract),
             ], $contract);
         }
 
@@ -886,6 +994,25 @@ class NordicblocksBlockContractNormalizer {
             ];
         }
 
+        if ($type === 'category_cards') {
+            return array_merge(self::denormalizeProps('content_feed', $contract), [
+                'eyebrow'                 => (string) ($contract['content']['eyebrow'] ?? ''),
+                'eyebrow_size_desktop'    => (string) ($contract['design']['entities']['eyebrow']['desktop']['fontSize'] ?? 13),
+                'eyebrow_size_mobile'     => (string) ($contract['design']['entities']['eyebrow']['mobile']['fontSize'] ?? 12),
+                'eyebrow_margin_bottom_desktop' => (string) ($contract['design']['entities']['eyebrow']['desktop']['marginBottom'] ?? 10),
+                'eyebrow_margin_bottom_mobile' => (string) ($contract['design']['entities']['eyebrow']['mobile']['marginBottom'] ?? 8),
+                'eyebrow_weight_desktop'  => (string) ($contract['design']['entities']['eyebrow']['desktop']['weight'] ?? '700'),
+                'eyebrow_weight_mobile'   => (string) ($contract['design']['entities']['eyebrow']['mobile']['weight'] ?? '700'),
+                'eyebrow_color_desktop'   => (string) ($contract['design']['entities']['eyebrow']['desktop']['color'] ?? ''),
+                'eyebrow_color_mobile'    => (string) ($contract['design']['entities']['eyebrow']['mobile']['color'] ?? ''),
+                'eyebrow_line_height_percent_desktop' => (string) ($contract['design']['entities']['eyebrow']['desktop']['lineHeightPercent'] ?? 140),
+                'eyebrow_line_height_percent_mobile' => (string) ($contract['design']['entities']['eyebrow']['mobile']['lineHeightPercent'] ?? 140),
+                'eyebrow_letter_spacing_desktop' => (string) ($contract['design']['entities']['eyebrow']['desktop']['letterSpacing'] ?? 1),
+                'eyebrow_letter_spacing_mobile' => (string) ($contract['design']['entities']['eyebrow']['mobile']['letterSpacing'] ?? 1),
+                'eyebrow_text_transform'  => (string) ($contract['design']['entities']['eyebrow']['textTransform'] ?? 'uppercase'),
+            ]);
+        }
+
         return [];
     }
 
@@ -915,10 +1042,10 @@ class NordicblocksBlockContractNormalizer {
             'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if (!in_array($type, ['faq', 'content_feed'], true)) {
+        if (!in_array($type, ['faq', 'content_feed', 'category_cards'], true)) {
             $normalized['listSource'] = self::normalizeListSource([]);
         } else {
-            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), $type);
+            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), self::isCardCollectionType($type) ? 'content_feed' : $type);
         }
 
         return $normalized;
@@ -1064,7 +1191,7 @@ class NordicblocksBlockContractNormalizer {
     private static function normalizeListSource(array $config, $type = 'faq') {
         $map = is_array($config['map'] ?? null) ? $config['map'] : [];
 
-        if ($type === 'content_feed') {
+        if (self::isCardCollectionType($type)) {
             return [
                 'type'          => self::normalizeSelect((string) ($config['type'] ?? 'manual'), ['manual', 'content_list'], 'manual'),
                 'ctype'         => preg_replace('/[^a-z0-9_\-\{\}]/i', '', (string) ($config['ctype'] ?? '')),

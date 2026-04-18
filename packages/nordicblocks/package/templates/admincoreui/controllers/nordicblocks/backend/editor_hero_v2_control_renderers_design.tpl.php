@@ -133,7 +133,7 @@ function nbhBuildDesignControlRenderers() {
                 return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMaxWidth: false, includeBlackWeight: true });
             }
             if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText') && profile.itemTypography.enabled) {
-                if (profile.kind === 'content_feed') {
+                if (profile.kind === 'content_feed' || profile.kind === 'category_cards') {
                     var titleDefaults = profile.itemTypography.title || {};
                     var textDefaults = profile.itemTypography.text || {};
 
@@ -265,7 +265,7 @@ function nbhBuildDesignControlRenderers() {
                     { value: 'plain', label: 'Без карточек' }
                 ], 'card'));
 
-                if (nbhBlockType() === 'content_feed') {
+                if (nbhIsCardCollectionBlock()) {
                     body += '<div class="nbh-grid-2">'
                         + nbhField('Скругление карточки', nbhInput('design.entities.itemSurface.radius', { inputType: 'number', type: 'number', fallback: profile.itemSurface.radius }))
                         + nbhField('Толщина рамки', nbhInput('design.entities.itemSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.itemSurface.borderWidth }))

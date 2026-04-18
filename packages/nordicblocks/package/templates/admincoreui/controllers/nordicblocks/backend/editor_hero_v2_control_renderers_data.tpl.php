@@ -128,7 +128,7 @@ function nbhBuildDataControlRenderers() {
             }));
             var body = '<div class="nbh-grid-2">';
 
-            if (nbhCollectionBlockKind() === 'content_feed') {
+            if (nbhIsCardCollectionBlock()) {
                 body += nbhField('Заголовок карточки', nbhSelect('data.listSource.map.title', fieldOptions, 'title'))
                     + nbhField('Анонс карточки', nbhSelect('data.listSource.map.excerpt', fieldOptions, 'teaser'))
                     + nbhField('Изображение карточки', nbhSelect('data.listSource.map.image', fieldOptions, 'photo'))

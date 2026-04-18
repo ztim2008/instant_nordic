@@ -552,6 +552,81 @@
     }
 }
 
+.nb-section.nb-category-cards {
+    --nb-feed-card-shadow: var(--nb-feed-card-shadow, var(--nb-shadow-sm, 0 12px 34px rgba(15, 23, 42, .08)));
+}
+
+.nb-category-cards .nb-content-feed__container {
+    gap: clamp(1rem, 2vw, var(--nb-feed-header-gap, 1.25rem));
+}
+
+.nb-category-cards .nb-content-feed__header {
+    align-items: flex-start;
+}
+
+.nb-category-cards .nb-content-feed__copy {
+    max-width: min(100%, var(--nb-feed-title-max-width, 860px));
+}
+
+.nb-category-cards__eyebrow {
+    margin: 0 0 var(--nb-category-cards-eyebrow-margin-bottom, .625rem);
+    color: var(--nb-category-cards-eyebrow-color, var(--nb-color-accent));
+    font-size: var(--nb-category-cards-eyebrow-size, var(--nb-text-sm, .875rem));
+    font-weight: var(--nb-category-cards-eyebrow-weight, 700);
+    line-height: var(--nb-category-cards-eyebrow-line-height, 1.4);
+    letter-spacing: var(--nb-category-cards-eyebrow-letter-spacing, .08em);
+    text-transform: var(--nb-category-cards-eyebrow-transform, uppercase);
+}
+
+.nb-category-cards .nb-content-feed__more {
+    padding-top: .3rem;
+}
+
+.nb-category-cards .nb-content-feed__grid {
+    align-items: stretch;
+}
+
+.nb-category-cards .nb-content-feed__card {
+    height: 100%;
+    background: var(--nb-card-bg, rgba(255,255,255,.92));
+}
+
+.nb-category-cards .nb-content-feed__body {
+    gap: .7rem;
+}
+
+.nb-category-cards .nb-content-feed__category {
+    padding: .32rem .62rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+
+.nb-category-cards .nb-content-feed__card-title {
+    text-wrap: pretty;
+}
+
+.nb-category-cards .nb-content-feed__excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+@media (max-width: 767px) {
+    .nb-category-cards__eyebrow {
+        margin-bottom: var(--nb-category-cards-eyebrow-margin-bottom-mobile, var(--nb-category-cards-eyebrow-margin-bottom, .625rem));
+        color: var(--nb-category-cards-eyebrow-color-mobile, var(--nb-category-cards-eyebrow-color, var(--nb-color-accent)));
+        font-size: var(--nb-category-cards-eyebrow-size-mobile, var(--nb-category-cards-eyebrow-size, var(--nb-text-sm, .875rem)));
+        font-weight: var(--nb-category-cards-eyebrow-weight-mobile, var(--nb-category-cards-eyebrow-weight, 700));
+        line-height: var(--nb-category-cards-eyebrow-line-height-mobile, var(--nb-category-cards-eyebrow-line-height, 1.4));
+        letter-spacing: var(--nb-category-cards-eyebrow-letter-spacing-mobile, var(--nb-category-cards-eyebrow-letter-spacing, .08em));
+    }
+
+    .nb-category-cards .nb-content-feed__body {
+        gap: .6rem;
+    }
+}
+
 .nb-anim {
     animation-duration: .72s;
     animation-timing-function: cubic-bezier(.22, 1, .36, 1);

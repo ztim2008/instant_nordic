@@ -3,7 +3,7 @@ function nbhBuildLayoutControlRenderers() {
         'spacing-layout-panel': function(panel, bp) {
             var profile = nbhBlockUiProfile();
             var body = nbhBreakpointToggle();
-            if (profile.kind === 'content_feed') {
+            if (profile.kind === 'content_feed' || profile.kind === 'category_cards') {
                 if (bp === 'desktop') {
                     return body + '<div class="nbh-grid-2">'
                         + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))

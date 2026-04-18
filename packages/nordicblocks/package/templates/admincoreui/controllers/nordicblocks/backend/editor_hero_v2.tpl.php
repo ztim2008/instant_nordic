@@ -653,11 +653,154 @@ function nbhCollectionBlockKind() {
         return '';
     }
 
-    return nbhBlockType() === 'content_feed' ? 'content_feed' : 'faq';
+    if (nbhBlockType() === 'content_feed') {
+        return 'content_feed';
+    }
+
+    if (nbhBlockType() === 'category_cards') {
+        return 'category_cards';
+    }
+
+    return 'faq';
+}
+
+function nbhIsCardCollectionBlock() {
+    var kind = nbhCollectionBlockKind();
+    return kind === 'content_feed' || kind === 'category_cards';
 }
 
 function nbhBlockUiProfile() {
     if (nbhHasEntity('items') && nbhHasCapability('repeaterContent')) {
+        if (nbhCollectionBlockKind() === 'category_cards') {
+            return {
+                kind: 'category_cards',
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                contentWidth: 1280,
+                eyebrow: {
+                    desktopFontSize: 13,
+                    mobileFontSize: 12,
+                    desktopMarginBottom: 10,
+                    mobileMarginBottom: 8,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#0f766e',
+                    mobileColor: '#0f766e',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 1,
+                    mobileLetterSpacing: 1,
+                    textTransform: 'uppercase',
+                },
+                title: {
+                    desktopFontSize: 34,
+                    mobileFontSize: 26,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 110,
+                    mobileLineHeightPercent: 110,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 860,
+                    mobileMaxWidth: 860,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 16,
+                    mobileFontSize: 15,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 155,
+                    mobileLineHeightPercent: 155,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 860,
+                    mobileMaxWidth: 860,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 13,
+                    mobileFontSize: 12,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#64748b',
+                    mobileColor: '#64748b',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                },
+                media: {
+                    aspectRatio: '4:3',
+                    objectFit: 'cover',
+                    radius: 20,
+                },
+                itemSurface: {
+                    radius: 20,
+                    borderWidth: 1,
+                    borderColor: '#dbe4ef',
+                    shadow: 'sm',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовок карточки',
+                    textLabel: 'Анонс карточки',
+                    title: {
+                        desktopFontSize: 20,
+                        mobileFontSize: 18,
+                        desktopWeight: '800',
+                        mobileWeight: '800',
+                        desktopColor: '#0f172a',
+                        mobileColor: '#0f172a',
+                        desktopLineHeightPercent: 130,
+                        mobileLineHeightPercent: 130,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 15,
+                        mobileFontSize: 14,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#475569',
+                        mobileColor: '#475569',
+                        desktopLineHeightPercent: 160,
+                        mobileLineHeightPercent: 160,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 72,
+                    desktopPaddingBottom: 72,
+                    mobilePaddingTop: 48,
+                    mobilePaddingBottom: 48,
+                    supportsMinHeight: false,
+                    primaryControl: 'feed-grid',
+                    desktopColumns: 4,
+                    mobileColumns: 2,
+                    desktopCardGap: 20,
+                    mobileCardGap: 14,
+                    desktopHeaderGap: 18,
+                    mobileHeaderGap: 14,
+                },
+            };
+        }
+
         if (nbhCollectionBlockKind() === 'content_feed') {
             return {
                 kind: 'content_feed',
@@ -962,7 +1105,7 @@ function nbhListSource() {
     if (!source.map || typeof source.map !== 'object' || Array.isArray(source.map)) {
         source.map = {};
     }
-    if (nbhCollectionBlockKind() === 'content_feed') {
+    if (nbhIsCardCollectionBlock()) {
         if (typeof source.map.title !== 'string') source.map.title = 'title';
         if (typeof source.map.excerpt !== 'string') source.map.excerpt = 'teaser';
         if (typeof source.map.image !== 'string') source.map.image = 'record_image_url';
@@ -986,10 +1129,10 @@ function nbhListSource() {
 }
 
 function nbhCollectionDefaultItem() {
-    if (nbhCollectionBlockKind() === 'content_feed') {
+    if (nbhIsCardCollectionBlock()) {
         return {
-            category: 'Новости',
-            title: 'Новая карточка',
+            category: nbhCollectionBlockKind() === 'category_cards' ? 'Раздел' : 'Новости',
+            title: nbhCollectionBlockKind() === 'category_cards' ? 'Новая карточка раздела' : 'Новая карточка',
             excerpt: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
             text: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
             url: '/news',
@@ -1015,19 +1158,19 @@ function nbhCollectionItemValue(item, key) {
         return '';
     }
 
-    if (nbhCollectionBlockKind() !== 'content_feed' && key === 'title') {
+    if (!nbhIsCardCollectionBlock() && key === 'title') {
         return typeof item.title === 'string' ? item.title : (typeof item.question === 'string' ? item.question : '');
     }
 
-    if (nbhCollectionBlockKind() !== 'content_feed' && key === 'text') {
+    if (!nbhIsCardCollectionBlock() && key === 'text') {
         return typeof item.text === 'string' ? item.text : (typeof item.answer === 'string' ? item.answer : '');
     }
 
-    if (nbhCollectionBlockKind() === 'content_feed' && key === 'excerpt') {
+    if (nbhIsCardCollectionBlock() && key === 'excerpt') {
         return typeof item.excerpt === 'string' ? item.excerpt : (typeof item.text === 'string' ? item.text : '');
     }
 
-    if (nbhCollectionBlockKind() === 'content_feed' && key === 'imageAlt') {
+    if (nbhIsCardCollectionBlock() && key === 'imageAlt') {
         return typeof item.imageAlt === 'string' ? item.imageAlt : (typeof item.alt === 'string' ? item.alt : '');
     }
 
@@ -1419,7 +1562,7 @@ function nbhUpdateRepeaterItem(index, field, value) {
     }
 
     var item = items[index];
-    if (nbhCollectionBlockKind() !== 'content_feed') {
+    if (!nbhIsCardCollectionBlock()) {
         if (field === 'question') field = 'title';
         if (field === 'answer') field = 'text';
     } else {
@@ -1429,7 +1572,7 @@ function nbhUpdateRepeaterItem(index, field, value) {
 
     item[field] = value;
 
-    if (nbhCollectionBlockKind() !== 'content_feed') {
+    if (!nbhIsCardCollectionBlock()) {
         if (field === 'title') {
             item.question = value;
         }

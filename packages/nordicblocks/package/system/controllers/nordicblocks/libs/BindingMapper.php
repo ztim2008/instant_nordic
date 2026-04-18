@@ -36,12 +36,12 @@ class NordicblocksBindingMapper {
             return self::mapHero($contract, $resolved_sources);
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards'], true)) {
             return $mapped;
         }
 
         $list_source = is_array($resolved_sources['listSource'] ?? null) ? $resolved_sources['listSource'] : [];
-        $items = $block_type === 'content_feed'
+        $items = in_array($block_type, ['content_feed', 'category_cards'], true)
             ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
             : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
         $empty_behavior = (string) ($list_source['emptyBehavior'] ?? 'fallback');
