@@ -1106,7 +1106,7 @@ var NordicEditorShell = (() => {
             var dispatcher = resolveDispatcher();
             return dispatcher.useInsertionEffect(create2, deps);
           }
-          function useLayoutEffect2(create2, deps) {
+          function useLayoutEffect3(create2, deps) {
             var dispatcher = resolveDispatcher();
             return dispatcher.useLayoutEffect(create2, deps);
           }
@@ -1885,7 +1885,7 @@ var NordicEditorShell = (() => {
           exports.useId = useId;
           exports.useImperativeHandle = useImperativeHandle;
           exports.useInsertionEffect = useInsertionEffect;
-          exports.useLayoutEffect = useLayoutEffect2;
+          exports.useLayoutEffect = useLayoutEffect3;
           exports.useMemo = useMemo3;
           exports.useReducer = useReducer;
           exports.useRef = useRef4;
@@ -32357,7 +32357,7 @@ var NordicEditorShell = (() => {
       }
       return buildPreviewRule(styleRule, deviceKey, interactionState, currentDeclarations, currentTarget);
     }, [currentDeclarations, currentTarget, deviceKey, interactionState, styleRule]);
-    (0, import_react4.useEffect)(() => {
+    (0, import_react4.useLayoutEffect)(() => {
       if (!currentTarget.key) {
         clearPreviewCss(iframeRef.current);
         return;

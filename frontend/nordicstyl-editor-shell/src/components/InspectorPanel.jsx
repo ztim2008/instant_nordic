@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
     BORDER_STYLE_PRESETS,
     STYLE_FIELD_GROUPS,
@@ -374,7 +374,7 @@ export function InspectorPanel({ iframeRef, frameRevision }) {
         return buildPreviewRule(styleRule, deviceKey, interactionState, currentDeclarations, currentTarget);
     }, [currentDeclarations, currentTarget, deviceKey, interactionState, styleRule]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!currentTarget.key) {
             clearPreviewCss(iframeRef.current);
             return;

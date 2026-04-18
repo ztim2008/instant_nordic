@@ -211,7 +211,7 @@
 
 ## День 5. Generic panel renderer
 
-**Статус:** 🟡 В работе
+**Статус:** 🟢 Завершено
 
 ### Что делаем
 
@@ -233,6 +233,13 @@
 2. Block logic приходит через contract + manifest.
 3. Shell не знает деталей `hero` и `faq` напрямую.
 
+### Факт закрытия дня
+
+1. `editor_hero_v2.tpl.php` перестал быть giant runtime-файлом и теперь собирается из partial-слоёв: panel helpers, control UI helpers, control dispatch, renderer groups и shell events.
+2. Runtime и package mirror синхронизированы на одной и той же composition-структуре.
+3. Live-smoke на свежих `faq` и `hero` подтвердил reload, entity/tab/mobile transitions и сохранение после финального shell-split.
+4. Временные smoke-блоки после проверки удалены, стенд снова пустой.
+
 ### Что трогаем
 
 1. `system/controllers/nordicblocks/libs/InspectorRegistryBuilder.php`
@@ -241,7 +248,7 @@
 
 ### Риск дня
 
-🔴 Если shell знает структуру блока глубже, чем через manifest, generic renderer ещё не собран.
+🟢 Основной риск дня снят: generic renderer-shell собран и проверен на `hero` и `faq`.
 
 ---
 

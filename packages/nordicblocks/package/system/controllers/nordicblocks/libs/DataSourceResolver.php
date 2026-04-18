@@ -157,7 +157,7 @@ class NordicblocksDataSourceResolver {
             }
 
             $item = $content_model->getContentItem($ctype_name, $item_id);
-            return is_array($item) ? $item : [];
+            return self::normalizeResolvedContentItem($item, $ctype_name);
         }
 
         if ($mode === 'latest') {
@@ -170,7 +170,7 @@ class NordicblocksDataSourceResolver {
             }
 
             $item = reset($items);
-            return is_array($item) ? $item : [];
+            return self::normalizeResolvedContentItem($item, $ctype_name);
         }
 
         $current = self::detectCurrentContentContext($context);
@@ -179,7 +179,19 @@ class NordicblocksDataSourceResolver {
         }
 
         $item = $content_model->getContentItem($ctype_name, (int) $current['itemId']);
-        return is_array($item) ? $item : [];
+        return self::normalizeResolvedContentItem($item, $ctype_name);
+    }
+
+    private static function normalizeResolvedContentItem($item, $ctype_name) {
+        if (!is_array($item)) {
+            return [];
+        }
+
+        if (empty($item['ctype_name'])) {
+            $item['ctype_name'] = $ctype_name;
+        }
+
+        return $item;
     }
 
     private static function buildFieldOptions($content_model, $ctype_name) {
