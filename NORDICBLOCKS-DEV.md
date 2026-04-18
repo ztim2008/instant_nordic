@@ -868,6 +868,12 @@ NordicBlocks v3 = почти уровень nordic-builder.ru по качест�
 4. meta-строка считается отдельной сущностью блока и должна иметь собственную типографику в инспекторе, а не хардкод в render;
 5. если у типа контента есть bindable custom field, его можно присваивать в существующие слоты блока, если тип данных совместим.
 
+Для текущего Hero runtime также зафиксировано:
+
+1. inspector-поля типографики для `eyebrow`, `title`, `subtitle`, `meta` и `buttonsText` должны доходить до live preview и SSR отдельно для desktop и mobile;
+2. inspector-поля `layout.desktop/mobile.contentGap` и `layout.desktop/mobile.actionsGap` считаются рабочими layout-контролами Hero, а не декоративными полями без эффекта;
+3. если значение цвета текста не задано явно, Hero продолжает брать цвет из темы блока, а не ломает theme fallback.
+
 Важно для первой волны:
 
 1. текущая динамика в NordicBlocks остаётся `slot-based`, а не freeform как в Tilda collections;
