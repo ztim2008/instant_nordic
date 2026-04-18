@@ -228,15 +228,15 @@ class NordicblocksBindingMapper {
     }
 
     private static function normalizeImageUrl($value) {
-        if (is_array($value)) {
-            $model = cmsCore::getModel('nordicblocks');
-            if ($model && method_exists($model, 'normalizeImageFieldValue')) {
-                $normalized = $model->normalizeImageFieldValue($value);
-                if (is_array($normalized)) {
-                    return trim((string) ($normalized['display'] ?? $normalized['original'] ?? ''));
-                }
+        $model = cmsCore::getModel('nordicblocks');
+        if ($model && method_exists($model, 'normalizeImageFieldValue')) {
+            $normalized = $model->normalizeImageFieldValue($value);
+            if (is_array($normalized)) {
+                return trim((string) ($normalized['display'] ?? $normalized['original'] ?? ''));
             }
+        }
 
+        if (is_array($value)) {
             foreach (['display', 'original', 'url', 'src'] as $key) {
                 if (!empty($value[$key]) && is_string($value[$key])) {
                     return trim($value[$key]);

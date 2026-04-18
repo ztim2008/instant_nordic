@@ -66,6 +66,7 @@ if ($hero_contract) {
 
     $btn1_label = htmlspecialchars(trim((string) ($hero_contract['content']['primaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
     $btn1_url = htmlspecialchars(trim((string) ($hero_contract['content']['primaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $title_url = $btn1_url !== '#' ? $btn1_url : '';
     $btn1_style = in_array($hero_contract['design']['entities']['primaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $hero_contract['design']['entities']['primaryButton']['style'] : 'primary';
     $btn2_label = htmlspecialchars(trim((string) ($hero_contract['content']['secondaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -124,6 +125,7 @@ if ($hero_contract) {
 
     $btn1_label = htmlspecialchars(trim((string) ($props['btn_primary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
     $btn1_url = htmlspecialchars(trim((string) ($props['btn_primary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $title_url = $btn1_url !== '#' ? $btn1_url : '';
     $btn1_style = in_array($props['btn_primary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $props['btn_primary_style'] : 'primary';
     $btn2_label = htmlspecialchars(trim((string) ($props['btn_secondary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -148,6 +150,10 @@ if ($hero_contract) {
     $meta_views = '';
     $meta_comments = '';
 }
+
+$has_meta_date = $meta_date !== '';
+$has_meta_views = $meta_views !== '';
+$has_meta_comments = $meta_comments !== '';
 
 $section_class = 'nb-section nb-hero nb-hero--' . $layout;
 $section_class .= $reveal['class'];
@@ -212,22 +218,22 @@ $button_classes = [
             <?php endif; ?>
 
             <?php if ($title_visible && $heading): ?>
-            <<?= $heading_tag ?> class="nb-hero__heading" style="font-weight:<?= (int) $heading_weight ?>" data-nb-entity="title"><?= $heading ?></<?= $heading_tag ?>>
+            <<?= $heading_tag ?> class="nb-hero__heading" style="font-weight:<?= (int) $heading_weight ?>" data-nb-entity="title"><?php if ($title_url): ?><a href="<?= $title_url ?>" class="nb-hero__heading-link"><?= $heading ?></a><?php else: ?><?= $heading ?><?php endif; ?></<?= $heading_tag ?>>
             <?php endif; ?>
 
             <?php if ($subtitle_visible && $subhead): ?>
             <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
             <?php endif; ?>
 
-            <?php if ($meta_date || $meta_views || $meta_comments): ?>
+            <?php if ($has_meta_date || $has_meta_views || $has_meta_comments): ?>
             <div class="nb-hero__meta" data-nb-entity="meta">
-                <?php if ($meta_date): ?>
+                <?php if ($has_meta_date): ?>
                 <span class="nb-hero__meta-item"><?= $meta_date ?></span>
                 <?php endif; ?>
-                <?php if ($meta_views): ?>
+                <?php if ($has_meta_views): ?>
                 <span class="nb-hero__meta-item"><?= $meta_views ?> просмотров</span>
                 <?php endif; ?>
-                <?php if ($meta_comments): ?>
+                <?php if ($has_meta_comments): ?>
                 <span class="nb-hero__meta-item"><?= $meta_comments ?> комментариев</span>
                 <?php endif; ?>
             </div>

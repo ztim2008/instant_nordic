@@ -79,6 +79,18 @@
     color:          var(--nb-color-text);
     margin-bottom:  var(--nb-hero-title-margin-bottom, var(--nb-space-md));
 }
+
+.nb-hero__heading-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.nb-hero__heading-link:hover,
+.nb-hero__heading-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .12em;
+}
+
 [data-nb-theme="dark"]  .nb-hero__heading,
 [data-nb-theme="accent"] .nb-hero__heading {
     color: #fff;

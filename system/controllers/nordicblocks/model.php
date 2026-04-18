@@ -978,6 +978,10 @@ class modelNordicblocks extends cmsModel {
             if (is_array($decoded)) {
                 $value = $decoded;
             } else {
+                $legacy_map = $this->normalizeLegacyImageMapString($trimmed);
+                if (is_array($legacy_map)) {
+                    $value = $legacy_map;
+                } else {
                 $value = [
                     'original' => $trimmed,
                     'display'  => $trimmed,
@@ -985,6 +989,7 @@ class modelNordicblocks extends cmsModel {
                     'alt'      => '',
                     'variants' => ['original' => $trimmed],
                 ];
+                }
             }
         }
 
@@ -1072,6 +1077,62 @@ class modelNordicblocks extends cmsModel {
             'preset'       => $preset,
             'alt'          => $alt,
             'variants'     => $variants,
+        ];
+    }
+
+    private function normalizeLegacyImageMapString($value) {
+        $value = trim((string) $value);
+        if ($value === '' || strpos($value, "\n") === false || strpos($value, ':') === false) {
+            return null;
+        }
+
+        $variants = [];
+        $active_key = '';
+
+        foreach (preg_split('/\r\n|\r|\n/', $value) as $line) {
+            $trimmed = trim((string) $line);
+            if ($trimmed === '' || $trimmed === '---') {
+                continue;
+            }
+
+            if (preg_match('/^([a-z0-9_]+):\s*>?\s*$/i', $trimmed, $matches)) {
+                $active_key = strtolower($matches[1]);
+                continue;
+            }
+
+            if ($active_key !== '') {
+                $variants[$active_key] = $trimmed;
+                $active_key = '';
+                continue;
+            }
+
+            if (preg_match('/^([a-z0-9_]+):\s*(.+)$/i', $trimmed, $matches)) {
+                $variants[strtolower($matches[1])] = trim($matches[2], " \t\n\r\0\x0B\"'");
+            }
+        }
+
+        if (!$variants) {
+            return null;
+        }
+
+        $preferred = '';
+        foreach (['content_item', 'content_list', 'content_list_small', 'normal', 'small', 'big', 'original'] as $candidate) {
+            if (!empty($variants[$candidate])) {
+                $preferred = (string) $variants[$candidate];
+                break;
+            }
+        }
+
+        if ($preferred === '') {
+            $preferred = (string) reset($variants);
+        }
+
+        return [
+            'original' => $preferred,
+            'display'  => $preferred,
+            'preset'   => 'original',
+            'alt'      => '',
+            'variants' => array_merge(['original' => $preferred], $variants),
         ];
     }
 
