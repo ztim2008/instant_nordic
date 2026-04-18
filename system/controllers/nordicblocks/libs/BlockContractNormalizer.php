@@ -7,7 +7,7 @@ class NordicblocksBlockContractNormalizer {
 
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq'], true);
+        return in_array($type, ['hero', 'faq', 'content_feed'], true);
     }
 
     public static function isContractPayload($payload) {
@@ -47,6 +47,10 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'faq') {
             return self::normalizeFaq($block);
+        }
+
+        if ($type === 'content_feed') {
+            return self::normalizeContentFeed($block);
         }
 
         return self::normalizeFallback($block, $type);
@@ -400,6 +404,181 @@ class NordicblocksBlockContractNormalizer {
         return self::mergeStoredContract($contract, $stored_contract);
     }
 
+    private static function normalizeContentFeed(array $block, array $stored_contract = []) {
+        $props = (array) ($block['props'] ?? []);
+        $theme = self::normalizeSelect($props['theme'] ?? 'light', ['light', 'alt', 'dark'], 'light');
+        $align = self::normalizeSelect($props['align'] ?? 'left', ['left', 'center'], 'left');
+        $background = self::normalizeBackgroundConfig($props);
+        $data = self::normalizeDataLayer('content_feed', (array) ($stored_contract['data'] ?? []));
+        $use_adapter = self::isAdapterEnabled($data);
+
+        $contract = [
+            'meta' => [
+                'contractVersion' => 3,
+                'blockType'       => 'content_feed',
+                'schemaVersion'   => 1,
+                'label'           => (string) ($block['title'] ?? 'Лента новостей'),
+                'status'          => (string) ($block['status'] ?? 'active'),
+            ],
+            'content' => [
+                'title' => (string) ($props['heading'] ?? 'Последние новости'),
+                'subtitle' => (string) ($props['intro'] ?? 'Короткая лента материалов, которую можно наполнить вручную или подключить к данным InstantCMS.'),
+                'primaryButton' => [
+                    'label' => (string) ($props['more_link_label'] ?? 'Все материалы'),
+                    'url'   => (string) ($props['more_link_url'] ?? '/news'),
+                ],
+                'items' => self::normalizeContentFeedItems($props['items'] ?? []),
+            ],
+            'design' => [
+                'section' => [
+                    'theme' => $theme,
+                    'background' => $background,
+                ],
+                'entities' => [
+                    'title' => [
+                        'visible' => self::normalizeBoolean($props['title_visible'] ?? '1', true),
+                        'color'   => self::normalizeFlatString($props['title_color'] ?? ''),
+                        'lineHeightPercent' => self::normalizeNumber($props['title_line_height_percent'] ?? 110, 80, 220, 110),
+                        'letterSpacing' => self::normalizeNumber($props['title_letter_spacing'] ?? 0, -40, 80, 0),
+                        'maxWidth' => self::normalizeNumber($props['title_max_width'] ?? 760, 240, 1440, 760),
+                        'desktop' => [
+                            'fontSize' => self::normalizeNumber($props['title_size_desktop'] ?? 42, 12, 160, 42),
+                            'marginBottom' => self::normalizeNumber($props['title_margin_bottom_desktop'] ?? 0, 0, 240, 0),
+                        ],
+                        'mobile' => [
+                            'fontSize' => self::normalizeNumber($props['title_size_mobile'] ?? 30, 12, 160, 30),
+                            'marginBottom' => self::normalizeNumber($props['title_margin_bottom_mobile'] ?? 0, 0, 240, 0),
+                        ],
+                        'weight' => self::normalizeNumber($props['heading_weight'] ?? 800, 100, 900, 800),
+                        'tag'    => self::normalizeSelect($props['heading_tag'] ?? 'h2', ['div', 'h1', 'h2', 'h3'], 'h2'),
+                    ],
+                    'subtitle' => [
+                        'visible' => self::normalizeBoolean($props['subtitle_visible'] ?? '1', true),
+                        'color'   => self::normalizeFlatString($props['subtitle_color'] ?? ''),
+                        'lineHeightPercent' => self::normalizeNumber($props['subtitle_line_height_percent'] ?? 160, 80, 240, 160),
+                        'letterSpacing' => self::normalizeNumber($props['subtitle_letter_spacing'] ?? 0, -40, 80, 0),
+                        'maxWidth' => self::normalizeNumber($props['subtitle_max_width'] ?? 680, 240, 1440, 680),
+                        'desktop' => [
+                            'fontSize' => self::normalizeNumber($props['subtitle_size_desktop'] ?? 18, 10, 80, 18),
+                            'marginBottom' => self::normalizeNumber($props['subtitle_margin_bottom_desktop'] ?? 0, 0, 240, 0),
+                        ],
+                        'mobile' => [
+                            'fontSize' => self::normalizeNumber($props['subtitle_size_mobile'] ?? 16, 10, 80, 16),
+                            'marginBottom' => self::normalizeNumber($props['subtitle_margin_bottom_mobile'] ?? 0, 0, 240, 0),
+                        ],
+                    ],
+                    'meta' => [
+                        'desktop' => [
+                            'fontSize' => self::normalizeNumber($props['meta_size_desktop'] ?? 14, 10, 120, 14),
+                            'marginBottom' => 0,
+                            'weight' => self::normalizeSelect((string) ($props['meta_weight_desktop'] ?? $props['meta_weight'] ?? '600'), ['400', '500', '600', '700', '800', '900'], '600'),
+                            'color' => self::normalizeFlatString($props['meta_color_desktop'] ?? $props['meta_color'] ?? ''),
+                            'lineHeightPercent' => self::normalizeNumber($props['meta_line_height_percent_desktop'] ?? $props['meta_line_height_percent'] ?? 140, 80, 240, 140),
+                            'letterSpacing' => self::normalizeNumber($props['meta_letter_spacing_desktop'] ?? $props['meta_letter_spacing'] ?? 0, -40, 80, 0),
+                        ],
+                        'mobile' => [
+                            'fontSize' => self::normalizeNumber($props['meta_size_mobile'] ?? 13, 10, 120, 13),
+                            'marginBottom' => 0,
+                            'weight' => self::normalizeSelect((string) ($props['meta_weight_mobile'] ?? $props['meta_weight'] ?? '600'), ['400', '500', '600', '700', '800', '900'], '600'),
+                            'color' => self::normalizeFlatString($props['meta_color_mobile'] ?? $props['meta_color'] ?? ''),
+                            'lineHeightPercent' => self::normalizeNumber($props['meta_line_height_percent_mobile'] ?? $props['meta_line_height_percent'] ?? 140, 80, 240, 140),
+                            'letterSpacing' => self::normalizeNumber($props['meta_letter_spacing_mobile'] ?? $props['meta_letter_spacing'] ?? 0, -40, 80, 0),
+                        ],
+                    ],
+                    'media' => [
+                        'aspectRatio' => self::normalizeSelect((string) ($props['media_aspect_ratio'] ?? '16:10'), ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], '16:10'),
+                        'objectFit' => self::normalizeSelect((string) ($props['media_object_fit'] ?? 'cover'), ['cover', 'contain'], 'cover'),
+                        'radius' => self::normalizeNumber($props['media_radius'] ?? 24, 0, 80, 24),
+                    ],
+                    'itemSurface' => [
+                        'variant' => self::normalizeSelect($props['item_surface_variant'] ?? 'card', ['card', 'plain'], 'card'),
+                        'radius' => self::normalizeNumber($props['item_surface_radius'] ?? 28, 0, 100, 28),
+                        'borderWidth' => self::normalizeNumber($props['item_surface_border_width'] ?? 1, 0, 20, 1),
+                        'borderColor' => self::normalizeFlatString($props['item_surface_border_color'] ?? '#e2e8f0'),
+                        'shadow' => self::normalizeSelect((string) ($props['item_surface_shadow'] ?? 'md'), ['none', 'sm', 'md', 'lg'], 'md'),
+                    ],
+                    'itemTitle' => [
+                        'color' => self::normalizeFlatString($props['item_title_color'] ?? ''),
+                        'lineHeightPercent' => self::normalizeNumber($props['item_title_line_height_percent'] ?? 130, 80, 220, 130),
+                        'letterSpacing' => self::normalizeNumber($props['item_title_letter_spacing'] ?? 0, -40, 80, 0),
+                        'desktop' => [
+                            'fontSize' => self::normalizeNumber($props['item_title_size_desktop'] ?? 24, 10, 80, 24),
+                        ],
+                        'mobile' => [
+                            'fontSize' => self::normalizeNumber($props['item_title_size_mobile'] ?? 20, 10, 80, 20),
+                        ],
+                        'weight' => self::normalizeNumber($props['item_title_weight'] ?? 800, 100, 900, 800),
+                    ],
+                    'itemText' => [
+                        'color' => self::normalizeFlatString($props['item_text_color'] ?? ''),
+                        'lineHeightPercent' => self::normalizeNumber($props['item_text_line_height_percent'] ?? 165, 80, 260, 165),
+                        'letterSpacing' => self::normalizeNumber($props['item_text_letter_spacing'] ?? 0, -40, 80, 0),
+                        'desktop' => [
+                            'fontSize' => self::normalizeNumber($props['item_text_size_desktop'] ?? 16, 10, 80, 16),
+                        ],
+                        'mobile' => [
+                            'fontSize' => self::normalizeNumber($props['item_text_size_mobile'] ?? 15, 10, 80, 15),
+                        ],
+                    ],
+                ],
+            ],
+            'layout' => [
+                'desktop' => [
+                    'align' => $align,
+                    'contentWidth'=> self::normalizeNumber($props['content_width'] ?? 1160, 320, 1600, 1160),
+                    'paddingTop'  => self::normalizeNumber($props['padding_top_desktop'] ?? 88, 0, 300, 88),
+                    'paddingBottom'=> self::normalizeNumber($props['padding_bottom_desktop'] ?? 88, 0, 300, 88),
+                    'columns' => self::normalizeNumber($props['columns_desktop'] ?? 3, 1, 4, 3),
+                    'cardGap' => self::normalizeNumber($props['card_gap_desktop'] ?? 24, 0, 120, 24),
+                    'headerGap' => self::normalizeNumber($props['header_gap_desktop'] ?? 28, 0, 160, 28),
+                ],
+                'mobile' => [
+                    'paddingTop'  => self::normalizeNumber($props['padding_top_mobile'] ?? 56, 0, 300, 56),
+                    'paddingBottom'=> self::normalizeNumber($props['padding_bottom_mobile'] ?? 56, 0, 300, 56),
+                    'columns' => self::normalizeNumber($props['columns_mobile'] ?? 1, 1, 2, 1),
+                    'cardGap' => self::normalizeNumber($props['card_gap_mobile'] ?? 16, 0, 120, 16),
+                    'headerGap' => self::normalizeNumber($props['header_gap_mobile'] ?? 20, 0, 160, 20),
+                ],
+            ],
+            'data' => $data,
+            'entities' => [
+                'title' => ['kind' => 'text', 'styleSlot' => 'title'],
+                'subtitle' => ['kind' => 'text', 'styleSlot' => 'subtitle'],
+                'primaryButton' => ['kind' => 'button', 'styleSlot' => 'primaryButton'],
+                'items' => ['kind' => 'repeater', 'styleSlot' => 'items'],
+                'itemSurface' => ['kind' => 'surface', 'styleSlot' => 'itemSurface'],
+                'itemTitle' => ['kind' => 'text', 'styleSlot' => 'itemTitle'],
+                'itemText' => ['kind' => 'text', 'styleSlot' => 'itemText'],
+                'media' => ['kind' => 'media', 'styleSlot' => 'media'],
+                'meta' => ['kind' => 'text', 'styleSlot' => 'meta'],
+            ],
+            'runtime' => [
+                'renderMode' => 'ssr',
+                'cacheScope' => 'page',
+                'animation' => [
+                    'name'  => self::normalizeSelect($props['block_animation'] ?? 'none', ['none', 'fade-up', 'fade-in', 'zoom-in'], 'none'),
+                    'delay' => self::normalizeNumber($props['block_animation_delay'] ?? 0, 0, 1500, 0),
+                ],
+                'visibility' => [
+                    'moreLink' => self::normalizeBoolean($props['show_more_link'] ?? '1', true),
+                    'image' => self::normalizeBoolean($props['show_image'] ?? '1', true),
+                    'category' => self::normalizeBoolean($props['show_category'] ?? '1', true),
+                    'excerpt' => self::normalizeBoolean($props['show_excerpt'] ?? '1', true),
+                    'date' => self::normalizeBoolean($props['show_date'] ?? '1', true),
+                    'views' => self::normalizeBoolean($props['show_views'] ?? '1', true),
+                    'comments' => self::normalizeBoolean($props['show_comments'] ?? '1', true),
+                ],
+                'featureFlags' => [
+                    'useAdapter'             => $use_adapter,
+                    'useResponsiveOverrides' => true,
+                    'useRepeater'            => true,
+                ],
+            ],
+        ];
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
     private static function normalizeStoredContract(array $block, array $contract) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? ($contract['meta']['blockType'] ?? ''))));
 
@@ -418,6 +597,15 @@ class NordicblocksBlockContractNormalizer {
                 'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'FAQ')),
                 'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
                 'props'  => self::denormalizeProps('faq', $contract),
+            ], $contract);
+        }
+
+        if ($type === 'content_feed') {
+            return self::normalizeContentFeed([
+                'type'   => 'content_feed',
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Лента новостей')),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeProps('content_feed', $contract),
             ], $contract);
         }
 
@@ -608,6 +796,96 @@ class NordicblocksBlockContractNormalizer {
             ];
         }
 
+        if ($type === 'content_feed') {
+            return [
+                'theme'                   => (string) ($contract['design']['section']['theme'] ?? 'light'),
+                'background_mode'         => (string) ($contract['design']['section']['background']['mode'] ?? 'theme'),
+                'background_color'        => (string) ($contract['design']['section']['background']['color'] ?? ''),
+                'background_gradient_from'=> (string) ($contract['design']['section']['background']['gradientFrom'] ?? ''),
+                'background_gradient_to'  => (string) ($contract['design']['section']['background']['gradientTo'] ?? ''),
+                'background_gradient_angle' => (string) ($contract['design']['section']['background']['gradientAngle'] ?? 135),
+                'background_image'        => (string) ($contract['design']['section']['background']['image'] ?? ''),
+                'background_image_position' => (string) ($contract['design']['section']['background']['imagePosition'] ?? 'center center'),
+                'background_image_size'   => (string) ($contract['design']['section']['background']['imageSize'] ?? 'cover'),
+                'background_image_repeat' => (string) ($contract['design']['section']['background']['imageRepeat'] ?? 'no-repeat'),
+                'background_overlay_color'=> (string) ($contract['design']['section']['background']['overlayColor'] ?? '#0f172a'),
+                'background_overlay_opacity' => (string) ($contract['design']['section']['background']['overlayOpacity'] ?? 45),
+                'heading'                 => (string) ($contract['content']['title'] ?? ''),
+                'intro'                   => (string) ($contract['content']['subtitle'] ?? ''),
+                'more_link_label'         => (string) ($contract['content']['primaryButton']['label'] ?? 'Все материалы'),
+                'more_link_url'           => (string) ($contract['content']['primaryButton']['url'] ?? '/news'),
+                'items'                   => is_array($contract['content']['items'] ?? null) ? $contract['content']['items'] : [],
+                'title_visible'           => !empty($contract['design']['entities']['title']['visible']) ? '1' : '0',
+                'subtitle_visible'        => !empty($contract['design']['entities']['subtitle']['visible']) ? '1' : '0',
+                'heading_tag'             => (string) ($contract['design']['entities']['title']['tag'] ?? 'h2'),
+                'heading_weight'          => (string) ($contract['design']['entities']['title']['weight'] ?? '800'),
+                'title_size_desktop'      => (string) ($contract['design']['entities']['title']['desktop']['fontSize'] ?? 42),
+                'title_size_mobile'       => (string) ($contract['design']['entities']['title']['mobile']['fontSize'] ?? 30),
+                'title_margin_bottom_desktop' => (string) ($contract['design']['entities']['title']['desktop']['marginBottom'] ?? 0),
+                'title_margin_bottom_mobile' => (string) ($contract['design']['entities']['title']['mobile']['marginBottom'] ?? 0),
+                'title_color'             => (string) ($contract['design']['entities']['title']['color'] ?? ''),
+                'title_line_height_percent' => (string) ($contract['design']['entities']['title']['lineHeightPercent'] ?? 110),
+                'title_letter_spacing'    => (string) ($contract['design']['entities']['title']['letterSpacing'] ?? 0),
+                'title_max_width'         => (string) ($contract['design']['entities']['title']['maxWidth'] ?? 760),
+                'subtitle_size_desktop'   => (string) ($contract['design']['entities']['subtitle']['desktop']['fontSize'] ?? 18),
+                'subtitle_size_mobile'    => (string) ($contract['design']['entities']['subtitle']['mobile']['fontSize'] ?? 16),
+                'subtitle_margin_bottom_desktop' => (string) ($contract['design']['entities']['subtitle']['desktop']['marginBottom'] ?? 0),
+                'subtitle_margin_bottom_mobile' => (string) ($contract['design']['entities']['subtitle']['mobile']['marginBottom'] ?? 0),
+                'subtitle_color'          => (string) ($contract['design']['entities']['subtitle']['color'] ?? ''),
+                'subtitle_line_height_percent' => (string) ($contract['design']['entities']['subtitle']['lineHeightPercent'] ?? 160),
+                'subtitle_letter_spacing' => (string) ($contract['design']['entities']['subtitle']['letterSpacing'] ?? 0),
+                'subtitle_max_width'      => (string) ($contract['design']['entities']['subtitle']['maxWidth'] ?? 680),
+                'meta_size_desktop'       => (string) ($contract['design']['entities']['meta']['desktop']['fontSize'] ?? 14),
+                'meta_size_mobile'        => (string) ($contract['design']['entities']['meta']['mobile']['fontSize'] ?? 13),
+                'meta_weight_desktop'     => (string) ($contract['design']['entities']['meta']['desktop']['weight'] ?? $contract['design']['entities']['meta']['weight'] ?? '600'),
+                'meta_weight_mobile'      => (string) ($contract['design']['entities']['meta']['mobile']['weight'] ?? $contract['design']['entities']['meta']['weight'] ?? '600'),
+                'meta_color_desktop'      => (string) ($contract['design']['entities']['meta']['desktop']['color'] ?? $contract['design']['entities']['meta']['color'] ?? ''),
+                'meta_color_mobile'       => (string) ($contract['design']['entities']['meta']['mobile']['color'] ?? $contract['design']['entities']['meta']['color'] ?? ''),
+                'meta_line_height_percent' => (string) ($contract['design']['entities']['meta']['desktop']['lineHeightPercent'] ?? $contract['design']['entities']['meta']['lineHeightPercent'] ?? 140),
+                'meta_letter_spacing'     => (string) ($contract['design']['entities']['meta']['desktop']['letterSpacing'] ?? $contract['design']['entities']['meta']['letterSpacing'] ?? 0),
+                'media_aspect_ratio'      => (string) ($contract['design']['entities']['media']['aspectRatio'] ?? '16:10'),
+                'media_object_fit'        => (string) ($contract['design']['entities']['media']['objectFit'] ?? 'cover'),
+                'media_radius'            => (string) ($contract['design']['entities']['media']['radius'] ?? 24),
+                'item_surface_variant'    => (string) ($contract['design']['entities']['itemSurface']['variant'] ?? 'card'),
+                'item_surface_radius'     => (string) ($contract['design']['entities']['itemSurface']['radius'] ?? 28),
+                'item_surface_border_width' => (string) ($contract['design']['entities']['itemSurface']['borderWidth'] ?? 1),
+                'item_surface_border_color' => (string) ($contract['design']['entities']['itemSurface']['borderColor'] ?? '#e2e8f0'),
+                'item_surface_shadow'     => (string) ($contract['design']['entities']['itemSurface']['shadow'] ?? 'md'),
+                'item_title_size_desktop' => (string) ($contract['design']['entities']['itemTitle']['desktop']['fontSize'] ?? 24),
+                'item_title_size_mobile'  => (string) ($contract['design']['entities']['itemTitle']['mobile']['fontSize'] ?? 20),
+                'item_title_weight'       => (string) ($contract['design']['entities']['itemTitle']['weight'] ?? '800'),
+                'item_title_color'        => (string) ($contract['design']['entities']['itemTitle']['color'] ?? ''),
+                'item_title_line_height_percent' => (string) ($contract['design']['entities']['itemTitle']['lineHeightPercent'] ?? 130),
+                'item_title_letter_spacing' => (string) ($contract['design']['entities']['itemTitle']['letterSpacing'] ?? 0),
+                'item_text_size_desktop'  => (string) ($contract['design']['entities']['itemText']['desktop']['fontSize'] ?? 16),
+                'item_text_size_mobile'   => (string) ($contract['design']['entities']['itemText']['mobile']['fontSize'] ?? 15),
+                'item_text_color'         => (string) ($contract['design']['entities']['itemText']['color'] ?? ''),
+                'item_text_line_height_percent' => (string) ($contract['design']['entities']['itemText']['lineHeightPercent'] ?? 165),
+                'item_text_letter_spacing' => (string) ($contract['design']['entities']['itemText']['letterSpacing'] ?? 0),
+                'content_width'           => (string) ($contract['layout']['desktop']['contentWidth'] ?? 1160),
+                'padding_top_desktop'     => (string) ($contract['layout']['desktop']['paddingTop'] ?? 88),
+                'padding_bottom_desktop'  => (string) ($contract['layout']['desktop']['paddingBottom'] ?? 88),
+                'padding_top_mobile'      => (string) ($contract['layout']['mobile']['paddingTop'] ?? 56),
+                'padding_bottom_mobile'   => (string) ($contract['layout']['mobile']['paddingBottom'] ?? 56),
+                'align'                   => (string) ($contract['layout']['desktop']['align'] ?? 'left'),
+                'columns_desktop'         => (string) ($contract['layout']['desktop']['columns'] ?? 3),
+                'columns_mobile'          => (string) ($contract['layout']['mobile']['columns'] ?? 1),
+                'card_gap_desktop'        => (string) ($contract['layout']['desktop']['cardGap'] ?? 24),
+                'card_gap_mobile'         => (string) ($contract['layout']['mobile']['cardGap'] ?? 16),
+                'header_gap_desktop'      => (string) ($contract['layout']['desktop']['headerGap'] ?? 28),
+                'header_gap_mobile'       => (string) ($contract['layout']['mobile']['headerGap'] ?? 20),
+                'show_more_link'          => !empty($contract['runtime']['visibility']['moreLink']) ? '1' : '0',
+                'show_image'              => !empty($contract['runtime']['visibility']['image']) ? '1' : '0',
+                'show_category'           => !empty($contract['runtime']['visibility']['category']) ? '1' : '0',
+                'show_excerpt'            => !empty($contract['runtime']['visibility']['excerpt']) ? '1' : '0',
+                'show_date'               => !empty($contract['runtime']['visibility']['date']) ? '1' : '0',
+                'show_views'              => !empty($contract['runtime']['visibility']['views']) ? '1' : '0',
+                'show_comments'           => !empty($contract['runtime']['visibility']['comments']) ? '1' : '0',
+                'block_animation'         => (string) ($contract['runtime']['animation']['name'] ?? 'none'),
+                'block_animation_delay'   => (string) ($contract['runtime']['animation']['delay'] ?? 0),
+            ];
+        }
+
         return [];
     }
 
@@ -637,8 +915,10 @@ class NordicblocksBlockContractNormalizer {
             'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if ($type !== 'faq') {
+        if (!in_array($type, ['faq', 'content_feed'], true)) {
             $normalized['listSource'] = self::normalizeListSource([]);
+        } else {
+            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), $type);
         }
 
         return $normalized;
@@ -781,8 +1061,29 @@ class NordicblocksBlockContractNormalizer {
         ];
     }
 
-    private static function normalizeListSource(array $config) {
+    private static function normalizeListSource(array $config, $type = 'faq') {
         $map = is_array($config['map'] ?? null) ? $config['map'] : [];
+
+        if ($type === 'content_feed') {
+            return [
+                'type'          => self::normalizeSelect((string) ($config['type'] ?? 'manual'), ['manual', 'content_list'], 'manual'),
+                'ctype'         => preg_replace('/[^a-z0-9_\-\{\}]/i', '', (string) ($config['ctype'] ?? '')),
+                'limit'         => self::normalizeNumber($config['limit'] ?? 3, 1, 24, 3),
+                'sort'          => self::normalizeSelect((string) ($config['sort'] ?? 'date_pub_desc'), self::$allowed_list_sorts, 'date_pub_desc'),
+                'map'           => [
+                    'title' => self::normalizeFieldReference($map['title'] ?? 'title'),
+                    'excerpt' => self::normalizeFieldReference($map['excerpt'] ?? 'teaser'),
+                    'image' => self::normalizeFieldReference($map['image'] ?? 'record_image_url'),
+                    'imageAlt' => self::normalizeFieldReference($map['imageAlt'] ?? 'title'),
+                    'category' => self::normalizeFieldReference($map['category'] ?? 'category.title'),
+                    'date' => self::normalizeFieldReference($map['date'] ?? 'date_pub'),
+                    'views' => self::normalizeFieldReference($map['views'] ?? 'hits_count'),
+                    'comments' => self::normalizeFieldReference($map['comments'] ?? 'comments_count'),
+                    'url' => self::normalizeFieldReference($map['url'] ?? 'record_url'),
+                ],
+                'emptyBehavior' => self::normalizeSelect((string) ($config['emptyBehavior'] ?? 'fallback'), ['fallback', 'empty'], 'fallback'),
+            ];
+        }
 
         return [
             'type'          => self::normalizeSelect((string) ($config['type'] ?? 'manual'), ['manual', 'content_list'], 'manual'),
@@ -873,6 +1174,54 @@ class NordicblocksBlockContractNormalizer {
         return $items;
     }
 
+    private static function normalizeContentFeedItems($value) {
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        $items = [];
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $title = trim((string) ($item['title'] ?? ''));
+            $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
+            $category = trim((string) ($item['category'] ?? ''));
+            $url = trim((string) ($item['url'] ?? ''));
+            $date = trim((string) ($item['date'] ?? ''));
+            $views = trim((string) ($item['views'] ?? ''));
+            $comments = trim((string) ($item['comments'] ?? ''));
+            $image = self::normalizeImagePayload($item['image'] ?? '');
+            $image_alt = trim((string) ($item['imageAlt'] ?? ($item['alt'] ?? ($image['alt'] ?? ''))));
+
+            if ($title === '' && $excerpt === '' && $category === '' && $url === '' && empty($image['original']) && empty($image['display'])) {
+                continue;
+            }
+
+            $items[] = self::buildContentFeedItemPayload([
+                'category' => $category,
+                'title' => $title,
+                'excerpt' => $excerpt,
+                'url' => $url,
+                'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
+                'imageAlt' => $image_alt,
+                'date' => $date,
+                'views' => $views,
+                'comments' => $comments,
+            ]);
+        }
+
+        return $items;
+    }
+
     private static function buildFaqItemPayload($title, $text) {
         $title = trim((string) $title);
         $text  = trim((string) $text);
@@ -882,6 +1231,25 @@ class NordicblocksBlockContractNormalizer {
             'text'     => $text,
             'question' => $title,
             'answer'   => $text,
+        ];
+    }
+
+    private static function buildContentFeedItemPayload(array $item) {
+        $title = trim((string) ($item['title'] ?? ''));
+        $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
+
+        return [
+            'category' => trim((string) ($item['category'] ?? '')),
+            'title' => $title,
+            'excerpt' => $excerpt,
+            'text' => $excerpt,
+            'url' => trim((string) ($item['url'] ?? '')),
+            'image' => trim((string) ($item['image'] ?? '')),
+            'imageAlt' => trim((string) ($item['imageAlt'] ?? ($item['alt'] ?? ''))),
+            'alt' => trim((string) ($item['imageAlt'] ?? ($item['alt'] ?? ''))),
+            'date' => trim((string) ($item['date'] ?? '')),
+            'views' => trim((string) ($item['views'] ?? '')),
+            'comments' => trim((string) ($item['comments'] ?? '')),
         ];
     }
 
