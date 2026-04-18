@@ -79,12 +79,14 @@ function nbhBuildDataControlRenderers() {
             }
 
             var textOptions = nbhFieldOptionsByKinds(fields, ['text'], 'Оставить ручное значение');
+            var metaTextOptions = nbhFieldOptionsByKinds(fields, ['text'], 'Скрыть поле');
             var imageOptions = nbhFieldOptionsByKinds(fields, ['image'], 'Оставить ручное изображение');
             var dateOptions = nbhFieldOptionsByKinds(fields, ['date', 'text'], 'Скрыть дату');
             var numberOptions = nbhFieldOptionsByKinds(fields, ['number', 'text'], 'Скрыть метрику');
             var urlOptions = nbhFieldOptionsByKinds(fields, ['url', 'text'], 'Оставить ручной URL');
 
             body += '<div class="nbh-grid-2">'
+                + nbhField('Надзаголовок', nbhSelect('data.bindings.eyebrow.field', textOptions, ''))
                 + nbhField('Заголовок', nbhSelect('data.bindings.title.field', textOptions, ''))
                 + nbhField('Подзаголовок', nbhSelect('data.bindings.subtitle.field', textOptions, ''))
                 + nbhField('Изображение', nbhSelect('data.bindings.image.field', imageOptions, ''))
@@ -92,13 +94,15 @@ function nbhBuildDataControlRenderers() {
                 + '</div>';
 
             body += '<div class="nbh-grid-2">'
+                + nbhField('Категория', nbhSelect('data.bindings.category.field', metaTextOptions, ''))
+                + nbhField('Автор', nbhSelect('data.bindings.author.field', metaTextOptions, ''))
                 + nbhField('Дата', nbhSelect('data.bindings.date.field', dateOptions, ''))
                 + nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, ''))
                 + nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, ''))
                 + nbhField('Ссылка основной кнопки', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
                 + '</div>';
 
-            body += '<div class="nbh-note">Ручные поля остаются резервным слоем. Если привязка не выбрана или запись не найдена, предпросмотр и публичный вывод продолжают работать на контенте из вкладки Контент.</div>';
+            body += '<div class="nbh-note">Пустой выбор скрывает категорию, автора, дату и метрики. Для надзаголовка, заголовка, подзаголовка и изображения ручные значения остаются резервным слоем. Это же позволяет подключать и кастомные текстовые поля, если они есть у типа контента.</div>';
 
             return body;
         },

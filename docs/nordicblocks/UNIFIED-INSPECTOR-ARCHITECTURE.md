@@ -176,18 +176,19 @@
 1. `eyebrow`
 2. `title`
 3. `subtitle`
-4. `body`
-5. `primaryButton`
-6. `secondaryButton`
-7. `media`
-8. `mediaSurface`
-9. `itemSurface`
-10. `itemTitle`
-11. `itemText`
-12. `itemBadge`
-13. `icon`
-14. `divider`
-15. `items`
+4. `meta`
+5. `body`
+6. `primaryButton`
+7. `secondaryButton`
+8. `media`
+9. `mediaSurface`
+10. `itemSurface`
+11. `itemTitle`
+12. `itemText`
+13. `itemBadge`
+14. `icon`
+15. `divider`
+16. `items`
 
 Для первой design-manifest волны дополнительно фиксируем:
 
@@ -203,11 +204,12 @@
 
 1. у меня есть `title`;
 2. у меня есть `subtitle`;
-3. у меня есть `items[]`;
-4. у item есть `itemTitle` и `itemText`;
-5. у item есть `itemSurface`;
-6. у меня нет `secondaryButton`;
-7. у меня нет `media`.
+3. у меня есть `meta`;
+4. у меня есть `items[]`;
+5. у item есть `itemTitle` и `itemText`;
+6. у item есть `itemSurface`;
+7. у меня нет `secondaryButton`;
+8. у меня нет `media`.
 
 После этого инспектор сам должен решить, какие группы показать.
 

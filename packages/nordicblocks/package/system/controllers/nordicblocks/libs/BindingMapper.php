@@ -3,10 +3,13 @@
 class NordicblocksBindingMapper {
 
     private static $hero_slot_definitions = [
+        'eyebrow' => ['path' => 'eyebrow'],
         'title' => ['path' => 'title'],
         'subtitle' => ['path' => 'subtitle'],
         'image' => ['path' => 'media.image'],
         'imageAlt' => ['path' => 'media.alt'],
+        'category' => ['path' => 'meta.category'],
+        'author' => ['path' => 'meta.author'],
         'date' => ['path' => 'meta.date'],
         'views' => ['path' => 'meta.views'],
         'comments' => ['path' => 'meta.comments'],

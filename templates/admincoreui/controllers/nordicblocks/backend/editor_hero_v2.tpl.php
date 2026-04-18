@@ -716,6 +716,14 @@ function nbhBlockUiProfile() {
             mobileMarginBottom: 20,
             desktopExtras: false,
         },
+        meta: {
+            desktopFontSize: 14,
+            mobileFontSize: 13,
+            desktopMarginBottom: 24,
+            mobileMarginBottom: 20,
+            weight: '600',
+            desktopExtras: true,
+        },
         itemTypography: {
             enabled: false,
         },

@@ -112,6 +112,29 @@ function nbhBuildDesignControlRenderers() {
                 }
                 return body;
             }
+            if (panel.entityScope === 'meta') {
+                body += '<div class="nbh-grid-2">'
+                    + nbhField('Размер', nbhInput('design.entities.meta.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.meta.desktopFontSize : profile.meta.mobileFontSize }))
+                    + nbhField('Отступ снизу', nbhInput('design.entities.meta.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.meta.desktopMarginBottom : profile.meta.mobileMarginBottom }))
+                    + (bp === 'desktop'
+                        ? nbhField('Жирность', nbhSelect('design.entities.meta.weight', [
+                            { value: '400', label: '400' },
+                            { value: '500', label: '500' },
+                            { value: '600', label: '600' },
+                            { value: '700', label: '700' },
+                            { value: '800', label: '800' }
+                        ], profile.meta.weight))
+                        : '')
+                    + '</div>';
+                if (profile.meta.desktopExtras && bp === 'desktop') {
+                    body += '<div class="nbh-grid-2">'
+                        + nbhField('Цвет', nbhInput('design.entities.meta.color', { inputType: 'color', fallback: '#64748b' }))
+                        + nbhField('Высота строки, %', nbhInput('design.entities.meta.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 140 }))
+                        + nbhField('Трекинг, px', nbhInput('design.entities.meta.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
+                        + '</div>';
+                }
+                return body;
+            }
             if (panel.entityScope === 'items' && profile.itemTypography.enabled) {
                 body += '<div class="nbh-grid-2">'
                     + nbhField('Размер вопроса', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.itemTypography.questionDesktopSize : profile.itemTypography.questionMobileSize }))

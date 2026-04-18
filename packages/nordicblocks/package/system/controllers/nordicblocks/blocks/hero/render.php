@@ -52,6 +52,14 @@ if ($hero_contract) {
     $title_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['title']['mobile']['marginBottom'] ?? 14);
     $subtitle_margin_bottom_desktop = (int) ($hero_contract['design']['entities']['subtitle']['desktop']['marginBottom'] ?? 24);
     $subtitle_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['subtitle']['mobile']['marginBottom'] ?? 20);
+    $meta_size_desktop = (int) ($hero_contract['design']['entities']['meta']['desktop']['fontSize'] ?? 14);
+    $meta_size_mobile = (int) ($hero_contract['design']['entities']['meta']['mobile']['fontSize'] ?? 13);
+    $meta_margin_bottom_desktop = (int) ($hero_contract['design']['entities']['meta']['desktop']['marginBottom'] ?? 24);
+    $meta_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['meta']['mobile']['marginBottom'] ?? 20);
+    $meta_weight = (int) ($hero_contract['design']['entities']['meta']['weight'] ?? 600);
+    $meta_line_height_percent = (int) ($hero_contract['design']['entities']['meta']['lineHeightPercent'] ?? 140);
+    $meta_letter_spacing = (float) ($hero_contract['design']['entities']['meta']['letterSpacing'] ?? 0);
+    $meta_color_raw = trim((string) ($hero_contract['design']['entities']['meta']['color'] ?? ''));
     $content_width = (int) ($hero_contract['layout']['desktop']['contentWidth'] ?? 640);
     $padding_top_desktop = (int) ($hero_contract['layout']['desktop']['paddingTop'] ?? 96);
     $padding_bottom_desktop = (int) ($hero_contract['layout']['desktop']['paddingBottom'] ?? 96);
@@ -76,6 +84,8 @@ if ($hero_contract) {
 
     $image = htmlspecialchars(trim((string) ($hero_contract['content']['media']['image'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($hero_contract['content']['media']['alt'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $meta_category = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['category'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $meta_author = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['author'] ?? '')), ENT_QUOTES, 'UTF-8');
     $meta_date = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['date'] ?? '')), ENT_QUOTES, 'UTF-8');
     $meta_views = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['views'] ?? '')), ENT_QUOTES, 'UTF-8');
     $meta_comments = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['comments'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -114,6 +124,14 @@ if ($hero_contract) {
     $title_margin_bottom_mobile = nb_hero_prop_int((array) $props, 'title_margin_bottom_mobile', 14, 0, 240);
     $subtitle_margin_bottom_desktop = nb_hero_prop_int((array) $props, 'subtitle_margin_bottom_desktop', 24, 0, 240);
     $subtitle_margin_bottom_mobile = nb_hero_prop_int((array) $props, 'subtitle_margin_bottom_mobile', 20, 0, 240);
+    $meta_size_desktop = 14;
+    $meta_size_mobile = 13;
+    $meta_margin_bottom_desktop = 24;
+    $meta_margin_bottom_mobile = 20;
+    $meta_weight = 600;
+    $meta_line_height_percent = 140;
+    $meta_letter_spacing = 0;
+    $meta_color_raw = '';
     $content_width = nb_hero_prop_int((array) $props, 'content_width', 640, 280, 1440);
     $padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', 96, 0, 300);
     $padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', 96, 0, 300);
@@ -146,11 +164,15 @@ if ($hero_contract) {
 
     $image = htmlspecialchars(trim((string) ($image_value['display'] ?? $image_value['original'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($image_value['alt'] ?? ($props['image_alt'] ?? ''))), ENT_QUOTES, 'UTF-8');
+    $meta_category = '';
+    $meta_author = '';
     $meta_date = '';
     $meta_views = '';
     $meta_comments = '';
 }
 
+$has_meta_category = $meta_category !== '';
+$has_meta_author = $meta_author !== '';
 $has_meta_date = $meta_date !== '';
 $has_meta_views = $meta_views !== '';
 $has_meta_comments = $meta_comments !== '';
@@ -174,6 +196,18 @@ $section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-b
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom-mobile:' . $subtitle_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-size:' . $meta_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-size-mobile:' . $meta_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-margin-bottom:' . $meta_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-margin-bottom-mobile:' . $meta_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-weight:' . $meta_weight . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-line-height:' . max(0.8, $meta_line_height_percent / 100) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-letter-spacing:' . $meta_letter_spacing . 'px;');
+if ($meta_color_raw !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color:' . $meta_color_raw . ';');
+} elseif ($theme === 'dark' || $theme === 'accent') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color:rgba(255,255,255,.82);');
+}
 if ($theme === 'accent' && $background_mode === 'theme') {
     $section_style = nb_block_append_style($section_style, 'background:var(--nb-color-accent);color:#fff;');
 }
@@ -225,8 +259,14 @@ $button_classes = [
             <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
             <?php endif; ?>
 
-            <?php if ($has_meta_date || $has_meta_views || $has_meta_comments): ?>
+            <?php if ($has_meta_category || $has_meta_author || $has_meta_date || $has_meta_views || $has_meta_comments): ?>
             <div class="nb-hero__meta" data-nb-entity="meta">
+                <?php if ($has_meta_category): ?>
+                <span class="nb-hero__meta-item">Категория: <?= $meta_category ?></span>
+                <?php endif; ?>
+                <?php if ($has_meta_author): ?>
+                <span class="nb-hero__meta-item">Автор: <?= $meta_author ?></span>
+                <?php endif; ?>
                 <?php if ($has_meta_date): ?>
                 <span class="nb-hero__meta-item"><?= $meta_date ?></span>
                 <?php endif; ?>

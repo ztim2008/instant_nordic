@@ -88,6 +88,8 @@ class NordicblocksBlockContractNormalizer {
                     'alt'   => (string) ($image['alt'] ?? ($props['image_alt'] ?? '')),
                 ],
                 'meta' => [
+                    'category' => '',
+                    'author'   => '',
                     'date'     => '',
                     'views'    => '',
                     'comments' => '',
@@ -124,6 +126,20 @@ class NordicblocksBlockContractNormalizer {
                             'marginBottom' => self::normalizeNumber($props['subtitle_margin_bottom_mobile'] ?? 20, 0, 240, 20),
                         ],
                     ],
+                    'meta' => [
+                        'desktop' => [
+                            'fontSize' => 14,
+                            'marginBottom' => 24,
+                        ],
+                        'mobile' => [
+                            'fontSize' => 13,
+                            'marginBottom' => 20,
+                        ],
+                        'weight' => 600,
+                        'color' => '',
+                        'lineHeightPercent' => 140,
+                        'letterSpacing' => 0,
+                    ],
                     'primaryButton' => [
                         'style' => self::normalizeSelect($props['btn_primary_style'] ?? 'primary', ['primary', 'outline', 'ghost'], 'primary'),
                     ],
@@ -152,6 +168,7 @@ class NordicblocksBlockContractNormalizer {
                 'eyebrow' => ['kind' => 'text', 'styleSlot' => 'eyebrow'],
                 'title' => ['kind' => 'text', 'styleSlot' => 'title'],
                 'subtitle' => ['kind' => 'text', 'styleSlot' => 'subtitle'],
+                'meta' => ['kind' => 'text', 'styleSlot' => 'meta'],
                 'primaryButton' => ['kind' => 'button', 'styleSlot' => 'primaryButton'],
                 'secondaryButton' => ['kind' => 'button', 'styleSlot' => 'secondaryButton'],
                 'media' => ['kind' => 'media', 'styleSlot' => 'media'],
@@ -604,10 +621,13 @@ class NordicblocksBlockContractNormalizer {
 
     private static function getHeroBindingDefaults() {
         return [
+            'eyebrow' => ['mode' => 'mixed', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
             'title' => ['mode' => 'bound', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
             'subtitle' => ['mode' => 'mixed', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
             'image' => ['mode' => 'mixed', 'formatter' => 'image_url', 'emptyBehavior' => 'fallback'],
             'imageAlt' => ['mode' => 'mixed', 'formatter' => 'plain_text', 'emptyBehavior' => 'fallback'],
+            'category' => ['mode' => 'bound', 'formatter' => 'plain_text', 'emptyBehavior' => 'hide'],
+            'author' => ['mode' => 'bound', 'formatter' => 'plain_text', 'emptyBehavior' => 'hide'],
             'date' => ['mode' => 'bound', 'formatter' => 'date_human', 'emptyBehavior' => 'hide'],
             'views' => ['mode' => 'bound', 'formatter' => 'number', 'emptyBehavior' => 'hide'],
             'comments' => ['mode' => 'bound', 'formatter' => 'number', 'emptyBehavior' => 'hide'],
