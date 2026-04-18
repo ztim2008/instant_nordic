@@ -774,6 +774,20 @@ function nbhBlockUiProfile() {
             desktopLetterSpacing: 0,
             mobileLetterSpacing: 0,
         },
+        media: {
+            aspectRatio: '16:10',
+            objectFit: 'cover',
+            radius: 28,
+        },
+        mediaSurface: {
+            backgroundMode: 'transparent',
+            backgroundColor: '#ffffff',
+            padding: 0,
+            radius: 28,
+            borderWidth: 0,
+            borderColor: '#e2e8f0',
+            shadow: 'lg',
+        },
         itemTypography: {
             enabled: false,
         },

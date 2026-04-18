@@ -269,6 +269,7 @@ class NordicblocksInspectorRegistryBuilder {
                     'metaTypography'      => true,
                     'bodyTypography'      => false,
                     'buttonsStyle'        => true,
+                    'mediaStyle'          => true,
                     'mediaSurface'        => true,
                     'itemSurface'         => false,
                     'itemTypography'      => false,

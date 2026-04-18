@@ -179,7 +179,52 @@ function nbhBuildDesignControlRenderers() {
 
             return body;
         },
-        'surface-style-panel': function() {
+        'media-style-panel': function(panel) {
+            var profile = nbhBlockUiProfile();
+            if (!panel || panel.entityScope !== 'media') {
+                return '<div class="nbh-note">Панель стиля медиа активируется только для сущности изображения.</div>';
+            }
+
+            return '<div class="nbh-grid-2">'
+                + nbhField('Формат кадра', nbhSelect('design.entities.media.aspectRatio', [
+                    { value: 'auto', label: 'По размеру изображения' },
+                    { value: '16:10', label: '16:10' },
+                    { value: '16:9', label: '16:9' },
+                    { value: '4:3', label: '4:3' },
+                    { value: '1:1', label: '1:1' },
+                    { value: '3:4', label: '3:4' }
+                ], profile.media.aspectRatio))
+                + nbhField('Вписывание', nbhSelect('design.entities.media.objectFit', [
+                    { value: 'cover', label: 'Заполнить кадр' },
+                    { value: 'contain', label: 'Показать целиком' }
+                ], profile.media.objectFit))
+                + nbhField('Скругление изображения', nbhInput('design.entities.media.radius', { inputType: 'number', type: 'number', fallback: profile.media.radius }))
+                + '</div>'
+                + '<div class="nbh-note">Эти настройки управляют самим изображением: форматом кадра, способом вписывания и собственным радиусом.</div>';
+        },
+        'surface-style-panel': function(panel) {
+            var profile = nbhBlockUiProfile();
+            if (panel && panel.entityScope === 'mediaSurface') {
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Подложка', nbhSelect('design.entities.mediaSurface.backgroundMode', [
+                        { value: 'transparent', label: 'Прозрачная' },
+                        { value: 'solid', label: 'Цветная' }
+                    ], profile.mediaSurface.backgroundMode))
+                    + nbhField('Фон поверхности', nbhInput('design.entities.mediaSurface.backgroundColor', { inputType: 'color', fallback: profile.mediaSurface.backgroundColor }))
+                    + nbhField('Внутренний отступ', nbhInput('design.entities.mediaSurface.padding', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.padding }))
+                    + nbhField('Скругление поверхности', nbhInput('design.entities.mediaSurface.radius', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.radius }))
+                    + nbhField('Толщина рамки', nbhInput('design.entities.mediaSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.borderWidth }))
+                    + nbhField('Цвет рамки', nbhInput('design.entities.mediaSurface.borderColor', { inputType: 'color', fallback: profile.mediaSurface.borderColor }))
+                    + nbhField('Тень', nbhSelect('design.entities.mediaSurface.shadow', [
+                        { value: 'none', label: 'Без тени' },
+                        { value: 'sm', label: 'Мягкая' },
+                        { value: 'md', label: 'Средняя' },
+                        { value: 'lg', label: 'Выразительная' }
+                    ], profile.mediaSurface.shadow))
+                        + '</div>'
+                        + '<div class="nbh-note">По умолчанию подложка прозрачная. Это удобно для PNG без фона. Если нужен цветной фон под изображением, переключите подложку в режим "Цветная".</div>';
+            }
+
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
                 return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
                     { value: 'card', label: 'Карточки' },

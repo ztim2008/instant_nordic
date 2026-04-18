@@ -8,7 +8,7 @@
    HERO
    ════════════════════════════════════ */
 
-.nb-hero {
+.nb-section.nb-hero {
     position: relative;
     overflow: hidden;
     padding-top: var(--nb-hero-padding-top, var(--nb-space-3xl, 6rem));
@@ -18,10 +18,10 @@
 
 /* 1 колонка (centered / left) */
 .nb-hero__container {
-    display:         grid;
+    display: grid;
     grid-template-columns: 1fr;
-    gap:             var(--nb-space-2xl);
-    align-items:     center;
+    gap: var(--nb-hero-content-gap, var(--nb-space-2xl));
+    align-items: center;
 }
 
 .nb-hero__content {
@@ -32,52 +32,41 @@
 .nb-hero--split .nb-hero__container {
     grid-template-columns: 1fr 1fr;
 }
-/* на узких экранах — в стопку */
-@media (max-width: 640px) {
-    .nb-hero {
-        padding-top: var(--nb-hero-mobile-padding-top, var(--nb-space-2xl, 3.5rem));
-        padding-bottom: var(--nb-hero-mobile-padding-bottom, var(--nb-space-2xl, 3.5rem));
-        min-height: var(--nb-hero-mobile-min-height, var(--nb-hero-min-height, 0px));
-    }
-
-    .nb-hero--split .nb-hero__container {
-        grid-template-columns: 1fr;
-    }
-    .nb-hero--split .nb-hero__media {
-        order: -1;
-    }
-}
 
 /* centered */
 .nb-hero--centered .nb-hero__content {
     text-align: center;
     margin-inline: auto;
 }
+
 .nb-hero--centered .nb-hero__actions {
     justify-content: center;
 }
 
 .nb-hero__eyebrow {
-    font-size:      var(--nb-text-sm);
-    font-weight:    var(--nb-weight-semibold);
-    letter-spacing: var(--nb-tracking-wide);
-    text-transform: uppercase;
-    color:          var(--nb-color-accent);
-    margin-bottom:  var(--nb-space-sm);
+    font-size: var(--nb-hero-eyebrow-size, var(--nb-text-sm));
+    font-weight: var(--nb-hero-eyebrow-weight, var(--nb-weight-semibold));
+    line-height: var(--nb-hero-eyebrow-line-height, 1.4);
+    letter-spacing: var(--nb-hero-eyebrow-letter-spacing, var(--nb-tracking-wide));
+    text-transform: var(--nb-hero-eyebrow-text-transform, uppercase);
+    color: var(--nb-hero-eyebrow-color, var(--nb-color-accent));
+    margin-bottom: var(--nb-hero-eyebrow-margin-bottom, var(--nb-space-sm));
 }
-[data-nb-theme="dark"]  .nb-hero__eyebrow,
+
+[data-nb-theme="dark"] .nb-hero__eyebrow,
 [data-nb-theme="accent"] .nb-hero__eyebrow {
-    color: rgba(255,255,255,.75);
+    color: var(--nb-hero-eyebrow-color, rgba(255,255,255,.75));
 }
 
 .nb-hero__heading {
-    font-family:    var(--nb-font-head);
-    font-size:      var(--nb-hero-title-size, var(--nb-text-hero));
-    font-weight:    var(--nb-weight-black);
-    line-height:    var(--nb-leading-tight);
-    letter-spacing: var(--nb-tracking-tight);
-    color:          var(--nb-color-text);
-    margin-bottom:  var(--nb-hero-title-margin-bottom, var(--nb-space-md));
+    font-family: var(--nb-font-head);
+    font-size: var(--nb-hero-title-size, var(--nb-text-hero));
+    font-weight: var(--nb-hero-title-weight, var(--nb-weight-black));
+    line-height: var(--nb-hero-title-line-height, var(--nb-leading-tight));
+    letter-spacing: var(--nb-hero-title-letter-spacing, var(--nb-tracking-tight));
+    color: var(--nb-hero-title-color, var(--nb-color-text));
+    margin-bottom: var(--nb-hero-title-margin-bottom, var(--nb-space-md));
+    max-width: min(100%, var(--nb-hero-title-max-width, 600px));
 }
 
 .nb-hero__heading-link {
@@ -91,28 +80,59 @@
     text-underline-offset: .12em;
 }
 
-[data-nb-theme="dark"]  .nb-hero__heading,
+[data-nb-theme="dark"] .nb-hero__heading,
 [data-nb-theme="accent"] .nb-hero__heading {
-    color: #fff;
+    color: var(--nb-hero-title-color, #fff);
 }
 
 .nb-hero__subheading {
-    font-size:     var(--nb-hero-subtitle-size, var(--nb-text-xl));
-    line-height:   var(--nb-leading-relaxed);
-    color:         var(--nb-color-text-muted);
+    font-size: var(--nb-hero-subtitle-size, var(--nb-text-xl));
+    font-weight: var(--nb-hero-subtitle-weight, 400);
+    line-height: var(--nb-hero-subtitle-line-height, var(--nb-leading-relaxed));
+    letter-spacing: var(--nb-hero-subtitle-letter-spacing, 0px);
+    color: var(--nb-hero-subtitle-color, var(--nb-color-text-muted));
     margin-bottom: var(--nb-hero-subtitle-margin-bottom, var(--nb-space-lg));
-    max-width:     60ch;
+    max-width: min(100%, var(--nb-hero-subtitle-max-width, 60ch));
 }
-[data-nb-theme="dark"]  .nb-hero__subheading,
+
+[data-nb-theme="dark"] .nb-hero__subheading,
 [data-nb-theme="accent"] .nb-hero__subheading {
-    color: rgba(255,255,255,.8);
+    color: var(--nb-hero-subtitle-color, rgba(255,255,255,.8));
 }
 
 .nb-hero__actions {
-    display:   flex;
+    display: flex;
     flex-wrap: wrap;
-    gap:       var(--nb-space-sm);
+    gap: var(--nb-hero-actions-gap, var(--nb-space-sm));
     align-items: center;
+}
+
+.nb-hero__actions .nb-btn {
+    font-size: var(--nb-hero-buttons-text-size, var(--nb-text-base));
+    font-weight: var(--nb-hero-buttons-text-weight, var(--nb-weight-semibold));
+    line-height: var(--nb-hero-buttons-text-line-height, 1);
+    letter-spacing: var(--nb-hero-buttons-text-letter-spacing, 0px);
+}
+
+.nb-hero__actions .nb-btn--primary,
+.nb-hero__actions .nb-btn--primary:hover,
+.nb-hero__actions .nb-btn--primary:active,
+.nb-hero__actions .nb-btn--primary:focus-visible {
+    color: var(--nb-hero-buttons-text-color, var(--nb-btn-primary-text));
+}
+
+.nb-hero__actions .nb-btn--outline,
+.nb-hero__actions .nb-btn--outline:hover,
+.nb-hero__actions .nb-btn--outline:active,
+.nb-hero__actions .nb-btn--outline:focus-visible {
+    color: var(--nb-hero-buttons-text-color, var(--nb-btn-outline-text));
+}
+
+.nb-hero__actions .nb-btn--ghost,
+.nb-hero__actions .nb-btn--ghost:hover,
+.nb-hero__actions .nb-btn--ghost:active,
+.nb-hero__actions .nb-btn--ghost:focus-visible {
+    color: var(--nb-hero-buttons-text-color, var(--nb-btn-ghost-text));
 }
 
 .nb-hero__meta {
@@ -142,21 +162,33 @@
 }
 
 .nb-hero__media {
-    border-radius: var(--nb-radius-card);
-    box-shadow: var(--nb-shadow-lg);
+    border-radius: var(--nb-hero-media-surface-radius, var(--nb-radius-card));
+    box-shadow: var(--nb-hero-media-surface-shadow, var(--nb-shadow-lg));
+    overflow: visible;
+    background: var(--nb-hero-media-surface-background, transparent);
+    padding: var(--nb-hero-media-surface-padding, 0px);
+    border: var(--nb-hero-media-surface-border-width, 0px) solid var(--nb-hero-media-surface-border-color, transparent);
+}
+
+.nb-hero__media-frame {
+    width: 100%;
+    border-radius: var(--nb-hero-media-radius, inherit);
     overflow: hidden;
+    aspect-ratio: var(--nb-hero-media-aspect-ratio, auto);
 }
 
 .nb-hero__image {
-    width:         100%;
-    height:        auto;
+    width: 100%;
+    height: var(--nb-hero-media-content-height, auto);
     border-radius: inherit;
-    box-shadow:    none;
-    display:       block;
+    box-shadow: none;
+    display: block;
+    object-fit: var(--nb-hero-media-object-fit, cover);
 }
 
 .nb-hero__media-placeholder {
-    min-height: 280px;
+    min-height: var(--nb-hero-media-placeholder-min-height, 280px);
+    height: var(--nb-hero-media-content-height, auto);
     display: grid;
     place-items: center;
     padding: 1.5rem;
@@ -164,17 +196,82 @@
     background: rgba(148,163,184,.12);
     color: #64748b;
     font-weight: 600;
+    border-radius: inherit;
 }
 
+/* на узких экранах — в стопку */
 @media (max-width: 640px) {
+    .nb-section.nb-hero {
+        padding-top: var(--nb-hero-mobile-padding-top, var(--nb-hero-padding-top, var(--nb-space-2xl, 3.5rem)));
+        padding-bottom: var(--nb-hero-mobile-padding-bottom, var(--nb-hero-padding-bottom, var(--nb-space-2xl, 3.5rem)));
+        min-height: var(--nb-hero-mobile-min-height, var(--nb-hero-min-height, 0px));
+    }
+
+    .nb-hero__container {
+        gap: var(--nb-hero-mobile-content-gap, var(--nb-hero-content-gap, var(--nb-space-xl)));
+    }
+
+    .nb-hero--split .nb-hero__container {
+        grid-template-columns: 1fr;
+    }
+
+    .nb-hero--split .nb-hero__media {
+        order: -1;
+    }
+
+    .nb-hero__eyebrow {
+        font-size: var(--nb-hero-eyebrow-size-mobile, var(--nb-hero-eyebrow-size, var(--nb-text-sm)));
+        font-weight: var(--nb-hero-eyebrow-weight-mobile, var(--nb-hero-eyebrow-weight, var(--nb-weight-semibold)));
+        line-height: var(--nb-hero-eyebrow-line-height-mobile, var(--nb-hero-eyebrow-line-height, 1.4));
+        letter-spacing: var(--nb-hero-eyebrow-letter-spacing-mobile, var(--nb-hero-eyebrow-letter-spacing, var(--nb-tracking-wide)));
+        margin-bottom: var(--nb-hero-eyebrow-margin-bottom-mobile, var(--nb-hero-eyebrow-margin-bottom, var(--nb-space-sm)));
+        color: var(--nb-hero-eyebrow-color-mobile, var(--nb-hero-eyebrow-color, var(--nb-color-accent)));
+    }
+
     .nb-hero__heading {
         font-size: var(--nb-hero-title-size-mobile, var(--nb-hero-title-size, var(--nb-text-hero)));
+        font-weight: var(--nb-hero-title-weight-mobile, var(--nb-hero-title-weight, var(--nb-weight-black)));
+        line-height: var(--nb-hero-title-line-height-mobile, var(--nb-hero-title-line-height, var(--nb-leading-tight)));
+        letter-spacing: var(--nb-hero-title-letter-spacing-mobile, var(--nb-hero-title-letter-spacing, var(--nb-tracking-tight)));
+        color: var(--nb-hero-title-color-mobile, var(--nb-hero-title-color, var(--nb-color-text)));
         margin-bottom: var(--nb-hero-title-margin-bottom-mobile, var(--nb-hero-title-margin-bottom, var(--nb-space-md)));
+        max-width: min(100%, var(--nb-hero-title-max-width-mobile, var(--nb-hero-title-max-width, 600px)));
     }
 
     .nb-hero__subheading {
         font-size: var(--nb-hero-subtitle-size-mobile, var(--nb-hero-subtitle-size, var(--nb-text-xl)));
+        font-weight: var(--nb-hero-subtitle-weight-mobile, var(--nb-hero-subtitle-weight, 400));
+        line-height: var(--nb-hero-subtitle-line-height-mobile, var(--nb-hero-subtitle-line-height, var(--nb-leading-relaxed)));
+        letter-spacing: var(--nb-hero-subtitle-letter-spacing-mobile, var(--nb-hero-subtitle-letter-spacing, 0px));
+        color: var(--nb-hero-subtitle-color-mobile, var(--nb-hero-subtitle-color, var(--nb-color-text-muted)));
         margin-bottom: var(--nb-hero-subtitle-margin-bottom-mobile, var(--nb-hero-subtitle-margin-bottom, var(--nb-space-lg)));
+        max-width: min(100%, var(--nb-hero-subtitle-max-width-mobile, var(--nb-hero-subtitle-max-width, 60ch)));
+    }
+
+    .nb-hero__actions {
+        gap: var(--nb-hero-mobile-actions-gap, var(--nb-hero-actions-gap, var(--nb-space-sm)));
+    }
+
+    .nb-hero__actions .nb-btn {
+        font-size: var(--nb-hero-buttons-text-size-mobile, var(--nb-hero-buttons-text-size, var(--nb-text-base)));
+        font-weight: var(--nb-hero-buttons-text-weight-mobile, var(--nb-hero-buttons-text-weight, var(--nb-weight-semibold)));
+        line-height: var(--nb-hero-buttons-text-line-height-mobile, var(--nb-hero-buttons-text-line-height, 1));
+        letter-spacing: var(--nb-hero-buttons-text-letter-spacing-mobile, var(--nb-hero-buttons-text-letter-spacing, 0px));
+    }
+
+    .nb-hero__actions .nb-btn--primary,
+    .nb-hero__actions .nb-btn--primary:hover,
+    .nb-hero__actions .nb-btn--primary:active,
+    .nb-hero__actions .nb-btn--primary:focus-visible,
+    .nb-hero__actions .nb-btn--outline,
+    .nb-hero__actions .nb-btn--outline:hover,
+    .nb-hero__actions .nb-btn--outline:active,
+    .nb-hero__actions .nb-btn--outline:focus-visible,
+    .nb-hero__actions .nb-btn--ghost,
+    .nb-hero__actions .nb-btn--ghost:hover,
+    .nb-hero__actions .nb-btn--ghost:active,
+    .nb-hero__actions .nb-btn--ghost:focus-visible {
+        color: var(--nb-hero-buttons-text-color-mobile, var(--nb-hero-buttons-text-color, currentColor));
     }
 
     .nb-hero__meta {
@@ -183,6 +280,10 @@
 
     .nb-hero__meta-item {
         font-size: var(--nb-hero-meta-size-mobile, var(--nb-hero-meta-size, var(--nb-text-sm)));
+        font-weight: var(--nb-hero-meta-weight-mobile, var(--nb-hero-meta-weight, 600));
+        line-height: var(--nb-hero-meta-line-height-mobile, var(--nb-hero-meta-line-height, 1.4));
+        letter-spacing: var(--nb-hero-meta-letter-spacing-mobile, var(--nb-hero-meta-letter-spacing, 0px));
+        color: var(--nb-hero-meta-color-mobile, var(--nb-hero-meta-color, var(--nb-color-text-muted)));
     }
 }
 

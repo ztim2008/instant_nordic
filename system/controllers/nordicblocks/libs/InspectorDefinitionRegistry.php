@@ -187,6 +187,7 @@ class NordicblocksInspectorDefinitionRegistry {
             'metaTypography'      => ['key' => 'metaTypography', 'label' => 'Типографика мета', 'tab' => 'design', 'default' => false],
             'bodyTypography'      => ['key' => 'bodyTypography', 'label' => 'Типографика основного текста', 'tab' => 'design', 'default' => false],
             'buttonsStyle'        => ['key' => 'buttonsStyle', 'label' => 'Стиль кнопок', 'tab' => 'design', 'default' => false],
+            'mediaStyle'          => ['key' => 'mediaStyle', 'label' => 'Стиль медиа', 'tab' => 'design', 'default' => false],
             'mediaSurface'        => ['key' => 'mediaSurface', 'label' => 'Поверхность медиа', 'tab' => 'design', 'default' => false],
             'itemSurface'         => ['key' => 'itemSurface', 'label' => 'Поверхность элементов', 'tab' => 'design', 'default' => false],
             'itemTypography'      => ['key' => 'itemTypography', 'label' => 'Типографика элементов', 'tab' => 'design', 'default' => false],
@@ -235,6 +236,11 @@ class NordicblocksInspectorDefinitionRegistry {
                 'key'       => 'buttonStyle',
                 'component' => 'button-style-panel',
                 'label'     => 'Стиль кнопок',
+            ],
+            'mediaStyle' => [
+                'key'       => 'mediaStyle',
+                'component' => 'media-style-panel',
+                'label'     => 'Стиль медиа',
             ],
             'surfaceStyle' => [
                 'key'       => 'surfaceStyle',
@@ -285,6 +291,7 @@ class NordicblocksInspectorDefinitionRegistry {
             ['key' => 'metaTypography', 'label' => 'Мета', 'tab' => 'design', 'section' => 'typography', 'group' => 'meta', 'order' => 225, 'requiresCapabilities' => ['metaTypography'], 'requiresEntities' => ['meta'], 'entityScope' => 'meta', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'bodyTypography', 'label' => 'Основной текст', 'tab' => 'design', 'section' => 'typography', 'group' => 'body', 'order' => 230, 'requiresCapabilities' => ['bodyTypography'], 'requiresEntities' => ['body'], 'entityScope' => 'body', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'buttonsStyle', 'label' => 'Кнопки', 'tab' => 'design', 'section' => 'actions', 'group' => 'buttons', 'order' => 310, 'requiresCapabilities' => ['buttonsStyle'], 'requiresAnyEntities' => ['primaryButton', 'secondaryButton'], 'entityScope' => 'buttons', 'control' => 'buttonStyle', 'breakpointAware' => false, 'repeatable' => false],
+            ['key' => 'mediaStyle', 'label' => 'Медиа', 'tab' => 'design', 'section' => 'media', 'group' => 'media', 'order' => 320, 'requiresCapabilities' => ['mediaStyle'], 'requiresEntities' => ['media'], 'entityScope' => 'media', 'control' => 'mediaStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'mediaSurface', 'label' => 'Поверхность медиа', 'tab' => 'design', 'section' => 'surfaces', 'group' => 'mediaSurface', 'order' => 410, 'requiresCapabilities' => ['mediaSurface'], 'requiresEntities' => ['mediaSurface'], 'entityScope' => 'mediaSurface', 'control' => 'surfaceStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'itemSurface', 'label' => 'Поверхность элементов', 'tab' => 'design', 'section' => 'surfaces', 'group' => 'itemSurface', 'order' => 420, 'requiresCapabilities' => ['itemSurface'], 'requiresEntities' => ['itemSurface'], 'entityScope' => 'itemSurface', 'control' => 'surfaceStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'itemTypography', 'label' => 'Типографика элементов', 'tab' => 'design', 'section' => 'typography', 'group' => 'items', 'order' => 430, 'requiresCapabilities' => ['itemTypography'], 'requiresAnyEntities' => ['itemTitle', 'itemText'], 'entityScope' => 'items', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],

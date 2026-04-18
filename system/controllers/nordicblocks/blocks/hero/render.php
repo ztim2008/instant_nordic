@@ -88,10 +88,14 @@ if ($hero_contract) {
     $meta_size_mobile = (int) ($hero_contract['design']['entities']['meta']['mobile']['fontSize'] ?? 13);
     $meta_margin_bottom_desktop = (int) ($hero_contract['design']['entities']['meta']['desktop']['marginBottom'] ?? 24);
     $meta_margin_bottom_mobile = (int) ($hero_contract['design']['entities']['meta']['mobile']['marginBottom'] ?? 20);
-    $meta_weight = (int) ($hero_contract['design']['entities']['meta']['weight'] ?? 600);
-    $meta_line_height_percent = (int) ($hero_contract['design']['entities']['meta']['lineHeightPercent'] ?? 140);
-    $meta_letter_spacing = (float) ($hero_contract['design']['entities']['meta']['letterSpacing'] ?? 0);
-    $meta_color_raw = trim((string) ($hero_contract['design']['entities']['meta']['color'] ?? ''));
+    $meta_weight_desktop = (int) ($hero_contract['design']['entities']['meta']['desktop']['weight'] ?? 600);
+    $meta_weight_mobile = (int) ($hero_contract['design']['entities']['meta']['mobile']['weight'] ?? $meta_weight_desktop);
+    $meta_line_height_desktop = (float) (($hero_contract['design']['entities']['meta']['desktop']['lineHeightPercent'] ?? 140) / 100);
+    $meta_line_height_mobile = (float) (($hero_contract['design']['entities']['meta']['mobile']['lineHeightPercent'] ?? 140) / 100);
+    $meta_letter_spacing_desktop = (float) ($hero_contract['design']['entities']['meta']['desktop']['letterSpacing'] ?? 0);
+    $meta_letter_spacing_mobile = (float) ($hero_contract['design']['entities']['meta']['mobile']['letterSpacing'] ?? $meta_letter_spacing_desktop);
+    $meta_color_desktop = trim((string) ($hero_contract['design']['entities']['meta']['desktop']['color'] ?? ''));
+    $meta_color_mobile = trim((string) ($hero_contract['design']['entities']['meta']['mobile']['color'] ?? ''));
     $buttons_text_size_desktop = (int) ($hero_contract['design']['entities']['buttonsText']['desktop']['fontSize'] ?? 16);
     $buttons_text_size_mobile = (int) ($hero_contract['design']['entities']['buttonsText']['mobile']['fontSize'] ?? 15);
     $buttons_text_weight_desktop = (int) ($hero_contract['design']['entities']['buttonsText']['desktop']['weight'] ?? 600);
@@ -127,6 +131,22 @@ if ($hero_contract) {
     $btn2_url = htmlspecialchars(trim((string) ($hero_contract['content']['secondaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
     $btn2_style = in_array($hero_contract['design']['entities']['secondaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $hero_contract['design']['entities']['secondaryButton']['style'] : 'outline';
+
+    $media_aspect_ratio = in_array($hero_contract['design']['entities']['media']['aspectRatio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
+        ? (string) $hero_contract['design']['entities']['media']['aspectRatio'] : '16:10';
+    $media_object_fit = in_array($hero_contract['design']['entities']['media']['objectFit'] ?? 'cover', ['cover', 'contain'], true)
+        ? (string) $hero_contract['design']['entities']['media']['objectFit'] : 'cover';
+    $media_radius = (int) ($hero_contract['design']['entities']['media']['radius'] ?? 28);
+    $media_surface_background_color = trim((string) ($hero_contract['design']['entities']['mediaSurface']['backgroundColor'] ?? ''));
+    $media_surface_background_mode = in_array($hero_contract['design']['entities']['mediaSurface']['backgroundMode'] ?? '', ['transparent', 'solid'], true)
+        ? (string) $hero_contract['design']['entities']['mediaSurface']['backgroundMode']
+        : ($media_surface_background_color !== '' ? 'solid' : 'transparent');
+    $media_surface_padding = (int) ($hero_contract['design']['entities']['mediaSurface']['padding'] ?? 0);
+    $media_surface_radius = (int) ($hero_contract['design']['entities']['mediaSurface']['radius'] ?? 28);
+    $media_surface_border_width = (int) ($hero_contract['design']['entities']['mediaSurface']['borderWidth'] ?? 0);
+    $media_surface_border_color = trim((string) ($hero_contract['design']['entities']['mediaSurface']['borderColor'] ?? ''));
+    $media_surface_shadow = in_array($hero_contract['design']['entities']['mediaSurface']['shadow'] ?? 'lg', ['none', 'sm', 'md', 'lg'], true)
+        ? (string) $hero_contract['design']['entities']['mediaSurface']['shadow'] : 'lg';
 
     $image = htmlspecialchars(trim((string) ($hero_contract['content']['media']['image'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($hero_contract['content']['media']['alt'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -206,10 +226,14 @@ if ($hero_contract) {
     $meta_size_mobile = 13;
     $meta_margin_bottom_desktop = 24;
     $meta_margin_bottom_mobile = 20;
-    $meta_weight = 600;
-    $meta_line_height_percent = 140;
-    $meta_letter_spacing = 0;
-    $meta_color_raw = '';
+    $meta_weight_desktop = nb_hero_prop_int((array) $props, 'meta_weight_desktop', nb_hero_prop_int((array) $props, 'meta_weight', 600, 400, 900), 400, 900);
+    $meta_weight_mobile = nb_hero_prop_int((array) $props, 'meta_weight_mobile', $meta_weight_desktop, 400, 900);
+    $meta_line_height_desktop = max(0.8, nb_hero_prop_int((array) $props, 'meta_line_height_percent_desktop', nb_hero_prop_int((array) $props, 'meta_line_height_percent', 140, 80, 240), 80, 240) / 100);
+    $meta_line_height_mobile = max(0.8, nb_hero_prop_int((array) $props, 'meta_line_height_percent_mobile', (int) round($meta_line_height_desktop * 100), 80, 240) / 100);
+    $meta_letter_spacing_desktop = (float) ($props['meta_letter_spacing_desktop'] ?? ($props['meta_letter_spacing'] ?? 0));
+    $meta_letter_spacing_mobile = (float) ($props['meta_letter_spacing_mobile'] ?? $meta_letter_spacing_desktop);
+    $meta_color_desktop = trim((string) ($props['meta_color_desktop'] ?? ($props['meta_color'] ?? '')));
+    $meta_color_mobile = trim((string) ($props['meta_color_mobile'] ?? ($props['meta_color'] ?? '')));
     $buttons_text_size_desktop = nb_hero_prop_int((array) $props, 'button_text_size_desktop', 16, 10, 120);
     $buttons_text_size_mobile = nb_hero_prop_int((array) $props, 'button_text_size_mobile', 15, 10, 120);
     $buttons_text_weight_desktop = nb_hero_prop_int((array) $props, 'button_text_weight_desktop', nb_hero_prop_int((array) $props, 'button_text_weight', 600, 400, 900), 400, 900);
@@ -242,6 +266,22 @@ if ($hero_contract) {
     $btn2_url = htmlspecialchars(trim((string) ($props['btn_secondary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
     $btn2_style = in_array($props['btn_secondary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $props['btn_secondary_style'] : 'outline';
+
+    $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
+        ? (string) ($props['media_aspect_ratio'] ?? '16:10') : '16:10';
+    $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true)
+        ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
+    $media_radius = nb_hero_prop_int((array) $props, 'media_radius', 28, 0, 80);
+    $media_surface_background_color = trim((string) ($props['media_surface_background_color'] ?? ''));
+    $media_surface_background_mode = in_array($props['media_surface_background_mode'] ?? '', ['transparent', 'solid'], true)
+        ? (string) ($props['media_surface_background_mode'] ?? 'transparent')
+        : ($media_surface_background_color !== '' ? 'solid' : 'transparent');
+    $media_surface_padding = nb_hero_prop_int((array) $props, 'media_surface_padding', 0, 0, 80);
+    $media_surface_radius = nb_hero_prop_int((array) $props, 'media_surface_radius', 28, 0, 100);
+    $media_surface_border_width = nb_hero_prop_int((array) $props, 'media_surface_border_width', 0, 0, 20);
+    $media_surface_border_color = trim((string) ($props['media_surface_border_color'] ?? ''));
+    $media_surface_shadow = in_array($props['media_surface_shadow'] ?? 'lg', ['none', 'sm', 'md', 'lg'], true)
+        ? (string) ($props['media_surface_shadow'] ?? 'lg') : 'lg';
 
     $image_value = $props['image'] ?? '';
     if (is_string($image_value)) {
@@ -280,25 +320,94 @@ $section_style = nb_block_append_style($section_style, '--nb-hero-mobile-padding
 $section_style = nb_block_append_style($section_style, '--nb-hero-mobile-padding-bottom:' . $padding_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-min-height:' . $min_height_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-mobile-min-height:' . $min_height_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-content-gap:' . $content_gap_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-mobile-content-gap:' . $content_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-actions-gap:' . $actions_gap_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-mobile-actions-gap:' . $actions_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-size:' . $eyebrow_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-size-mobile:' . $eyebrow_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-weight:' . $eyebrow_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-weight-mobile:' . $eyebrow_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-line-height:' . max(0.8, $eyebrow_line_height_desktop) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-line-height-mobile:' . max(0.8, $eyebrow_line_height_mobile) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-letter-spacing:' . $eyebrow_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-letter-spacing-mobile:' . $eyebrow_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-margin-bottom:' . $eyebrow_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-margin-bottom-mobile:' . $eyebrow_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-text-transform:' . ($eyebrow_text_transform === 'none' ? 'none' : 'uppercase') . ';');
+if ($eyebrow_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-color:' . $eyebrow_color_desktop . ';');
+}
+if ($eyebrow_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-eyebrow-color-mobile:' . $eyebrow_color_mobile . ';');
+}
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-size:' . $title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-size-mobile:' . $title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-weight:' . $title_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-weight-mobile:' . $title_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-line-height:' . max(0.8, $title_line_height_desktop) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-line-height-mobile:' . max(0.8, $title_line_height_mobile) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-letter-spacing:' . $title_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-letter-spacing-mobile:' . $title_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-max-width:' . $title_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-title-max-width-mobile:' . $title_max_width_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-size:' . $subtitle_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-size-mobile:' . $subtitle_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-weight:' . $subtitle_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-weight-mobile:' . $subtitle_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-line-height:' . max(0.8, $subtitle_line_height_desktop) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-line-height-mobile:' . max(0.8, $subtitle_line_height_mobile) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-letter-spacing:' . $subtitle_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-letter-spacing-mobile:' . $subtitle_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-max-width:' . $subtitle_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-max-width-mobile:' . $subtitle_max_width_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-bottom:' . $title_margin_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-margin-bottom-mobile:' . $subtitle_margin_bottom_mobile . 'px;');
+if ($title_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-title-color:' . $title_color_desktop . ';');
+}
+if ($title_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-title-color-mobile:' . $title_color_mobile . ';');
+}
+if ($subtitle_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-color:' . $subtitle_color_desktop . ';');
+}
+if ($subtitle_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-subtitle-color-mobile:' . $subtitle_color_mobile . ';');
+}
 $section_style = nb_block_append_style($section_style, '--nb-hero-meta-size:' . $meta_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-meta-size-mobile:' . $meta_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-meta-margin-bottom:' . $meta_margin_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-meta-margin-bottom-mobile:' . $meta_margin_bottom_mobile . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-hero-meta-weight:' . $meta_weight . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-meta-line-height:' . max(0.8, $meta_line_height_percent / 100) . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-meta-letter-spacing:' . $meta_letter_spacing . 'px;');
-if ($meta_color_raw !== '') {
-    $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color:' . $meta_color_raw . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-weight:' . $meta_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-weight-mobile:' . $meta_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-line-height:' . max(0.8, $meta_line_height_desktop) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-line-height-mobile:' . max(0.8, $meta_line_height_mobile) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-letter-spacing:' . $meta_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-meta-letter-spacing-mobile:' . $meta_letter_spacing_mobile . 'px;');
+if ($meta_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color:' . $meta_color_desktop . ';');
 } elseif ($theme === 'dark' || $theme === 'accent') {
     $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color:rgba(255,255,255,.82);');
+}
+if ($meta_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-meta-color-mobile:' . $meta_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-size:' . $buttons_text_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-size-mobile:' . $buttons_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-weight:' . $buttons_text_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-weight-mobile:' . $buttons_text_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-line-height:' . max(0.8, $buttons_text_line_height_desktop) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-line-height-mobile:' . max(0.8, $buttons_text_line_height_mobile) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-letter-spacing:' . $buttons_text_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-letter-spacing-mobile:' . $buttons_text_letter_spacing_mobile . 'px;');
+if ($buttons_text_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-color:' . $buttons_text_color_desktop . ';');
+}
+if ($buttons_text_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-buttons-text-color-mobile:' . $buttons_text_color_mobile . ';');
 }
 if ($theme === 'accent' && $background_mode === 'theme') {
     $section_style = nb_block_append_style($section_style, 'background:var(--nb-color-accent);color:#fff;');
@@ -312,18 +421,40 @@ $button_classes = [
     'ghost'   => 'nb-btn nb-btn--ghost',
 ];
 
-$block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
-$hero_inline_css = [];
+$media_aspect_ratio_map = [
+    '16:10' => '16 / 10',
+    '16:9'  => '16 / 9',
+    '4:3'   => '4 / 3',
+    '1:1'   => '1 / 1',
+    '3:4'   => '3 / 4',
+];
+$media_aspect_ratio_css = $media_aspect_ratio_map[$media_aspect_ratio] ?? 'auto';
+$media_shadow_map = [
+    'none' => 'none',
+    'sm'   => '0 8px 20px rgba(15,23,42,.10)',
+    'md'   => '0 18px 36px rgba(15,23,42,.16)',
+    'lg'   => '0 28px 64px rgba(15,23,42,.22)',
+];
+$media_surface_shadow_css = $media_shadow_map[$media_surface_shadow] ?? $media_shadow_map['lg'];
+$media_content_height = $media_aspect_ratio === 'auto' ? 'auto' : '100%';
 
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__container{gap:' . $content_gap_desktop . 'px;}';
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__actions{gap:' . $actions_gap_desktop . 'px;}';
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__eyebrow{font-size:' . $eyebrow_size_desktop . 'px;font-weight:' . $eyebrow_weight_desktop . ';line-height:' . max(0.8, $eyebrow_line_height_desktop) . ';letter-spacing:' . $eyebrow_letter_spacing_desktop . 'px;text-transform:' . ($eyebrow_text_transform === 'none' ? 'none' : 'uppercase') . ';margin-bottom:' . $eyebrow_margin_bottom_desktop . 'px;' . ($eyebrow_color_desktop !== '' ? 'color:' . $eyebrow_color_desktop . ';' : '') . '}';
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__heading{font-size:' . $title_size_desktop . 'px;font-weight:' . $title_weight_desktop . ';line-height:' . max(0.8, $title_line_height_desktop) . ';letter-spacing:' . $title_letter_spacing_desktop . 'px;margin-bottom:' . $title_margin_bottom_desktop . 'px;max-width:min(100%,' . $title_max_width_desktop . 'px);' . ($title_color_desktop !== '' ? 'color:' . $title_color_desktop . ';' : '') . '}';
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__subheading{font-size:' . $subtitle_size_desktop . 'px;font-weight:' . $subtitle_weight_desktop . ';line-height:' . max(0.8, $subtitle_line_height_desktop) . ';letter-spacing:' . $subtitle_letter_spacing_desktop . 'px;margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;max-width:min(100%,' . $subtitle_max_width_desktop . 'px);' . ($subtitle_color_desktop !== '' ? 'color:' . $subtitle_color_desktop . ';' : '') . '}';
-$hero_inline_css[] = '#' . $block_dom_id . ' .nb-hero__actions .nb-btn{font-size:' . $buttons_text_size_desktop . 'px;font-weight:' . $buttons_text_weight_desktop . ';line-height:' . max(0.8, $buttons_text_line_height_desktop) . ';letter-spacing:' . $buttons_text_letter_spacing_desktop . 'px;' . ($buttons_text_color_desktop !== '' ? 'color:' . $buttons_text_color_desktop . ';' : '') . '}';
-$hero_inline_css[] = '@media (max-width:640px){#' . $block_dom_id . ' .nb-hero__container{gap:' . $content_gap_mobile . 'px;}#' . $block_dom_id . ' .nb-hero__actions{gap:' . $actions_gap_mobile . 'px;}#' . $block_dom_id . ' .nb-hero__eyebrow{font-size:' . $eyebrow_size_mobile . 'px;font-weight:' . $eyebrow_weight_mobile . ';line-height:' . max(0.8, $eyebrow_line_height_mobile) . ';letter-spacing:' . $eyebrow_letter_spacing_mobile . 'px;margin-bottom:' . $eyebrow_margin_bottom_mobile . 'px;' . ($eyebrow_color_mobile !== '' ? 'color:' . $eyebrow_color_mobile . ';' : '') . '}#' . $block_dom_id . ' .nb-hero__heading{font-size:' . $title_size_mobile . 'px;font-weight:' . $title_weight_mobile . ';line-height:' . max(0.8, $title_line_height_mobile) . ';letter-spacing:' . $title_letter_spacing_mobile . 'px;margin-bottom:' . $title_margin_bottom_mobile . 'px;max-width:min(100%,' . $title_max_width_mobile . 'px);' . ($title_color_mobile !== '' ? 'color:' . $title_color_mobile . ';' : '') . '}#' . $block_dom_id . ' .nb-hero__subheading{font-size:' . $subtitle_size_mobile . 'px;font-weight:' . $subtitle_weight_mobile . ';line-height:' . max(0.8, $subtitle_line_height_mobile) . ';letter-spacing:' . $subtitle_letter_spacing_mobile . 'px;margin-bottom:' . $subtitle_margin_bottom_mobile . 'px;max-width:min(100%,' . $subtitle_max_width_mobile . 'px);' . ($subtitle_color_mobile !== '' ? 'color:' . $subtitle_color_mobile . ';' : '') . '}#' . $block_dom_id . ' .nb-hero__actions .nb-btn{font-size:' . $buttons_text_size_mobile . 'px;font-weight:' . $buttons_text_weight_mobile . ';line-height:' . max(0.8, $buttons_text_line_height_mobile) . ';letter-spacing:' . $buttons_text_letter_spacing_mobile . 'px;' . ($buttons_text_color_mobile !== '' ? 'color:' . $buttons_text_color_mobile . ';' : '') . '}}';
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-aspect-ratio:' . $media_aspect_ratio_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-content-height:' . $media_content_height . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-radius:' . $media_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-object-fit:' . $media_object_fit . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-padding:' . $media_surface_padding . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-radius:' . $media_surface_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-border-width:' . $media_surface_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-shadow:' . $media_surface_shadow_css . ';');
+if ($media_surface_background_mode === 'solid' && $media_surface_background_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-background:' . $media_surface_background_color . ';');
+}
+if ($media_surface_border_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-hero-media-surface-border-color:' . $media_surface_border_color . ';');
+}
+
+$block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
 ?>
-<style><?= htmlspecialchars(implode('', $hero_inline_css), ENT_NOQUOTES, 'UTF-8') ?></style>
 <section
     class="<?= $section_class ?>"
     id="<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>"
@@ -334,6 +465,7 @@ $hero_inline_css[] = '@media (max-width:640px){#' . $block_dom_id . ' .nb-hero__
 
         <?php if ($layout === 'split'): ?>
         <div class="nb-hero__media" data-nb-entity="mediaSurface">
+                <div class="nb-hero__media-frame">
             <?php if ($image): ?>
             <img
                 src="<?= $image ?>"
@@ -346,6 +478,7 @@ $hero_inline_css[] = '@media (max-width:640px){#' . $block_dom_id . ' .nb-hero__
             <?php else: ?>
             <div class="nb-hero__media-placeholder" data-nb-entity="media">Добавьте изображение</div>
             <?php endif; ?>
+                </div>
         </div>
         <?php endif; ?>
 
