@@ -263,6 +263,7 @@ class NordicblocksInspectorRegistryBuilder {
                     'buttonsContent'      => true,
                     'mediaContent'        => true,
                     'repeaterContent'     => false,
+                    'eyebrowTypography'   => true,
                     'titleTypography'     => true,
                     'subtitleTypography'  => true,
                     'metaTypography'      => true,

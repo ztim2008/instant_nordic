@@ -1,4 +1,44 @@
 function nbhBuildDesignControlRenderers() {
+    function nbhTypographyWeightOptions(includeBlack) {
+        var options = [
+            { value: '400', label: '400' },
+            { value: '500', label: '500' },
+            { value: '600', label: '600' },
+            { value: '700', label: '700' },
+            { value: '800', label: '800' }
+        ];
+
+        if (includeBlack) {
+            options.push({ value: '900', label: '900' });
+        }
+
+        return options;
+    }
+
+    function nbhResponsiveTypographyPanel(basePath, defaults, bp, options) {
+        options = options || {};
+        var body = '<div class="nbh-grid-2">'
+            + nbhField('Размер', nbhInput(basePath + '.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? defaults.desktopFontSize : defaults.mobileFontSize }))
+            + (options.hasMarginBottom === false
+                ? ''
+                : nbhField('Отступ снизу', nbhInput(basePath + '.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? defaults.desktopMarginBottom : defaults.mobileMarginBottom })))
+            + nbhField('Жирность', nbhSelect(basePath + '.' + bp + '.weight', nbhTypographyWeightOptions(!!options.includeBlackWeight), bp === 'desktop' ? defaults.desktopWeight : defaults.mobileWeight))
+            + '</div>';
+
+        body += '<div class="nbh-grid-2">'
+            + nbhField('Цвет', nbhInput(basePath + '.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? defaults.desktopColor : defaults.mobileColor }))
+            + nbhField('Высота строки, %', nbhInput(basePath + '.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? defaults.desktopLineHeightPercent : defaults.mobileLineHeightPercent }))
+            + nbhField('Трекинг, px', nbhInput(basePath + '.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? defaults.desktopLetterSpacing : defaults.mobileLetterSpacing }));
+
+        if (options.hasMaxWidth) {
+            body += nbhField('Макс. ширина, px', nbhInput(basePath + '.' + bp + '.maxWidth', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? defaults.desktopMaxWidth : defaults.mobileMaxWidth }));
+        }
+
+        body += '</div>';
+
+        return body;
+    }
+
     return {
         'section-background-panel': function() {
             var profile = nbhBlockUiProfile();
@@ -64,29 +104,18 @@ function nbhBuildDesignControlRenderers() {
         'typography-text-panel': function(panel, bp) {
             var profile = nbhBlockUiProfile();
             var body = nbhBreakpointToggle();
-            if (panel.entityScope === 'title') {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Размер', nbhInput('design.entities.title.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.title.desktopFontSize : profile.title.mobileFontSize }))
-                    + nbhField('Отступ снизу', nbhInput('design.entities.title.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.title.desktopMarginBottom : profile.title.mobileMarginBottom }))
-                    + (bp === 'desktop'
-                        ? nbhField('Жирность', nbhSelect('design.entities.title.weight', [
-                            { value: '400', label: '400' },
-                            { value: '500', label: '500' },
-                            { value: '600', label: '600' },
-                            { value: '700', label: '700' },
-                            { value: '800', label: '800' },
-                            { value: '900', label: '900' }
-                        ], profile.title.weight))
-                        : '')
-                    + '</div>';
-                if (profile.title.desktopExtras && bp === 'desktop') {
-                    body += '<div class="nbh-grid-2">'
-                        + nbhField('Цвет', nbhInput('design.entities.title.color', { inputType: 'color', fallback: '#0f172a' }))
-                        + nbhField('Высота строки, %', nbhInput('design.entities.title.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 110 }))
-                        + nbhField('Трекинг, px', nbhInput('design.entities.title.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
-                        + nbhField('Макс. ширина, px', nbhInput('design.entities.title.maxWidth', { inputType: 'number', type: 'number', fallback: 600 }))
-                        + '</div>';
+            if (panel.entityScope === 'eyebrow') {
+                body += nbhResponsiveTypographyPanel('design.entities.eyebrow', profile.eyebrow, bp, { hasMaxWidth: false, includeBlackWeight: false });
+                if (bp === 'desktop') {
+                    body += nbhField('Регистр', nbhSelect('design.entities.eyebrow.textTransform', [
+                        { value: 'uppercase', label: 'Верхний' },
+                        { value: 'none', label: 'Как в тексте' }
+                    ], profile.eyebrow.textTransform));
                 }
+                return body;
+            }
+            if (panel.entityScope === 'title') {
+                body += nbhResponsiveTypographyPanel('design.entities.title', profile.title, bp, { hasMaxWidth: true, includeBlackWeight: true });
                 if (bp === 'desktop') {
                     body += nbhField('HTML тег', nbhSelect('design.entities.title.tag', [
                         { value: 'div', label: 'DIV' },
@@ -98,42 +127,10 @@ function nbhBuildDesignControlRenderers() {
                 return body;
             }
             if (panel.entityScope === 'subtitle') {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Размер', nbhInput('design.entities.subtitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.subtitle.desktopFontSize : profile.subtitle.mobileFontSize }))
-                    + nbhField('Отступ снизу', nbhInput('design.entities.subtitle.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.subtitle.desktopMarginBottom : profile.subtitle.mobileMarginBottom }))
-                    + '</div>';
-                if (profile.subtitle.desktopExtras && bp === 'desktop') {
-                    body += '<div class="nbh-grid-2">'
-                        + nbhField('Цвет', nbhInput('design.entities.subtitle.color', { inputType: 'color', fallback: '#475569' }))
-                        + nbhField('Высота строки, %', nbhInput('design.entities.subtitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 165 }))
-                        + nbhField('Трекинг, px', nbhInput('design.entities.subtitle.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
-                        + nbhField('Макс. ширина, px', nbhInput('design.entities.subtitle.maxWidth', { inputType: 'number', type: 'number', fallback: 720 }))
-                        + '</div>';
-                }
-                return body;
+                return body + nbhResponsiveTypographyPanel('design.entities.subtitle', profile.subtitle, bp, { hasMaxWidth: true, includeBlackWeight: true });
             }
             if (panel.entityScope === 'meta') {
-                body += '<div class="nbh-grid-2">'
-                    + nbhField('Размер', nbhInput('design.entities.meta.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.meta.desktopFontSize : profile.meta.mobileFontSize }))
-                    + nbhField('Отступ снизу', nbhInput('design.entities.meta.' + bp + '.marginBottom', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.meta.desktopMarginBottom : profile.meta.mobileMarginBottom }))
-                    + (bp === 'desktop'
-                        ? nbhField('Жирность', nbhSelect('design.entities.meta.weight', [
-                            { value: '400', label: '400' },
-                            { value: '500', label: '500' },
-                            { value: '600', label: '600' },
-                            { value: '700', label: '700' },
-                            { value: '800', label: '800' }
-                        ], profile.meta.weight))
-                        : '')
-                    + '</div>';
-                if (profile.meta.desktopExtras && bp === 'desktop') {
-                    body += '<div class="nbh-grid-2">'
-                        + nbhField('Цвет', nbhInput('design.entities.meta.color', { inputType: 'color', fallback: '#64748b' }))
-                        + nbhField('Высота строки, %', nbhInput('design.entities.meta.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 140 }))
-                        + nbhField('Трекинг, px', nbhInput('design.entities.meta.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
-                        + '</div>';
-                }
-                return body;
+                return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMaxWidth: false, includeBlackWeight: true });
             }
             if (panel.entityScope === 'items' && profile.itemTypography.enabled) {
                 body += '<div class="nbh-grid-2">'
@@ -161,8 +158,9 @@ function nbhBuildDesignControlRenderers() {
             }
             return body + '<div class="nbh-note">Этот набор настроек зарезервирован под типографику сущностей и будет расширен следующим этапом.</div>';
         },
-        'button-style-panel': function() {
-            return '<div class="nbh-grid-2">'
+        'button-style-panel': function(panel, bp) {
+            var profile = nbhBlockUiProfile();
+            var body = '<div class="nbh-grid-2">'
                 + nbhField('Стиль основной кнопки', nbhSelect('design.entities.primaryButton.style', [
                     { value: 'primary', label: 'Основная' },
                     { value: 'outline', label: 'Контурная' },
@@ -174,6 +172,12 @@ function nbhBuildDesignControlRenderers() {
                     { value: 'ghost', label: 'Прозрачная' }
                 ], 'outline'))
                 + '</div>';
+
+            body += nbhBreakpointToggle();
+            body += nbhResponsiveTypographyPanel('design.entities.buttonsText', profile.buttonsText, bp, { hasMarginBottom: false, hasMaxWidth: false, includeBlackWeight: true });
+            body += '<div class="nbh-note">Цвет текста кнопок можно задать отдельно для desktop и mobile. Если поле не меняли, кнопка продолжает брать цвет из выбранного стиля.</div>';
+
+            return body;
         },
         'surface-style-panel': function() {
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
