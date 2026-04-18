@@ -133,7 +133,15 @@ class NordicblocksDataSourceResolver {
         $content_model->limit((int) ($config['limit'] ?? 3));
 
         $items = $content_model->getContentItems($ctype_name);
-        return is_array($items) ? $items : [];
+        if (!is_array($items)) {
+            return [];
+        }
+
+        foreach ($items as $index => $item) {
+            $items[$index] = self::normalizeResolvedContentItem($item, $ctype_name);
+        }
+
+        return $items;
     }
 
     private static function resolveContentItem(array $source, array $context = []) {

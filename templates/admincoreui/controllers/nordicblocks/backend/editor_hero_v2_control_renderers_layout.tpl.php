@@ -3,6 +3,27 @@ function nbhBuildLayoutControlRenderers() {
         'spacing-layout-panel': function(panel, bp) {
             var profile = nbhBlockUiProfile();
             var body = nbhBreakpointToggle();
+            if (profile.kind === 'content_feed') {
+                if (bp === 'desktop') {
+                    return body + '<div class="nbh-grid-2">'
+                        + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
+                        + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))
+                        + nbhField('Ширина контейнера', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }))
+                        + nbhField('Колонки', nbhInput('layout.desktop.columns', { inputType: 'number', type: 'number', fallback: profile.layout.desktopColumns }))
+                        + nbhField('Gap карточек', nbhInput('layout.desktop.cardGap', { inputType: 'number', type: 'number', fallback: profile.layout.desktopCardGap }))
+                        + nbhField('Отступ header/grid', nbhInput('layout.desktop.headerGap', { inputType: 'number', type: 'number', fallback: profile.layout.desktopHeaderGap }))
+                        + '</div>';
+                }
+
+                return body + '<div class="nbh-grid-2">'
+                    + nbhField('Отступ сверху', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingTop }))
+                    + nbhField('Отступ снизу', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingBottom }))
+                    + nbhField('Колонки', nbhInput('layout.mobile.columns', { inputType: 'number', type: 'number', fallback: profile.layout.mobileColumns }))
+                    + nbhField('Gap карточек', nbhInput('layout.mobile.cardGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileCardGap }))
+                    + nbhField('Отступ header/grid', nbhInput('layout.mobile.headerGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileHeaderGap }))
+                    + '</div>';
+            }
+
             if (bp === 'desktop') {
                 return body + '<div class="nbh-grid-2">'
                     + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
@@ -23,6 +44,12 @@ function nbhBuildLayoutControlRenderers() {
         },
         'alignment-layout-panel': function() {
             var profile = nbhBlockUiProfile();
+            if (profile.layout.primaryControl === 'feed-grid') {
+                return nbhField('Выравнивание header', nbhSelect('layout.desktop.align', [
+                    { value: 'left', label: 'Слева' },
+                    { value: 'center', label: 'По центру' }
+                ], 'left'));
+            }
             if (profile.layout.primaryControl === 'align') {
                 return nbhField('Выравнивание', nbhSelect('layout.desktop.align', [
                     { value: 'center', label: 'По центру' },

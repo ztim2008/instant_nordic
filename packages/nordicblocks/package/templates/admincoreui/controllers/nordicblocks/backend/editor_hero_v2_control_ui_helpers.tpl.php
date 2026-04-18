@@ -71,8 +71,40 @@ function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
     var cards = items.map(function(item, index) {
-        var question = nbhFaqItemValue(item, 'title');
-        var answer = nbhFaqItemValue(item, 'text');
+        if (nbhCollectionBlockKind() === 'content_feed') {
+            var category = nbhCollectionItemValue(item, 'category');
+            var title = nbhCollectionItemValue(item, 'title');
+            var excerpt = nbhCollectionItemValue(item, 'excerpt');
+            var url = nbhCollectionItemValue(item, 'url');
+            var image = nbhCollectionItemValue(item, 'image');
+            var imageAlt = nbhCollectionItemValue(item, 'imageAlt');
+            var date = nbhCollectionItemValue(item, 'date');
+            var views = nbhCollectionItemValue(item, 'views');
+            var comments = nbhCollectionItemValue(item, 'comments');
+
+            return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
+                + '<strong>Карточка ' + (index + 1) + '</strong>'
+                + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
+                + '</div>'
+                + '<div class="nbh-grid-2">'
+                + nbhField('Рубрика', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
+                + nbhField('Дата', '<input type="text" data-item-field="date" data-item-index="' + index + '" value="' + nbhEscapeAttr(date) + '">')
+                + '</div>'
+                + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
+                + nbhField('Анонс', '<textarea data-item-field="excerpt" data-item-index="' + index + '">' + nbhEscapeHtml(excerpt) + '</textarea>')
+                + '<div class="nbh-grid-2">'
+                + nbhField('URL', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
+                + nbhField('Изображение', '<input type="text" data-item-field="image" data-item-index="' + index + '" value="' + nbhEscapeAttr(image) + '">')
+                + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
+                + nbhField('Просмотры', '<input type="text" data-item-field="views" data-item-index="' + index + '" value="' + nbhEscapeAttr(views) + '">')
+                + nbhField('Комментарии', '<input type="text" data-item-field="comments" data-item-index="' + index + '" value="' + nbhEscapeAttr(comments) + '">')
+                + '</div>'
+                + '</div>';
+        }
+
+        var question = nbhCollectionItemValue(item, 'title');
+        var answer = nbhCollectionItemValue(item, 'text');
         return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
             + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
             + '<strong>Вопрос ' + (index + 1) + '</strong>'
@@ -84,11 +116,28 @@ function nbhRepeaterEditor() {
     }).join('');
 
     if (!cards) {
-        cards = '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
+        cards = nbhCollectionBlockKind() === 'content_feed'
+            ? '<div class="nbh-note">Лента пока пустая. Добавьте первую карточку.</div>'
+            : '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
     }
 
     if (listSource.type === 'content_list') {
-        cards = '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>' + cards;
+        cards = (nbhCollectionBlockKind() === 'content_feed'
+            ? '<div class="nbh-note">Ручные карточки ниже остаются резервной лентой, если источник данных не вернёт записей.</div>'
+            : '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>') + cards;
+    }
+
+    if (nbhCollectionBlockKind() === 'content_feed') {
+        return '<div class="nbh-grid-2">'
+            + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать анонс', nbhSelect('runtime.visibility.excerpt', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать дату', nbhSelect('runtime.visibility.date', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать просмотры', nbhSelect('runtime.visibility.views', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать комментарии', nbhSelect('runtime.visibility.comments', nbhYesNoOptions(), '1'))
+            + '</div>'
+            + cards
+            + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить карточку</button>';
     }
 
     return nbhField('Первый вопрос открыт', nbhSelect('runtime.disclosure.openFirst', [

@@ -42,7 +42,7 @@ class NordicblocksDataSourceResolver {
             return $resolved;
         }
 
-        if ($block_type !== 'faq') {
+        if (!in_array($block_type, ['faq', 'content_feed'], true)) {
             return $resolved;
         }
 
@@ -75,7 +75,7 @@ class NordicblocksDataSourceResolver {
         ];
 
         $block_type = (string) $block_type;
-        if (!in_array($block_type, ['hero', 'faq'], true)) {
+        if (!in_array($block_type, ['hero', 'faq', 'content_feed'], true)) {
             return $options;
         }
 
@@ -83,7 +83,7 @@ class NordicblocksDataSourceResolver {
             $options['itemResolverModes'][] = ['value' => $key, 'label' => $label];
         }
 
-        if ($block_type === 'faq') {
+        if (in_array($block_type, ['faq', 'content_feed'], true)) {
             foreach (self::$sort_options as $key => $sort) {
                 $options['sortOptions'][] = ['value' => $key, 'label' => $sort['label']];
             }
@@ -133,7 +133,15 @@ class NordicblocksDataSourceResolver {
         $content_model->limit((int) ($config['limit'] ?? 3));
 
         $items = $content_model->getContentItems($ctype_name);
-        return is_array($items) ? $items : [];
+        if (!is_array($items)) {
+            return [];
+        }
+
+        foreach ($items as $index => $item) {
+            $items[$index] = self::normalizeResolvedContentItem($item, $ctype_name);
+        }
+
+        return $items;
     }
 
     private static function resolveContentItem(array $source, array $context = []) {
@@ -196,14 +204,54 @@ class NordicblocksDataSourceResolver {
 
     private static function buildFieldOptions($content_model, $ctype_name) {
         $fields = [
-            ['name' => 'title', 'label' => 'Заголовок записи', 'type' => 'system', 'kinds' => ['text']],
-            ['name' => 'date_pub', 'label' => 'Дата публикации', 'type' => 'system', 'kinds' => ['date', 'text']],
-            ['name' => 'hits_count', 'label' => 'Просмотры', 'type' => 'system', 'kinds' => ['number', 'text']],
-            ['name' => 'comments_count', 'label' => 'Комментарии', 'type' => 'system', 'kinds' => ['number', 'text']],
-            ['name' => 'record_url', 'label' => 'URL записи', 'type' => 'runtime', 'kinds' => ['url', 'text']],
-            ['name' => 'record_image_url', 'label' => 'Главное изображение записи', 'type' => 'runtime', 'kinds' => ['image']],
-            ['name' => 'category.title', 'label' => 'Категория', 'type' => 'system', 'kinds' => ['text']],
-            ['name' => 'user.nickname', 'label' => 'Автор', 'type' => 'system', 'kinds' => ['text']],
+            [
+                'name'  => 'title',
+                'label' => 'Заголовок записи',
+                'type'  => 'system',
+                'kinds' => ['text'],
+            ],
+            [
+                'name'  => 'date_pub',
+                'label' => 'Дата публикации',
+                'type'  => 'system',
+                'kinds' => ['date', 'text'],
+            ],
+            [
+                'name'  => 'hits_count',
+                'label' => 'Просмотры',
+                'type'  => 'system',
+                'kinds' => ['number', 'text'],
+            ],
+            [
+                'name'  => 'comments_count',
+                'label' => 'Комментарии',
+                'type'  => 'system',
+                'kinds' => ['number', 'text'],
+            ],
+            [
+                'name'  => 'record_url',
+                'label' => 'URL записи',
+                'type'  => 'runtime',
+                'kinds' => ['url', 'text'],
+            ],
+            [
+                'name'  => 'record_image_url',
+                'label' => 'Главное изображение записи',
+                'type'  => 'runtime',
+                'kinds' => ['image'],
+            ],
+            [
+                'name'  => 'category.title',
+                'label' => 'Категория',
+                'type'  => 'system',
+                'kinds' => ['text'],
+            ],
+            [
+                'name'  => 'user.nickname',
+                'label' => 'Автор',
+                'type'  => 'system',
+                'kinds' => ['text'],
+            ],
         ];
 
         foreach ((array) $content_model->getContentFields($ctype_name) as $field) {

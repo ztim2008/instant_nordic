@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "updated_at": "2026-04-18",
+    "blocks": {
+        "content_feed": {
+            "title": "Лента новостей",
+            "family": "news-family-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260418-102305",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": true,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": true
+            },
+            "notes": "v1 block type поднят. Live smoke пройден: create, editor, manual repeater, content_list switch и save/reload подтверждены; временные smoke-блоки удалены."
+        }
+    }
+}

@@ -36,14 +36,14 @@ class NordicblocksBindingMapper {
             return self::mapHero($contract, $resolved_sources);
         }
 
-            if (!in_array($block_type, ['faq', 'content_feed'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed'], true)) {
             return $mapped;
         }
 
         $list_source = is_array($resolved_sources['listSource'] ?? null) ? $resolved_sources['listSource'] : [];
-            $items = $block_type === 'content_feed'
-                ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
-                : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
+        $items = $block_type === 'content_feed'
+            ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
+            : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
         $empty_behavior = (string) ($list_source['emptyBehavior'] ?? 'fallback');
 
         if ($items || $empty_behavior === 'empty') {
@@ -139,44 +139,52 @@ class NordicblocksBindingMapper {
         return $items;
     }
 
-        private static function mapContentFeedItems(array $records, array $list_source) {
-            $map = is_array($list_source['map'] ?? null) ? $list_source['map'] : [];
+    private static function mapContentFeedItems(array $records, array $list_source) {
+        $map = is_array($list_source['map'] ?? null) ? $list_source['map'] : [];
 
-            $items = [];
-            foreach ($records as $record) {
-                if (!is_array($record)) {
-                    continue;
-                }
-
-                $title = self::normalizeText(self::extractValue($record, (string) ($map['title'] ?? 'title')));
-                $excerpt = self::normalizeText(self::extractValue($record, (string) ($map['excerpt'] ?? 'teaser')));
-                $category = self::normalizeText(self::extractValue($record, (string) ($map['category'] ?? 'category.title')));
-                $date = self::normalizeDate(self::extractValue($record, (string) ($map['date'] ?? 'date_pub')));
-                $views = self::normalizeNumber(self::extractValue($record, (string) ($map['views'] ?? 'hits_count')));
-                $comments = self::normalizeNumber(self::extractValue($record, (string) ($map['comments'] ?? 'comments_count')));
-                $url = self::normalizeUrl(self::extractValue($record, (string) ($map['url'] ?? 'record_url')));
-                $image = self::normalizeImageUrl(self::extractValue($record, (string) ($map['image'] ?? 'record_image_url')));
-                $image_alt = self::normalizeText(self::extractValue($record, (string) ($map['imageAlt'] ?? 'title')));
-
-                if ($title === '' && $excerpt === '' && $category === '' && $image === '' && $url === '') {
-                    continue;
-                }
-
-                $items[] = self::buildContentFeedItemPayload([
-                    'category' => $category,
-                    'title' => $title,
-                    'excerpt' => $excerpt,
-                    'url' => $url,
-                    'image' => $image,
-                    'imageAlt' => $image_alt !== '' ? $image_alt : $title,
-                    'date' => $date,
-                    'views' => $views,
-                    'comments' => $comments,
-                ]);
+        $items = [];
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
             }
 
-            return $items;
+            $title = self::normalizeText(self::extractValue($record, (string) ($map['title'] ?? 'title')));
+            $excerpt = self::normalizeText(self::extractValue($record, (string) ($map['excerpt'] ?? 'teaser')));
+            $category = self::normalizeText(self::extractValue($record, (string) ($map['category'] ?? 'category.title')));
+            $date = self::normalizeDate(self::extractValue($record, (string) ($map['date'] ?? 'date_pub')));
+            $views = self::normalizeNumber(self::extractValue($record, (string) ($map['views'] ?? 'hits_count')));
+            $comments = self::normalizeNumber(self::extractValue($record, (string) ($map['comments'] ?? 'comments_count')));
+            $url = self::normalizeUrl(self::extractValue($record, (string) ($map['url'] ?? 'record_url')));
+            $image = self::normalizeImageUrl(self::extractValue($record, (string) ($map['image'] ?? 'record_image_url')));
+            $image_alt = self::normalizeText(self::extractValue($record, (string) ($map['imageAlt'] ?? 'title')));
+
+            if ($url === '') {
+                $url = self::normalizeUrl(self::extractValue($record, 'record_url'));
+            }
+
+            if ($image === '') {
+                $image = self::normalizeImageUrl(self::extractValue($record, 'record_image_url'));
+            }
+
+            if ($title === '' && $excerpt === '' && $category === '' && $image === '' && $url === '') {
+                continue;
+            }
+
+            $items[] = self::buildContentFeedItemPayload([
+                'category' => $category,
+                'title' => $title,
+                'excerpt' => $excerpt,
+                'url' => $url,
+                'image' => $image,
+                'imageAlt' => $image_alt !== '' ? $image_alt : $title,
+                'date' => $date,
+                'views' => $views,
+                'comments' => $comments,
+            ]);
         }
+
+        return $items;
+    }
     private static function buildFaqItemPayload($title, $text) {
         $title = self::normalizeText($title);
         $text  = self::normalizeText($text);
@@ -189,25 +197,25 @@ class NordicblocksBindingMapper {
         ];
     }
 
-        private static function buildContentFeedItemPayload(array $item) {
-            $title = self::normalizeText($item['title'] ?? '');
-            $excerpt = self::normalizeText($item['excerpt'] ?? ($item['text'] ?? ''));
-            $image_alt = self::normalizeText($item['imageAlt'] ?? ($item['alt'] ?? ''));
+    private static function buildContentFeedItemPayload(array $item) {
+        $title = self::normalizeText($item['title'] ?? '');
+        $excerpt = self::normalizeText($item['excerpt'] ?? ($item['text'] ?? ''));
+        $image_alt = self::normalizeText($item['imageAlt'] ?? ($item['alt'] ?? ''));
 
-            return [
-                'category' => self::normalizeText($item['category'] ?? ''),
-                'title' => $title,
-                'excerpt' => $excerpt,
-                'text' => $excerpt,
-                'url' => self::normalizeUrl($item['url'] ?? ''),
-                'image' => self::normalizeImageUrl($item['image'] ?? ''),
-                'imageAlt' => $image_alt,
-                'alt' => $image_alt,
-                'date' => self::normalizeText($item['date'] ?? ''),
-                'views' => self::normalizeText($item['views'] ?? ''),
-                'comments' => self::normalizeText($item['comments'] ?? ''),
-            ];
-        }
+        return [
+            'category' => self::normalizeText($item['category'] ?? ''),
+            'title' => $title,
+            'excerpt' => $excerpt,
+            'text' => $excerpt,
+            'url' => self::normalizeUrl($item['url'] ?? ''),
+            'image' => self::normalizeImageUrl($item['image'] ?? ''),
+            'imageAlt' => $image_alt,
+            'alt' => $image_alt,
+            'date' => self::normalizeText($item['date'] ?? ''),
+            'views' => self::normalizeText($item['views'] ?? ''),
+            'comments' => self::normalizeText($item['comments'] ?? ''),
+        ];
+    }
     private static function extractRecordIds(array $records) {
         $ids = [];
 

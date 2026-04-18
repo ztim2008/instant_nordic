@@ -132,10 +132,44 @@ function nbhBuildDesignControlRenderers() {
             if (panel.entityScope === 'meta') {
                 return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMaxWidth: false, includeBlackWeight: true });
             }
-            if (panel.entityScope === 'items' && profile.itemTypography.enabled) {
+            if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText') && profile.itemTypography.enabled) {
+                if (profile.kind === 'content_feed') {
+                    var titleDefaults = profile.itemTypography.title || {};
+                    var textDefaults = profile.itemTypography.text || {};
+
+                    body += '<div class="nbh-grid-2">'
+                        + nbhField('Размер заголовка карточки', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopFontSize : titleDefaults.mobileFontSize }))
+                        + nbhField('Размер анонса карточки', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopFontSize : textDefaults.mobileFontSize }))
+                        + nbhField('Жирность заголовка', nbhSelect('design.entities.itemTitle.' + bp + '.weight', nbhTypographyWeightOptions(false), bp === 'desktop' ? titleDefaults.desktopWeight : titleDefaults.mobileWeight))
+                        + nbhField('Жирность анонса', nbhSelect('design.entities.itemText.' + bp + '.weight', nbhTypographyWeightOptions(false), bp === 'desktop' ? textDefaults.desktopWeight : textDefaults.mobileWeight))
+                        + '</div>';
+
+                    body += '<div class="nbh-grid-2">'
+                        + nbhField('Цвет заголовка', nbhInput('design.entities.itemTitle.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? titleDefaults.desktopColor : titleDefaults.mobileColor }))
+                        + nbhField('Цвет анонса', nbhInput('design.entities.itemText.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? textDefaults.desktopColor : textDefaults.mobileColor }))
+                        + nbhField('Высота строки заголовка, %', nbhInput('design.entities.itemTitle.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopLineHeightPercent : titleDefaults.mobileLineHeightPercent }))
+                        + nbhField('Высота строки анонса, %', nbhInput('design.entities.itemText.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopLineHeightPercent : textDefaults.mobileLineHeightPercent }))
+                        + nbhField('Трекинг заголовка, px', nbhInput('design.entities.itemTitle.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopLetterSpacing : titleDefaults.mobileLetterSpacing }))
+                        + nbhField('Трекинг анонса, px', nbhInput('design.entities.itemText.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopLetterSpacing : textDefaults.mobileLetterSpacing }))
+                        + '</div>';
+
+                    return body;
+                }
+
+                var titleLabel = profile.itemTypography.titleLabel || 'Размер вопроса';
+                var textLabel = profile.itemTypography.textLabel || 'Размер ответа';
+                var titleDesktopSize = profile.itemTypography.titleDesktopSize || profile.itemTypography.questionDesktopSize;
+                var titleMobileSize = profile.itemTypography.titleMobileSize || profile.itemTypography.questionMobileSize;
+                var textDesktopSize = profile.itemTypography.textDesktopSize || profile.itemTypography.answerDesktopSize;
+                var textMobileSize = profile.itemTypography.textMobileSize || profile.itemTypography.answerMobileSize;
+                var titleWeightFallback = '700';
+                var titleColorFallback = '#0f172a';
+                var textColorFallback = '#475569';
+                var titleLineHeightFallback = 135;
+                var textLineHeightFallback = 170;
                 body += '<div class="nbh-grid-2">'
-                    + nbhField('Размер вопроса', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.itemTypography.questionDesktopSize : profile.itemTypography.questionMobileSize }))
-                    + nbhField('Размер ответа', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? profile.itemTypography.answerDesktopSize : profile.itemTypography.answerMobileSize }))
+                    + nbhField(titleLabel, nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDesktopSize : titleMobileSize }))
+                    + nbhField(textLabel, nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDesktopSize : textMobileSize }))
                     + '</div>';
                 if (bp === 'desktop') {
                     body += nbhField('Жирность вопроса', nbhSelect('design.entities.itemTitle.weight', [
@@ -144,13 +178,13 @@ function nbhBuildDesignControlRenderers() {
                         { value: '600', label: '600' },
                         { value: '700', label: '700' },
                         { value: '800', label: '800' }
-                    ], '700'));
+                    ], titleWeightFallback));
                     body += '<div class="nbh-grid-2">'
-                        + nbhField('Цвет вопроса', nbhInput('design.entities.itemTitle.color', { inputType: 'color', fallback: '#0f172a' }))
-                        + nbhField('Высота строки вопроса, %', nbhInput('design.entities.itemTitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 135 }))
+                        + nbhField('Цвет вопроса', nbhInput('design.entities.itemTitle.color', { inputType: 'color', fallback: titleColorFallback }))
+                        + nbhField('Высота строки вопроса, %', nbhInput('design.entities.itemTitle.lineHeightPercent', { inputType: 'number', type: 'number', fallback: titleLineHeightFallback }))
                         + nbhField('Трекинг вопроса, px', nbhInput('design.entities.itemTitle.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
-                        + nbhField('Цвет ответа', nbhInput('design.entities.itemText.color', { inputType: 'color', fallback: '#475569' }))
-                        + nbhField('Высота строки ответа, %', nbhInput('design.entities.itemText.lineHeightPercent', { inputType: 'number', type: 'number', fallback: 170 }))
+                        + nbhField('Цвет ответа', nbhInput('design.entities.itemText.color', { inputType: 'color', fallback: textColorFallback }))
+                        + nbhField('Высота строки ответа, %', nbhInput('design.entities.itemText.lineHeightPercent', { inputType: 'number', type: 'number', fallback: textLineHeightFallback }))
                         + nbhField('Трекинг ответа, px', nbhInput('design.entities.itemText.letterSpacing', { inputType: 'number', type: 'number', fallback: 0 }))
                         + '</div>';
                 }
@@ -226,10 +260,26 @@ function nbhBuildDesignControlRenderers() {
             }
 
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
-                return nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
+                var body = nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
                     { value: 'card', label: 'Карточки' },
                     { value: 'plain', label: 'Без карточек' }
                 ], 'card'));
+
+                if (nbhBlockType() === 'content_feed') {
+                    body += '<div class="nbh-grid-2">'
+                        + nbhField('Скругление карточки', nbhInput('design.entities.itemSurface.radius', { inputType: 'number', type: 'number', fallback: profile.itemSurface.radius }))
+                        + nbhField('Толщина рамки', nbhInput('design.entities.itemSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.itemSurface.borderWidth }))
+                        + nbhField('Цвет рамки', nbhInput('design.entities.itemSurface.borderColor', { inputType: 'color', fallback: profile.itemSurface.borderColor }))
+                        + nbhField('Тень', nbhSelect('design.entities.itemSurface.shadow', [
+                            { value: 'none', label: 'Без тени' },
+                            { value: 'sm', label: 'Мягкая' },
+                            { value: 'md', label: 'Средняя' },
+                            { value: 'lg', label: 'Выразительная' }
+                        ], profile.itemSurface.shadow))
+                        + '</div>';
+                }
+
+                return body;
             }
             return '<div class="nbh-note">Настройки поверхности пойдут следующим слоем. Сейчас панель показывает, что сущность уже распознана и готова к общему стилевому контракту.</div>';
         }

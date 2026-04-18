@@ -648,8 +648,131 @@ function nbhBlockType() {
     return nbhGet(nbhState.server, 'block.type', '');
 }
 
+function nbhCollectionBlockKind() {
+    if (!(nbhHasEntity('items') && nbhHasCapability('repeaterContent'))) {
+        return '';
+    }
+
+    return nbhBlockType() === 'content_feed' ? 'content_feed' : 'faq';
+}
+
 function nbhBlockUiProfile() {
     if (nbhHasEntity('items') && nbhHasCapability('repeaterContent')) {
+        if (nbhCollectionBlockKind() === 'content_feed') {
+            return {
+                kind: 'content_feed',
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                contentWidth: 1160,
+                title: {
+                    desktopFontSize: 42,
+                    mobileFontSize: 30,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 110,
+                    mobileLineHeightPercent: 110,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 760,
+                    mobileMaxWidth: 760,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 18,
+                    mobileFontSize: 16,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 160,
+                    mobileLineHeightPercent: 160,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 680,
+                    mobileMaxWidth: 680,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 14,
+                    mobileFontSize: 13,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#64748b',
+                    mobileColor: '#64748b',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                },
+                media: {
+                    aspectRatio: '16:10',
+                    objectFit: 'cover',
+                    radius: 24,
+                },
+                itemSurface: {
+                    radius: 28,
+                    borderWidth: 1,
+                    borderColor: '#e2e8f0',
+                    shadow: 'md',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовок карточки',
+                    textLabel: 'Анонс карточки',
+                    title: {
+                        desktopFontSize: 24,
+                        mobileFontSize: 20,
+                        desktopWeight: '800',
+                        mobileWeight: '800',
+                        desktopColor: '#0f172a',
+                        mobileColor: '#0f172a',
+                        desktopLineHeightPercent: 130,
+                        mobileLineHeightPercent: 130,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 16,
+                        mobileFontSize: 15,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#475569',
+                        mobileColor: '#475569',
+                        desktopLineHeightPercent: 165,
+                        mobileLineHeightPercent: 165,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 88,
+                    desktopPaddingBottom: 88,
+                    mobilePaddingTop: 56,
+                    mobilePaddingBottom: 56,
+                    supportsMinHeight: false,
+                    primaryControl: 'feed-grid',
+                    desktopColumns: 3,
+                    mobileColumns: 1,
+                    desktopCardGap: 24,
+                    mobileCardGap: 16,
+                    desktopHeaderGap: 28,
+                    mobileHeaderGap: 20,
+                },
+            };
+        }
+
         return {
             kind: 'collection',
             themeOptions: [
@@ -839,39 +962,73 @@ function nbhListSource() {
     if (!source.map || typeof source.map !== 'object' || Array.isArray(source.map)) {
         source.map = {};
     }
-    if (typeof source.map.title !== 'string') source.map.title = typeof source.map.question === 'string' ? source.map.question : 'title';
-    if (typeof source.map.text !== 'string') source.map.text = typeof source.map.answer === 'string' ? source.map.answer : '';
-    source.map.question = source.map.title;
-    source.map.answer = source.map.text;
+    if (nbhCollectionBlockKind() === 'content_feed') {
+        if (typeof source.map.title !== 'string') source.map.title = 'title';
+        if (typeof source.map.excerpt !== 'string') source.map.excerpt = 'teaser';
+        if (typeof source.map.image !== 'string') source.map.image = 'record_image_url';
+        if (typeof source.map.imageAlt !== 'string') source.map.imageAlt = 'title';
+        if (typeof source.map.category !== 'string') source.map.category = 'category.title';
+        if (typeof source.map.date !== 'string') source.map.date = 'date_pub';
+        if (typeof source.map.views !== 'string') source.map.views = 'hits_count';
+        if (typeof source.map.comments !== 'string') source.map.comments = 'comments_count';
+        if (typeof source.map.url !== 'string') source.map.url = 'record_url';
+        source.map.text = source.map.excerpt;
+    } else {
+        if (typeof source.map.title !== 'string') source.map.title = typeof source.map.question === 'string' ? source.map.question : 'title';
+        if (typeof source.map.text !== 'string') source.map.text = typeof source.map.answer === 'string' ? source.map.answer : '';
+        source.map.question = source.map.title;
+        source.map.answer = source.map.text;
+    }
     if (!source.emptyBehavior) source.emptyBehavior = 'fallback';
 
     nbhSet(nbhState.draft, 'data.listSource', source);
     return source;
 }
 
-function nbhBuildFaqItem(title, text) {
-    title = typeof title === 'string' ? title : '';
-    text = typeof text === 'string' ? text : '';
+function nbhCollectionDefaultItem() {
+    if (nbhCollectionBlockKind() === 'content_feed') {
+        return {
+            category: 'Новости',
+            title: 'Новая карточка',
+            excerpt: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
+            text: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
+            url: '/news',
+            image: '',
+            imageAlt: '',
+            alt: '',
+            date: '',
+            views: '',
+            comments: ''
+        };
+    }
 
     return {
-        title: title,
-        text: text,
-        question: title,
-        answer: text
+        title: 'Новый вопрос',
+        text: 'Короткий ответ на вопрос.',
+        question: 'Новый вопрос',
+        answer: 'Короткий ответ на вопрос.'
     };
 }
 
-function nbhFaqItemValue(item, key) {
+function nbhCollectionItemValue(item, key) {
     if (!item || typeof item !== 'object') {
         return '';
     }
 
-    if (key === 'title') {
+    if (nbhCollectionBlockKind() !== 'content_feed' && key === 'title') {
         return typeof item.title === 'string' ? item.title : (typeof item.question === 'string' ? item.question : '');
     }
 
-    if (key === 'text') {
+    if (nbhCollectionBlockKind() !== 'content_feed' && key === 'text') {
         return typeof item.text === 'string' ? item.text : (typeof item.answer === 'string' ? item.answer : '');
+    }
+
+    if (nbhCollectionBlockKind() === 'content_feed' && key === 'excerpt') {
+        return typeof item.excerpt === 'string' ? item.excerpt : (typeof item.text === 'string' ? item.text : '');
+    }
+
+    if (nbhCollectionBlockKind() === 'content_feed' && key === 'imageAlt') {
+        return typeof item.imageAlt === 'string' ? item.imageAlt : (typeof item.alt === 'string' ? item.alt : '');
     }
 
     return typeof item[key] === 'string' ? item[key] : '';
@@ -1236,7 +1393,7 @@ function nbhOpenIconPicker(path) {
 
 function nbhAddRepeaterItem() {
     var items = nbhRepeaterItems().slice();
-    items.push(nbhBuildFaqItem('Новый вопрос', 'Короткий ответ на вопрос.'));
+    items.push(nbhCollectionDefaultItem());
     nbhSet(nbhState.draft, 'content.items', items);
     nbhMarkDirty();
     nbhRenderPanels();
@@ -1258,26 +1415,44 @@ function nbhRemoveRepeaterItem(index) {
 function nbhUpdateRepeaterItem(index, field, value) {
     var items = nbhRepeaterItems().slice();
     if (!items[index] || typeof items[index] !== 'object') {
-        items[index] = nbhBuildFaqItem('', '');
+        items[index] = nbhCollectionDefaultItem();
     }
 
     var item = items[index];
-    if (field === 'question') field = 'title';
-    if (field === 'answer') field = 'text';
+    if (nbhCollectionBlockKind() !== 'content_feed') {
+        if (field === 'question') field = 'title';
+        if (field === 'answer') field = 'text';
+    } else {
+        if (field === 'text') field = 'excerpt';
+        if (field === 'alt') field = 'imageAlt';
+    }
 
     item[field] = value;
 
-    if (field === 'title') {
-        item.question = value;
-    }
-    if (field === 'text') {
-        item.answer = value;
-    }
+    if (nbhCollectionBlockKind() !== 'content_feed') {
+        if (field === 'title') {
+            item.question = value;
+        }
+        if (field === 'text') {
+            item.answer = value;
+        }
 
-    if (typeof item.title !== 'string') item.title = typeof item.question === 'string' ? item.question : '';
-    if (typeof item.text !== 'string') item.text = typeof item.answer === 'string' ? item.answer : '';
-    item.question = item.title;
-    item.answer = item.text;
+        if (typeof item.title !== 'string') item.title = typeof item.question === 'string' ? item.question : '';
+        if (typeof item.text !== 'string') item.text = typeof item.answer === 'string' ? item.answer : '';
+        item.question = item.title;
+        item.answer = item.text;
+    } else {
+        if (field === 'excerpt') {
+            item.text = value;
+        }
+        if (field === 'imageAlt') {
+            item.alt = value;
+        }
+        if (typeof item.excerpt !== 'string') item.excerpt = typeof item.text === 'string' ? item.text : '';
+        if (typeof item.text !== 'string') item.text = item.excerpt;
+        if (typeof item.imageAlt !== 'string') item.imageAlt = typeof item.alt === 'string' ? item.alt : '';
+        if (typeof item.alt !== 'string') item.alt = item.imageAlt;
+    }
 
     nbhSet(nbhState.draft, 'content.items', items);
     nbhMarkDirty();

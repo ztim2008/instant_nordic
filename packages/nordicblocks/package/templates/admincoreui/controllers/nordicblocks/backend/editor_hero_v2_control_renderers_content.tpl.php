@@ -15,6 +15,14 @@ function nbhBuildContentControlRenderers() {
             return '<div class="nbh-note">Для сущности ' + panel.entityScope + ' пока не подключена отдельная контентная панель.</div>';
         },
         'button-content-panel': function() {
+            if (nbhBlockType() === 'content_feed') {
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Показывать ссылку', nbhSelect('runtime.visibility.moreLink', nbhYesNoOptions(), '1'))
+                    + nbhField('Текст ссылки', nbhInput('content.primaryButton.label'))
+                    + nbhField('URL ссылки', nbhInput('content.primaryButton.url'))
+                    + '</div>';
+            }
+
             return '<div class="nbh-grid-2">'
                 + nbhField('Текст основной кнопки', nbhInput('content.primaryButton.label'))
                 + nbhField('Ссылка основной кнопки', nbhInput('content.primaryButton.url'))

@@ -128,11 +128,23 @@ function nbhBuildDataControlRenderers() {
             }));
             var body = '<div class="nbh-grid-2">';
 
-            if (nbhHasEntity('itemTitle')) {
-                body += nbhField('Заголовок элемента', nbhSelect('data.listSource.map.title', fieldOptions, 'title'));
-            }
-            if (nbhHasEntity('itemText')) {
-                body += nbhField('Текст элемента', nbhSelect('data.listSource.map.text', fieldOptions, ''));
+            if (nbhCollectionBlockKind() === 'content_feed') {
+                body += nbhField('Заголовок карточки', nbhSelect('data.listSource.map.title', fieldOptions, 'title'))
+                    + nbhField('Анонс карточки', nbhSelect('data.listSource.map.excerpt', fieldOptions, 'teaser'))
+                    + nbhField('Изображение карточки', nbhSelect('data.listSource.map.image', fieldOptions, 'photo'))
+                    + nbhField('Alt изображения', nbhSelect('data.listSource.map.imageAlt', fieldOptions, 'title'))
+                    + nbhField('Рубрика', nbhSelect('data.listSource.map.category', fieldOptions, 'category.title'))
+                    + nbhField('Дата', nbhSelect('data.listSource.map.date', fieldOptions, 'date_pub'))
+                    + nbhField('Просмотры', nbhSelect('data.listSource.map.views', fieldOptions, 'hits_count'))
+                    + nbhField('Комментарии', nbhSelect('data.listSource.map.comments', fieldOptions, 'comments_count'))
+                    + nbhField('URL карточки', nbhSelect('data.listSource.map.url', fieldOptions, 'record_url'));
+            } else {
+                if (nbhHasEntity('itemTitle')) {
+                    body += nbhField('Заголовок элемента', nbhSelect('data.listSource.map.title', fieldOptions, 'title'));
+                }
+                if (nbhHasEntity('itemText')) {
+                    body += nbhField('Текст элемента', nbhSelect('data.listSource.map.text', fieldOptions, ''));
+                }
             }
 
             body += '</div>';
