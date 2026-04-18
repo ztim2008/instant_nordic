@@ -6,12 +6,12 @@ class NordicblocksBlockContractNormalizer {
     private static $allowed_list_sorts = ['date_pub_desc', 'date_pub_asc', 'title_asc', 'title_desc', 'hits_desc', 'hits_asc', 'comments_desc', 'comments_asc'];
 
     private static function isCardCollectionType($type) {
-        return in_array($type, ['content_feed', 'category_cards'], true);
+        return in_array($type, ['content_feed', 'category_cards', 'headline_feed'], true);
     }
 
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards'], true);
+        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed'], true);
     }
 
     public static function isContractPayload($payload) {
@@ -59,6 +59,10 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'category_cards') {
             return self::normalizeCategoryCards($block);
+        }
+
+        if ($type === 'headline_feed') {
+            return self::normalizeHeadlineFeed($block);
         }
 
         return self::normalizeFallback($block, $type);
@@ -678,6 +682,59 @@ class NordicblocksBlockContractNormalizer {
         return self::mergeStoredContract($contract, $stored_contract);
     }
 
+    private static function normalizeHeadlineFeed(array $block, array $stored_contract = []) {
+        $block['props'] = array_merge([
+            'heading' => 'Главная статья и лента',
+            'intro' => 'Один акцентный материал и продолжение ленты в том же блоке: удобно для главной, спецтемы и редакционных подборок.',
+            'more_link_label' => 'Смотреть все материалы',
+            'more_link_url' => '/news',
+            'layout_preset' => 'split',
+            'content_width' => 1240,
+            'padding_top_desktop' => 88,
+            'padding_bottom_desktop' => 88,
+            'padding_top_mobile' => 56,
+            'padding_bottom_mobile' => 56,
+            'columns_desktop' => 3,
+            'columns_mobile' => 1,
+            'card_gap_desktop' => 22,
+            'card_gap_mobile' => 16,
+            'header_gap_desktop' => 24,
+            'header_gap_mobile' => 18,
+            'title_size_desktop' => 38,
+            'title_size_mobile' => 28,
+            'subtitle_size_desktop' => 17,
+            'subtitle_size_mobile' => 15,
+            'subtitle_max_width' => 760,
+            'media_aspect_ratio' => '4:3',
+            'media_radius' => 28,
+            'item_surface_radius' => 28,
+            'item_surface_border_width' => 1,
+            'item_surface_border_color' => '#dbe4ef',
+            'item_surface_shadow' => 'md',
+            'item_title_size_desktop' => 18,
+            'item_title_size_mobile' => 17,
+            'item_title_weight' => 800,
+            'item_text_size_desktop' => 15,
+            'item_text_size_mobile' => 14,
+            'meta_size_desktop' => 13,
+            'meta_size_mobile' => 12,
+        ], (array) ($block['props'] ?? []));
+
+        $props = (array) $block['props'];
+        $contract = self::normalizeContentFeed([
+            'type'   => 'content_feed',
+            'title'  => (string) ($block['title'] ?? 'Главная статья и лента'),
+            'status' => (string) ($block['status'] ?? 'active'),
+            'props'  => $props,
+        ], $stored_contract);
+
+        $contract['meta']['blockType'] = 'headline_feed';
+        $contract['meta']['label'] = (string) ($block['title'] ?? 'Главная статья и лента');
+        $contract['layout']['preset'] = self::normalizeSelect((string) self::coalesceProp($props, ['layout_preset'], 'split'), ['split', 'stack', 'cover'], 'split');
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
     private static function normalizeStoredContract(array $block, array $contract) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? ($contract['meta']['blockType'] ?? ''))));
 
@@ -714,6 +771,15 @@ class NordicblocksBlockContractNormalizer {
                 'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Рубрика с карточками')),
                 'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
                 'props'  => self::denormalizeProps('category_cards', $contract),
+            ], $contract);
+        }
+
+        if ($type === 'headline_feed') {
+            return self::normalizeHeadlineFeed([
+                'type'   => 'headline_feed',
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Главная статья и лента')),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeProps('headline_feed', $contract),
             ], $contract);
         }
 
@@ -1013,6 +1079,12 @@ class NordicblocksBlockContractNormalizer {
             ]);
         }
 
+        if ($type === 'headline_feed') {
+            return array_merge(self::denormalizeProps('content_feed', $contract), [
+                'layout_preset' => (string) ($contract['layout']['preset'] ?? 'split'),
+            ]);
+        }
+
         return [];
     }
 
@@ -1042,7 +1114,7 @@ class NordicblocksBlockContractNormalizer {
             'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if (!in_array($type, ['faq', 'content_feed', 'category_cards'], true)) {
+        if (!in_array($type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
             $normalized['listSource'] = self::normalizeListSource([]);
         } else {
             $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), self::isCardCollectionType($type) ? 'content_feed' : $type);

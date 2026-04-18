@@ -42,7 +42,7 @@ class NordicblocksDataSourceResolver {
             return $resolved;
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
             return $resolved;
         }
 
@@ -75,7 +75,7 @@ class NordicblocksDataSourceResolver {
         ];
 
         $block_type = (string) $block_type;
-        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards'], true)) {
+        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
             return $options;
         }
 
@@ -83,7 +83,7 @@ class NordicblocksDataSourceResolver {
             $options['itemResolverModes'][] = ['value' => $key, 'label' => $label];
         }
 
-        if (in_array($block_type, ['faq', 'content_feed', 'category_cards'], true)) {
+        if (in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
             foreach (self::$sort_options as $key => $sort) {
                 $options['sortOptions'][] = ['value' => $key, 'label' => $sort['label']];
             }

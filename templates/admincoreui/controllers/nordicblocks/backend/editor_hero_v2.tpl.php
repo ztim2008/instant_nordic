@@ -661,16 +661,140 @@ function nbhCollectionBlockKind() {
         return 'category_cards';
     }
 
+    if (nbhBlockType() === 'headline_feed') {
+        return 'headline_feed';
+    }
+
     return 'faq';
 }
 
 function nbhIsCardCollectionBlock() {
     var kind = nbhCollectionBlockKind();
-    return kind === 'content_feed' || kind === 'category_cards';
+    return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed';
 }
 
 function nbhBlockUiProfile() {
     if (nbhHasEntity('items') && nbhHasCapability('repeaterContent')) {
+        if (nbhCollectionBlockKind() === 'headline_feed') {
+            return {
+                kind: 'headline_feed',
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                presets: [
+                    { value: 'split', label: 'Lead слева + лента' },
+                    { value: 'stack', label: 'Lead сверху + сетка' },
+                    { value: 'cover', label: 'Lead cover + сетка' }
+                ],
+                contentWidth: 1240,
+                title: {
+                    desktopFontSize: 38,
+                    mobileFontSize: 28,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 110,
+                    mobileLineHeightPercent: 110,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 760,
+                    mobileMaxWidth: 760,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 17,
+                    mobileFontSize: 15,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 160,
+                    mobileLineHeightPercent: 160,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 760,
+                    mobileMaxWidth: 760,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 13,
+                    mobileFontSize: 12,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#64748b',
+                    mobileColor: '#64748b',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                },
+                media: {
+                    aspectRatio: '4:3',
+                    objectFit: 'cover',
+                    radius: 28,
+                },
+                itemSurface: {
+                    radius: 28,
+                    borderWidth: 1,
+                    borderColor: '#dbe4ef',
+                    shadow: 'md',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовки материалов',
+                    textLabel: 'Анонсы материалов',
+                    title: {
+                        desktopFontSize: 18,
+                        mobileFontSize: 17,
+                        desktopWeight: '800',
+                        mobileWeight: '800',
+                        desktopColor: '#0f172a',
+                        mobileColor: '#0f172a',
+                        desktopLineHeightPercent: 130,
+                        mobileLineHeightPercent: 130,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 15,
+                        mobileFontSize: 14,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#475569',
+                        mobileColor: '#475569',
+                        desktopLineHeightPercent: 160,
+                        mobileLineHeightPercent: 160,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 88,
+                    desktopPaddingBottom: 88,
+                    mobilePaddingTop: 56,
+                    mobilePaddingBottom: 56,
+                    supportsMinHeight: false,
+                    primaryControl: 'headline-feed',
+                    desktopColumns: 3,
+                    mobileColumns: 1,
+                    desktopCardGap: 22,
+                    mobileCardGap: 16,
+                    desktopHeaderGap: 24,
+                    mobileHeaderGap: 18,
+                },
+            };
+        }
+
         if (nbhCollectionBlockKind() === 'category_cards') {
             return {
                 kind: 'category_cards',
@@ -1131,8 +1255,8 @@ function nbhListSource() {
 function nbhCollectionDefaultItem() {
     if (nbhIsCardCollectionBlock()) {
         return {
-            category: nbhCollectionBlockKind() === 'category_cards' ? 'Раздел' : 'Новости',
-            title: nbhCollectionBlockKind() === 'category_cards' ? 'Новая карточка раздела' : 'Новая карточка',
+            category: nbhCollectionBlockKind() === 'category_cards' ? 'Раздел' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Тема' : 'Новости'),
+            title: nbhCollectionBlockKind() === 'category_cards' ? 'Новая карточка раздела' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Новый материал ленты' : 'Новая карточка'),
             excerpt: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
             text: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
             url: '/news',

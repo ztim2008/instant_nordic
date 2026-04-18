@@ -70,6 +70,7 @@ function nbhBreakpointToggle() {
 function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
+    var kind = nbhCollectionBlockKind();
     var cards = items.map(function(item, index) {
         if (nbhIsCardCollectionBlock()) {
             var category = nbhCollectionItemValue(item, 'category');
@@ -81,10 +82,11 @@ function nbhRepeaterEditor() {
             var date = nbhCollectionItemValue(item, 'date');
             var views = nbhCollectionItemValue(item, 'views');
             var comments = nbhCollectionItemValue(item, 'comments');
+            var cardLabel = (kind === 'headline_feed' && index === 0) ? 'Главная статья' : 'Карточка ' + (index + 1);
 
             return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
                 + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
-                + '<strong>Карточка ' + (index + 1) + '</strong>'
+                + '<strong>' + cardLabel + '</strong>'
                 + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
                 + '</div>'
                 + '<div class="nbh-grid-2">'
@@ -117,18 +119,19 @@ function nbhRepeaterEditor() {
 
     if (!cards) {
         cards = nbhIsCardCollectionBlock()
-            ? '<div class="nbh-note">Лента пока пустая. Добавьте первую карточку.</div>'
+            ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Секция пока пуста. Добавьте главную статью и продолжение ленты.' : 'Лента пока пустая. Добавьте первую карточку.') + '</div>'
             : '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
     }
 
     if (listSource.type === 'content_list') {
         cards = (nbhIsCardCollectionBlock()
-            ? '<div class="nbh-note">Ручные карточки ниже остаются резервной лентой, если источник данных не вернёт записей.</div>'
+            ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Первый материал из content_list станет главной статьёй, а ручные карточки ниже останутся резервным сценарием, если данных не хватит.' : 'Ручные карточки ниже остаются резервной лентой, если источник данных не вернёт записей.') + '</div>'
             : '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>') + cards;
     }
 
     if (nbhIsCardCollectionBlock()) {
-        return '<div class="nbh-grid-2">'
+        return (kind === 'headline_feed' ? '<div class="nbh-note">Первая карточка всегда становится главной статьёй. Остальные карточки продолжают ленту и перестраиваются по выбранному visual preset.</div>' : '')
+            + '<div class="nbh-grid-2">'
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))
             + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))
             + nbhField('Показывать анонс', nbhSelect('runtime.visibility.excerpt', nbhYesNoOptions(), '1'))

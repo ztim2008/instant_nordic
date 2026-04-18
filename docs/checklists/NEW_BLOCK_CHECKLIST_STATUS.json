@@ -33,6 +33,22 @@
                 "live_smoke": true
             },
             "notes": "v1 второго news-блока собран поверх card-runtime из content_feed: отдельный type category_cards с compact grid и тем же manual/content_list data mode. Live smoke пройден полностью: create через админку, editor preview и инспектор загрузились, save/reload для manual подтвержден, а content_list для news после фикса normalizer сохраняется и переживает reload с реальными URL /news/...html; временные smoke-блоки удалены после проверки."
+        },
+        "headline_feed": {
+            "title": "Главная статья и лента",
+            "family": "news-family-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260418-171903",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": true,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": true
+            },
+            "notes": "Третий блок линейки уже собран как акцентный lead+feed block с presets split, stack и cover. Block type, contract/data layer, editor shell, SSR render и shared CSS подключены в system/package mirror; первый материал становится главной статьёй, остальные продолжают ленту в том же manual/content_list data mode. Live smoke пройден через админку: create, editor preview и inspector загрузились, дефолтный split подтвердился, cover сохранился и пережил reload, stack тоже сохранился после save/reload; временный smoke-блок удалён после проверки."
         }
     }
 }

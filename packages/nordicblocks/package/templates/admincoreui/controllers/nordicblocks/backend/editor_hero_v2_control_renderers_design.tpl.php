@@ -133,7 +133,7 @@ function nbhBuildDesignControlRenderers() {
                 return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMaxWidth: false, includeBlackWeight: true });
             }
             if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText') && profile.itemTypography.enabled) {
-                if (profile.kind === 'content_feed' || profile.kind === 'category_cards') {
+                if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed') {
                     var titleDefaults = profile.itemTypography.title || {};
                     var textDefaults = profile.itemTypography.text || {};
 

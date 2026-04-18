@@ -28,7 +28,7 @@ class actionNordicblocksBlockCreate extends cmsAction {
         }
 
         if (!$this->model->isFirstWaveBlockType($type)) {
-            cmsCore::addFlashMessage('error', 'Этот тип блока временно выведен из первой волны продукта. Сейчас доступны hero, faq, content_feed и category_cards.');
+            cmsCore::addFlashMessage('error', 'Этот тип блока временно выведен из первой волны продукта. Сейчас доступны hero, faq, content_feed, category_cards и headline_feed.');
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 
