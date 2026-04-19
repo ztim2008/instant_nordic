@@ -14,6 +14,7 @@ class modelNordicblocks extends cmsModel {
     const TBL_DESIGN = 'nordicblocks_design';
     const TBL_CACHE  = 'nordicblocks_cache';
     const TBL_BLOCK_CSS = 'nordicblocks_block_css';
+    const TBL_BLOCK_CSS_REVISION = 'nordicblocks_block_css_revision';
 
     // ── СТРАНИЦЫ ──────────────────────────────────────────────────
 
@@ -157,6 +158,15 @@ class modelNordicblocks extends cmsModel {
             && $this->db->isFieldExists(self::TBL_BLOCK_CSS, 'published_by');
     }
 
+    public function hasBlockCssOverlayRevisionStorage() {
+        return $this->db->isTableExists(self::TBL_BLOCK_CSS_REVISION)
+            && $this->db->isFieldExists(self::TBL_BLOCK_CSS_REVISION, 'block_css_id')
+            && $this->db->isFieldExists(self::TBL_BLOCK_CSS_REVISION, 'version')
+            && $this->db->isFieldExists(self::TBL_BLOCK_CSS_REVISION, 'css_text')
+            && $this->db->isFieldExists(self::TBL_BLOCK_CSS_REVISION, 'created_at')
+            && $this->db->isFieldExists(self::TBL_BLOCK_CSS_REVISION, 'created_by');
+    }
+
     public function buildBlockCssOverlayMeta($type, $scope_selector = null) {
         $config = $this->getBlockCssOverlayConfig($type);
 
@@ -176,6 +186,7 @@ class modelNordicblocks extends cmsModel {
             'enabled'        => true,
             'mode'           => $this->hasBlockCssOverlayStorage() ? 'persistent' : 'session',
             'publishMode'    => $this->hasBlockCssOverlayPublishStorage() ? 'explicit' : 'live',
+            'revisionsReady' => $this->hasBlockCssOverlayRevisionStorage(),
             'scopeSelector'  => $scope_selector,
             'allowedTargets' => array_values($config['allowedTargets']),
             'targets'        => $config['targets'],
@@ -246,6 +257,7 @@ class modelNordicblocks extends cmsModel {
         $block_type  = $this->normalizeBlockType((string) $block_type);
         $updated_by  = (int) $updated_by;
         $publish_ready = $this->hasBlockCssOverlayPublishStorage();
+        $revision_ready = $this->hasBlockCssOverlayRevisionStorage();
 
         if ($block_id < 1 || !$this->supportsBlockCssOverlay($block_type)) {
             return ['ok' => false, 'error' => 'unsupported_block_type'];
@@ -277,12 +289,17 @@ class modelNordicblocks extends cmsModel {
 
         if (!$normalized_target_css) {
             if ($publish_ready && $existing) {
+                $new_version = $current_version + 1;
                 $this->db->update(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}", [
                     'css_text'   => '',
-                    'version'    => $current_version + 1,
+                    'version'    => $new_version,
                     'updated_by' => $updated_by > 0 ? $updated_by : null,
                     'updated_at' => date('Y-m-d H:i:s'),
                 ], true);
+
+                if ($revision_ready && !empty($existing['id'])) {
+                    $this->insertBlockCssOverlayRevision((int) $existing['id'], $new_version, [], $updated_by);
+                }
             } elseif ($existing) {
                 $this->db->delete(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
                 $this->invalidateBlockCache($block_id);
@@ -294,21 +311,34 @@ class modelNordicblocks extends cmsModel {
             ];
         }
 
+        $new_version = $current_version + 1;
         $payload = [
             'block_id'    => $block_id,
             'block_type'  => $block_type,
             'scope_type'  => 'block',
             'css_text'    => json_encode($normalized_target_css, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'version'     => $current_version + 1,
+            'version'     => $new_version,
             'updated_by'  => $updated_by > 0 ? $updated_by : null,
             'updated_at'  => date('Y-m-d H:i:s'),
         ];
+
+        $block_css_id = $existing ? (int) ($existing['id'] ?? 0) : 0;
 
         if ($existing) {
             $this->db->update(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}", $payload, true);
         } else {
             $payload['created_at'] = date('Y-m-d H:i:s');
-            $this->db->insert(self::TBL_BLOCK_CSS, $payload, true);
+            $insert_id = $this->db->insert(self::TBL_BLOCK_CSS, $payload, true);
+            $block_css_id = $insert_id ? (int) $insert_id : 0;
+        }
+
+        if ($block_css_id < 1) {
+            $saved_row = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+            $block_css_id = (int) ($saved_row['id'] ?? 0);
+        }
+
+        if ($revision_ready && $block_css_id > 0) {
+            $this->insertBlockCssOverlayRevision($block_css_id, $new_version, $normalized_target_css, $updated_by);
         }
 
         if (!$publish_ready) {
@@ -319,6 +349,99 @@ class modelNordicblocks extends cmsModel {
             'ok'         => true,
             'cssOverlay' => $this->getBlockCssOverlayState($block_id, $block_type, $scope_selector),
         ];
+    }
+
+    public function listBlockCssOverlayRevisions($block_id, $block_type, $limit = 12) {
+        $block_id   = (int) $block_id;
+        $block_type = $this->normalizeBlockType((string) $block_type);
+        $limit      = max(1, min(30, (int) $limit));
+
+        if ($block_id < 1 || !$this->supportsBlockCssOverlay($block_type) || !$this->hasBlockCssOverlayRevisionStorage()) {
+            return [];
+        }
+
+        $row = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+        $block_css_id = (int) ($row['id'] ?? 0);
+        if ($block_css_id < 1) {
+            return [];
+        }
+
+        $result = $this->db->query(
+            "SELECT `id`, `version`, `css_text`, `created_by`, `created_at`
+             FROM `{#}" . self::TBL_BLOCK_CSS_REVISION . "`
+             WHERE `block_css_id` = '%s'
+             ORDER BY `version` DESC, `id` DESC
+             LIMIT {$limit}",
+            [(string) $block_css_id],
+            true
+        );
+
+        if (!$result || $result->num_rows < 1) {
+            return [];
+        }
+
+        $revisions = [];
+
+        while ($revision = $result->fetch_assoc()) {
+            $target_css = $this->decodeBlockCssOverlayTargetCss((string) ($revision['css_text'] ?? ''), $block_type);
+
+            $revisions[] = [
+                'id'         => (int) ($revision['id'] ?? 0),
+                'version'    => max(0, (int) ($revision['version'] ?? 0)),
+                'targetCss'  => $target_css,
+                'targetKeys' => array_values(array_keys($target_css)),
+                'createdBy'  => max(0, (int) ($revision['created_by'] ?? 0)),
+                'createdAt'  => (string) ($revision['created_at'] ?? ''),
+            ];
+        }
+
+        return $revisions;
+    }
+
+    public function restoreBlockCssOverlayRevision($block_id, $block_type, $revision_id, $expected_version = null, $updated_by = 0, $scope_selector = null) {
+        $block_id    = (int) $block_id;
+        $block_type  = $this->normalizeBlockType((string) $block_type);
+        $revision_id = (int) $revision_id;
+        $updated_by  = (int) $updated_by;
+
+        if ($block_id < 1 || $revision_id < 1 || !$this->supportsBlockCssOverlay($block_type)) {
+            return ['ok' => false, 'error' => 'unsupported_block_type'];
+        }
+
+        if (!$this->hasBlockCssOverlayRevisionStorage()) {
+            return ['ok' => false, 'error' => 'revisions_schema_missing'];
+        }
+
+        $row = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+        $block_css_id = (int) ($row['id'] ?? 0);
+        if ($block_css_id < 1) {
+            return ['ok' => false, 'error' => 'css_overlay_missing'];
+        }
+
+        $result = $this->db->query(
+            "SELECT `id`, `css_text`
+             FROM `{#}" . self::TBL_BLOCK_CSS_REVISION . "`
+             WHERE `id` = '%s' AND `block_css_id` = '%s'
+             LIMIT 1",
+            [(string) $revision_id, (string) $block_css_id],
+            true
+        );
+
+        if (!$result || $result->num_rows < 1) {
+            return ['ok' => false, 'error' => 'revision_not_found'];
+        }
+
+        $revision = $result->fetch_assoc();
+        $target_css = $this->decodeBlockCssOverlayTargetCss((string) ($revision['css_text'] ?? ''), $block_type);
+
+        return $this->saveBlockCssOverlayState(
+            $block_id,
+            $block_type,
+            $target_css,
+            $expected_version,
+            $updated_by,
+            $scope_selector
+        );
     }
 
     public function publishBlockCssOverlayState($block_id, $block_type, $expected_version = null, $updated_by = 0, $scope_selector = null) {
@@ -383,7 +506,37 @@ class modelNordicblocks extends cmsModel {
             return;
         }
 
+        $row = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+        $block_css_id = (int) ($row['id'] ?? 0);
+
+        if ($block_css_id > 0 && $this->hasBlockCssOverlayRevisionStorage()) {
+            $this->db->delete(self::TBL_BLOCK_CSS_REVISION, "`block_css_id` = {$block_css_id}");
+        }
+
         $this->db->delete(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+    }
+
+    private function insertBlockCssOverlayRevision($block_css_id, $version, array $target_css, $created_by = 0) {
+        $block_css_id = (int) $block_css_id;
+        $version      = (int) $version;
+        $created_by   = (int) $created_by;
+
+        if ($block_css_id < 1 || $version < 1 || !$this->hasBlockCssOverlayRevisionStorage()) {
+            return 0;
+        }
+
+        $existing = $this->db->getRow(self::TBL_BLOCK_CSS_REVISION, "`block_css_id` = {$block_css_id} AND `version` = {$version}");
+        if ($existing) {
+            return (int) ($existing['id'] ?? 0);
+        }
+
+        return (int) $this->db->insert(self::TBL_BLOCK_CSS_REVISION, [
+            'block_css_id' => $block_css_id,
+            'version'      => $version,
+            'css_text'     => $target_css ? json_encode($target_css, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '',
+            'created_by'   => $created_by > 0 ? $created_by : null,
+            'created_at'   => date('Y-m-d H:i:s'),
+        ], true);
     }
 
     public function buildBlockCssOverlayRuntimeCss(array $block, $block_uid) {

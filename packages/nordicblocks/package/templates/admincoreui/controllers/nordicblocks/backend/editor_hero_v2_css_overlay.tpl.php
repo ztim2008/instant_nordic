@@ -23,6 +23,14 @@ function nbhCssOverlayEnsureEditorStyle() {
         + '.nbh-css-overlay-diff{display:flex;flex-direction:column;gap:.5rem;padding:.7rem .75rem;border:1px solid #e2e8f0;border-radius:10px;background:#fff;}'
         + '.nbh-css-overlay-diff strong{font-size:.72rem;color:#0f172a;}'
         + '.nbh-css-overlay-diff pre{margin:0;padding:.55rem .65rem;border-radius:8px;background:#0f172a;color:#dbeafe;font-size:.68rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,monospace;}'
+        + '.nbh-css-overlay-revisions{display:flex;flex-direction:column;gap:.45rem;}'
+        + '.nbh-css-overlay-revision-list{display:flex;flex-direction:column;gap:.5rem;max-height:18rem;overflow:auto;padding-right:.15rem;}'
+        + '.nbh-css-overlay-revision{display:flex;flex-direction:column;gap:.45rem;padding:.7rem .75rem;border:1px solid #e2e8f0;border-radius:10px;background:#fff;}'
+        + '.nbh-css-overlay-revision-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;}'
+        + '.nbh-css-overlay-revision-title{font-size:.72rem;font-weight:700;color:#0f172a;}'
+        + '.nbh-css-overlay-revision-meta{font-size:.67rem;color:#64748b;line-height:1.45;}'
+        + '.nbh-css-overlay-revision-actions{display:flex;gap:.4rem;flex-wrap:wrap;}'
+        + '.nbh-css-overlay-revision-preview{margin:0;padding:.5rem .6rem;border-radius:8px;background:#f8fafc;color:#334155;font-size:.68rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,monospace;}'
         + '.nbh-css-overlay-textarea{width:100%;min-height:126px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,monospace;font-size:.75rem;line-height:1.55;}'
         + '.nbh-css-overlay-actions{display:flex;gap:.45rem;flex-wrap:wrap;}'
         + '.nbh-css-overlay-actions button{border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;cursor:pointer;font-size:.72rem;font-weight:700;padding:.45rem .7rem;}'
@@ -86,11 +94,19 @@ function nbhCssOverlayBuildState(meta) {
         loading: false,
         saving: false,
         publishing: false,
+        restoring: false,
         error: '',
+        revisionsError: '',
         stateUrl: nbhCssOverlayStateUrl || '',
         saveUrl: nbhCssOverlaySaveUrl || '',
         publishUrl: nbhCssOverlayPublishUrl || '',
-        publishReady: !!meta.publishReady
+        publishReady: !!meta.publishReady,
+        revisionsReady: !!meta.revisionsReady,
+        revisionsUrl: nbhCssOverlayRevisionsUrl || '',
+        restoreUrl: nbhCssOverlayRestoreUrl || '',
+        revisionsLoading: false,
+        revisionsLoaded: false,
+        revisions: []
     };
 }
 
@@ -158,6 +174,12 @@ function nbhCssOverlayCanPublish() {
         && nbhCssOverlaySignature(nbhState.cssOverlay.savedTargetCss || {}) !== nbhCssOverlaySignature(nbhState.cssOverlay.publishedTargetCss || {}));
 }
 
+    function nbhCssOverlayCanUseRevisions() {
+        return !!(nbhCssOverlayCanPersist()
+        && nbhState.cssOverlay.revisionsReady
+        && nbhState.cssOverlay.revisionsUrl);
+    }
+
 function nbhCssOverlaySignature(targetCss) {
     if (!nbhCssOverlayIsEnabled()) {
         return '{}';
@@ -178,7 +200,27 @@ function nbhCssOverlayRefreshDirty() {
 }
 
 function nbhCssOverlayCanRevert() {
-    return !!(nbhCssOverlayIsEnabled() && nbhState.cssOverlay.dirty && !nbhState.cssOverlay.saving && !nbhState.cssOverlay.publishing);
+    return !!(nbhCssOverlayIsEnabled() && nbhState.cssOverlay.dirty && !nbhState.cssOverlay.saving && !nbhState.cssOverlay.publishing && !nbhState.cssOverlay.restoring);
+}
+
+function nbhCssOverlayRevisionMatchesSaved(revision) {
+    if (!nbhCssOverlayIsEnabled() || !revision || typeof revision !== 'object') {
+        return false;
+    }
+
+    return nbhCssOverlaySignature(revision.targetCss || {}) === nbhCssOverlaySignature(nbhState.cssOverlay.savedTargetCss || {});
+}
+
+function nbhCssOverlayCanRestoreRevision(revision) {
+    return !!(nbhCssOverlayCanUseRevisions()
+        && nbhState.cssOverlay.restoreUrl
+        && !nbhState.cssOverlay.dirty
+        && !nbhState.cssOverlay.saving
+        && !nbhState.cssOverlay.publishing
+        && !nbhState.cssOverlay.restoring
+        && revision
+        && revision.id
+        && !nbhCssOverlayRevisionMatchesSaved(revision));
 }
 
 function nbhCssOverlayPublishLabel() {
@@ -290,6 +332,10 @@ function nbhCssOverlayStatusText() {
         return 'Публикую draft overlay в runtime...';
     }
 
+    if (nbhState.cssOverlay.restoring) {
+        return 'Возвращаю выбранную revision обратно в draft...';
+    }
+
     if (!nbhCssOverlayCanPersist()) {
         return 'Session-only режим: изменения живут только в текущей browser session.';
     }
@@ -342,8 +388,41 @@ function nbhCssOverlayApplyPersistedState(meta) {
     nbhState.cssOverlay.publishedAt = meta.publishedAt || '';
     nbhState.cssOverlay.publishedBy = parseInt(meta.publishedBy || 0, 10) || 0;
     nbhState.cssOverlay.publishReady = !!meta.publishReady;
+    nbhState.cssOverlay.revisionsReady = !!meta.revisionsReady;
     nbhState.cssOverlay.error = '';
     nbhCssOverlayRefreshDirty();
+}
+
+function nbhCssOverlayLoadRevisions() {
+    if (!nbhCssOverlayCanUseRevisions()) {
+        return Promise.resolve();
+    }
+
+    nbhState.cssOverlay.revisionsLoading = true;
+    nbhState.cssOverlay.revisionsError = '';
+    nbhRenderPanels();
+
+    return fetch(nbhState.cssOverlay.revisionsUrl + '?limit=12', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+        .then(function(response) { return response.json(); })
+        .then(function(payload) {
+            if (!payload.ok) {
+                throw new Error(payload.error || 'css_overlay_revisions_error');
+            }
+
+            nbhState.cssOverlay.revisions = Array.isArray(payload.revisions) ? payload.revisions : [];
+            nbhState.cssOverlay.revisionsLoaded = true;
+        })
+        .catch(function(error) {
+            nbhState.cssOverlay.revisions = [];
+            nbhState.cssOverlay.revisionsLoaded = true;
+            nbhState.cssOverlay.revisionsError = error && error.message ? error.message : 'revisions_load_failed';
+        })
+        .finally(function() {
+            nbhState.cssOverlay.revisionsLoading = false;
+            nbhRenderPanels();
+        });
 }
 
 function nbhCssOverlayLoadPersisted() {
@@ -363,6 +442,7 @@ function nbhCssOverlayLoadPersisted() {
             }
 
             nbhCssOverlayApplyPersistedState(payload.cssOverlay || {});
+            return nbhCssOverlayLoadRevisions();
         })
         .catch(function(error) {
             nbhState.cssOverlay.error = error && error.message ? error.message : 'state_load_failed';
@@ -403,7 +483,9 @@ function nbhCssOverlaySavePersisted() {
             }
 
             nbhCssOverlayApplyPersistedState(payload.cssOverlay || {});
-            nbhRenderPanels();
+            return nbhCssOverlayLoadRevisions().then(function() {
+                nbhRenderPanels();
+            });
         })
         .catch(function(error) {
             nbhState.cssOverlay.error = error && error.message ? error.message : 'save_failed';
@@ -453,6 +535,53 @@ function nbhCssOverlayPublishPersisted() {
         })
         .finally(function() {
             nbhState.cssOverlay.publishing = false;
+            nbhRenderPanels();
+        });
+}
+
+function nbhCssOverlayRestoreRevision(revisionId) {
+    if (!nbhCssOverlayCanUseRevisions()) {
+        return Promise.resolve();
+    }
+
+    nbhState.cssOverlay.restoring = true;
+    nbhState.cssOverlay.error = '';
+    nbhRenderPanels();
+
+    return fetch(nbhState.cssOverlay.restoreUrl + '?csrf_token=' + encodeURIComponent(nbhCsrfToken), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            csrf_token: nbhCsrfToken,
+            version: nbhState.cssOverlay.version,
+            revisionId: revisionId
+        })
+    })
+        .then(function(response) { return response.json(); })
+        .then(function(payload) {
+            if (!payload.ok) {
+                if (payload.error === 'version_conflict' && payload.cssOverlay) {
+                    nbhCssOverlayApplyPersistedState(payload.cssOverlay);
+                    nbhCssOverlaySyncFrame();
+                    nbhRenderPanels();
+                }
+
+                throw new Error(payload.error || 'css_overlay_restore_error');
+            }
+
+            nbhCssOverlayApplyPersistedState(payload.cssOverlay || {});
+            nbhCssOverlaySyncFrame();
+
+            return nbhCssOverlayLoadRevisions().then(function() {
+                nbhRenderPanels();
+            });
+        })
+        .catch(function(error) {
+            nbhState.cssOverlay.error = error && error.message ? error.message : 'restore_failed';
+            nbhRenderPanels();
+        })
+        .finally(function() {
+            nbhState.cssOverlay.restoring = false;
             nbhRenderPanels();
         });
 }
@@ -579,6 +708,11 @@ document.getElementById('nbh-panel-body').addEventListener('click', function(eve
 
     if (action.dataset.cssOverlayAction === 'publish') {
         nbhCssOverlayPublishPersisted();
+        return;
+    }
+
+    if (action.dataset.cssOverlayAction === 'restore-revision') {
+        nbhCssOverlayRestoreRevision(parseInt(action.dataset.cssOverlayRevisionId || '0', 10) || 0);
         return;
     }
 

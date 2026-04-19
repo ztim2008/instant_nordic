@@ -53,6 +53,17 @@ Scope:
 4. presets хранятся как target-key maps по разрешённым `allowedTargets`, без произвольных selector injections;
 5. editor показывает diff draft vs published на уровне `targetCss`, а не сырых compiled selectors.
 
+### MVP-D
+
+Цель: добавить историю saved draft revisions и безопасный restore выбранной revision обратно в draft layer.
+
+Scope:
+
+1. revisions хранятся отдельно от current/published row в `cms_nordicblocks_block_css_revision`;
+2. каждая успешная операция `block_css_save` пишет snapshot нормализованного draft document с номером version;
+3. `block_css_restore` не трогает runtime напрямую, а восстанавливает выбранную revision как новый draft с новым version;
+4. editor показывает список последних revisions и позволяет вернуть их в draft перед отдельным publish.
+
 ## 3. Backend Actions
 
 ## 3.1 Что делаем в MVP-A
@@ -82,7 +93,8 @@ Scope:
 | `block_css_state` | `system/controllers/nordicblocks/backend/actions/block_css_state.php` | GET | Возвращает текущий сохранённый CSS overlay для блока, version и target metadata |
 | `block_css_save` | `system/controllers/nordicblocks/backend/actions/block_css_save.php` | POST JSON | Сохраняет текущий CSS overlay и возвращает нормализованный сохранённый документ |
 | `block_css_publish` | `system/controllers/nordicblocks/backend/actions/block_css_publish.php` | POST JSON | Продвигает saved draft в published runtime layer |
-| `block_css_revisions` | `system/controllers/nordicblocks/backend/actions/block_css_revisions.php` | GET | Возвращает список ревизий CSS overlay, только если ревизии включены в этот этап |
+| `block_css_revisions` | `system/controllers/nordicblocks/backend/actions/block_css_revisions.php` | GET | Возвращает список последних saved draft revisions для блока |
+| `block_css_restore` | `system/controllers/nordicblocks/backend/actions/block_css_restore.php` | POST JSON | Возвращает выбранную revision обратно в draft layer с новым version |
 
 ### Минимальный payload для `block_css_state`
 
@@ -176,6 +188,7 @@ Scope:
 | `nbhBuildCssOverlayRenderers` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_control_renderers_css.tpl.php` | Рендерит UI fine-tune панели для `title`, `body`, `accentSurface`, `bodySurface` |
 | `nbCanvasCssOverlayBridge` | `system/controllers/nordicblocks/backend/actions/block_canvas.php` | Принимает overlay CSS в iframe и вставляет его в отдельный `<style>` |
 | `nbhCssOverlayPublishFlow` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | Управляет published state, publish button, preset apply и diff summary |
+| `nbhCssOverlayRevisionFlow` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | Загружает revisions list и выполняет restore выбранной revision обратно в draft |
 
 ### Почему не отдельный frontend bundle на MVP
 
@@ -246,6 +259,17 @@ Scope:
 | modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2.tpl.php` | Shell получает publish URL |
 | modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | publish state, preset apply, target diff |
 | modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_control_renderers_css.tpl.php` | UI для presets, draft/published diff и publish button |
+
+## 5.6 MVP-D: revisions history
+
+| Статус | Файл | Что меняем |
+| --- | --- | --- |
+| add | `system/controllers/nordicblocks/backend/actions/block_css_revisions.php` | Отдаёт список последних draft revisions |
+| add | `system/controllers/nordicblocks/backend/actions/block_css_restore.php` | Восстанавливает revision обратно в draft layer |
+| modify | `system/controllers/nordicblocks/model.php` | Пишет revision snapshot на успешный save draft и умеет list/restore |
+| modify | `system/controllers/nordicblocks/backend/actions/block_edit.php` | Передаёт revisions/restore URLs в editor shell |
+| modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | transport для revisions list + restore |
+| modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_control_renderers_css.tpl.php` | UI для истории revisions |
 
 ## 5.4 Какие файлы в MVP специально не трогаем
 
@@ -366,6 +390,8 @@ CREATE TABLE cms_nordicblocks_block_css_revision (
 ```
 
 На production start это уже не минимум, а рекомендуемое расширение.
+
+Для текущего rollout MVP-D это уже обязательная миграция, потому что editor UI и backend actions опираются на наличие history table.
 
 ## 8. Порядок выполнения
 
