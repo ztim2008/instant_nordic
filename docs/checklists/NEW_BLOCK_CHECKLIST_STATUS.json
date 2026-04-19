@@ -6,7 +6,7 @@
             "title": "Каталог",
             "family": "catalog-family-v1",
             "status": "in_progress",
-            "checkpoint": "pending",
+            "checkpoint": "snapshot/20260419-082751",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
@@ -14,9 +14,9 @@
                 "editor_shell": true,
                 "shared_runtime_css": true,
                 "package_mirror": true,
-                "live_smoke": false
+                "live_smoke": true
             },
-            "notes": "Первый block type каталожной линейки уже подключен в first-wave registry, contract/data layer, unified editor shell, shared theme CSS и package mirror. В SSR/runtime добавлены toolbar search/category/price/sort, active filters и fullscreen media modal со swipe-навигацией. Live smoke ещё не пройден; checkpoint всё ещё pending, потому что worktree текущей сессии остаётся грязным и repo-wide snapshot зафиксирует весь набор изменений."
+            "notes": "Первый block type каталожной линейки уже подключен в first-wave registry, contract/data layer, unified editor shell, shared theme CSS и package mirror. В SSR/runtime добавлены toolbar search/category/price/sort, active filters и fullscreen media modal со swipe-навигацией. Admin smoke пройден после checkpoint snapshot/20260419-082751: create, editor load, save/reload, content_list mapping/persistence и preview runtime. Для content_list на текущем окружении подтверждён рендер через ctype Статьи; search/category/price/sort/reset и empty-state проверены на ручном наборе, а modal/swipe прогнаны в preview runtime с временной multi-slide gallery подстановкой, потому что demo seed сейчас одноизображенный."
         },
         "content_feed": {
             "title": "Лента новостей",
