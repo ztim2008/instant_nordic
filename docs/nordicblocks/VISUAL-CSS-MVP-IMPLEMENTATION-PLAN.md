@@ -41,6 +41,18 @@ Scope:
 2. одна таблица current-state как минимальный persistence слой;
 3. revisions можно отложить на следующий шаг, но лучше предусмотреть отдельной таблицей.
 
+### MVP-C
+
+Цель: разделить saved draft и published runtime, добавить selector-safe presets и явный publish UX.
+
+Scope:
+
+1. `block_css_save` обновляет только draft document;
+2. `block_css_publish` отдельно продвигает draft в runtime layer;
+3. editor canvas стартует с draft CSS, public runtime/page/widget стартуют только с published CSS;
+4. presets хранятся как target-key maps по разрешённым `allowedTargets`, без произвольных selector injections;
+5. editor показывает diff draft vs published на уровне `targetCss`, а не сырых compiled selectors.
+
 ## 3. Backend Actions
 
 ## 3.1 Что делаем в MVP-A
@@ -69,6 +81,7 @@ Scope:
 | --- | --- | --- | --- |
 | `block_css_state` | `system/controllers/nordicblocks/backend/actions/block_css_state.php` | GET | Возвращает текущий сохранённый CSS overlay для блока, version и target metadata |
 | `block_css_save` | `system/controllers/nordicblocks/backend/actions/block_css_save.php` | POST JSON | Сохраняет текущий CSS overlay и возвращает нормализованный сохранённый документ |
+| `block_css_publish` | `system/controllers/nordicblocks/backend/actions/block_css_publish.php` | POST JSON | Продвигает saved draft в published runtime layer |
 | `block_css_revisions` | `system/controllers/nordicblocks/backend/actions/block_css_revisions.php` | GET | Возвращает список ревизий CSS overlay, только если ревизии включены в этот этап |
 
 ### Минимальный payload для `block_css_state`
@@ -84,6 +97,16 @@ Scope:
     "enabled": true,
     "scopeSelector": "[data-nb-block-root=\"hero_panels_wide\"]",
     "allowedTargets": ["title", "body", "accentSurface", "bodySurface"],
+    "presets": [
+      {
+        "key": "editorial-punch",
+        "label": "Editorial Punch",
+        "description": "Быстрый старт для плотной журнальной типографики.",
+        "targetCss": {
+          "title": "font-size: clamp(3.4rem, 5.4vw, 5.2rem);\nletter-spacing: -0.05em;"
+        }
+      }
+    ],
     "targetCss": {
       "title": "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;"
     },
@@ -104,6 +127,14 @@ Scope:
 }
 ```
 
+### Минимальный payload для `block_css_publish`
+
+```json
+{
+  "version": 3
+}
+```
+
 ### Implementation note for MVP-B
 
 В production-safe реализации persisted storage должен хранить не «готовый CSS для всего документа», а canonical target-document по разрешённым target keys.
@@ -120,6 +151,20 @@ Scope:
 2. editor получает target map + compiled preview CSS под editor scope;
 3. runtime/page/widget/canvas получают compiled CSS уже под instance-specific selector.
 
+### Implementation note for MVP-C
+
+В MVP-C runtime больше не должен читать тот же current document, который редактируется в shell.
+
+Иначе explicit publish UX фиктивен: любой saved draft сразу утечёт в public runtime.
+
+Поэтому production-safe схема такая:
+
+1. одна row хранит draft document в `css_text` + `version`;
+2. та же row хранит published document в `published_css_text` + `published_version`;
+3. `block_canvas` использует draft document;
+4. public `view` и widget runtime используют только published document;
+5. SQL migration должна backfill-нуть существующие rows: `published_* := draft_*`, иначе после rollout runtime внезапно опустеет.
+
 ## 4. JS Modules
 
 В текущем репозитории editor shell собран через tpl partials, а не через отдельный frontend bundle. Поэтому в MVP разумно добавлять JS-модули в том же стиле.
@@ -130,6 +175,7 @@ Scope:
 | `nbhCssOverlayTransport` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | Отправляет CSS в iframe через `postMessage`, умеет `set` и `clear` |
 | `nbhBuildCssOverlayRenderers` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_control_renderers_css.tpl.php` | Рендерит UI fine-tune панели для `title`, `body`, `accentSurface`, `bodySurface` |
 | `nbCanvasCssOverlayBridge` | `system/controllers/nordicblocks/backend/actions/block_canvas.php` | Принимает overlay CSS в iframe и вставляет его в отдельный `<style>` |
+| `nbhCssOverlayPublishFlow` | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | Управляет published state, publish button, preset apply и diff summary |
 
 ### Почему не отдельный frontend bundle на MVP
 
@@ -187,6 +233,19 @@ Scope:
 | modify | `system/controllers/nordicblocks/backend/actions/block_edit.php` | Даём shell URLs новых CSS endpoints |
 | modify | `system/controllers/nordicblocks/model.php` | CRUD для current CSS overlay и ревизий |
 | modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | Загрузка persisted CSS и explicit save/revert |
+
+## 5.5 MVP-C: draft/publish layer
+
+| Статус | Файл | Что меняем |
+| --- | --- | --- |
+| add | `system/controllers/nordicblocks/backend/actions/block_css_publish.php` | Отдельный publish action для runtime layer |
+| modify | `system/controllers/nordicblocks/model.php` | Разделяем draft и published document в одной row, добавляем presets и diff metadata |
+| modify | `system/controllers/nordicblocks/backend/actions/block_canvas.php` | Canvas берёт именно draft overlay |
+| modify | `system/controllers/nordicblocks/actions/view.php` | Public runtime остаётся только на published overlay |
+| modify | `system/widgets/nordicblocks_page/widget.php` | Widget runtime остаётся только на published overlay |
+| modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2.tpl.php` | Shell получает publish URL |
+| modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_css_overlay.tpl.php` | publish state, preset apply, target diff |
+| modify | `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2_control_renderers_css.tpl.php` | UI для presets, draft/published diff и publish button |
 
 ## 5.4 Какие файлы в MVP специально не трогаем
 
@@ -258,6 +317,33 @@ CREATE TABLE cms_nordicblocks_block_css (
 Этого достаточно, чтобы:
 
 1. хранить один актуальный CSS document на блок;
+
+## 7.3 Минимум для MVP-C
+
+Нужно расширить ту же таблицу published-слоем, а не заводить второй table только ради первой publish-итерации.
+
+Минимум колонок:
+
+```sql
+ALTER TABLE cms_nordicblocks_block_css
+    ADD COLUMN published_css_text MEDIUMTEXT NULL AFTER css_text,
+    ADD COLUMN published_version INT UNSIGNED NOT NULL DEFAULT 0 AFTER version,
+    ADD COLUMN published_by INT UNSIGNED DEFAULT NULL AFTER updated_by,
+    ADD COLUMN published_at DATETIME DEFAULT NULL AFTER updated_at;
+```
+
+И обязательный backfill после rollout:
+
+```sql
+UPDATE cms_nordicblocks_block_css
+SET
+    published_css_text = css_text,
+    published_version  = CASE WHEN TRIM(COALESCE(css_text, '')) <> '' THEN GREATEST(version, 1) ELSE published_version END,
+    published_by       = COALESCE(published_by, updated_by),
+    published_at       = COALESCE(published_at, updated_at)
+WHERE COALESCE(published_version, 0) = 0
+  AND TRIM(COALESCE(css_text, '')) <> '';
+```
 2. повторно открывать редактор и видеть те же fine-tune правки;
 3. не трогать block contract table и не смешивать contract с freeform CSS.
 

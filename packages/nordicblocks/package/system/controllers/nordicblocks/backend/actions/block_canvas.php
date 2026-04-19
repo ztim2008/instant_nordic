@@ -30,7 +30,7 @@ a{color:inherit;text-decoration:none}
 ';
 
         $block_html = $this->renderSingleBlock($block);
-        $overlay_css = $this->model->buildBlockCssOverlayRuntimeCss($block, 'block_' . (int) ($block['id'] ?? 0));
+        $overlay_css = $this->model->buildBlockCssOverlayEditorCss($block, 'block_' . (int) ($block['id'] ?? 0));
         $empty_html = $block_html ? '' : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:1rem;color:#94a3b8;text-align:center;padding:2rem">'
             . '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>'
             . '<p style="font-size:1.1rem;font-weight:600;color:#64748b;margin:0">Блок пустой</p>'

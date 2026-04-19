@@ -11,7 +11,7 @@ class actionNordicblocksBlockPlace extends cmsAction {
         }
 
         if (($block['status'] ?? 'disabled') !== 'active') {
-            cmsCore::addFlashMessage('error', 'Разместить можно только активный блок.');
+            cmsUser::addSessionMessage('Разместить можно только активный блок.', 'error');
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 
@@ -20,35 +20,42 @@ class actionNordicblocksBlockPlace extends cmsAction {
         $position      = $this->resolvePosition($template_name);
 
         if ($position === '') {
-            cmsCore::addFlashMessage('error', 'Не найдена доступная позиция в схеме шаблона.');
+            cmsUser::addSessionMessage('Не найдена доступная позиция в схеме шаблона.', 'error');
             return $this->redirect(href_to('admin', 'widgets') . '?template_name=' . urlencode($template_name));
         }
 
         $widget = $this->findBlockWidget();
         if (!$widget) {
-            cmsCore::addFlashMessage('error', 'Виджет NordicBlocks: блок не зарегистрирован. Запустите nordicblocks-sync --apply.');
+            cmsUser::addSessionMessage('Виджет NordicBlocks: блок не зарегистрирован. Запустите nordicblocks-sync --apply.', 'error');
             return $this->redirect(href_to('admin', 'widgets') . '?template_name=' . urlencode($template_name));
         }
 
         $existing = $this->findExistingBinding((int) $widget['id'], $block_id, $template_name, $page_id, $position);
         if ($existing) {
-            cmsCore::addFlashMessage('success', 'Блок уже размещён в этой позиции.');
+            cmsUser::addSessionMessage('Блок уже размещён в этой позиции.', 'success');
             return $this->redirect(href_to('admin', 'widgets') . '?template_name=' . urlencode($template_name) . '&scroll_to=pos-' . urlencode($position));
         }
 
         $res = $this->model_backend_widgets->addWidgetBinding($widget, $page_id, $position, $template_name);
         if (!$res || empty($res['id'])) {
-            cmsCore::addFlashMessage('error', 'Не удалось создать привязку виджета.');
+            cmsUser::addSessionMessage('Не удалось создать привязку виджета.', 'error');
             return $this->redirect(href_to('admin', 'widgets') . '?template_name=' . urlencode($template_name));
         }
 
-        $this->model_backend_widgets->updateWidgetBinding((int) $res['id'], [
-            'options' => [
-                'block_id' => $block_id
-            ]
-        ]);
+        $widget_bind = $this->model_backend_widgets->getWidgetBinding((int) $res['id']);
+        if (!$widget_bind) {
+            $this->model_backend_widgets->deleteWidgetBinding((int) $res['id']);
+            cmsUser::addSessionMessage('Не удалось инициализировать привязку виджета после создания.', 'error');
+            return $this->redirect(href_to('admin', 'widgets') . '?template_name=' . urlencode($template_name));
+        }
 
-        cmsCore::addFlashMessage('success', 'Блок размещён через виджет NordicBlocks: блок.');
+        $widget_bind['options'] = [
+            'block_id' => $block_id
+        ];
+
+        $this->model_backend_widgets->updateWidgetBinding((int) $res['id'], $widget_bind);
+
+        cmsUser::addSessionMessage('Блок размещён через виджет NordicBlocks: блок.', 'success');
 
         return $this->redirect(
             href_to('admin', 'widgets') .

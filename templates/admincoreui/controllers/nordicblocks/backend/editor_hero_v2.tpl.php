@@ -997,6 +997,7 @@ var nbhServerBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_U
 var nbhCssOverlayEnabled = <?= json_encode(!empty($css_overlay_enabled), JSON_UNESCAPED_UNICODE) ?>;
 var nbhCssOverlayStateUrl = <?= json_encode($css_overlay_state_url ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 var nbhCssOverlaySaveUrl = <?= json_encode($css_overlay_save_url ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+var nbhCssOverlayPublishUrl = <?= json_encode($css_overlay_publish_url ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 var nbhState = {
     loaded: false,

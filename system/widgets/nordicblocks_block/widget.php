@@ -57,10 +57,15 @@ class widgetNordicblocksBlock extends cmsWidget {
         $block_contract = (array) ($block['contract'] ?? []);
         $block_type     = $type;
         $block_uid      = 'widget_block_' . $block_id;
+        $block_css_overlay_css = $model->buildBlockCssOverlayRuntimeCss($block, $block_uid);
 
         ob_start();
         include $render_file;
         $html = ob_get_clean();
+
+        if ($block_css_overlay_css !== '') {
+            $html = '<style data-nb-block-css-overlay="' . htmlspecialchars((string) $block_uid, ENT_QUOTES, 'UTF-8') . '">' . str_ireplace('</style', '<\\/style', (string) $block_css_overlay_css) . '</style>' . $html;
+        }
 
         if (!empty($cache_profile['cacheEligible'])) {
             $model->setCachedBlock((string) $cache_profile['cacheKey'], (string) $html, 3600);

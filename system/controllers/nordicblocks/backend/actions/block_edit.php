@@ -24,11 +24,13 @@ class actionNordicblocksBlockEdit extends cmsAction {
         $render_version = $this->model->getRenderCacheVersion((string) ($block['type'] ?? ''));
         $css_overlay_enabled = $this->model->supportsBlockCssOverlay((string) ($block['type'] ?? ''));
         $css_overlay_storage_ready = $css_overlay_enabled && $this->model->hasBlockCssOverlayStorage();
+        $css_overlay_publish_ready = $css_overlay_enabled && $this->model->hasBlockCssOverlayPublishStorage();
 
         $canvas_url       = href_to($this->controller->root_url, 'block_canvas', $block_id);
         $editor_state_url = href_to($this->controller->root_url, 'block_editor_state', $block_id);
         $css_overlay_state_url = $css_overlay_storage_ready ? href_to($this->controller->root_url, 'block_css_state', $block_id) : null;
         $css_overlay_save_url = $css_overlay_storage_ready ? href_to($this->controller->root_url, 'block_css_save', $block_id) : null;
+        $css_overlay_publish_url = $css_overlay_publish_ready ? href_to($this->controller->root_url, 'block_css_publish', $block_id) : null;
         $template_name_view = 'backend/editor_hero_v2';
         $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
             'template_name'               => $template_name,
@@ -51,6 +53,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
             'css_overlay_enabled' => $css_overlay_enabled,
             'css_overlay_state_url' => $css_overlay_state_url,
             'css_overlay_save_url' => $css_overlay_save_url,
+            'css_overlay_publish_url' => $css_overlay_publish_url,
             'place_url'      => $place_url,
             'render_version' => $render_version,
             'render_version_label' => (string) ($block['type'] ?? 'block') . ' SSR',
