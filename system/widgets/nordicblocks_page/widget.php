@@ -37,8 +37,9 @@ class widgetNordicblocksPage extends cmsWidget {
             return '';
         }
 
-        $html        = '';
-        $blocks_base = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $html           = '';
+        $blocks_base    = cmsConfig::get('root_path') . 'system/controllers/nordicblocks/blocks';
+        $design_version = $model->getDesignCacheVersion();
 
         foreach ($blocks as $block) {
             $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
@@ -47,13 +48,26 @@ class widgetNordicblocksPage extends cmsWidget {
                 continue;
             }
 
-            $cache_key = 'page_' . $page['id'] . '_' . $uid . '_'
-                . substr(md5(json_encode($block)), 0, 8);
+            $block = $model->hydrateBlockForRender($block, [
+                'mode'    => 'widget_page',
+                'page_id' => (int) ($page['id'] ?? 0),
+                'uid'     => $uid,
+            ]);
 
-            $cached = $model->getCachedBlock($cache_key);
-            if ($cached !== null) {
-                $html .= $cached;
-                continue;
+            $cache_profile = $model->buildRenderCacheProfile($block, [
+                'surface'        => 'widget_page',
+                'mode'           => 'widget_page',
+                'page_id'        => (int) ($page['id'] ?? 0),
+                'uid'            => $uid,
+                'design_version' => $design_version,
+            ]);
+
+            if (!empty($cache_profile['cacheEligible'])) {
+                $cached = $model->getCachedBlock((string) $cache_profile['cacheKey']);
+                if ($cached !== null) {
+                    $html .= $cached;
+                    continue;
+                }
             }
 
             $render_file = "{$blocks_base}/{$type}/render.php";
@@ -61,15 +75,18 @@ class widgetNordicblocksPage extends cmsWidget {
                 continue;
             }
 
-            $props      = isset($block['props']) && is_array($block['props']) ? $block['props'] : [];
-            $block_type = $type;
-            $block_uid  = $uid;
+            $props          = isset($block['props']) && is_array($block['props']) ? $block['props'] : [];
+            $block_contract = isset($block['contract']) && is_array($block['contract']) ? $block['contract'] : [];
+            $block_type     = $type;
+            $block_uid      = $uid;
 
             ob_start();
             include $render_file;
             $block_html = ob_get_clean();
 
-            $model->setCachedBlock($cache_key, $block_html, 3600);
+            if (!empty($cache_profile['cacheEligible'])) {
+                $model->setCachedBlock((string) $cache_profile['cacheKey'], $block_html, 3600);
+            }
             $html .= $block_html;
         }
 

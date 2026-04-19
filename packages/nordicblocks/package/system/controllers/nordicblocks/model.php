@@ -162,12 +162,14 @@ class modelNordicblocks extends cmsModel {
         if ($design_version === '') {
             $design_version = $this->getDesignCacheVersion();
         }
+        $renderer_version = $this->getRenderCacheVersion((string) ($block['type'] ?? ''));
 
         $namespace = $this->buildRenderCacheNamespace($block, $surface, $context);
         $payload = [
             'surface'        => $surface,
             'blockFingerprint'=> $this->buildRenderBlockFingerprint($block),
             'designVersion'  => $design_version,
+            'rendererVersion'=> $renderer_version,
             'adapterHash'    => (string) ($adapter_context['hash'] ?? 'manual'),
         ];
 
@@ -1365,6 +1367,20 @@ class modelNordicblocks extends cmsModel {
 
     // ── УТИЛИТЫ ───────────────────────────────────────────────────
 
+    public function getRenderCacheVersion($block_type = '') {
+        $root_path = cmsConfig::get('root_path');
+        $parts = [
+            'helpers:' . $this->getFileCacheStamp($root_path . 'system/controllers/nordicblocks/blocks/render_helpers.php'),
+        ];
+
+        $block_type = $this->normalizeBlockType((string) $block_type);
+        if ($block_type !== '') {
+            $parts[] = $block_type . ':' . $this->getFileCacheStamp($root_path . 'system/controllers/nordicblocks/blocks/' . $block_type . '/render.php');
+        }
+
+        return substr(md5(implode('|', $parts)), 0, 16);
+    }
+
     private function buildRenderCacheNamespace(array $block, $surface, array $context = []) {
         $block_id = (int) ($block['id'] ?? 0);
         $page_id  = (int) ($context['page_id'] ?? 0);
@@ -1411,6 +1427,19 @@ class modelNordicblocks extends cmsModel {
         $normalized = $this->normalizeValueForCache($value);
         $json = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         return is_string($json) ? $json : '';
+    }
+
+    private function getFileCacheStamp($file_path) {
+        if (!is_string($file_path) || $file_path === '' || !is_file($file_path)) {
+            return 'missing';
+        }
+
+        $mtime = @filemtime($file_path);
+        if ($mtime === false) {
+            return 'unknown';
+        }
+
+        return (string) $mtime;
     }
 
     private function normalizeValueForCache($value) {
