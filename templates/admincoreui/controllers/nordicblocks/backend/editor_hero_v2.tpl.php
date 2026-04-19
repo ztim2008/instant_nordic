@@ -1008,7 +1008,7 @@ var nbhState = {
     draft: null,
     cssOverlay: null,
     blockTitle: document.getElementById('nbh-title-input').value || '',
-    selectedEntity: 'title',
+    selectedEntity: '',
     activeTab: 'content',
     activeBreakpoint: 'desktop',
     dirty: false,
@@ -1017,7 +1017,12 @@ var nbhState = {
     queuedSave: false,
     queuedSilent: true,
     debounceTimer: null,
-    openAccordionByTab: {}
+    openAccordionByTab: {},
+    canvas: {
+        ready: false,
+        availableEntities: [],
+        selectedEntity: ''
+    }
 };
 
 function nbhClone(value) {
@@ -1049,6 +1054,96 @@ function nbhSet(obj, path, value) {
         current = current[key];
     }
     current[parts[parts.length - 1]] = value;
+}
+
+function nbhResolvedEntityKeys() {
+    var resolved = nbhGet(nbhState, 'server.resolved.entities', {});
+
+    return resolved && typeof resolved === 'object' ? Object.keys(resolved) : [];
+}
+
+function nbhPostCanvasMessage(type, payload) {
+    var frame = document.getElementById('nbh-canvas-frame');
+
+    if (!frame || !frame.contentWindow) {
+        return;
+    }
+
+    frame.contentWindow.postMessage(Object.assign({
+        source: 'nordicblocks-editor',
+        type: type
+    }, payload || {}), '*');
+}
+
+function nbhRequestCanvasState(reason) {
+    nbhPostCanvasMessage('canvas:request-state', {
+        reason: reason || 'shell-request-state'
+    });
+}
+
+function nbhCanvasHasEntity(entityKey) {
+    if (!entityKey) {
+        return false;
+    }
+
+    if (!nbhState.canvas || !nbhState.canvas.ready) {
+        return true;
+    }
+
+    return Array.isArray(nbhState.canvas.availableEntities) && nbhState.canvas.availableEntities.indexOf(entityKey) !== -1;
+}
+
+function nbhSelectableEntityKeys() {
+    return nbhResolvedEntityKeys().filter(function(entityKey) {
+        return nbhCanvasHasEntity(entityKey);
+    });
+}
+
+function nbhResolveSelectedEntity(entityKey) {
+    var resolvedKeys = nbhSelectableEntityKeys();
+    var preferredEntity = '';
+
+    if (entityKey && (!nbhState.canvas || !nbhState.canvas.ready || nbhCanvasHasEntity(entityKey))) {
+        return String(entityKey);
+    }
+
+    if (nbhState.selectedEntity && (!nbhState.canvas || !nbhState.canvas.ready || nbhCanvasHasEntity(nbhState.selectedEntity))) {
+        return String(nbhState.selectedEntity);
+    }
+
+    if (typeof nbhPreferredEntityForActiveTab === 'function') {
+        preferredEntity = nbhPreferredEntityForActiveTab();
+        if (preferredEntity) {
+            return preferredEntity;
+        }
+    }
+
+    return resolvedKeys.length ? resolvedKeys[0] : '';
+}
+
+function nbhSyncCanvasSelection(reason) {
+    var entityKey = nbhResolveSelectedEntity('');
+
+    if (!entityKey) {
+        return;
+    }
+
+    nbhPostCanvasMessage('canvas:select-entity', {
+        entity: entityKey,
+        reason: reason || 'shell-sync'
+    });
+}
+
+function nbhApplyCanvasState(payload) {
+    var entities = Array.isArray(payload && payload.entities) ? payload.entities.filter(Boolean) : [];
+
+    nbhState.canvas.ready = true;
+    nbhState.canvas.availableEntities = entities;
+    nbhState.canvas.selectedEntity = payload && payload.entity ? String(payload.entity) : '';
+
+    if (nbhState.selectedEntity && !nbhCanvasHasEntity(nbhState.selectedEntity)) {
+        nbhState.selectedEntity = '';
+    }
 }
 
 function nbhHumanEntity(entityKey) {
@@ -4305,11 +4400,13 @@ function nbhSyncCanvasHeightFromFrame() {
 function nbhSelectEntity(entityKey, fromCanvas, options) {
     options = options || {};
 
+    entityKey = nbhResolveSelectedEntity(entityKey);
     if (!entityKey) return;
     if (!options.preserveNotice) {
         nbhState.autoSelectionNotice = null;
     }
     nbhState.selectedEntity = entityKey;
+    nbhState.canvas.selectedEntity = entityKey;
     var label = document.getElementById('nbhSelectionLabel');
     if (label) {
         label.textContent = 'Сущность: ' + nbhHumanEntity(entityKey);
@@ -4318,11 +4415,8 @@ function nbhSelectEntity(entityKey, fromCanvas, options) {
         chip.classList.toggle('is-active', chip.dataset.entity === entityKey);
     });
     nbhRenderPanels();
-    if (!fromCanvas) {
-        var frame = document.getElementById('nbh-canvas-frame');
-        if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ source: 'nordicblocks-editor', type: 'entity:select', entity: entityKey }, '*');
-        }
+    if (!fromCanvas && options.syncCanvas !== false) {
+        nbhSyncCanvasSelection(options.reason || 'shell-selection');
     }
 }
 
@@ -4367,12 +4461,13 @@ function nbhLoadState() {
             nbhState.cssOverlay = nbhCssOverlayBuildState(payload.cssOverlay || {});
             nbhState.activeTab = payload.ui && payload.ui.activeTab ? payload.ui.activeTab : 'content';
             nbhState.activeBreakpoint = payload.ui && payload.ui.activeBreakpoint ? payload.ui.activeBreakpoint : 'desktop';
-            nbhState.selectedEntity = payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : 'title';
+            nbhState.selectedEntity = nbhResolveSelectedEntity(payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : '');
             primedCatalog = nbhPrimeCatalogBrowserDraft();
             return nbhCssOverlayLoadPersisted().then(function() {
                 nbhState.loaded = true;
                 nbhRender();
                 nbhCssOverlaySyncFrame();
+                nbhSyncCanvasSelection('state-load');
 
                 if (primedCatalog) {
                     nbhMarkDirty();

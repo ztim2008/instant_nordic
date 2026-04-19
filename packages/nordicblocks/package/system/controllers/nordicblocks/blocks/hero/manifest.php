@@ -3,6 +3,7 @@
 return [
     'title' => 'Hero inspector manifest',
     'entities' => [
+        'section' => ['label' => 'Секция'],
         'eyebrow' => [],
         'title' => [],
         'subtitle' => [],

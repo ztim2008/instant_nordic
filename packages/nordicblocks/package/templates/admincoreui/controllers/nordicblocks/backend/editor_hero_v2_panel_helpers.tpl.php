@@ -192,8 +192,7 @@ function nbhEntityHasPanelsForActiveTab(entityKey) {
 }
 
 function nbhPreferredEntityForActiveTab() {
-    var resolved = nbhState.server && nbhState.server.resolved && nbhState.server.resolved.entities ? nbhState.server.resolved.entities : {};
-    var entityKeys = Object.keys(resolved);
+    var entityKeys = nbhSelectableEntityKeys();
     var bestKey = nbhState.selectedEntity;
     var bestScore = -100001;
     var index;
@@ -303,8 +302,7 @@ function nbhEnsureSelectionForActiveTab(options) {
 }
 
 function nbhEntityChipList() {
-    var resolved = nbhState.server.resolved.entities || {};
-    return Object.keys(resolved).filter(function(key) {
+    return nbhSelectableEntityKeys().filter(function(key) {
         return nbhEntityHasPanelsForActiveTab(key);
     }).map(function(key) {
         return '<button type="button" class="nbh-entity-chip' + (nbhState.selectedEntity === key ? ' is-active' : '') + '" data-entity="' + key + '">' + nbhHumanEntity(key) + '</button>';

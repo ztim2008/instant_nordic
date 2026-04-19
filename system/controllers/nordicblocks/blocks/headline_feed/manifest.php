@@ -3,6 +3,7 @@
 return [
     'title' => 'Главная статья и лента inspector manifest',
     'entities' => [
+        'section' => ['label' => 'Секция'],
         'title' => ['label' => 'Заголовок секции'],
         'subtitle' => ['label' => 'Описание секции'],
         'primaryButton' => ['label' => 'Ссылка секции'],
@@ -11,12 +12,13 @@ return [
         'media' => ['label' => 'Изображения'],
         'itemTitle' => ['label' => 'Заголовки материалов'],
         'itemText' => ['label' => 'Анонсы материалов'],
+        'itemLink' => ['label' => 'CTA карточки'],
         'meta' => ['label' => 'Мета материалов'],
     ],
     'entityGroups' => [
         'items' => [
             'label' => 'Lead и лента',
-            'entities' => ['items', 'itemSurface', 'media', 'itemTitle', 'itemText', 'meta'],
+            'entities' => ['items', 'itemSurface', 'media', 'itemTitle', 'itemText', 'itemLink', 'meta'],
         ],
     ],
     'capabilities' => [

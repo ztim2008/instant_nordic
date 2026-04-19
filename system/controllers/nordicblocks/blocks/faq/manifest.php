@@ -3,6 +3,7 @@
 return [
     'title' => 'FAQ inspector manifest',
     'entities' => [
+        'section' => ['label' => 'Секция'],
         'eyebrow' => [],
         'title' => [],
         'subtitle' => [],

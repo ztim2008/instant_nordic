@@ -3,6 +3,7 @@
 return [
     'title' => 'Лента новостей inspector manifest',
     'entities' => [
+        'section' => ['label' => 'Секция'],
         'title' => ['label' => 'Заголовок секции'],
         'subtitle' => ['label' => 'Описание секции'],
         'primaryButton' => ['label' => 'Ссылка секции'],
@@ -11,12 +12,13 @@ return [
         'media' => ['label' => 'Изображение карточки'],
         'itemTitle' => ['label' => 'Заголовок карточки'],
         'itemText' => ['label' => 'Анонс карточки'],
+        'itemLink' => ['label' => 'CTA карточки'],
         'meta' => ['label' => 'Мета карточки'],
     ],
     'entityGroups' => [
         'items' => [
             'label' => 'Лента',
-            'entities' => ['items', 'itemSurface', 'media', 'itemTitle', 'itemText', 'meta'],
+            'entities' => ['items', 'itemSurface', 'media', 'itemTitle', 'itemText', 'itemLink', 'meta'],
         ],
     ],
     'capabilities' => [

@@ -57,6 +57,34 @@ a{color:inherit;text-decoration:none}
     var resizeFrameTimer = null;
     var overlayStyleNode = null;
 
+    function emitToParent(type, payload) {
+        if (!window.parent) {
+            return;
+        }
+
+        window.parent.postMessage(Object.assign({
+            source: 'nordicblocks-canvas',
+            type: type
+        }, payload || {}), '*');
+    }
+
+    function listAvailableEntities() {
+        var seen = {};
+
+        return Array.prototype.reduce.call(document.querySelectorAll('[data-nb-entity]'), function(result, node) {
+            var entityKey = node && node.getAttribute ? String(node.getAttribute('data-nb-entity') || '') : '';
+
+            if (!entityKey || seen[entityKey]) {
+                return result;
+            }
+
+            seen[entityKey] = true;
+            result.push(entityKey);
+
+            return result;
+        }, []);
+    }
+
     function ensureOverlayStyleNode() {
         if (overlayStyleNode && overlayStyleNode.parentNode) {
             return overlayStyleNode;
@@ -93,6 +121,20 @@ a{color:inherit;text-decoration:none}
         if (selectedNode) {
             selectedNode.classList.remove('nb-editor-selected');
         }
+
+        selectedNode = null;
+    }
+
+    function getSelectedEntity() {
+        return selectedNode && selectedNode.getAttribute ? String(selectedNode.getAttribute('data-nb-entity') || '') : '';
+    }
+
+    function emitSelectionChange(reason) {
+        emitToParent('canvas:selection', {
+            entity: getSelectedEntity(),
+            entities: listAvailableEntities(),
+            reason: reason || 'unknown'
+        });
     }
 
     function emitCanvasMetrics() {
@@ -107,13 +149,7 @@ a{color:inherit;text-decoration:none}
             height = Math.max(height, html.scrollHeight, html.offsetHeight, html.clientHeight);
         }
 
-        if (window.parent) {
-            window.parent.postMessage({
-                source: 'nordicblocks-canvas',
-                type: 'canvas:metrics',
-                height: height
-            }, '*');
-        }
+        emitToParent('canvas:metrics', { height: height });
     }
 
     function scheduleCanvasMetrics() {
@@ -127,22 +163,24 @@ a{color:inherit;text-decoration:none}
     function selectEntity(entityKey, shouldScroll) {
         var safeKey;
 
-        if (!entityKey) {
-            return;
-        }
-
         clearSelection();
+
+        if (!entityKey) {
+            return false;
+        }
 
         safeKey = String(entityKey).replace(/"/g, '\\"');
         selectedNode = document.querySelector('[data-nb-entity="' + safeKey + '"]');
         if (!selectedNode) {
-            return;
+            return false;
         }
 
         selectedNode.classList.add('nb-editor-selected');
         if (shouldScroll && typeof selectedNode.scrollIntoView === 'function') {
             selectedNode.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
         }
+
+        return true;
     }
 
     document.addEventListener('click', function (event) {
@@ -161,14 +199,7 @@ a{color:inherit;text-decoration:none}
         }
 
         selectEntity(entityNode.getAttribute('data-nb-entity') || '', false);
-
-        if (window.parent) {
-            window.parent.postMessage({
-                source: 'nordicblocks-canvas',
-                type: 'entity:selected',
-                entity: entityNode.getAttribute('data-nb-entity') || ''
-            }, '*');
-        }
+        emitSelectionChange('canvas-click');
     }, true);
 
     window.addEventListener('message', function (event) {
@@ -177,8 +208,14 @@ a{color:inherit;text-decoration:none}
             return;
         }
 
-        if (data.type === 'entity:select') {
+        if (data.type === 'entity:select' || data.type === 'canvas:select-entity') {
             selectEntity(data.entity || '', true);
+            emitSelectionChange(data.type === 'canvas:select-entity' ? 'editor-sync-v2' : 'editor-sync');
+            return;
+        }
+
+        if (data.type === 'canvas:request-state') {
+            emitSelectionChange('editor-request-state');
             return;
         }
 
@@ -217,9 +254,10 @@ a{color:inherit;text-decoration:none}
         img.addEventListener('error', scheduleCanvasMetrics, { once: true });
     });
 
-    if (window.parent) {
-        window.parent.postMessage({ source: 'nordicblocks-canvas', type: 'canvas:ready' }, '*');
-    }
+    emitToParent('canvas:ready', {
+        entity: getSelectedEntity(),
+        entities: listAvailableEntities()
+    });
 
     scheduleCanvasMetrics();
 })();

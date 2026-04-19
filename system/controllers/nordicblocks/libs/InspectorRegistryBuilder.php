@@ -58,10 +58,15 @@ class NordicblocksInspectorRegistryBuilder {
     }
 
     private static function buildFromManifest($block_type, array $manifest) {
-        $entities     = self::buildManifestEntities((array) ($manifest['entities'] ?? []));
-        $entity_groups= self::buildManifestEntityGroups((array) ($manifest['entityGroups'] ?? []));
-        $panels       = self::buildManifestPanels((array) ($manifest['panels'] ?? []));
-        $capabilities = self::buildManifestCapabilities((array) ($manifest['capabilities'] ?? []));
+        $manifest_entities = (array) ($manifest['entities'] ?? []);
+        $manifest_groups = (array) ($manifest['entityGroups'] ?? []);
+        $manifest_panels = (array) ($manifest['panels'] ?? []);
+        $manifest_capabilities = (array) ($manifest['capabilities'] ?? []);
+        $entities     = self::buildManifestEntities($manifest_entities);
+        $entity_groups= self::buildManifestEntityGroups($manifest_groups);
+        $panels       = self::buildManifestPanels($manifest_panels);
+        $capabilities = self::buildManifestCapabilities($manifest_capabilities);
+        $diagnostics  = self::buildManifestDiagnostics($manifest_entities, $manifest_groups, $manifest_panels, $manifest_capabilities);
 
         return [
             'tabs'             => NordicblocksInspectorDefinitionRegistry::getTabs(),
@@ -84,13 +89,42 @@ class NordicblocksInspectorRegistryBuilder {
             'manifest'         => [
                 'blockType'      => $block_type,
                 'title'          => (string) ($manifest['title'] ?? $block_type),
+                'declaredEntityKeys' => array_keys($manifest_entities),
                 'entityKeys'     => array_keys($entities),
+                'declaredPanelKeys' => array_keys($manifest_panels),
                 'panelKeys'      => array_values(array_map(function ($panel) {
                     return (string) ($panel['key'] ?? '');
                 }, $panels)),
+                'declaredCapabilityKeys' => array_keys(array_filter($manifest_capabilities)),
                 'capabilityKeys' => array_keys(array_filter($capabilities)),
+                'diagnostics'    => $diagnostics,
                 'source'         => (string) ($manifest['__file'] ?? ''),
             ],
+        ];
+    }
+
+    private static function buildManifestDiagnostics(array $manifest_entities, array $manifest_groups, array $manifest_panels, array $manifest_capabilities) {
+        $shared_entities = NordicblocksInspectorDefinitionRegistry::getEntities();
+        $shared_panels = NordicblocksInspectorDefinitionRegistry::getPanelMap();
+        $shared_capabilities = NordicblocksInspectorDefinitionRegistry::getCapabilities();
+        $unknown_group_entities = [];
+
+        foreach ($manifest_groups as $group_key => $group) {
+            $group_entities = array_values(array_filter((array) ($group['entities'] ?? []), function ($entity_key) {
+                return is_string($entity_key) && $entity_key !== '';
+            }));
+            $unknown_entities = array_values(array_diff($group_entities, array_keys($shared_entities)));
+
+            if ($unknown_entities) {
+                $unknown_group_entities[$group_key] = $unknown_entities;
+            }
+        }
+
+        return [
+            'unknownEntityKeys' => array_values(array_diff(array_keys($manifest_entities), array_keys($shared_entities))),
+            'unknownPanelKeys' => array_values(array_diff(array_keys($manifest_panels), array_keys($shared_panels))),
+            'unknownCapabilityKeys' => array_values(array_diff(array_keys(array_filter($manifest_capabilities)), array_keys($shared_capabilities))),
+            'unknownGroupEntities' => $unknown_group_entities,
         ];
     }
 

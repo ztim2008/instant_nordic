@@ -203,6 +203,12 @@ document.getElementById('nbhVpMobile').addEventListener('click', function() { nb
 
 document.getElementById('nbh-canvas-frame').addEventListener('load', function() {
     setTimeout(nbhSyncCanvasHeightFromFrame, 20);
+    nbhState.canvas.ready = false;
+    nbhState.canvas.availableEntities = [];
+    nbhState.canvas.selectedEntity = '';
+    setTimeout(function() {
+        nbhRequestCanvasState('iframe-load');
+    }, 60);
 });
 
 window.addEventListener('message', function(event) {
@@ -212,8 +218,26 @@ window.addEventListener('message', function(event) {
         nbhApplyCanvasHeight(data.height);
         return;
     }
+    if (data.type === 'canvas:ready') {
+        nbhApplyCanvasState(data);
+        document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
+        nbhSyncCanvasSelection('canvas-ready');
+        return;
+    }
+    if (data.type === 'canvas:selection') {
+        nbhApplyCanvasState(data);
+        document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
+        if (data.entity) {
+            nbhSelectEntity(data.entity, true, { preserveNotice: true, reason: data.reason || 'canvas-selection' });
+        } else if (nbhState.selectedEntity) {
+            nbhSelectEntity('', true, { preserveNotice: true, reason: data.reason || 'canvas-selection-empty' });
+        }
+        return;
+    }
     if (data.type === 'entity:selected' && data.entity) {
-        nbhSelectEntity(data.entity, true);
+        nbhApplyCanvasState(data);
+        document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
+        nbhSelectEntity(data.entity, true, { preserveNotice: true, reason: 'canvas-legacy-selection' });
     }
 });
 

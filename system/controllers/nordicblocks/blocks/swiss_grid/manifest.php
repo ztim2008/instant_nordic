@@ -3,6 +3,7 @@
 return [
     'title' => 'Swiss Grid inspector manifest',
     'entities' => [
+        'section' => ['label' => 'Секция'],
         'header' => ['label' => 'Шапка секции'],
         'title' => ['label' => 'Заголовок секции'],
         'subtitle' => ['label' => 'Подзаголовок секции'],
