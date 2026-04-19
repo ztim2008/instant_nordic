@@ -67,6 +67,24 @@ function nbhBreakpointToggle() {
     return '<div class="nbh-breakpoints"><button type="button" data-breakpoint="desktop" class="' + (nbhState.activeBreakpoint === 'desktop' ? 'is-active' : '') + '">Компьютер</button><button type="button" data-breakpoint="mobile" class="' + (nbhState.activeBreakpoint === 'mobile' ? 'is-active' : '') + '">Мобильный</button></div>';
 }
 
+function nbhRepeaterImageField(index, image) {
+    var path = 'content.items.' + index + '.image';
+    var hasImage = typeof image === 'string' && image !== '';
+    var preview = hasImage
+        ? '<div style="margin-top:.6rem;border:1px solid #dbe4ef;border-radius:14px;overflow:hidden;background:#f8fafc;">'
+            + '<img src="' + nbhEscapeAttr(image) + '" alt="Превью изображения" style="display:block;width:100%;max-height:180px;object-fit:cover;">'
+            + '</div>'
+        : '<div class="nbh-note" style="margin-top:.6rem;padding:.7rem .85rem;">Изображение пока не выбрано. Добавление доступно только через медиабиблиотеку.</div>';
+
+    return '<div>'
+        + '<div class="nbh-input-row">'
+        + '<button type="button" class="nbh-picker-btn" data-picker-action="pick" data-picker-kind="image" data-path="' + path + '">Выбрать из медиабиблиотеки</button>'
+        + '<button type="button" class="nbh-picker-btn nbh-picker-btn--clear" data-picker-action="clear" data-path="' + path + '"' + (hasImage ? '' : ' disabled') + '>Очистить</button>'
+        + '</div>'
+        + preview
+        + '</div>';
+}
+
 function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
@@ -95,9 +113,9 @@ function nbhRepeaterEditor() {
                 + '</div>'
                 + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
                 + nbhField('Анонс', '<textarea data-item-field="excerpt" data-item-index="' + index + '">' + nbhEscapeHtml(excerpt) + '</textarea>')
+                + nbhField('Изображение', nbhRepeaterImageField(index, image))
                 + '<div class="nbh-grid-2">'
                 + nbhField('URL', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
-                + nbhField('Изображение', '<input type="text" data-item-field="image" data-item-index="' + index + '" value="' + nbhEscapeAttr(image) + '">')
                 + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
                 + nbhField('Просмотры', '<input type="text" data-item-field="views" data-item-index="' + index + '" value="' + nbhEscapeAttr(views) + '">')
                 + nbhField('Комментарии', '<input type="text" data-item-field="comments" data-item-index="' + index + '" value="' + nbhEscapeAttr(comments) + '">')

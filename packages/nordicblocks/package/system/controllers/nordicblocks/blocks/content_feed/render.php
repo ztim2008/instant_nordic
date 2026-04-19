@@ -131,8 +131,8 @@ if ($feed_contract) {
     $heading_tag = htmlspecialchars((string) ($title_entity['tag'] ?? 'h2'), ENT_QUOTES, 'UTF-8');
     $title_weight_desktop = (int) nb_content_feed_entity_value($title_entity, 'desktop', 'weight', 800);
     $title_weight_mobile = (int) nb_content_feed_entity_value($title_entity, 'mobile', 'weight', $title_weight_desktop);
-    $title_size_desktop = (int) nb_content_feed_entity_value($title_entity, 'desktop', 'fontSize', 42);
-    $title_size_mobile = (int) nb_content_feed_entity_value($title_entity, 'mobile', 'fontSize', 30);
+    $title_size_desktop = (int) nb_content_feed_entity_value($title_entity, 'desktop', 'fontSize', 36);
+    $title_size_mobile = (int) nb_content_feed_entity_value($title_entity, 'mobile', 'fontSize', 27);
     $title_margin_bottom_desktop = (int) nb_content_feed_entity_value($title_entity, 'desktop', 'marginBottom', 0);
     $title_margin_bottom_mobile = (int) nb_content_feed_entity_value($title_entity, 'mobile', 'marginBottom', 0);
     $title_color_desktop = nb_block_css_color((string) nb_content_feed_entity_value($title_entity, 'desktop', 'color', ''));
@@ -156,7 +156,7 @@ if ($feed_contract) {
     $subtitle_line_height_mobile = ((float) nb_content_feed_entity_value($subtitle_entity, 'mobile', 'lineHeightPercent', $subtitle_line_height_desktop * 100)) / 100;
     $subtitle_letter_spacing_desktop = (float) nb_content_feed_entity_value($subtitle_entity, 'desktop', 'letterSpacing', 0);
     $subtitle_letter_spacing_mobile = (float) nb_content_feed_entity_value($subtitle_entity, 'mobile', 'letterSpacing', $subtitle_letter_spacing_desktop);
-    $subtitle_max_width_desktop = (int) nb_content_feed_entity_value($subtitle_entity, 'desktop', 'maxWidth', 680);
+    $subtitle_max_width_desktop = (int) nb_content_feed_entity_value($subtitle_entity, 'desktop', 'maxWidth', 620);
     $subtitle_max_width_mobile = (int) nb_content_feed_entity_value($subtitle_entity, 'mobile', 'maxWidth', $subtitle_max_width_desktop);
 
     $meta_size_desktop = (int) nb_content_feed_entity_value($meta_entity, 'desktop', 'fontSize', 14);
@@ -170,8 +170,8 @@ if ($feed_contract) {
     $meta_letter_spacing_desktop = (float) nb_content_feed_entity_value($meta_entity, 'desktop', 'letterSpacing', 0);
     $meta_letter_spacing_mobile = (float) nb_content_feed_entity_value($meta_entity, 'mobile', 'letterSpacing', $meta_letter_spacing_desktop);
 
-    $item_title_size_desktop = (int) nb_content_feed_entity_value($item_title_entity, 'desktop', 'fontSize', 24);
-    $item_title_size_mobile = (int) nb_content_feed_entity_value($item_title_entity, 'mobile', 'fontSize', 20);
+    $item_title_size_desktop = (int) nb_content_feed_entity_value($item_title_entity, 'desktop', 'fontSize', 20);
+    $item_title_size_mobile = (int) nb_content_feed_entity_value($item_title_entity, 'mobile', 'fontSize', 18);
     $item_title_weight_desktop = (int) nb_content_feed_entity_value($item_title_entity, 'desktop', 'weight', 800);
     $item_title_weight_mobile = (int) nb_content_feed_entity_value($item_title_entity, 'mobile', 'weight', $item_title_weight_desktop);
     $item_title_color_desktop = nb_block_css_color((string) nb_content_feed_entity_value($item_title_entity, 'desktop', 'color', ''));
@@ -196,27 +196,27 @@ if ($feed_contract) {
         ? (string) ($feed_contract['design']['entities']['media']['aspectRatio'] ?? '16:10') : '16:10';
     $media_object_fit = in_array($feed_contract['design']['entities']['media']['objectFit'] ?? 'cover', ['cover', 'contain'], true)
         ? (string) ($feed_contract['design']['entities']['media']['objectFit'] ?? 'cover') : 'cover';
-    $media_radius = (int) ($feed_contract['design']['entities']['media']['radius'] ?? 24);
+    $media_radius = (int) ($feed_contract['design']['entities']['media']['radius'] ?? 20);
 
     $item_surface_variant = in_array($feed_contract['design']['entities']['itemSurface']['variant'] ?? 'card', ['card', 'plain'], true)
         ? (string) ($feed_contract['design']['entities']['itemSurface']['variant'] ?? 'card') : 'card';
-    $item_surface_radius = (int) ($feed_contract['design']['entities']['itemSurface']['radius'] ?? 28);
+    $item_surface_radius = (int) ($feed_contract['design']['entities']['itemSurface']['radius'] ?? 22);
     $item_surface_border_width = (int) ($feed_contract['design']['entities']['itemSurface']['borderWidth'] ?? 1);
     $item_surface_border_color = nb_block_css_color((string) ($feed_contract['design']['entities']['itemSurface']['borderColor'] ?? '#e2e8f0'), '#e2e8f0');
     $item_surface_shadow = in_array($feed_contract['design']['entities']['itemSurface']['shadow'] ?? 'md', ['none', 'sm', 'md', 'lg'], true)
         ? (string) ($feed_contract['design']['entities']['itemSurface']['shadow'] ?? 'md') : 'md';
 
-    $content_width = (int) ($feed_contract['layout']['desktop']['contentWidth'] ?? 1160);
-    $padding_top_desktop = (int) ($feed_contract['layout']['desktop']['paddingTop'] ?? 88);
-    $padding_bottom_desktop = (int) ($feed_contract['layout']['desktop']['paddingBottom'] ?? 88);
-    $padding_top_mobile = (int) ($feed_contract['layout']['mobile']['paddingTop'] ?? 56);
-    $padding_bottom_mobile = (int) ($feed_contract['layout']['mobile']['paddingBottom'] ?? 56);
+    $content_width = (int) ($feed_contract['layout']['desktop']['contentWidth'] ?? 1080);
+    $padding_top_desktop = (int) ($feed_contract['layout']['desktop']['paddingTop'] ?? 64);
+    $padding_bottom_desktop = (int) ($feed_contract['layout']['desktop']['paddingBottom'] ?? 64);
+    $padding_top_mobile = (int) ($feed_contract['layout']['mobile']['paddingTop'] ?? 44);
+    $padding_bottom_mobile = (int) ($feed_contract['layout']['mobile']['paddingBottom'] ?? 44);
     $columns_desktop = (int) ($feed_contract['layout']['desktop']['columns'] ?? 3);
     $columns_mobile = (int) ($feed_contract['layout']['mobile']['columns'] ?? 1);
-    $card_gap_desktop = (int) ($feed_contract['layout']['desktop']['cardGap'] ?? 24);
+    $card_gap_desktop = (int) ($feed_contract['layout']['desktop']['cardGap'] ?? 18);
     $card_gap_mobile = (int) ($feed_contract['layout']['mobile']['cardGap'] ?? 16);
-    $header_gap_desktop = (int) ($feed_contract['layout']['desktop']['headerGap'] ?? 28);
-    $header_gap_mobile = (int) ($feed_contract['layout']['mobile']['headerGap'] ?? 20);
+    $header_gap_desktop = (int) ($feed_contract['layout']['desktop']['headerGap'] ?? 18);
+    $header_gap_mobile = (int) ($feed_contract['layout']['mobile']['headerGap'] ?? 14);
 } else {
     $theme = in_array($props['theme'] ?? 'light', ['light', 'alt', 'dark'], true) ? (string) ($props['theme'] ?? 'light') : 'light';
     $align = in_array($props['align'] ?? 'left', ['left', 'center'], true) ? (string) ($props['align'] ?? 'left') : 'left';
@@ -255,8 +255,8 @@ if ($feed_contract) {
     $heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h2');
     $title_weight_desktop = (int) nb_content_feed_prop_int((array) $props, 'title_weight_desktop', (int) nb_content_feed_prop_value((array) $props, ['heading_weight'], 800), 100, 900);
     $title_weight_mobile = (int) nb_content_feed_prop_int((array) $props, 'title_weight_mobile', $title_weight_desktop, 100, 900);
-    $title_size_desktop = nb_content_feed_prop_int((array) $props, 'title_size_desktop', 42, 12, 160);
-    $title_size_mobile = nb_content_feed_prop_int((array) $props, 'title_size_mobile', 30, 12, 160);
+    $title_size_desktop = nb_content_feed_prop_int((array) $props, 'title_size_desktop', 36, 12, 160);
+    $title_size_mobile = nb_content_feed_prop_int((array) $props, 'title_size_mobile', 27, 12, 160);
     $title_margin_bottom_desktop = nb_content_feed_prop_int((array) $props, 'title_margin_bottom_desktop', 0, 0, 240);
     $title_margin_bottom_mobile = nb_content_feed_prop_int((array) $props, 'title_margin_bottom_mobile', 0, 0, 240);
     $title_color_desktop = nb_block_css_color((string) nb_content_feed_prop_value((array) $props, ['title_color_desktop', 'title_color'], ''));
@@ -265,7 +265,7 @@ if ($feed_contract) {
     $title_line_height_mobile = nb_content_feed_prop_int((array) $props, 'title_line_height_percent_mobile', (int) round($title_line_height_desktop * 100), 80, 220) / 100;
     $title_letter_spacing_desktop = (float) nb_content_feed_prop_value((array) $props, ['title_letter_spacing_desktop', 'title_letter_spacing'], 0);
     $title_letter_spacing_mobile = (float) nb_content_feed_prop_value((array) $props, ['title_letter_spacing_mobile'], $title_letter_spacing_desktop);
-    $title_max_width_desktop = nb_content_feed_prop_int((array) $props, 'title_max_width_desktop', (int) nb_content_feed_prop_value((array) $props, ['title_max_width'], 760), 240, 1440);
+    $title_max_width_desktop = nb_content_feed_prop_int((array) $props, 'title_max_width_desktop', (int) nb_content_feed_prop_value((array) $props, ['title_max_width'], 700), 240, 1440);
     $title_max_width_mobile = nb_content_feed_prop_int((array) $props, 'title_max_width_mobile', $title_max_width_desktop, 240, 1440);
 
     $subtitle_weight_desktop = (int) nb_content_feed_prop_int((array) $props, 'subtitle_weight_desktop', 400, 100, 900);
@@ -280,11 +280,11 @@ if ($feed_contract) {
     $subtitle_line_height_mobile = nb_content_feed_prop_int((array) $props, 'subtitle_line_height_percent_mobile', (int) round($subtitle_line_height_desktop * 100), 80, 240) / 100;
     $subtitle_letter_spacing_desktop = (float) nb_content_feed_prop_value((array) $props, ['subtitle_letter_spacing_desktop', 'subtitle_letter_spacing'], 0);
     $subtitle_letter_spacing_mobile = (float) nb_content_feed_prop_value((array) $props, ['subtitle_letter_spacing_mobile'], $subtitle_letter_spacing_desktop);
-    $subtitle_max_width_desktop = nb_content_feed_prop_int((array) $props, 'subtitle_max_width_desktop', (int) nb_content_feed_prop_value((array) $props, ['subtitle_max_width'], 680), 240, 1440);
+    $subtitle_max_width_desktop = nb_content_feed_prop_int((array) $props, 'subtitle_max_width_desktop', (int) nb_content_feed_prop_value((array) $props, ['subtitle_max_width'], 620), 240, 1440);
     $subtitle_max_width_mobile = nb_content_feed_prop_int((array) $props, 'subtitle_max_width_mobile', $subtitle_max_width_desktop, 240, 1440);
 
-    $meta_size_desktop = nb_content_feed_prop_int((array) $props, 'meta_size_desktop', 14, 10, 120);
-    $meta_size_mobile = nb_content_feed_prop_int((array) $props, 'meta_size_mobile', 13, 10, 120);
+    $meta_size_desktop = nb_content_feed_prop_int((array) $props, 'meta_size_desktop', 13, 10, 120);
+    $meta_size_mobile = nb_content_feed_prop_int((array) $props, 'meta_size_mobile', 12, 10, 120);
     $meta_weight_desktop = nb_content_feed_prop_int((array) $props, 'meta_weight_desktop', 600, 400, 900);
     $meta_weight_mobile = nb_content_feed_prop_int((array) $props, 'meta_weight_mobile', $meta_weight_desktop, 400, 900);
     $meta_color_desktop = nb_block_css_color((string) ($props['meta_color_desktop'] ?? ($props['meta_color'] ?? '')));
@@ -294,8 +294,8 @@ if ($feed_contract) {
     $meta_letter_spacing_desktop = (float) ($props['meta_letter_spacing'] ?? 0);
     $meta_letter_spacing_mobile = $meta_letter_spacing_desktop;
 
-    $item_title_size_desktop = nb_content_feed_prop_int((array) $props, 'item_title_size_desktop', 24, 10, 80);
-    $item_title_size_mobile = nb_content_feed_prop_int((array) $props, 'item_title_size_mobile', 20, 10, 80);
+    $item_title_size_desktop = nb_content_feed_prop_int((array) $props, 'item_title_size_desktop', 20, 10, 80);
+    $item_title_size_mobile = nb_content_feed_prop_int((array) $props, 'item_title_size_mobile', 18, 10, 80);
     $item_title_weight_desktop = nb_content_feed_prop_int((array) $props, 'item_title_weight_desktop', (int) nb_content_feed_prop_value((array) $props, ['item_title_weight'], 800), 100, 900);
     $item_title_weight_mobile = nb_content_feed_prop_int((array) $props, 'item_title_weight_mobile', $item_title_weight_desktop, 100, 900);
     $item_title_color_desktop = nb_block_css_color((string) nb_content_feed_prop_value((array) $props, ['item_title_color_desktop', 'item_title_color'], ''));
@@ -318,25 +318,25 @@ if ($feed_contract) {
 
     $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true) ? (string) ($props['media_aspect_ratio'] ?? '16:10') : '16:10';
     $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true) ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
-    $media_radius = nb_content_feed_prop_int((array) $props, 'media_radius', 24, 0, 80);
+    $media_radius = nb_content_feed_prop_int((array) $props, 'media_radius', 20, 0, 80);
 
     $item_surface_variant = in_array($props['item_surface_variant'] ?? 'card', ['card', 'plain'], true) ? (string) ($props['item_surface_variant'] ?? 'card') : 'card';
-    $item_surface_radius = nb_content_feed_prop_int((array) $props, 'item_surface_radius', 28, 0, 100);
+    $item_surface_radius = nb_content_feed_prop_int((array) $props, 'item_surface_radius', 22, 0, 100);
     $item_surface_border_width = nb_content_feed_prop_int((array) $props, 'item_surface_border_width', 1, 0, 20);
     $item_surface_border_color = nb_block_css_color((string) ($props['item_surface_border_color'] ?? '#e2e8f0'), '#e2e8f0');
     $item_surface_shadow = in_array($props['item_surface_shadow'] ?? 'md', ['none', 'sm', 'md', 'lg'], true) ? (string) ($props['item_surface_shadow'] ?? 'md') : 'md';
 
-    $content_width = nb_content_feed_prop_int((array) $props, 'content_width', 1160, 320, 1440);
-    $padding_top_desktop = nb_content_feed_prop_int((array) $props, 'padding_top_desktop', 88, 0, 300);
-    $padding_bottom_desktop = nb_content_feed_prop_int((array) $props, 'padding_bottom_desktop', 88, 0, 300);
-    $padding_top_mobile = nb_content_feed_prop_int((array) $props, 'padding_top_mobile', 56, 0, 300);
-    $padding_bottom_mobile = nb_content_feed_prop_int((array) $props, 'padding_bottom_mobile', 56, 0, 300);
+    $content_width = nb_content_feed_prop_int((array) $props, 'content_width', 1080, 320, 1440);
+    $padding_top_desktop = nb_content_feed_prop_int((array) $props, 'padding_top_desktop', 64, 0, 300);
+    $padding_bottom_desktop = nb_content_feed_prop_int((array) $props, 'padding_bottom_desktop', 64, 0, 300);
+    $padding_top_mobile = nb_content_feed_prop_int((array) $props, 'padding_top_mobile', 44, 0, 300);
+    $padding_bottom_mobile = nb_content_feed_prop_int((array) $props, 'padding_bottom_mobile', 44, 0, 300);
     $columns_desktop = nb_content_feed_prop_int((array) $props, 'columns_desktop', 3, 1, 4);
     $columns_mobile = nb_content_feed_prop_int((array) $props, 'columns_mobile', 1, 1, 2);
-    $card_gap_desktop = nb_content_feed_prop_int((array) $props, 'card_gap_desktop', 24, 0, 120);
-    $card_gap_mobile = nb_content_feed_prop_int((array) $props, 'card_gap_mobile', 16, 0, 120);
-    $header_gap_desktop = nb_content_feed_prop_int((array) $props, 'header_gap_desktop', 28, 0, 120);
-    $header_gap_mobile = nb_content_feed_prop_int((array) $props, 'header_gap_mobile', 20, 0, 120);
+    $card_gap_desktop = nb_content_feed_prop_int((array) $props, 'card_gap_desktop', 18, 0, 120);
+    $card_gap_mobile = nb_content_feed_prop_int((array) $props, 'card_gap_mobile', 14, 0, 120);
+    $header_gap_desktop = nb_content_feed_prop_int((array) $props, 'header_gap_desktop', 18, 0, 120);
+    $header_gap_mobile = nb_content_feed_prop_int((array) $props, 'header_gap_mobile', 14, 0, 120);
 }
 
 $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8')) : '';

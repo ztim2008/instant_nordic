@@ -130,17 +130,17 @@ if ($category_contract) {
     $show_comments = !array_key_exists('comments', (array) ($category_contract['runtime']['visibility'] ?? [])) || !empty($category_contract['runtime']['visibility']['comments']);
 
     $heading_tag = htmlspecialchars((string) ($title_entity['tag'] ?? 'h2'), ENT_QUOTES, 'UTF-8');
-    $content_width = (int) ($category_contract['layout']['desktop']['contentWidth'] ?? 1280);
-    $padding_top_desktop = (int) ($category_contract['layout']['desktop']['paddingTop'] ?? 72);
-    $padding_bottom_desktop = (int) ($category_contract['layout']['desktop']['paddingBottom'] ?? 72);
-    $padding_top_mobile = (int) ($category_contract['layout']['mobile']['paddingTop'] ?? 48);
-    $padding_bottom_mobile = (int) ($category_contract['layout']['mobile']['paddingBottom'] ?? 48);
+    $content_width = (int) ($category_contract['layout']['desktop']['contentWidth'] ?? 1180);
+    $padding_top_desktop = (int) ($category_contract['layout']['desktop']['paddingTop'] ?? 56);
+    $padding_bottom_desktop = (int) ($category_contract['layout']['desktop']['paddingBottom'] ?? 56);
+    $padding_top_mobile = (int) ($category_contract['layout']['mobile']['paddingTop'] ?? 40);
+    $padding_bottom_mobile = (int) ($category_contract['layout']['mobile']['paddingBottom'] ?? 40);
     $columns_desktop = (int) ($category_contract['layout']['desktop']['columns'] ?? 4);
     $columns_mobile = (int) ($category_contract['layout']['mobile']['columns'] ?? 2);
-    $card_gap_desktop = (int) ($category_contract['layout']['desktop']['cardGap'] ?? 20);
+    $card_gap_desktop = (int) ($category_contract['layout']['desktop']['cardGap'] ?? 16);
     $card_gap_mobile = (int) ($category_contract['layout']['mobile']['cardGap'] ?? 14);
-    $header_gap_desktop = (int) ($category_contract['layout']['desktop']['headerGap'] ?? 18);
-    $header_gap_mobile = (int) ($category_contract['layout']['mobile']['headerGap'] ?? 14);
+    $header_gap_desktop = (int) ($category_contract['layout']['desktop']['headerGap'] ?? 14);
+    $header_gap_mobile = (int) ($category_contract['layout']['mobile']['headerGap'] ?? 12);
 } else {
     $theme = in_array($props['theme'] ?? 'light', ['light', 'alt', 'dark'], true) ? (string) ($props['theme'] ?? 'light') : 'light';
     $align = in_array($props['align'] ?? 'left', ['left', 'center'], true) ? (string) ($props['align'] ?? 'left') : 'left';
@@ -184,17 +184,17 @@ if ($category_contract) {
     $show_comments = nb_category_cards_visible($props['show_comments'] ?? '1', true);
 
     $heading_tag = nb_block_get_heading_tag((array) $props, 'heading', 'h2');
-    $content_width = nb_category_cards_prop_int((array) $props, 'content_width', 1280, 320, 1600);
-    $padding_top_desktop = nb_category_cards_prop_int((array) $props, 'padding_top_desktop', 72, 0, 300);
-    $padding_bottom_desktop = nb_category_cards_prop_int((array) $props, 'padding_bottom_desktop', 72, 0, 300);
-    $padding_top_mobile = nb_category_cards_prop_int((array) $props, 'padding_top_mobile', 48, 0, 300);
-    $padding_bottom_mobile = nb_category_cards_prop_int((array) $props, 'padding_bottom_mobile', 48, 0, 300);
+    $content_width = nb_category_cards_prop_int((array) $props, 'content_width', 1180, 320, 1600);
+    $padding_top_desktop = nb_category_cards_prop_int((array) $props, 'padding_top_desktop', 56, 0, 300);
+    $padding_bottom_desktop = nb_category_cards_prop_int((array) $props, 'padding_bottom_desktop', 56, 0, 300);
+    $padding_top_mobile = nb_category_cards_prop_int((array) $props, 'padding_top_mobile', 40, 0, 300);
+    $padding_bottom_mobile = nb_category_cards_prop_int((array) $props, 'padding_bottom_mobile', 40, 0, 300);
     $columns_desktop = nb_category_cards_prop_int((array) $props, 'columns_desktop', 4, 1, 4);
     $columns_mobile = nb_category_cards_prop_int((array) $props, 'columns_mobile', 2, 1, 2);
-    $card_gap_desktop = nb_category_cards_prop_int((array) $props, 'card_gap_desktop', 20, 0, 120);
-    $card_gap_mobile = nb_category_cards_prop_int((array) $props, 'card_gap_mobile', 14, 0, 120);
-    $header_gap_desktop = nb_category_cards_prop_int((array) $props, 'header_gap_desktop', 18, 0, 120);
-    $header_gap_mobile = nb_category_cards_prop_int((array) $props, 'header_gap_mobile', 14, 0, 120);
+    $card_gap_desktop = nb_category_cards_prop_int((array) $props, 'card_gap_desktop', 16, 0, 120);
+    $card_gap_mobile = nb_category_cards_prop_int((array) $props, 'card_gap_mobile', 12, 0, 120);
+    $header_gap_desktop = nb_category_cards_prop_int((array) $props, 'header_gap_desktop', 14, 0, 120);
+    $header_gap_mobile = nb_category_cards_prop_int((array) $props, 'header_gap_mobile', 12, 0, 120);
 }
 
 $eyebrow_html = htmlspecialchars($eyebrow, ENT_QUOTES, 'UTF-8');
@@ -203,8 +203,8 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
 $more_label_html = htmlspecialchars($more_label, ENT_QUOTES, 'UTF-8');
 $more_url_html = htmlspecialchars($more_url, ENT_QUOTES, 'UTF-8');
 
-$title_size_desktop = (int) nb_category_cards_entity_value($title_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'title_size_desktop', 34, 12, 160));
-$title_size_mobile = (int) nb_category_cards_entity_value($title_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'title_size_mobile', 26, 12, 160));
+$title_size_desktop = (int) nb_category_cards_entity_value($title_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'title_size_desktop', 30, 12, 160));
+$title_size_mobile = (int) nb_category_cards_entity_value($title_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'title_size_mobile', 24, 12, 160));
 $title_weight_desktop = (int) nb_category_cards_entity_value($title_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['title_weight_desktop', 'heading_weight'], 800));
 $title_weight_mobile = (int) nb_category_cards_entity_value($title_entity, 'mobile', 'weight', $title_weight_desktop);
 $title_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($title_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['title_color_desktop', 'title_color'], '')));
@@ -213,11 +213,11 @@ $title_line_height_desktop = ((float) nb_category_cards_entity_value($title_enti
 $title_line_height_mobile = ((float) nb_category_cards_entity_value($title_entity, 'mobile', 'lineHeightPercent', $title_line_height_desktop * 100)) / 100;
 $title_letter_spacing_desktop = (float) nb_category_cards_entity_value($title_entity, 'desktop', 'letterSpacing', nb_category_cards_prop_value((array) ($props ?? []), ['title_letter_spacing_desktop', 'title_letter_spacing'], 0));
 $title_letter_spacing_mobile = (float) nb_category_cards_entity_value($title_entity, 'mobile', 'letterSpacing', $title_letter_spacing_desktop);
-$title_max_width_desktop = (int) nb_category_cards_entity_value($title_entity, 'desktop', 'maxWidth', nb_category_cards_prop_value((array) ($props ?? []), ['title_max_width_desktop', 'title_max_width'], 860));
+$title_max_width_desktop = (int) nb_category_cards_entity_value($title_entity, 'desktop', 'maxWidth', nb_category_cards_prop_value((array) ($props ?? []), ['title_max_width_desktop', 'title_max_width'], 720));
 $title_max_width_mobile = (int) nb_category_cards_entity_value($title_entity, 'mobile', 'maxWidth', $title_max_width_desktop);
 
-$subtitle_size_desktop = (int) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'subtitle_size_desktop', 16, 10, 80));
-$subtitle_size_mobile = (int) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'subtitle_size_mobile', 15, 10, 80));
+$subtitle_size_desktop = (int) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'subtitle_size_desktop', 15, 10, 80));
+$subtitle_size_mobile = (int) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'subtitle_size_mobile', 14, 10, 80));
 $subtitle_weight_desktop = (int) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['subtitle_weight_desktop', 'subtitle_weight'], 400));
 $subtitle_weight_mobile = (int) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'weight', $subtitle_weight_desktop);
 $subtitle_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['subtitle_color_desktop', 'subtitle_color'], '')));
@@ -226,13 +226,13 @@ $subtitle_line_height_desktop = ((float) nb_category_cards_entity_value($subtitl
 $subtitle_line_height_mobile = ((float) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'lineHeightPercent', $subtitle_line_height_desktop * 100)) / 100;
 $subtitle_letter_spacing_desktop = (float) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'letterSpacing', nb_category_cards_prop_value((array) ($props ?? []), ['subtitle_letter_spacing_desktop', 'subtitle_letter_spacing'], 0));
 $subtitle_letter_spacing_mobile = (float) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'letterSpacing', $subtitle_letter_spacing_desktop);
-$subtitle_max_width_desktop = (int) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'maxWidth', nb_category_cards_prop_value((array) ($props ?? []), ['subtitle_max_width_desktop', 'subtitle_max_width'], 860));
+$subtitle_max_width_desktop = (int) nb_category_cards_entity_value($subtitle_entity, 'desktop', 'maxWidth', nb_category_cards_prop_value((array) ($props ?? []), ['subtitle_max_width_desktop', 'subtitle_max_width'], 720));
 $subtitle_max_width_mobile = (int) nb_category_cards_entity_value($subtitle_entity, 'mobile', 'maxWidth', $subtitle_max_width_desktop);
 
 $eyebrow_size_desktop = (int) nb_category_cards_entity_value($eyebrow_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_size_desktop', 13, 10, 120));
 $eyebrow_size_mobile = (int) nb_category_cards_entity_value($eyebrow_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_size_mobile', 12, 10, 120));
-$eyebrow_margin_bottom_desktop = (int) nb_category_cards_entity_value($eyebrow_entity, 'desktop', 'marginBottom', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_margin_bottom_desktop', 10, 0, 240));
-$eyebrow_margin_bottom_mobile = (int) nb_category_cards_entity_value($eyebrow_entity, 'mobile', 'marginBottom', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_margin_bottom_mobile', 8, 0, 240));
+$eyebrow_margin_bottom_desktop = (int) nb_category_cards_entity_value($eyebrow_entity, 'desktop', 'marginBottom', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_margin_bottom_desktop', 8, 0, 240));
+$eyebrow_margin_bottom_mobile = (int) nb_category_cards_entity_value($eyebrow_entity, 'mobile', 'marginBottom', nb_category_cards_prop_int((array) ($props ?? []), 'eyebrow_margin_bottom_mobile', 6, 0, 240));
 $eyebrow_weight_desktop = (int) nb_category_cards_entity_value($eyebrow_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['eyebrow_weight_desktop', 'eyebrow_weight'], 700));
 $eyebrow_weight_mobile = (int) nb_category_cards_entity_value($eyebrow_entity, 'mobile', 'weight', $eyebrow_weight_desktop);
 $eyebrow_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($eyebrow_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['eyebrow_color_desktop', 'eyebrow_color'], '#0f766e')), '#0f766e');
@@ -243,8 +243,8 @@ $eyebrow_letter_spacing_desktop = (float) nb_category_cards_entity_value($eyebro
 $eyebrow_letter_spacing_mobile = (float) nb_category_cards_entity_value($eyebrow_entity, 'mobile', 'letterSpacing', $eyebrow_letter_spacing_desktop);
 $eyebrow_text_transform = (string) ($eyebrow_entity['textTransform'] ?? nb_category_cards_prop_value((array) ($props ?? []), ['eyebrow_text_transform'], 'uppercase'));
 
-$meta_size_desktop = (int) nb_category_cards_entity_value($meta_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'meta_size_desktop', 13, 10, 120));
-$meta_size_mobile = (int) nb_category_cards_entity_value($meta_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'meta_size_mobile', 12, 10, 120));
+$meta_size_desktop = (int) nb_category_cards_entity_value($meta_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'meta_size_desktop', 12, 10, 120));
+$meta_size_mobile = (int) nb_category_cards_entity_value($meta_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'meta_size_mobile', 11, 10, 120));
 $meta_weight_desktop = (int) nb_category_cards_entity_value($meta_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['meta_weight_desktop', 'meta_weight'], 600));
 $meta_weight_mobile = (int) nb_category_cards_entity_value($meta_entity, 'mobile', 'weight', $meta_weight_desktop);
 $meta_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($meta_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['meta_color_desktop', 'meta_color'], '')));
@@ -254,8 +254,8 @@ $meta_line_height_mobile = ((float) nb_category_cards_entity_value($meta_entity,
 $meta_letter_spacing_desktop = (float) nb_category_cards_entity_value($meta_entity, 'desktop', 'letterSpacing', nb_category_cards_prop_value((array) ($props ?? []), ['meta_letter_spacing_desktop', 'meta_letter_spacing'], 0));
 $meta_letter_spacing_mobile = (float) nb_category_cards_entity_value($meta_entity, 'mobile', 'letterSpacing', $meta_letter_spacing_desktop);
 
-$item_title_size_desktop = (int) nb_category_cards_entity_value($item_title_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_title_size_desktop', 20, 10, 80));
-$item_title_size_mobile = (int) nb_category_cards_entity_value($item_title_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_title_size_mobile', 18, 10, 80));
+$item_title_size_desktop = (int) nb_category_cards_entity_value($item_title_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_title_size_desktop', 18, 10, 80));
+$item_title_size_mobile = (int) nb_category_cards_entity_value($item_title_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_title_size_mobile', 16, 10, 80));
 $item_title_weight_desktop = (int) nb_category_cards_entity_value($item_title_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['item_title_weight_desktop', 'item_title_weight'], 800));
 $item_title_weight_mobile = (int) nb_category_cards_entity_value($item_title_entity, 'mobile', 'weight', $item_title_weight_desktop);
 $item_title_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($item_title_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['item_title_color_desktop', 'item_title_color'], '')));
@@ -265,8 +265,8 @@ $item_title_line_height_mobile = ((float) nb_category_cards_entity_value($item_t
 $item_title_letter_spacing_desktop = (float) nb_category_cards_entity_value($item_title_entity, 'desktop', 'letterSpacing', nb_category_cards_prop_value((array) ($props ?? []), ['item_title_letter_spacing_desktop', 'item_title_letter_spacing'], 0));
 $item_title_letter_spacing_mobile = (float) nb_category_cards_entity_value($item_title_entity, 'mobile', 'letterSpacing', $item_title_letter_spacing_desktop);
 
-$item_text_size_desktop = (int) nb_category_cards_entity_value($item_text_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_text_size_desktop', 15, 10, 80));
-$item_text_size_mobile = (int) nb_category_cards_entity_value($item_text_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_text_size_mobile', 14, 10, 80));
+$item_text_size_desktop = (int) nb_category_cards_entity_value($item_text_entity, 'desktop', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_text_size_desktop', 14, 10, 80));
+$item_text_size_mobile = (int) nb_category_cards_entity_value($item_text_entity, 'mobile', 'fontSize', nb_category_cards_prop_int((array) ($props ?? []), 'item_text_size_mobile', 13, 10, 80));
 $item_text_weight_desktop = (int) nb_category_cards_entity_value($item_text_entity, 'desktop', 'weight', nb_category_cards_prop_value((array) ($props ?? []), ['item_text_weight_desktop', 'item_text_weight'], 400));
 $item_text_weight_mobile = (int) nb_category_cards_entity_value($item_text_entity, 'mobile', 'weight', $item_text_weight_desktop);
 $item_text_color_desktop = nb_block_css_color((string) nb_category_cards_entity_value($item_text_entity, 'desktop', 'color', nb_category_cards_prop_value((array) ($props ?? []), ['item_text_color_desktop', 'item_text_color'], '')));
@@ -278,9 +278,9 @@ $item_text_letter_spacing_mobile = (float) nb_category_cards_entity_value($item_
 
 $media_aspect_ratio = (string) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['media'] ?? []), '', 'aspectRatio', $props['media_aspect_ratio'] ?? '4:3');
 $media_object_fit = (string) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['media'] ?? []), '', 'objectFit', $props['media_object_fit'] ?? 'cover');
-$media_radius = (int) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['media'] ?? []), '', 'radius', nb_category_cards_prop_int((array) ($props ?? []), 'media_radius', 20, 0, 80));
+$media_radius = (int) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['media'] ?? []), '', 'radius', nb_category_cards_prop_int((array) ($props ?? []), 'media_radius', 18, 0, 80));
 $item_surface_variant = (string) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'variant', $props['item_surface_variant'] ?? 'card');
-$item_surface_radius = (int) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'radius', nb_category_cards_prop_int((array) ($props ?? []), 'item_surface_radius', 20, 0, 100));
+$item_surface_radius = (int) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'radius', nb_category_cards_prop_int((array) ($props ?? []), 'item_surface_radius', 18, 0, 100));
 $item_surface_border_width = (int) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'borderWidth', nb_category_cards_prop_int((array) ($props ?? []), 'item_surface_border_width', 1, 0, 20));
 $item_surface_border_color = nb_block_css_color((string) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'borderColor', $props['item_surface_border_color'] ?? '#dbe4ef'), '#dbe4ef');
 $item_surface_shadow = (string) nb_category_cards_entity_value((array) ($category_contract['design']['entities']['itemSurface'] ?? []), '', 'shadow', $props['item_surface_shadow'] ?? 'sm');
