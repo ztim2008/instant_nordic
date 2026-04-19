@@ -29,9 +29,150 @@ if (!function_exists('nb_hero_prop_int')) {
     }
 }
 
+if (!function_exists('nb_hero_prop_select')) {
+    function nb_hero_prop_select(array $props, $key, array $allowed, $default) {
+        $value = (string) ($props[$key] ?? $default);
+        return in_array($value, $allowed, true) ? $value : $default;
+    }
+}
+
+if (!function_exists('nb_hero_nested_has')) {
+    function nb_hero_nested_has(array $source, array $path) {
+        $cursor = $source;
+        foreach ($path as $segment) {
+            if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
+                return false;
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        return true;
+    }
+}
+
+if (!function_exists('nb_hero_nested_get')) {
+    function nb_hero_nested_get(array $source, array $path, $default = null) {
+        $cursor = $source;
+        foreach ($path as $segment) {
+            if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
+                return $default;
+            }
+            $cursor = $cursor[$segment];
+        }
+
+        return $cursor;
+    }
+}
+
+if (!function_exists('nb_hero_preset_defaults')) {
+    function nb_hero_preset_defaults($preset) {
+        $presets = [
+            'classic' => [
+                'mode' => 'centered',
+                'containerMode' => 'contained',
+                'mediaPositionDesktop' => 'start',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 96,
+                'paddingBottomDesktop' => 96,
+                'paddingTopMobile' => 56,
+                'paddingBottomMobile' => 56,
+                'mediaRadius' => 28,
+                'mediaSurfaceRadius' => 28,
+                'mediaSurfaceShadow' => 'lg',
+            ],
+            'split-left' => [
+                'mode' => 'split',
+                'containerMode' => 'contained',
+                'mediaPositionDesktop' => 'start',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 96,
+                'paddingBottomDesktop' => 96,
+                'paddingTopMobile' => 56,
+                'paddingBottomMobile' => 56,
+                'mediaRadius' => 28,
+                'mediaSurfaceRadius' => 28,
+                'mediaSurfaceShadow' => 'lg',
+            ],
+            'split-right' => [
+                'mode' => 'split',
+                'containerMode' => 'contained',
+                'mediaPositionDesktop' => 'end',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 96,
+                'paddingBottomDesktop' => 96,
+                'paddingTopMobile' => 56,
+                'paddingBottomMobile' => 56,
+                'mediaRadius' => 28,
+                'mediaSurfaceRadius' => 28,
+                'mediaSurfaceShadow' => 'lg',
+            ],
+            'edge-left' => [
+                'mode' => 'split',
+                'containerMode' => 'fluid',
+                'mediaPositionDesktop' => 'start',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 96,
+                'paddingBottomDesktop' => 96,
+                'paddingTopMobile' => 56,
+                'paddingBottomMobile' => 56,
+                'mediaRadius' => 0,
+                'mediaSurfaceRadius' => 0,
+                'mediaSurfaceShadow' => 'none',
+            ],
+            'edge-right' => [
+                'mode' => 'split',
+                'containerMode' => 'fluid',
+                'mediaPositionDesktop' => 'end',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 96,
+                'paddingBottomDesktop' => 96,
+                'paddingTopMobile' => 56,
+                'paddingBottomMobile' => 56,
+                'mediaRadius' => 0,
+                'mediaSurfaceRadius' => 0,
+                'mediaSurfaceShadow' => 'none',
+            ],
+            'strip' => [
+                'mode' => 'split',
+                'containerMode' => 'fluid',
+                'mediaPositionDesktop' => 'start',
+                'mediaPositionMobile' => 'top',
+                'paddingTopDesktop' => 0,
+                'paddingBottomDesktop' => 0,
+                'paddingTopMobile' => 0,
+                'paddingBottomMobile' => 0,
+                'mediaRadius' => 0,
+                'mediaSurfaceRadius' => 0,
+                'mediaSurfaceShadow' => 'none',
+            ],
+        ];
+
+        return $presets[$preset] ?? $presets['classic'];
+    }
+}
+
+$hero_preset = 'classic';
+$preset_defaults = nb_hero_preset_defaults($hero_preset);
+
 if ($hero_contract) {
-    $layout = in_array($hero_contract['layout']['desktop']['mode'] ?? '', ['centered', 'left', 'split'], true)
-        ? (string) $hero_contract['layout']['desktop']['mode'] : 'centered';
+    $hero_preset = (string) nb_hero_nested_get($hero_contract, ['layout', 'preset'], 'classic');
+    if (!in_array($hero_preset, ['classic', 'split-left', 'split-right', 'edge-left', 'edge-right', 'strip'], true)) {
+        $hero_preset = 'classic';
+    }
+    $preset_defaults = nb_hero_preset_defaults($hero_preset);
+
+    $layout = in_array(nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'mode'], ''), ['centered', 'left', 'split'], true)
+        ? (string) nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'mode'], 'centered')
+        : $preset_defaults['mode'];
+    $container_mode = in_array(nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'containerMode'], ''), ['contained', 'fluid'], true)
+        ? (string) nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'containerMode'], 'contained')
+        : $preset_defaults['containerMode'];
+    $media_position_desktop = in_array(nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'mediaPosition'], ''), ['start', 'end'], true)
+        ? (string) nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'mediaPosition'], 'start')
+        : $preset_defaults['mediaPositionDesktop'];
+    $media_position_mobile = in_array(nb_hero_nested_get($hero_contract, ['layout', 'mobile', 'mediaPosition'], ''), ['top', 'bottom'], true)
+        ? (string) nb_hero_nested_get($hero_contract, ['layout', 'mobile', 'mediaPosition'], 'top')
+        : $preset_defaults['mediaPositionMobile'];
     $theme = in_array($hero_contract['design']['section']['theme'] ?? '', ['light', 'dark', 'accent'], true)
         ? (string) $hero_contract['design']['section']['theme'] : 'light';
     $background_mode = (string) ($hero_contract['design']['section']['background']['mode'] ?? 'theme');
@@ -111,10 +252,10 @@ if ($hero_contract) {
     $content_gap_mobile = (int) ($hero_contract['layout']['mobile']['contentGap'] ?? 24);
     $actions_gap_desktop = (int) ($hero_contract['layout']['desktop']['actionsGap'] ?? 12);
     $actions_gap_mobile = (int) ($hero_contract['layout']['mobile']['actionsGap'] ?? 10);
-    $padding_top_desktop = (int) ($hero_contract['layout']['desktop']['paddingTop'] ?? 96);
-    $padding_bottom_desktop = (int) ($hero_contract['layout']['desktop']['paddingBottom'] ?? 96);
-    $padding_top_mobile = (int) ($hero_contract['layout']['mobile']['paddingTop'] ?? 56);
-    $padding_bottom_mobile = (int) ($hero_contract['layout']['mobile']['paddingBottom'] ?? 56);
+    $padding_top_desktop = (int) (nb_hero_nested_has($hero_contract, ['layout', 'desktop', 'paddingTop']) ? nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'paddingTop'], 96) : $preset_defaults['paddingTopDesktop']);
+    $padding_bottom_desktop = (int) (nb_hero_nested_has($hero_contract, ['layout', 'desktop', 'paddingBottom']) ? nb_hero_nested_get($hero_contract, ['layout', 'desktop', 'paddingBottom'], 96) : $preset_defaults['paddingBottomDesktop']);
+    $padding_top_mobile = (int) (nb_hero_nested_has($hero_contract, ['layout', 'mobile', 'paddingTop']) ? nb_hero_nested_get($hero_contract, ['layout', 'mobile', 'paddingTop'], 56) : $preset_defaults['paddingTopMobile']);
+    $padding_bottom_mobile = (int) (nb_hero_nested_has($hero_contract, ['layout', 'mobile', 'paddingBottom']) ? nb_hero_nested_get($hero_contract, ['layout', 'mobile', 'paddingBottom'], 56) : $preset_defaults['paddingBottomMobile']);
     $min_height_desktop = (int) ($hero_contract['layout']['desktop']['minHeight'] ?? 0);
     $min_height_mobile = (int) ($hero_contract['layout']['mobile']['minHeight'] ?? 0);
     $reveal = nb_block_get_reveal_settings([
@@ -131,22 +272,26 @@ if ($hero_contract) {
     $btn2_url = htmlspecialchars(trim((string) ($hero_contract['content']['secondaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
     $btn2_style = in_array($hero_contract['design']['entities']['secondaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $hero_contract['design']['entities']['secondaryButton']['style'] : 'outline';
+    $btn3_label = htmlspecialchars(trim((string) ($hero_contract['content']['tertiaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn3_url = htmlspecialchars(trim((string) ($hero_contract['content']['tertiaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn3_style = in_array($hero_contract['design']['entities']['tertiaryButton']['style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $hero_contract['design']['entities']['tertiaryButton']['style'] : 'ghost';
 
     $media_aspect_ratio = in_array($hero_contract['design']['entities']['media']['aspectRatio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
         ? (string) $hero_contract['design']['entities']['media']['aspectRatio'] : '16:10';
     $media_object_fit = in_array($hero_contract['design']['entities']['media']['objectFit'] ?? 'cover', ['cover', 'contain'], true)
         ? (string) $hero_contract['design']['entities']['media']['objectFit'] : 'cover';
-    $media_radius = (int) ($hero_contract['design']['entities']['media']['radius'] ?? 28);
+    $media_radius = (int) (nb_hero_nested_has($hero_contract, ['design', 'entities', 'media', 'radius']) ? nb_hero_nested_get($hero_contract, ['design', 'entities', 'media', 'radius'], 28) : $preset_defaults['mediaRadius']);
     $media_surface_background_color = trim((string) ($hero_contract['design']['entities']['mediaSurface']['backgroundColor'] ?? ''));
     $media_surface_background_mode = in_array($hero_contract['design']['entities']['mediaSurface']['backgroundMode'] ?? '', ['transparent', 'solid'], true)
         ? (string) $hero_contract['design']['entities']['mediaSurface']['backgroundMode']
         : ($media_surface_background_color !== '' ? 'solid' : 'transparent');
     $media_surface_padding = (int) ($hero_contract['design']['entities']['mediaSurface']['padding'] ?? 0);
-    $media_surface_radius = (int) ($hero_contract['design']['entities']['mediaSurface']['radius'] ?? 28);
+    $media_surface_radius = (int) (nb_hero_nested_has($hero_contract, ['design', 'entities', 'mediaSurface', 'radius']) ? nb_hero_nested_get($hero_contract, ['design', 'entities', 'mediaSurface', 'radius'], 28) : $preset_defaults['mediaSurfaceRadius']);
     $media_surface_border_width = (int) ($hero_contract['design']['entities']['mediaSurface']['borderWidth'] ?? 0);
     $media_surface_border_color = trim((string) ($hero_contract['design']['entities']['mediaSurface']['borderColor'] ?? ''));
-    $media_surface_shadow = in_array($hero_contract['design']['entities']['mediaSurface']['shadow'] ?? 'lg', ['none', 'sm', 'md', 'lg'], true)
-        ? (string) $hero_contract['design']['entities']['mediaSurface']['shadow'] : 'lg';
+    $media_surface_shadow = in_array($hero_contract['design']['entities']['mediaSurface']['shadow'] ?? '', ['none', 'sm', 'md', 'lg'], true)
+        ? (string) $hero_contract['design']['entities']['mediaSurface']['shadow'] : $preset_defaults['mediaSurfaceShadow'];
 
     $image = htmlspecialchars(trim((string) ($hero_contract['content']['media']['image'] ?? '')), ENT_QUOTES, 'UTF-8');
     $image_alt = htmlspecialchars(trim((string) ($hero_contract['content']['media']['alt'] ?? '')), ENT_QUOTES, 'UTF-8');
@@ -156,8 +301,13 @@ if ($hero_contract) {
     $meta_views = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['views'] ?? '')), ENT_QUOTES, 'UTF-8');
     $meta_comments = htmlspecialchars(trim((string) ($hero_contract['content']['meta']['comments'] ?? '')), ENT_QUOTES, 'UTF-8');
 } else {
-    $layout = in_array($props['layout'] ?? '', ['centered', 'left', 'split'], true)
-        ? $props['layout'] : 'centered';
+    $hero_preset = nb_hero_prop_select((array) $props, 'layout_preset', ['classic', 'split-left', 'split-right', 'edge-left', 'edge-right', 'strip'], 'classic');
+    $preset_defaults = nb_hero_preset_defaults($hero_preset);
+
+    $layout = nb_hero_prop_select((array) $props, 'layout', ['centered', 'left', 'split'], $preset_defaults['mode']);
+    $container_mode = nb_hero_prop_select((array) $props, 'container_mode', ['contained', 'fluid'], $preset_defaults['containerMode']);
+    $media_position_desktop = nb_hero_prop_select((array) $props, 'media_position_desktop', ['start', 'end'], $preset_defaults['mediaPositionDesktop']);
+    $media_position_mobile = nb_hero_prop_select((array) $props, 'media_position_mobile', ['top', 'bottom'], $preset_defaults['mediaPositionMobile']);
     $theme = in_array($props['theme'] ?? '', ['light', 'dark', 'accent'], true)
         ? $props['theme'] : 'light';
     $background_mode = (string) ($props['background_mode'] ?? 'theme');
@@ -249,10 +399,10 @@ if ($hero_contract) {
     $content_gap_mobile = nb_hero_prop_int((array) $props, 'content_gap_mobile', 24, 0, 240);
     $actions_gap_desktop = nb_hero_prop_int((array) $props, 'actions_gap_desktop', 12, 0, 120);
     $actions_gap_mobile = nb_hero_prop_int((array) $props, 'actions_gap_mobile', 10, 0, 120);
-    $padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', 96, 0, 300);
-    $padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', 96, 0, 300);
-    $padding_top_mobile = nb_hero_prop_int((array) $props, 'padding_top_mobile', 56, 0, 300);
-    $padding_bottom_mobile = nb_hero_prop_int((array) $props, 'padding_bottom_mobile', 56, 0, 300);
+    $padding_top_desktop = nb_hero_prop_int((array) $props, 'padding_top_desktop', $preset_defaults['paddingTopDesktop'], 0, 300);
+    $padding_bottom_desktop = nb_hero_prop_int((array) $props, 'padding_bottom_desktop', $preset_defaults['paddingBottomDesktop'], 0, 300);
+    $padding_top_mobile = nb_hero_prop_int((array) $props, 'padding_top_mobile', $preset_defaults['paddingTopMobile'], 0, 300);
+    $padding_bottom_mobile = nb_hero_prop_int((array) $props, 'padding_bottom_mobile', $preset_defaults['paddingBottomMobile'], 0, 300);
     $min_height_desktop = nb_hero_prop_int((array) $props, 'min_height_desktop', 0, 0, 1200);
     $min_height_mobile = nb_hero_prop_int((array) $props, 'min_height_mobile', 0, 0, 1200);
     $reveal = nb_block_get_reveal_settings((array) $props);
@@ -266,22 +416,26 @@ if ($hero_contract) {
     $btn2_url = htmlspecialchars(trim((string) ($props['btn_secondary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
     $btn2_style = in_array($props['btn_secondary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
         ? (string) $props['btn_secondary_style'] : 'outline';
+    $btn3_label = htmlspecialchars(trim((string) ($props['btn_tertiary_label'] ?? '')), ENT_QUOTES, 'UTF-8');
+    $btn3_url = htmlspecialchars(trim((string) ($props['btn_tertiary_url'] ?? '#')), ENT_QUOTES, 'UTF-8');
+    $btn3_style = in_array($props['btn_tertiary_style'] ?? '', ['primary', 'outline', 'ghost'], true)
+        ? (string) $props['btn_tertiary_style'] : 'ghost';
 
     $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
         ? (string) ($props['media_aspect_ratio'] ?? '16:10') : '16:10';
     $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true)
         ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
-    $media_radius = nb_hero_prop_int((array) $props, 'media_radius', 28, 0, 80);
+    $media_radius = nb_hero_prop_int((array) $props, 'media_radius', $preset_defaults['mediaRadius'], 0, 80);
     $media_surface_background_color = trim((string) ($props['media_surface_background_color'] ?? ''));
     $media_surface_background_mode = in_array($props['media_surface_background_mode'] ?? '', ['transparent', 'solid'], true)
         ? (string) ($props['media_surface_background_mode'] ?? 'transparent')
         : ($media_surface_background_color !== '' ? 'solid' : 'transparent');
     $media_surface_padding = nb_hero_prop_int((array) $props, 'media_surface_padding', 0, 0, 80);
-    $media_surface_radius = nb_hero_prop_int((array) $props, 'media_surface_radius', 28, 0, 100);
+    $media_surface_radius = nb_hero_prop_int((array) $props, 'media_surface_radius', $preset_defaults['mediaSurfaceRadius'], 0, 100);
     $media_surface_border_width = nb_hero_prop_int((array) $props, 'media_surface_border_width', 0, 0, 20);
     $media_surface_border_color = trim((string) ($props['media_surface_border_color'] ?? ''));
-    $media_surface_shadow = in_array($props['media_surface_shadow'] ?? 'lg', ['none', 'sm', 'md', 'lg'], true)
-        ? (string) ($props['media_surface_shadow'] ?? 'lg') : 'lg';
+    $media_surface_shadow = in_array($props['media_surface_shadow'] ?? '', ['none', 'sm', 'md', 'lg'], true)
+        ? (string) ($props['media_surface_shadow'] ?? $preset_defaults['mediaSurfaceShadow']) : $preset_defaults['mediaSurfaceShadow'];
 
     $image_value = $props['image'] ?? '';
     if (is_string($image_value)) {
@@ -310,6 +464,9 @@ $has_meta_views = $meta_views !== '';
 $has_meta_comments = $meta_comments !== '';
 
 $section_class = 'nb-section nb-hero nb-hero--' . $layout;
+$section_class .= ' nb-hero--' . $container_mode;
+$section_class .= ' nb-hero--media-' . $media_position_desktop;
+$section_class .= ' nb-hero--mobile-media-' . $media_position_mobile;
 $section_class .= $reveal['class'];
 $data_theme = $theme !== 'light' ? ' data-nb-theme="' . $theme . '"' : '';
 
@@ -454,6 +611,9 @@ if ($media_surface_border_color !== '') {
 }
 
 $block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
+$hero_shell_class = $container_mode === 'fluid'
+    ? 'nb-hero__shell nb-hero__shell--fluid'
+    : 'nb-container nb-hero__shell nb-hero__shell--contained';
 ?>
 <section
     class="<?= $section_class ?>"
@@ -461,78 +621,86 @@ $block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_
     data-nb-entity="section"
     <?= $data_theme ?><?= $section_style ? ' style="' . htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
 >
-    <div class="nb-container nb-hero__container">
+    <div class="<?= $hero_shell_class ?>">
+        <div class="nb-hero__container">
 
-        <?php if ($layout === 'split'): ?>
-        <div class="nb-hero__media" data-nb-entity="mediaSurface">
+            <?php if ($layout === 'split'): ?>
+            <div class="nb-hero__media" data-nb-entity="mediaSurface">
                 <div class="nb-hero__media-frame">
-            <?php if ($image): ?>
-            <img
-                src="<?= $image ?>"
-                alt="<?= $image_alt ?>"
-                class="nb-hero__image"
-                loading="lazy"
-                decoding="async"
-                data-nb-entity="media"
-            >
-            <?php else: ?>
-            <div class="nb-hero__media-placeholder" data-nb-entity="media">Добавьте изображение</div>
-            <?php endif; ?>
+                    <?php if ($image): ?>
+                    <img
+                        src="<?= $image ?>"
+                        alt="<?= $image_alt ?>"
+                        class="nb-hero__image"
+                        loading="lazy"
+                        decoding="async"
+                        data-nb-entity="media"
+                    >
+                    <?php else: ?>
+                    <div class="nb-hero__media-placeholder" data-nb-entity="media">Добавьте изображение</div>
+                    <?php endif; ?>
                 </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="nb-hero__content">
-
-            <?php if ($eyebrow): ?>
-            <p class="nb-hero__eyebrow" data-nb-entity="eyebrow"><?= $eyebrow ?></p>
-            <?php endif; ?>
-
-            <?php if ($title_visible && $heading): ?>
-            <<?= $heading_tag ?> class="nb-hero__heading" data-nb-entity="title"><?php if ($title_url): ?><a href="<?= $title_url ?>" class="nb-hero__heading-link"><?= $heading ?></a><?php else: ?><?= $heading ?><?php endif; ?></<?= $heading_tag ?>>
-            <?php endif; ?>
-
-            <?php if ($subtitle_visible && $subhead): ?>
-            <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
-            <?php endif; ?>
-
-            <?php if ($has_meta_category || $has_meta_author || $has_meta_date || $has_meta_views || $has_meta_comments): ?>
-            <div class="nb-hero__meta" data-nb-entity="meta">
-                <?php if ($has_meta_category): ?>
-                <span class="nb-hero__meta-item">Категория: <?= $meta_category ?></span>
-                <?php endif; ?>
-                <?php if ($has_meta_author): ?>
-                <span class="nb-hero__meta-item">Автор: <?= $meta_author ?></span>
-                <?php endif; ?>
-                <?php if ($has_meta_date): ?>
-                <span class="nb-hero__meta-item"><?= $meta_date ?></span>
-                <?php endif; ?>
-                <?php if ($has_meta_views): ?>
-                <span class="nb-hero__meta-item"><?= $meta_views ?> просмотров</span>
-                <?php endif; ?>
-                <?php if ($has_meta_comments): ?>
-                <span class="nb-hero__meta-item"><?= $meta_comments ?> комментариев</span>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
 
-            <?php if ($btn1_label || $btn2_label): ?>
-            <div class="nb-hero__actions">
-                <?php if ($btn1_label): ?>
-                <a href="<?= $btn1_url ?>" class="<?= $button_classes[$btn1_style] ?>" data-nb-entity="primaryButton">
-                    <?= $btn1_label ?>
-                </a>
-                <?php endif; ?>
+            <div class="nb-hero__content">
+                <div class="nb-hero__content-inner">
+                    <?php if ($eyebrow): ?>
+                    <p class="nb-hero__eyebrow" data-nb-entity="eyebrow"><?= $eyebrow ?></p>
+                    <?php endif; ?>
 
-                <?php if ($btn2_label): ?>
-                <a href="<?= $btn2_url ?>" class="<?= $button_classes[$btn2_style] ?>" data-nb-entity="secondaryButton">
-                    <?= $btn2_label ?>
-                </a>
-                <?php endif; ?>
+                    <?php if ($title_visible && $heading): ?>
+                    <<?= $heading_tag ?> class="nb-hero__heading" data-nb-entity="title"><?php if ($title_url): ?><a href="<?= $title_url ?>" class="nb-hero__heading-link"><?= $heading ?></a><?php else: ?><?= $heading ?><?php endif; ?></<?= $heading_tag ?>>
+                    <?php endif; ?>
+
+                    <?php if ($subtitle_visible && $subhead): ?>
+                    <p class="nb-hero__subheading" data-nb-entity="subtitle"><?= $subhead ?></p>
+                    <?php endif; ?>
+
+                    <?php if ($has_meta_category || $has_meta_author || $has_meta_date || $has_meta_views || $has_meta_comments): ?>
+                    <div class="nb-hero__meta" data-nb-entity="meta">
+                        <?php if ($has_meta_category): ?>
+                        <span class="nb-hero__meta-item">Категория: <?= $meta_category ?></span>
+                        <?php endif; ?>
+                        <?php if ($has_meta_author): ?>
+                        <span class="nb-hero__meta-item">Автор: <?= $meta_author ?></span>
+                        <?php endif; ?>
+                        <?php if ($has_meta_date): ?>
+                        <span class="nb-hero__meta-item"><?= $meta_date ?></span>
+                        <?php endif; ?>
+                        <?php if ($has_meta_views): ?>
+                        <span class="nb-hero__meta-item"><?= $meta_views ?> просмотров</span>
+                        <?php endif; ?>
+                        <?php if ($has_meta_comments): ?>
+                        <span class="nb-hero__meta-item"><?= $meta_comments ?> комментариев</span>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if ($btn1_label || $btn2_label || $btn3_label): ?>
+                    <div class="nb-hero__actions">
+                        <?php if ($btn1_label): ?>
+                        <a href="<?= $btn1_url ?>" class="<?= $button_classes[$btn1_style] ?>" data-nb-entity="primaryButton">
+                            <?= $btn1_label ?>
+                        </a>
+                        <?php endif; ?>
+
+                        <?php if ($btn2_label): ?>
+                        <a href="<?= $btn2_url ?>" class="<?= $button_classes[$btn2_style] ?>" data-nb-entity="secondaryButton">
+                            <?= $btn2_label ?>
+                        </a>
+                        <?php endif; ?>
+
+                        <?php if ($btn3_label): ?>
+                        <a href="<?= $btn3_url ?>" class="<?= $button_classes[$btn3_style] ?>" data-nb-entity="tertiaryButton">
+                            <?= $btn3_label ?>
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
             </div>
-            <?php endif; ?>
 
         </div>
-
     </div>
 </section>

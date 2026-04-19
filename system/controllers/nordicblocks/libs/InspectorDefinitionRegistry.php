@@ -83,6 +83,16 @@ class NordicblocksInspectorDefinitionRegistry {
                 'contentPath' => 'content.secondaryButton',
                 'designPath'  => 'design.entities.secondaryButton',
             ],
+            'tertiaryButton' => [
+                'key'         => 'tertiaryButton',
+                'label'       => 'Третья кнопка',
+                'kind'        => 'button',
+                'level'       => 'block',
+                'styleSlot'   => 'tertiaryButton',
+                'dataSlot'    => 'tertiaryButton',
+                'contentPath' => 'content.tertiaryButton',
+                'designPath'  => 'design.entities.tertiaryButton',
+            ],
             'media' => [
                 'key'         => 'media',
                 'label'       => 'Медиа',
@@ -151,7 +161,7 @@ class NordicblocksInspectorDefinitionRegistry {
             'buttons' => [
                 'key'      => 'buttons',
                 'label'    => 'Кнопки',
-                'entities' => ['primaryButton', 'secondaryButton'],
+                'entities' => ['primaryButton', 'secondaryButton', 'tertiaryButton'],
             ],
             'media' => [
                 'key'      => 'media',
@@ -280,7 +290,7 @@ class NordicblocksInspectorDefinitionRegistry {
             ['key' => 'textEyebrowContent', 'label' => 'Надзаголовок', 'tab' => 'content', 'section' => 'text', 'group' => 'eyebrow', 'order' => 110, 'requiresCapabilities' => ['titleContent'], 'requiresEntities' => ['eyebrow'], 'entityScope' => 'eyebrow', 'control' => 'textContent', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'textTitleContent', 'label' => 'Заголовок', 'tab' => 'content', 'section' => 'text', 'group' => 'title', 'order' => 120, 'requiresCapabilities' => ['titleContent'], 'requiresEntities' => ['title'], 'entityScope' => 'title', 'control' => 'textContent', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'textSubtitleContent', 'label' => 'Подзаголовок', 'tab' => 'content', 'section' => 'text', 'group' => 'subtitle', 'order' => 130, 'requiresCapabilities' => ['subtitleContent'], 'requiresEntities' => ['subtitle'], 'entityScope' => 'subtitle', 'control' => 'textContent', 'breakpointAware' => false, 'repeatable' => false],
-            ['key' => 'buttonsContent', 'label' => 'Кнопки', 'tab' => 'content', 'section' => 'actions', 'group' => 'buttons', 'order' => 210, 'requiresCapabilities' => ['buttonsContent'], 'requiresAnyEntities' => ['primaryButton', 'secondaryButton'], 'entityScope' => 'buttons', 'control' => 'buttonContent', 'breakpointAware' => false, 'repeatable' => false],
+            ['key' => 'buttonsContent', 'label' => 'Кнопки', 'tab' => 'content', 'section' => 'actions', 'group' => 'buttons', 'order' => 210, 'requiresCapabilities' => ['buttonsContent'], 'requiresAnyEntities' => ['primaryButton', 'secondaryButton', 'tertiaryButton'], 'entityScope' => 'buttons', 'control' => 'buttonContent', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'mediaContent', 'label' => 'Медиа', 'tab' => 'content', 'section' => 'media', 'group' => 'media', 'order' => 310, 'requiresCapabilities' => ['mediaContent'], 'requiresEntities' => ['media'], 'entityScope' => 'media', 'control' => 'mediaContent', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'repeaterItems', 'label' => 'Элементы', 'tab' => 'content', 'section' => 'repeaters', 'group' => 'items', 'order' => 410, 'requiresCapabilities' => ['repeaterContent'], 'requiresEntities' => ['items'], 'entityScope' => 'items', 'control' => 'repeaterItems', 'breakpointAware' => false, 'repeatable' => true],
             ['key' => 'sectionBackground', 'label' => 'Фон секции', 'tab' => 'design', 'section' => 'section', 'group' => 'background', 'order' => 110, 'requiresCapabilities' => ['sectionBackground'], 'entityScope' => 'section', 'control' => 'sectionBackground', 'breakpointAware' => false, 'repeatable' => false],
@@ -290,7 +300,7 @@ class NordicblocksInspectorDefinitionRegistry {
             ['key' => 'subtitleTypography', 'label' => 'Подзаголовок', 'tab' => 'design', 'section' => 'typography', 'group' => 'subtitle', 'order' => 220, 'requiresCapabilities' => ['subtitleTypography'], 'requiresEntities' => ['subtitle'], 'entityScope' => 'subtitle', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'metaTypography', 'label' => 'Мета', 'tab' => 'design', 'section' => 'typography', 'group' => 'meta', 'order' => 225, 'requiresCapabilities' => ['metaTypography'], 'requiresEntities' => ['meta'], 'entityScope' => 'meta', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
             ['key' => 'bodyTypography', 'label' => 'Основной текст', 'tab' => 'design', 'section' => 'typography', 'group' => 'body', 'order' => 230, 'requiresCapabilities' => ['bodyTypography'], 'requiresEntities' => ['body'], 'entityScope' => 'body', 'control' => 'typographyText', 'breakpointAware' => true, 'repeatable' => false],
-            ['key' => 'buttonsStyle', 'label' => 'Кнопки', 'tab' => 'design', 'section' => 'actions', 'group' => 'buttons', 'order' => 310, 'requiresCapabilities' => ['buttonsStyle'], 'requiresAnyEntities' => ['primaryButton', 'secondaryButton'], 'entityScope' => 'buttons', 'control' => 'buttonStyle', 'breakpointAware' => false, 'repeatable' => false],
+            ['key' => 'buttonsStyle', 'label' => 'Кнопки', 'tab' => 'design', 'section' => 'actions', 'group' => 'buttons', 'order' => 310, 'requiresCapabilities' => ['buttonsStyle'], 'requiresAnyEntities' => ['primaryButton', 'secondaryButton', 'tertiaryButton'], 'entityScope' => 'buttons', 'control' => 'buttonStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'mediaStyle', 'label' => 'Медиа', 'tab' => 'design', 'section' => 'media', 'group' => 'media', 'order' => 320, 'requiresCapabilities' => ['mediaStyle'], 'requiresEntities' => ['media'], 'entityScope' => 'media', 'control' => 'mediaStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'mediaSurface', 'label' => 'Поверхность медиа', 'tab' => 'design', 'section' => 'surfaces', 'group' => 'mediaSurface', 'order' => 410, 'requiresCapabilities' => ['mediaSurface'], 'requiresEntities' => ['mediaSurface'], 'entityScope' => 'mediaSurface', 'control' => 'surfaceStyle', 'breakpointAware' => false, 'repeatable' => false],
             ['key' => 'itemSurface', 'label' => 'Поверхность элементов', 'tab' => 'design', 'section' => 'surfaces', 'group' => 'itemSurface', 'order' => 420, 'requiresCapabilities' => ['itemSurface'], 'requiresEntities' => ['itemSurface'], 'entityScope' => 'itemSurface', 'control' => 'surfaceStyle', 'breakpointAware' => false, 'repeatable' => false],

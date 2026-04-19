@@ -28,6 +28,8 @@ function nbhBuildContentControlRenderers() {
                 + nbhField('Ссылка основной кнопки', nbhInput('content.primaryButton.url'))
                 + nbhField('Текст вторичной кнопки', nbhInput('content.secondaryButton.label'))
                 + nbhField('Ссылка вторичной кнопки', nbhInput('content.secondaryButton.url'))
+                + nbhField('Текст третьей кнопки', nbhInput('content.tertiaryButton.label'))
+                + nbhField('Ссылка третьей кнопки', nbhInput('content.tertiaryButton.url'))
                 + '</div>';
         },
         'media-content-panel': function() {

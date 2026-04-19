@@ -9,13 +9,14 @@ return [
         'meta' => [],
         'primaryButton' => [],
         'secondaryButton' => [],
+        'tertiaryButton' => [],
         'media' => [],
         'mediaSurface' => [],
     ],
     'entityGroups' => [
         'buttons' => [
             'label' => 'Кнопки',
-            'entities' => ['primaryButton', 'secondaryButton'],
+            'entities' => ['primaryButton', 'secondaryButton', 'tertiaryButton'],
         ],
         'media' => [
             'label' => 'Медиа',

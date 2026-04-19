@@ -66,6 +66,10 @@ document.getElementById('nbh-panel-body').addEventListener('input', function(eve
     path = target.dataset.path;
     if (!path) return;
 
+    if (path === 'layout.preset') {
+        return;
+    }
+
     value = target.value;
     if (target.dataset.type === 'number') {
         value = parseInt(value || '0', 10);
@@ -112,6 +116,15 @@ document.getElementById('nbh-panel-body').addEventListener('change', function(ev
     }
     path = target.dataset.path;
     if (!path) return;
+
+    if (path === 'layout.preset') {
+        if (nbhApplyHeroPreset(target.value)) {
+            nbhRenderPanels();
+            nbhMarkDirty();
+            nbhScheduleSave();
+            return;
+        }
+    }
 
     value = target.value;
     if (target.dataset.type === 'number') {

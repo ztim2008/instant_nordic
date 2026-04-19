@@ -14,6 +14,8 @@ class NordicblocksBindingMapper {
         'views' => ['path' => 'meta.views'],
         'comments' => ['path' => 'meta.comments'],
         'primaryButtonUrl' => ['path' => 'primaryButton.url'],
+        'secondaryButtonUrl' => ['path' => 'secondaryButton.url'],
+        'tertiaryButtonUrl' => ['path' => 'tertiaryButton.url'],
     ];
 
     private static $field_aliases = [
@@ -370,8 +372,17 @@ class NordicblocksBindingMapper {
             return $bindings[$key];
         }
 
-        if ($key === 'primaryButtonUrl' && isset($bindings['primaryButton']['url']) && is_array($bindings['primaryButton']['url'])) {
-            return $bindings['primaryButton']['url'];
+        $legacy_button_map = [
+            'primaryButtonUrl' => 'primaryButton',
+            'secondaryButtonUrl' => 'secondaryButton',
+            'tertiaryButtonUrl' => 'tertiaryButton',
+        ];
+
+        if (isset($legacy_button_map[$key])) {
+            $button_key = $legacy_button_map[$key];
+            if (isset($bindings[$button_key]['url']) && is_array($bindings[$button_key]['url'])) {
+                return $bindings[$button_key]['url'];
+            }
         }
 
         return [];

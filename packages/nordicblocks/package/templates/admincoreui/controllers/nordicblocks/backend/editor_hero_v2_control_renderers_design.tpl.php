@@ -99,6 +99,17 @@ function nbhBuildDesignControlRenderers() {
         },
         'section-container-panel': function() {
             var profile = nbhBlockUiProfile();
+            if (profile.kind === 'hero') {
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }))
+                    + nbhField('Контейнер секции', nbhSelect('layout.desktop.containerMode', [
+                        { value: 'contained', label: 'Внутри контейнера' },
+                        { value: 'fluid', label: 'Фото тянется к краю окна' }
+                    ], profile.layout.containerMode || 'contained'))
+                    + '</div>'
+                    + '<div class="nbh-note">Для hero контейнер можно оставить обычным или сделать edge-to-browser для фото. Текст при этом остаётся в читаемой колонке.</div>';
+            }
+
             return nbhField('Ширина контента', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }));
         },
         'typography-text-panel': function(panel, bp) {
@@ -205,6 +216,11 @@ function nbhBuildDesignControlRenderers() {
                     { value: 'outline', label: 'Контурная' },
                     { value: 'ghost', label: 'Прозрачная' }
                 ], 'outline'))
+                + nbhField('Стиль третьей кнопки', nbhSelect('design.entities.tertiaryButton.style', [
+                    { value: 'primary', label: 'Основная' },
+                    { value: 'outline', label: 'Контурная' },
+                    { value: 'ghost', label: 'Прозрачная' }
+                ], 'ghost'))
                 + '</div>';
 
             body += nbhBreakpointToggle();

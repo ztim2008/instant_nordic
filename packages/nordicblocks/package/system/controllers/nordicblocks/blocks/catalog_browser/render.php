@@ -535,7 +535,8 @@ if ($catalog_contract) {
     $media_surface_radius = (int) ($media_surface_entity['radius'] ?? $media_radius);
     $media_surface_border_width = (int) ($media_surface_entity['borderWidth'] ?? 0);
     $media_surface_border_color = nb_block_css_color((string) ($media_surface_entity['borderColor'] ?? ''), '');
-    $media_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($media_surface_entity['shadow'] ?? 'none'), 'none');
+    $media_surface_shadow_token = (string) ($media_surface_entity['shadow'] ?? 'none');
+    $media_surface_shadow_css = nb_catalog_browser_shadow_css($media_surface_shadow_token, 'none');
 
     $item_surface_variant = in_array($item_surface_entity['variant'] ?? 'card', ['card', 'plain'], true)
         ? (string) ($item_surface_entity['variant'] ?? 'card')
@@ -543,7 +544,8 @@ if ($catalog_contract) {
     $item_surface_radius = (int) ($item_surface_entity['radius'] ?? 22);
     $item_surface_border_width = (int) ($item_surface_entity['borderWidth'] ?? 1);
     $item_surface_border_color = nb_block_css_color((string) ($item_surface_entity['borderColor'] ?? '#dbe4ef'), '#dbe4ef');
-    $item_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($item_surface_entity['shadow'] ?? 'md'), 'md');
+    $item_surface_shadow_token = (string) ($item_surface_entity['shadow'] ?? 'md');
+    $item_surface_shadow_css = nb_catalog_browser_shadow_css($item_surface_shadow_token, 'md');
 
     $modal_background_mode = (string) ($modal_surface_entity['backgroundMode'] ?? 'solid');
     $modal_background_color = nb_block_css_color((string) ($modal_surface_entity['backgroundColor'] ?? '#0f172a'), '#0f172a');
@@ -708,13 +710,15 @@ if ($catalog_contract) {
     $media_surface_radius = nb_catalog_browser_prop_int($props, 'media_surface_radius', $media_radius, 0, 160);
     $media_surface_border_width = nb_catalog_browser_prop_int($props, 'media_surface_border_width', 0, 0, 20);
     $media_surface_border_color = nb_block_css_color((string) ($props['media_surface_border_color'] ?? ''), '');
-    $media_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($props['media_surface_shadow'] ?? 'none'), 'none');
+    $media_surface_shadow_token = (string) ($props['media_surface_shadow'] ?? 'none');
+    $media_surface_shadow_css = nb_catalog_browser_shadow_css($media_surface_shadow_token, 'none');
 
     $item_surface_variant = in_array($props['item_surface_variant'] ?? 'card', ['card', 'plain'], true) ? (string) ($props['item_surface_variant'] ?? 'card') : 'card';
     $item_surface_radius = nb_catalog_browser_prop_int($props, 'item_surface_radius', 22, 0, 100);
     $item_surface_border_width = nb_catalog_browser_prop_int($props, 'item_surface_border_width', 1, 0, 20);
     $item_surface_border_color = nb_block_css_color((string) ($props['item_surface_border_color'] ?? '#dbe4ef'), '#dbe4ef');
-    $item_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($props['item_surface_shadow'] ?? 'md'), 'md');
+    $item_surface_shadow_token = (string) ($props['item_surface_shadow'] ?? 'md');
+    $item_surface_shadow_css = nb_catalog_browser_shadow_css($item_surface_shadow_token, 'md');
 
     $modal_background_mode = 'solid';
     $modal_background_color = '#0f172a';
@@ -737,6 +741,25 @@ if ($catalog_contract) {
     $header_gap_desktop = nb_catalog_browser_prop_int($props, 'header_gap_desktop', 20, 0, 120);
     $header_gap_mobile = nb_catalog_browser_prop_int($props, 'header_gap_mobile', 14, 0, 120);
 }
+
+$catalog_media_radius_css = $media_radius === 20
+    ? 'var(--nb-radius-media, 20px)'
+    : $media_radius . 'px';
+$catalog_media_surface_radius_css = $media_surface_radius === $media_radius
+    ? 'var(--nb-catalog-media-radius, var(--nb-radius-media, 20px))'
+    : $media_surface_radius . 'px';
+$catalog_item_surface_radius_css = ($item_surface_radius === 22 || $item_surface_radius === 1)
+    ? 'var(--nb-radius-card, 22px)'
+    : $item_surface_radius . 'px';
+$catalog_item_surface_border_width_css = $item_surface_border_width === 1
+    ? 'var(--nb-border-width, 1px)'
+    : $item_surface_border_width . 'px';
+$catalog_item_surface_border_color_css = strtolower($item_surface_border_color) === '#dbe4ef'
+    ? 'var(--nb-color-border, #dbe4ef)'
+    : $item_surface_border_color;
+$catalog_item_surface_shadow_css = $item_surface_shadow_token === 'md'
+    ? 'var(--nb-shadow-card, ' . nb_catalog_browser_shadow_css('md', 'md') . ')'
+    : $item_surface_shadow_css;
 
 $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8')) : '';
 $layout_variant_class = $columns_desktop >= 5 ? ' nb-catalog-browser--dense' : ($columns_desktop >= 4 ? ' nb-catalog-browser--compact' : '');
@@ -890,10 +913,10 @@ if ($item_text_color_mobile !== '') {
     $section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-color-mobile:' . $item_text_color_mobile . ';');
 }
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-aspect-ratio:' . $media_aspect_ratio_css . ';');
-$section_style = nb_block_append_style($section_style, '--nb-catalog-media-radius:' . $media_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-radius:' . $catalog_media_radius_css . ';');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-object-fit:' . $media_object_fit . ';');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-padding:' . $media_surface_padding . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-radius:' . $media_surface_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-radius:' . $catalog_media_surface_radius_css . ';');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-border-width:' . $media_surface_border_width . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-shadow:' . $media_surface_shadow_css . ';');
 if ($media_surface_background_mode === 'solid' && $media_surface_background_color !== '') {
@@ -902,10 +925,10 @@ if ($media_surface_background_mode === 'solid' && $media_surface_background_colo
 if ($media_surface_border_color !== '') {
     $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-border-color:' . $media_surface_border_color . ';');
 }
-$section_style = nb_block_append_style($section_style, '--nb-catalog-card-radius:' . $item_surface_radius . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-width:' . $item_surface_border_width . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-color:' . $item_surface_border_color . ';');
-$section_style = nb_block_append_style($section_style, '--nb-catalog-card-shadow:' . $item_surface_shadow_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-radius:' . $catalog_item_surface_radius_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-width:' . $catalog_item_surface_border_width_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-color:' . $catalog_item_surface_border_color_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-shadow:' . $catalog_item_surface_shadow_css . ';');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-modal-padding:' . $modal_padding . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-modal-radius:' . $modal_radius . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-modal-border-width:' . $modal_border_width . 'px;');

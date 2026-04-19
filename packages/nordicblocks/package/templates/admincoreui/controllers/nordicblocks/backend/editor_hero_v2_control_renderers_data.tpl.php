@@ -100,6 +100,8 @@ function nbhBuildDataControlRenderers() {
                 + nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, ''))
                 + nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, ''))
                 + nbhField('Ссылка основной кнопки', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
+                + nbhField('Ссылка вторичной кнопки', nbhSelect('data.bindings.secondaryButtonUrl.field', urlOptions, ''))
+                + nbhField('Ссылка третьей кнопки', nbhSelect('data.bindings.tertiaryButtonUrl.field', urlOptions, ''))
                 + '</div>';
 
             body += '<div class="nbh-note">Пустой выбор скрывает категорию, автора, дату и метрики. Для надзаголовка, заголовка, подзаголовка и изображения ручные значения остаются резервным слоем. Это же позволяет подключать и кастомные текстовые поля, если они есть у типа контента.</div>';

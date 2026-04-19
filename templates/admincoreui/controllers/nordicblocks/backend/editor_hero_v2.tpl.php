@@ -1768,6 +1768,15 @@ function nbhBlockUiProfile() {
 
     return {
         kind: 'hero',
+        presets: [
+            { value: 'classic', label: 'Текст по центру' },
+            { value: 'split-left', label: 'Фото слева' },
+            { value: 'split-right', label: 'Фото справа' },
+            { value: 'edge-left', label: 'Фото слева до края' },
+            { value: 'edge-right', label: 'Фото справа до края' },
+            { value: 'strip', label: 'Без вертикальных отступов' }
+        ],
+        layoutPreset: 'classic',
         themeOptions: [
             { value: 'light', label: 'Светлая' },
             { value: 'dark', label: 'Темная' },
@@ -1874,6 +1883,9 @@ function nbhBlockUiProfile() {
             mobileContentGap: 24,
             desktopActionsGap: 12,
             mobileActionsGap: 10,
+            containerMode: 'contained',
+            mediaPositionDesktop: 'start',
+            mediaPositionMobile: 'top',
             supportsMinHeight: true,
             primaryControl: 'mode',
         },
@@ -3565,7 +3577,9 @@ function nbhSingleBindings() {
         date: { mode: 'bound', formatter: 'date_human', emptyBehavior: 'hide' },
         views: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },
         comments: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },
-        primaryButtonUrl: { mode: 'mixed', formatter: 'record_url', emptyBehavior: 'fallback' }
+        primaryButtonUrl: { mode: 'mixed', formatter: 'record_url', emptyBehavior: 'fallback' },
+        secondaryButtonUrl: { mode: 'mixed', formatter: 'record_url', emptyBehavior: 'fallback' },
+        tertiaryButtonUrl: { mode: 'mixed', formatter: 'record_url', emptyBehavior: 'fallback' }
     };
     var bindings = nbhGet(nbhState.draft, 'data.bindings', null);
     if (!bindings || typeof bindings !== 'object' || Array.isArray(bindings)) {
@@ -3695,6 +3709,116 @@ function nbhCommitPathValue(path, value, forceRerender) {
     }
     nbhMarkDirty();
     nbhScheduleSave();
+}
+
+function nbhHeroPresetConfig(preset) {
+    var presets = {
+        'classic': {
+            mode: 'centered',
+            containerMode: 'contained',
+            mediaPositionDesktop: 'start',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 96,
+            paddingBottomDesktop: 96,
+            paddingTopMobile: 56,
+            paddingBottomMobile: 56,
+            mediaRadius: 28,
+            mediaSurfaceRadius: 28,
+            mediaSurfaceShadow: 'lg'
+        },
+        'split-left': {
+            mode: 'split',
+            containerMode: 'contained',
+            mediaPositionDesktop: 'start',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 96,
+            paddingBottomDesktop: 96,
+            paddingTopMobile: 56,
+            paddingBottomMobile: 56,
+            mediaRadius: 28,
+            mediaSurfaceRadius: 28,
+            mediaSurfaceShadow: 'lg'
+        },
+        'split-right': {
+            mode: 'split',
+            containerMode: 'contained',
+            mediaPositionDesktop: 'end',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 96,
+            paddingBottomDesktop: 96,
+            paddingTopMobile: 56,
+            paddingBottomMobile: 56,
+            mediaRadius: 28,
+            mediaSurfaceRadius: 28,
+            mediaSurfaceShadow: 'lg'
+        },
+        'edge-left': {
+            mode: 'split',
+            containerMode: 'fluid',
+            mediaPositionDesktop: 'start',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 96,
+            paddingBottomDesktop: 96,
+            paddingTopMobile: 56,
+            paddingBottomMobile: 56,
+            mediaRadius: 0,
+            mediaSurfaceRadius: 0,
+            mediaSurfaceShadow: 'none'
+        },
+        'edge-right': {
+            mode: 'split',
+            containerMode: 'fluid',
+            mediaPositionDesktop: 'end',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 96,
+            paddingBottomDesktop: 96,
+            paddingTopMobile: 56,
+            paddingBottomMobile: 56,
+            mediaRadius: 0,
+            mediaSurfaceRadius: 0,
+            mediaSurfaceShadow: 'none'
+        },
+        'strip': {
+            mode: 'split',
+            containerMode: 'fluid',
+            mediaPositionDesktop: 'start',
+            mediaPositionMobile: 'top',
+            paddingTopDesktop: 0,
+            paddingBottomDesktop: 0,
+            paddingTopMobile: 0,
+            paddingBottomMobile: 0,
+            mediaRadius: 0,
+            mediaSurfaceRadius: 0,
+            mediaSurfaceShadow: 'none'
+        }
+    };
+
+    return presets[preset] || presets.classic;
+}
+
+function nbhApplyHeroPreset(preset) {
+    var profile = nbhBlockUiProfile();
+    var config;
+
+    if (!profile || profile.kind !== 'hero' || !nbhState.draft) {
+        return false;
+    }
+
+    config = nbhHeroPresetConfig(preset);
+    nbhSet(nbhState.draft, 'layout.preset', preset);
+    nbhSet(nbhState.draft, 'layout.desktop.mode', config.mode);
+    nbhSet(nbhState.draft, 'layout.desktop.containerMode', config.containerMode);
+    nbhSet(nbhState.draft, 'layout.desktop.mediaPosition', config.mediaPositionDesktop);
+    nbhSet(nbhState.draft, 'layout.mobile.mediaPosition', config.mediaPositionMobile);
+    nbhSet(nbhState.draft, 'layout.desktop.paddingTop', config.paddingTopDesktop);
+    nbhSet(nbhState.draft, 'layout.desktop.paddingBottom', config.paddingBottomDesktop);
+    nbhSet(nbhState.draft, 'layout.mobile.paddingTop', config.paddingTopMobile);
+    nbhSet(nbhState.draft, 'layout.mobile.paddingBottom', config.paddingBottomMobile);
+    nbhSet(nbhState.draft, 'design.entities.media.radius', config.mediaRadius);
+    nbhSet(nbhState.draft, 'design.entities.mediaSurface.radius', config.mediaSurfaceRadius);
+    nbhSet(nbhState.draft, 'design.entities.mediaSurface.shadow', config.mediaSurfaceShadow);
+
+    return true;
 }
 
 var nbhImagePickerState = {

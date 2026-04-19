@@ -253,7 +253,7 @@ class NordicblocksInspectorRegistryBuilder {
     private static function getCapabilityMatrix() {
         return [
             'hero' => [
-                'entities' => ['eyebrow', 'title', 'subtitle', 'meta', 'primaryButton', 'secondaryButton', 'media', 'mediaSurface'],
+                'entities' => ['eyebrow', 'title', 'subtitle', 'meta', 'primaryButton', 'secondaryButton', 'tertiaryButton', 'media', 'mediaSurface'],
                 'capabilities' => [
                     'sectionBackground'   => true,
                     'sectionContainer'    => true,

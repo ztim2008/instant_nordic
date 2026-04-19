@@ -110,6 +110,10 @@ class NordicblocksBlockContractNormalizer {
                     'label' => (string) ($props['btn_secondary_label'] ?? ''),
                     'url'   => (string) ($props['btn_secondary_url'] ?? '#'),
                 ],
+                'tertiaryButton' => [
+                    'label' => (string) ($props['btn_tertiary_label'] ?? ''),
+                    'url'   => (string) ($props['btn_tertiary_url'] ?? '#'),
+                ],
                 'media' => [
                     'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
                     'alt'   => (string) ($image['alt'] ?? ($props['image_alt'] ?? '')),
@@ -235,6 +239,9 @@ class NordicblocksBlockContractNormalizer {
                     'secondaryButton' => [
                         'style' => self::normalizeSelect($props['btn_secondary_style'] ?? 'outline', ['primary', 'outline', 'ghost'], 'outline'),
                     ],
+                    'tertiaryButton' => [
+                        'style' => self::normalizeSelect($props['btn_tertiary_style'] ?? 'ghost', ['primary', 'outline', 'ghost'], 'ghost'),
+                    ],
                     'mediaSurface' => [
                         'backgroundMode' => self::normalizeSelect((string) self::coalesceProp($props, ['media_surface_background_mode'], $stored_media_surface['backgroundMode'] ?? (self::coalesceProp($props, ['media_surface_background_color'], $stored_media_surface['backgroundColor'] ?? '') !== '' ? 'solid' : 'transparent')), ['transparent', 'solid'], 'transparent'),
                         'backgroundColor' => self::normalizeFlatString(self::coalesceProp($props, ['media_surface_background_color'], $stored_media_surface['backgroundColor'] ?? '')),
@@ -247,8 +254,11 @@ class NordicblocksBlockContractNormalizer {
                 ],
             ],
             'layout' => [
+                'preset' => self::normalizeSelect((string) ($props['layout_preset'] ?? 'classic'), ['classic', 'split-left', 'split-right', 'edge-left', 'edge-right', 'strip'], 'classic'),
                 'desktop' => [
                     'mode'        => $layout,
+                    'containerMode' => self::normalizeSelect((string) ($props['container_mode'] ?? 'contained'), ['contained', 'fluid'], 'contained'),
+                    'mediaPosition' => self::normalizeSelect((string) ($props['media_position_desktop'] ?? 'start'), ['start', 'end'], 'start'),
                     'contentWidth'=> self::normalizeNumber($props['content_width'] ?? 640, 280, 1440, 640),
                     'paddingTop'  => self::normalizeNumber($props['padding_top_desktop'] ?? 96, 0, 300, 96),
                     'paddingBottom'=> self::normalizeNumber($props['padding_bottom_desktop'] ?? 96, 0, 300, 96),
@@ -257,6 +267,7 @@ class NordicblocksBlockContractNormalizer {
                     'actionsGap'  => self::normalizeNumber(self::coalesceProp($props, ['actions_gap_desktop'], 12), 0, 120, 12),
                 ],
                 'mobile' => [
+                    'mediaPosition' => self::normalizeSelect((string) ($props['media_position_mobile'] ?? 'top'), ['top', 'bottom'], 'top'),
                     'paddingTop'  => self::normalizeNumber($props['padding_top_mobile'] ?? 56, 0, 300, 56),
                     'paddingBottom'=> self::normalizeNumber($props['padding_bottom_mobile'] ?? 56, 0, 300, 56),
                     'minHeight'   => self::normalizeNumber($props['min_height_mobile'] ?? 0, 0, 1200, 0),
@@ -272,6 +283,7 @@ class NordicblocksBlockContractNormalizer {
                 'meta' => ['kind' => 'text', 'styleSlot' => 'meta'],
                 'primaryButton' => ['kind' => 'button', 'styleSlot' => 'primaryButton'],
                 'secondaryButton' => ['kind' => 'button', 'styleSlot' => 'secondaryButton'],
+                'tertiaryButton' => ['kind' => 'button', 'styleSlot' => 'tertiaryButton'],
                 'media' => ['kind' => 'media', 'styleSlot' => 'media'],
                 'mediaSurface' => ['kind' => 'surface', 'styleSlot' => 'mediaSurface'],
             ],
@@ -1007,6 +1019,7 @@ class NordicblocksBlockContractNormalizer {
         if ($type === 'hero') {
             return [
                 'layout'                 => (string) ($contract['layout']['desktop']['mode'] ?? 'centered'),
+                'layout_preset'          => (string) ($contract['layout']['preset'] ?? 'classic'),
                 'theme'                  => (string) ($contract['design']['section']['theme'] ?? 'light'),
                 'background_mode'        => (string) ($contract['design']['section']['background']['mode'] ?? 'theme'),
                 'background_color'       => (string) ($contract['design']['section']['background']['color'] ?? ''),
@@ -1028,6 +1041,8 @@ class NordicblocksBlockContractNormalizer {
                 'btn_primary_url'        => (string) ($contract['content']['primaryButton']['url'] ?? '#'),
                 'btn_secondary_label'    => (string) ($contract['content']['secondaryButton']['label'] ?? ''),
                 'btn_secondary_url'      => (string) ($contract['content']['secondaryButton']['url'] ?? '#'),
+                'btn_tertiary_label'     => (string) ($contract['content']['tertiaryButton']['label'] ?? ''),
+                'btn_tertiary_url'       => (string) ($contract['content']['tertiaryButton']['url'] ?? '#'),
                 'image'                  => (string) ($contract['content']['media']['image'] ?? ''),
                 'image_alt'              => (string) ($contract['content']['media']['alt'] ?? ''),
                 'heading_tag'            => (string) ($contract['design']['entities']['title']['tag'] ?? 'h1'),
@@ -1105,6 +1120,9 @@ class NordicblocksBlockContractNormalizer {
                 'media_surface_border_width' => (string) ($contract['design']['entities']['mediaSurface']['borderWidth'] ?? 0),
                 'media_surface_border_color' => (string) ($contract['design']['entities']['mediaSurface']['borderColor'] ?? ''),
                 'media_surface_shadow'    => (string) ($contract['design']['entities']['mediaSurface']['shadow'] ?? 'lg'),
+                'container_mode'        => (string) ($contract['layout']['desktop']['containerMode'] ?? 'contained'),
+                'media_position_desktop' => (string) ($contract['layout']['desktop']['mediaPosition'] ?? 'start'),
+                'media_position_mobile' => (string) ($contract['layout']['mobile']['mediaPosition'] ?? 'top'),
                 'content_width'          => (string) ($contract['layout']['desktop']['contentWidth'] ?? 640),
                 'padding_top_desktop'    => (string) ($contract['layout']['desktop']['paddingTop'] ?? 96),
                 'padding_bottom_desktop' => (string) ($contract['layout']['desktop']['paddingBottom'] ?? 96),
@@ -1118,6 +1136,7 @@ class NordicblocksBlockContractNormalizer {
                 'actions_gap_mobile'     => (string) ($contract['layout']['mobile']['actionsGap'] ?? 10),
                 'btn_primary_style'      => (string) ($contract['design']['entities']['primaryButton']['style'] ?? 'primary'),
                 'btn_secondary_style'    => (string) ($contract['design']['entities']['secondaryButton']['style'] ?? 'outline'),
+                'btn_tertiary_style'     => (string) ($contract['design']['entities']['tertiaryButton']['style'] ?? 'ghost'),
                 'block_animation'        => (string) ($contract['runtime']['animation']['name'] ?? 'none'),
                 'block_animation_delay'  => (string) ($contract['runtime']['animation']['delay'] ?? 0),
             ];

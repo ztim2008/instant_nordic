@@ -66,6 +66,16 @@ function nbhBuildLayoutControlRenderers() {
 
             if (bp === 'desktop') {
                 return body + '<div class="nbh-grid-2">'
+                    + (profile.kind === 'hero'
+                        ? nbhField('Hero preset', nbhSelect('layout.preset', profile.presets || [
+                            { value: 'classic', label: 'Текст по центру' },
+                            { value: 'split-left', label: 'Фото слева' },
+                            { value: 'split-right', label: 'Фото справа' },
+                            { value: 'edge-left', label: 'Фото слева до края' },
+                            { value: 'edge-right', label: 'Фото справа до края' },
+                            { value: 'strip', label: 'Без вертикальных отступов' }
+                        ], profile.layoutPreset || 'classic'))
+                        : '')
                     + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
                     + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))
                     + (profile.layout.supportsMinHeight ? nbhField('Мин. высота', nbhInput('layout.desktop.minHeight', { inputType: 'number', type: 'number', fallback: 0 })) : '')
@@ -102,6 +112,25 @@ function nbhBuildLayoutControlRenderers() {
                     { value: 'left', label: 'Слева' }
                 ], 'center'));
             }
+            if (profile.kind === 'hero') {
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Компоновка блока', nbhSelect('layout.desktop.mode', [
+                        { value: 'centered', label: 'По центру' },
+                        { value: 'left', label: 'Слева' },
+                        { value: 'split', label: 'Текст и медиа' }
+                    ], 'centered'))
+                    + nbhField('Позиция фото на desktop', nbhSelect('layout.desktop.mediaPosition', [
+                        { value: 'start', label: 'Слева' },
+                        { value: 'end', label: 'Справа' }
+                    ], profile.layout.mediaPositionDesktop || 'start'))
+                    + nbhField('Позиция фото на mobile', nbhSelect('layout.mobile.mediaPosition', [
+                        { value: 'top', label: 'Сверху текста' },
+                        { value: 'bottom', label: 'Под текстом' }
+                    ], profile.layout.mediaPositionMobile || 'top'))
+                    + '</div>'
+                    + '<div class="nbh-note">Preset выставляет стартовую композицию, а эти поля позволяют вручную дожать hero под конкретный экран.</div>';
+            }
+
             return nbhField('Компоновка блока', nbhSelect('layout.desktop.mode', [
                 { value: 'centered', label: 'По центру' },
                 { value: 'left', label: 'Слева' },
