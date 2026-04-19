@@ -54,7 +54,7 @@
                     "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
                     "imageAlt": "Комплексный аудит",
                     "availability": "available",
-                    "gallery": ""
+                    "gallery": "[{\"src\":\"/upload/nordicblocks/demo/hero-magazine-01-cover.jpg\",\"alt\":\"Комплексный аудит\",\"caption\":\"Обложка услуги\"},{\"src\":\"/upload/nordicblocks/demo/hero-magazine-01-bg.jpg\",\"alt\":\"Комплексный аудит\",\"caption\":\"Деталь кейса\"}]"
                 },
                 {
                     "category": "Кейсы",
@@ -144,11 +144,25 @@
         ] },
         { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 3 },
         { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 1 },
+        { "key": "collection_mode", "label": "Режим длинного каталога", "type": "select", "default": "all", "options": [
+            { "value": "all", "label": "Все карточки" },
+            { "value": "load_more", "label": "Кнопка Показать ещё" },
+            { "value": "pagination", "label": "Пагинация" }
+        ] },
+        { "key": "items_per_page", "label": "Карточек на шаг или страницу", "type": "number", "default": 6 },
+        { "key": "show_results_count", "label": "Показывать счётчик результатов", "type": "boolean", "default": "1" },
         { "key": "show_search", "label": "Показывать поиск", "type": "boolean", "default": "1" },
         { "key": "show_category_filter", "label": "Показывать фильтр категорий", "type": "boolean", "default": "1" },
         { "key": "show_price_filter", "label": "Показывать фильтр цены", "type": "boolean", "default": "1" },
         { "key": "show_sort", "label": "Показывать сортировку", "type": "boolean", "default": "1" },
         { "key": "show_active_filters", "label": "Показывать активные фильтры", "type": "boolean", "default": "1" },
+        { "key": "search_in_title", "label": "Искать по заголовку", "type": "boolean", "default": "1" },
+        { "key": "search_in_excerpt", "label": "Искать по описанию", "type": "boolean", "default": "1" },
+        { "key": "search_in_category", "label": "Искать по категории", "type": "boolean", "default": "1" },
+        { "key": "search_in_badge", "label": "Искать по badge", "type": "boolean", "default": "1" },
+        { "key": "search_in_tags", "label": "Искать по тегам", "type": "boolean", "default": "1" },
+        { "key": "search_in_price", "label": "Искать по цене", "type": "boolean", "default": "0" },
+        { "key": "search_in_availability", "label": "Искать по наличию", "type": "boolean", "default": "1" },
         { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
         { "key": "show_category", "label": "Показывать категорию", "type": "boolean", "default": "1" },
         { "key": "show_badge", "label": "Показывать badge", "type": "boolean", "default": "1" },

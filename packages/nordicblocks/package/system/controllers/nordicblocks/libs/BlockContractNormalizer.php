@@ -832,6 +832,16 @@ class NordicblocksBlockContractNormalizer {
             'card_gap_mobile' => 14,
             'header_gap_desktop' => 18,
             'header_gap_mobile' => 14,
+            'collection_mode' => 'all',
+            'items_per_page' => 6,
+            'show_results_count' => '1',
+            'search_in_title' => '1',
+            'search_in_excerpt' => '1',
+            'search_in_category' => '1',
+            'search_in_badge' => '1',
+            'search_in_tags' => '1',
+            'search_in_price' => '0',
+            'search_in_availability' => '1',
             'title_size_desktop' => 34,
             'title_size_mobile' => 26,
             'subtitle_size_desktop' => 16,
@@ -878,6 +888,8 @@ class NordicblocksBlockContractNormalizer {
 
         $contract['meta']['blockType'] = 'catalog_browser';
         $contract['meta']['label'] = (string) ($block['title'] ?? 'Каталог');
+        $contract['layout']['desktop']['columns'] = self::normalizeNumber($props['columns_desktop'] ?? 3, 1, 6, 3);
+        $contract['layout']['mobile']['columns'] = self::normalizeNumber($props['columns_mobile'] ?? 1, 1, 2, 1);
         $contract['entities'] = array_merge((array) ($contract['entities'] ?? []), [
             'toolbar' => ['kind' => 'group', 'styleSlot' => 'toolbar'],
             'searchField' => ['kind' => 'text', 'styleSlot' => 'searchField'],
@@ -901,6 +913,20 @@ class NordicblocksBlockContractNormalizer {
             'price' => self::normalizeBoolean($props['show_price'] ?? '1', true),
             'oldPrice' => self::normalizeBoolean($props['show_old_price'] ?? '1', true),
             'cta' => self::normalizeBoolean($props['show_cta'] ?? '1', true),
+        ]);
+        $contract['runtime']['catalog'] = array_merge((array) ($contract['runtime']['catalog'] ?? []), [
+            'collectionMode' => self::normalizeSelect((string) ($props['collection_mode'] ?? 'all'), ['all', 'load_more', 'pagination'], 'all'),
+            'itemsPerPage' => self::normalizeNumber($props['items_per_page'] ?? 6, 1, 48, 6),
+            'showResultsCount' => self::normalizeBoolean($props['show_results_count'] ?? '1', true),
+            'searchFields' => [
+                'title' => self::normalizeBoolean($props['search_in_title'] ?? '1', true),
+                'excerpt' => self::normalizeBoolean($props['search_in_excerpt'] ?? '1', true),
+                'category' => self::normalizeBoolean($props['search_in_category'] ?? '1', true),
+                'badge' => self::normalizeBoolean($props['search_in_badge'] ?? '1', true),
+                'tags' => self::normalizeBoolean($props['search_in_tags'] ?? '1', true),
+                'price' => self::normalizeBoolean($props['search_in_price'] ?? '0', false),
+                'availability' => self::normalizeBoolean($props['search_in_availability'] ?? '1', true),
+            ],
         ]);
 
         return self::mergeStoredContract($contract, $stored_contract);
@@ -1280,6 +1306,12 @@ class NordicblocksBlockContractNormalizer {
         }
 
         if ($type === 'catalog_browser') {
+            $catalog_runtime = isset($contract['runtime']['catalog']) && is_array($contract['runtime']['catalog'])
+                ? $contract['runtime']['catalog']
+                : [];
+            $catalog_search_fields = isset($catalog_runtime['searchFields']) && is_array($catalog_runtime['searchFields'])
+                ? $catalog_runtime['searchFields']
+                : [];
             return array_merge(self::denormalizeProps('content_feed', $contract), [
                 'section_link_label' => (string) ($contract['content']['primaryButton']['label'] ?? 'Открыть все'),
                 'section_link_url' => (string) ($contract['content']['primaryButton']['url'] ?? '/catalog'),
@@ -1292,6 +1324,16 @@ class NordicblocksBlockContractNormalizer {
                 'show_price' => !empty($contract['runtime']['visibility']['price']) ? '1' : '0',
                 'show_old_price' => !empty($contract['runtime']['visibility']['oldPrice']) ? '1' : '0',
                 'show_cta' => !empty($contract['runtime']['visibility']['cta']) ? '1' : '0',
+                'collection_mode' => (string) ($catalog_runtime['collectionMode'] ?? 'all'),
+                'items_per_page' => (string) ($catalog_runtime['itemsPerPage'] ?? 6),
+                'show_results_count' => array_key_exists('showResultsCount', $catalog_runtime) ? (!empty($catalog_runtime['showResultsCount']) ? '1' : '0') : '1',
+                'search_in_title' => array_key_exists('title', $catalog_search_fields) ? (!empty($catalog_search_fields['title']) ? '1' : '0') : '1',
+                'search_in_excerpt' => array_key_exists('excerpt', $catalog_search_fields) ? (!empty($catalog_search_fields['excerpt']) ? '1' : '0') : '1',
+                'search_in_category' => array_key_exists('category', $catalog_search_fields) ? (!empty($catalog_search_fields['category']) ? '1' : '0') : '1',
+                'search_in_badge' => array_key_exists('badge', $catalog_search_fields) ? (!empty($catalog_search_fields['badge']) ? '1' : '0') : '1',
+                'search_in_tags' => array_key_exists('tags', $catalog_search_fields) ? (!empty($catalog_search_fields['tags']) ? '1' : '0') : '1',
+                'search_in_price' => array_key_exists('price', $catalog_search_fields) ? (!empty($catalog_search_fields['price']) ? '1' : '0') : '0',
+                'search_in_availability' => array_key_exists('availability', $catalog_search_fields) ? (!empty($catalog_search_fields['availability']) ? '1' : '0') : '1',
             ]);
         }
 

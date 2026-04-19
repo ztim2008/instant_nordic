@@ -109,6 +109,8 @@ function nbhRepeaterEditor() {
             var ctaLabel = nbhCollectionItemValue(item, 'cta_label');
             var ctaUrl = nbhCollectionItemValue(item, 'cta_url');
             var tags = nbhCollectionItemValue(item, 'tags');
+            var gallery = nbhCollectionItemValue(item, 'gallery');
+            var currency = nbhCollectionItemValue(item, 'currency');
             var cardLabel = (kind === 'headline_feed' && index === 0) ? 'Главная статья' : 'Карточка ' + (index + 1);
 
             if (kind === 'catalog_browser') {
@@ -129,12 +131,15 @@ function nbhRepeaterEditor() {
                     + '<div class="nbh-grid-2">'
                     + nbhField('Цена', '<input type="text" data-item-field="price" data-item-index="' + index + '" value="' + nbhEscapeAttr(price) + '">')
                     + nbhField('Старая цена', '<input type="text" data-item-field="priceOld" data-item-index="' + index + '" value="' + nbhEscapeAttr(priceOld) + '">')
+                        + nbhField('Валюта', '<input type="text" data-item-field="currency" data-item-index="' + index + '" value="' + nbhEscapeAttr(currency) + '">')
                     + nbhField('CTA', '<input type="text" data-item-field="cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaLabel) + '">')
                     + nbhField('URL CTA', '<input type="text" data-item-field="cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaUrl) + '">')
                     + nbhField('URL карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
                     + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
                     + '</div>'
                     + nbhField('Теги через запятую', '<input type="text" data-item-field="tags" data-item-index="' + index + '" value="' + nbhEscapeAttr(tags) + '">')
+                        + nbhField('Галерея JSON', '<textarea data-item-field="gallery" data-item-index="' + index + '" placeholder="[{&quot;src&quot;:&quot;/upload/...jpg&quot;,&quot;alt&quot;:&quot;Слайд&quot;,&quot;caption&quot;:&quot;Подпись&quot;}]">' + nbhEscapeHtml(gallery) + '</textarea>')
+                        + '<div class="nbh-note" style="margin-top:.75rem;">Для полноэкранного modal можно передать JSON-массив слайдов. Если поле пустое, блок использует cover image карточки.</div>'
                     + '</div>';
             }
 
@@ -187,16 +192,33 @@ function nbhRepeaterEditor() {
 
     if (nbhIsCardCollectionBlock()) {
         return (kind === 'headline_feed' ? '<div class="nbh-note">Первая карточка всегда становится главной статьёй. Остальные карточки продолжают ленту и перестраиваются по выбранному visual preset.</div>' : '')
+            + (kind === 'catalog_browser'
+                ? '<div class="nbh-note">Каталог можно держать целиком открытым, резать по кнопке Показать ещё или по клиентской пагинации. Поиск тоже можно сузить до нужных полей карточки.</div>'
+                : '')
             + '<div class="nbh-grid-2">'
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))
             + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))
             + nbhField('Показывать анонс', nbhSelect('runtime.visibility.excerpt', nbhYesNoOptions(), '1'))
             + (kind === 'catalog_browser'
-                ? nbhField('Показывать поиск', nbhSelect('runtime.visibility.search', nbhYesNoOptions(), '1'))
+                ? nbhField('Режим длинного каталога', nbhSelect('runtime.catalog.collectionMode', [
+                        { value: 'all', label: 'Все карточки сразу' },
+                        { value: 'load_more', label: 'Кнопка Показать ещё' },
+                        { value: 'pagination', label: 'Пагинация' }
+                    ], 'all'))
+                    + nbhField('Карточек на шаг/страницу', nbhInput('runtime.catalog.itemsPerPage', { inputType: 'number', type: 'number', fallback: 6 }))
+                    + nbhField('Показывать счётчик результатов', nbhSelect('runtime.catalog.showResultsCount', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать поиск', nbhSelect('runtime.visibility.search', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать фильтр категорий', nbhSelect('runtime.visibility.categoryFilter', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать фильтр цены', nbhSelect('runtime.visibility.priceFilter', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать сортировку', nbhSelect('runtime.visibility.sort', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать активные фильтры', nbhSelect('runtime.visibility.activeFilters', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по заголовку', nbhSelect('runtime.catalog.searchFields.title', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по описанию', nbhSelect('runtime.catalog.searchFields.excerpt', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по категории', nbhSelect('runtime.catalog.searchFields.category', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по badge', nbhSelect('runtime.catalog.searchFields.badge', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по тегам', nbhSelect('runtime.catalog.searchFields.tags', nbhYesNoOptions(), '1'))
+                    + nbhField('Поиск по цене', nbhSelect('runtime.catalog.searchFields.price', nbhYesNoOptions(), '0'))
+                    + nbhField('Поиск по наличию', nbhSelect('runtime.catalog.searchFields.availability', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать badge', nbhSelect('runtime.visibility.badge', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать цену', nbhSelect('runtime.visibility.price', nbhYesNoOptions(), '1'))
                     + nbhField('Показывать старую цену', nbhSelect('runtime.visibility.oldPrice', nbhYesNoOptions(), '1'))

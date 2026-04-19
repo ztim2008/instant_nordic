@@ -1274,9 +1274,9 @@ function nbhBlockUiProfile() {
                     primaryControl: 'feed-grid',
                     desktopColumns: 3,
                     mobileColumns: 1,
-                    desktopCardGap: 18,
+                    desktopCardGap: 20,
                     mobileCardGap: 14,
-                    desktopHeaderGap: 18,
+                    desktopHeaderGap: 20,
                     mobileHeaderGap: 14,
                 },
             };
@@ -1533,7 +1533,7 @@ function nbhCollectionDefaultItem() {
                 image: '',
                 imageAlt: '',
                 alt: '',
-                gallery: []
+                gallery: [{ src: '', alt: '', caption: '' }]
             };
         }
 
@@ -1610,6 +1610,17 @@ function nbhCollectionItemValue(item, key) {
             return item.tags.join(', ');
         }
         return typeof item.tags === 'string' ? item.tags : '';
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'gallery') {
+        if (Array.isArray(item.gallery)) {
+            try {
+                return JSON.stringify(item.gallery, null, 2);
+            } catch (error) {
+                return '';
+            }
+        }
+        return typeof item.gallery === 'string' ? item.gallery : '';
     }
 
     return typeof item[key] === 'string' ? item[key] : '';

@@ -99,6 +99,26 @@ if (!function_exists('nb_catalog_browser_normalize_gallery')) {
     }
 }
 
+if (!function_exists('nb_catalog_browser_build_search_text')) {
+    function nb_catalog_browser_build_search_text(array $item, array $search_fields) {
+        $index = (isset($item['searchIndex']) && is_array($item['searchIndex'])) ? $item['searchIndex'] : [];
+        $parts = [];
+
+        foreach ($search_fields as $field => $enabled) {
+            if (!$enabled) {
+                continue;
+            }
+
+            $value = trim((string) ($index[$field] ?? ''));
+            if ($value !== '') {
+                $parts[] = $value;
+            }
+        }
+
+        return trim(implode(' ', $parts));
+    }
+}
+
 if (!function_exists('nb_catalog_browser_normalize_item')) {
     function nb_catalog_browser_normalize_item(array $item) {
         $title = trim((string) ($item['title'] ?? ''));
@@ -114,6 +134,11 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
         $currency = trim((string) ($item['currency'] ?? ''));
         $badge = trim((string) ($item['badge'] ?? ''));
         $availability = trim((string) ($item['availability'] ?? ''));
+        $tags_value = $item['tags'] ?? '';
+        if (is_array($tags_value)) {
+            $tags_value = implode(', ', array_filter(array_map('trim', $tags_value)));
+        }
+        $tags = trim((string) $tags_value);
         $media = nb_block_extract_media($item['image'] ?? '', $item['imageAlt'] ?? ($item['alt'] ?? $title));
         $image_src = (string) ($media['display'] ?: $media['original']);
         $image_alt = (string) ($media['alt'] ?: $title);
@@ -141,7 +166,15 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
             'image' => htmlspecialchars($image_src, ENT_QUOTES, 'UTF-8'),
             'imageAlt' => htmlspecialchars($image_alt, ENT_QUOTES, 'UTF-8'),
             'gallery' => $gallery,
-            'searchText' => mb_strtolower(trim($title . ' ' . $excerpt . ' ' . $category . ' ' . $badge . ' ' . $availability), 'UTF-8'),
+            'searchIndex' => [
+                'title' => mb_strtolower($title, 'UTF-8'),
+                'excerpt' => mb_strtolower($excerpt, 'UTF-8'),
+                'category' => mb_strtolower($category, 'UTF-8'),
+                'badge' => mb_strtolower($badge, 'UTF-8'),
+                'tags' => mb_strtolower($tags, 'UTF-8'),
+                'price' => mb_strtolower(nb_catalog_browser_normalize_price($price, $currency), 'UTF-8'),
+                'availability' => mb_strtolower($availability, 'UTF-8'),
+            ],
         ];
     }
 }
@@ -165,12 +198,27 @@ $show_price = nb_catalog_browser_visible($props['show_price'] ?? '1', true);
 $show_old_price = nb_catalog_browser_visible($props['show_old_price'] ?? '1', true);
 $show_excerpt = nb_catalog_browser_visible($props['show_excerpt'] ?? '1', true);
 $show_cta = nb_catalog_browser_visible($props['show_cta'] ?? '1', true);
+$collection_mode = trim((string) ($props['collection_mode'] ?? 'all'));
+if (!in_array($collection_mode, ['all', 'load_more', 'pagination'], true)) {
+    $collection_mode = 'all';
+}
+$items_per_page = max(1, min(48, (int) ($props['items_per_page'] ?? 6)));
+$show_results_count = nb_catalog_browser_visible($props['show_results_count'] ?? '1', true);
+$search_fields = [
+    'title' => nb_catalog_browser_visible($props['search_in_title'] ?? '1', true),
+    'excerpt' => nb_catalog_browser_visible($props['search_in_excerpt'] ?? '1', true),
+    'category' => nb_catalog_browser_visible($props['search_in_category'] ?? '1', true),
+    'badge' => nb_catalog_browser_visible($props['search_in_badge'] ?? '1', true),
+    'tags' => nb_catalog_browser_visible($props['search_in_tags'] ?? '1', true),
+    'price' => nb_catalog_browser_visible($props['search_in_price'] ?? '0', false),
+    'availability' => nb_catalog_browser_visible($props['search_in_availability'] ?? '1', true),
+];
 $content_width = max(320, (int) ($props['content_width'] ?? 1180));
 $padding_top_desktop = max(0, (int) ($props['padding_top_desktop'] ?? 64));
 $padding_bottom_desktop = max(0, (int) ($props['padding_bottom_desktop'] ?? 64));
 $padding_top_mobile = max(0, (int) ($props['padding_top_mobile'] ?? 44));
 $padding_bottom_mobile = max(0, (int) ($props['padding_bottom_mobile'] ?? 44));
-$columns_desktop = max(1, min(4, (int) ($props['columns_desktop'] ?? 3)));
+$columns_desktop = max(1, min(6, (int) ($props['columns_desktop'] ?? 3)));
 $columns_mobile = max(1, min(2, (int) ($props['columns_mobile'] ?? 1)));
 $card_gap_desktop = max(0, (int) ($props['card_gap_desktop'] ?? 18));
 $card_gap_mobile = max(0, (int) ($props['card_gap_mobile'] ?? 14));
@@ -178,6 +226,7 @@ $header_gap_desktop = max(0, (int) ($props['header_gap_desktop'] ?? 18));
 $header_gap_mobile = max(0, (int) ($props['header_gap_mobile'] ?? 14));
 $media_radius = max(0, (int) ($props['media_radius'] ?? 20));
 $item_surface_radius = max(0, (int) ($props['item_surface_radius'] ?? 22));
+$layout_variant_class = $columns_desktop >= 5 ? ' nb-catalog-browser--dense' : ($columns_desktop >= 4 ? ' nb-catalog-browser--compact' : '');
 
 $items = [];
 foreach ((array) ($props['items'] ?? []) as $item) {
@@ -187,6 +236,7 @@ foreach ((array) ($props['items'] ?? []) as $item) {
 
     $normalized_item = nb_catalog_browser_normalize_item($item);
     if ($normalized_item) {
+        $normalized_item['searchText'] = nb_catalog_browser_build_search_text($normalized_item, $search_fields);
         $items[] = $normalized_item;
     }
 }
@@ -219,7 +269,7 @@ $section_style = sprintf(
     $item_surface_radius
 );
 ?>
-<section class="nb-section nb-catalog-browser nb-catalog-browser--align-<?= htmlspecialchars($align, ENT_QUOTES, 'UTF-8') ?>" id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>" data-nb-block="catalog_browser" data-nb-theme="<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?>" style="<?= htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') ?>">
+<section class="nb-section nb-catalog-browser nb-catalog-browser--align-<?= htmlspecialchars($align, ENT_QUOTES, 'UTF-8') ?><?= $layout_variant_class ?>" id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>" data-nb-block="catalog_browser" data-nb-theme="<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?>" style="<?= htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') ?>">
     <div class="nb-container nb-catalog-browser__container">
         <?php if ($heading !== '' || $intro !== '' || ($section_link_label !== '' && $section_link_url !== '')): ?>
         <header class="nb-catalog-browser__header">
@@ -286,6 +336,12 @@ $section_style = sprintf(
         <div class="nb-catalog-browser__active-filters" data-role="catalog-active" hidden></div>
         <?php endif; ?>
 
+        <?php if ($items && $show_results_count): ?>
+        <div class="nb-catalog-browser__results-row" data-role="catalog-results-row" hidden>
+            <div class="nb-catalog-browser__results" data-role="catalog-results"></div>
+        </div>
+        <?php endif; ?>
+
         <?php if ($items): ?>
         <div class="nb-catalog-browser__grid" data-role="catalog-grid">
             <?php foreach ($items as $index => $item): ?>
@@ -343,6 +399,10 @@ $section_style = sprintf(
             <?php endforeach; ?>
         </div>
         <div class="nb-catalog-browser__empty nb-catalog-browser__empty--filtered" data-role="catalog-empty" hidden>Ничего не найдено по текущим фильтрам.</div>
+        <div class="nb-catalog-browser__footer" data-role="catalog-footer" hidden>
+            <button type="button" class="nb-catalog-browser__more" data-role="catalog-more" hidden>Показать ещё</button>
+            <div class="nb-catalog-browser__pagination" data-role="catalog-pagination" hidden></div>
+        </div>
         <?php else: ?>
         <div class="nb-catalog-browser__empty">Каталог пока пуст. Добавьте первую карточку.</div>
         <?php endif; ?>
@@ -373,11 +433,25 @@ $section_style = sprintf(
         var cards = grid ? Array.prototype.slice.call(grid.querySelectorAll('.nb-catalog-browser__card')) : [];
         var emptyState = root.querySelector('[data-role="catalog-empty"]');
         var activeFilters = root.querySelector('[data-role="catalog-active"]');
+        var resultsRow = root.querySelector('[data-role="catalog-results-row"]');
+        var resultsBar = root.querySelector('[data-role="catalog-results"]');
+        var footer = root.querySelector('[data-role="catalog-footer"]');
+        var moreButton = root.querySelector('[data-role="catalog-more"]');
+        var pagination = root.querySelector('[data-role="catalog-pagination"]');
         var searchInput = root.querySelector('[data-role="catalog-search"]');
         var categorySelect = root.querySelector('[data-role="catalog-category"]');
         var priceMinInput = root.querySelector('[data-role="catalog-price-min"]');
         var priceMaxInput = root.querySelector('[data-role="catalog-price-max"]');
         var sortSelect = root.querySelector('[data-role="catalog-sort"]');
+        var collectionMode = '<?= htmlspecialchars($collection_mode, ENT_QUOTES, 'UTF-8') ?>';
+        var itemsPerPage = Math.max(1, parseInt('<?= (int) $items_per_page ?>', 10) || 1);
+        var showResultsCount = <?= $show_results_count ? 'true' : 'false' ?>;
+        var currentPage = 1;
+        var visibleLimit = itemsPerPage;
+
+        function sanitizeLabel(value) {
+            return String(value || '').replace(/[&<>"']/g, '');
+        }
 
         function renderActiveFilters(filters) {
             if (!activeFilters) {
@@ -386,10 +460,10 @@ $section_style = sprintf(
 
             var chips = [];
             if (filters.search) {
-                chips.push('<span class="nb-catalog-browser__filter-chip">Поиск: ' + filters.search.replace(/[&<>\"]/g, '') + '</span>');
+                chips.push('<span class="nb-catalog-browser__filter-chip">Поиск: ' + sanitizeLabel(filters.search) + '</span>');
             }
             if (filters.category) {
-                chips.push('<span class="nb-catalog-browser__filter-chip">Категория: ' + filters.category.replace(/[&<>\"]/g, '') + '</span>');
+                chips.push('<span class="nb-catalog-browser__filter-chip">Категория: ' + sanitizeLabel(filters.category) + '</span>');
             }
             if (filters.minPrice) {
                 chips.push('<span class="nb-catalog-browser__filter-chip">Цена от ' + filters.minPrice + '</span>');
@@ -408,9 +482,109 @@ $section_style = sprintf(
             activeFilters.innerHTML = chips.join('') + '<button type="button" class="nb-catalog-browser__filter-reset" data-role="catalog-reset">Сбросить</button>';
         }
 
-        function applyFilters() {
+        function buildPaginationItems(totalPages, page) {
+            var items = [];
+            if (totalPages <= 7) {
+                for (var index = 1; index <= totalPages; index++) {
+                    items.push(index);
+                }
+                return items;
+            }
+
+            items.push(1);
+            var start = Math.max(2, page - 1);
+            var end = Math.min(totalPages - 1, page + 1);
+
+            if (start > 2) {
+                items.push('ellipsis-start');
+            }
+
+            for (var middle = start; middle <= end; middle++) {
+                items.push(middle);
+            }
+
+            if (end < totalPages - 1) {
+                items.push('ellipsis-end');
+            }
+
+            items.push(totalPages);
+            return items;
+        }
+
+        function renderResults(totalMatches, displayedCount, totalPages) {
+            if (!resultsBar || !resultsRow) {
+                return;
+            }
+
+            if (!showResultsCount || totalMatches < 1) {
+                resultsRow.hidden = true;
+                resultsBar.textContent = '';
+                return;
+            }
+
+            resultsRow.hidden = false;
+            if (collectionMode === 'pagination' && totalPages > 1) {
+                resultsBar.textContent = 'Страница ' + currentPage + ' из ' + totalPages + ' · ' + totalMatches + ' карточек';
+                return;
+            }
+
+            if (collectionMode === 'load_more' && displayedCount < totalMatches) {
+                resultsBar.textContent = 'Показано ' + displayedCount + ' из ' + totalMatches + ' карточек';
+                return;
+            }
+
+            resultsBar.textContent = 'Найдено ' + totalMatches + ' карточек';
+        }
+
+        function renderCollectionNavigation(totalMatches, displayedCount, totalPages) {
+            if (!footer) {
+                return;
+            }
+
+            var hasControls = false;
+
+            if (moreButton) {
+                moreButton.hidden = true;
+            }
+
+            if (pagination) {
+                pagination.hidden = true;
+                pagination.innerHTML = '';
+            }
+
+            if (collectionMode === 'load_more' && moreButton && displayedCount < totalMatches) {
+                hasControls = true;
+                moreButton.hidden = false;
+                moreButton.textContent = 'Показать ещё ' + Math.min(itemsPerPage, totalMatches - displayedCount);
+            }
+
+            if (collectionMode === 'pagination' && pagination && totalPages > 1) {
+                hasControls = true;
+                pagination.hidden = false;
+                pagination.innerHTML = ''
+                    + '<button type="button" class="nb-catalog-browser__page-control" data-role="catalog-page" data-page="' + Math.max(1, currentPage - 1) + '"' + (currentPage === 1 ? ' disabled' : '') + '>Назад</button>'
+                    + buildPaginationItems(totalPages, currentPage).map(function(item) {
+                        if (typeof item !== 'number') {
+                            return '<span class="nb-catalog-browser__page-gap">…</span>';
+                        }
+
+                        return '<button type="button" class="nb-catalog-browser__page' + (item === currentPage ? ' is-active' : '') + '" data-role="catalog-page" data-page="' + item + '"' + (item === currentPage ? ' aria-current="page"' : '') + '>' + item + '</button>';
+                    }).join('')
+                    + '<button type="button" class="nb-catalog-browser__page-control" data-role="catalog-page" data-page="' + Math.min(totalPages, currentPage + 1) + '"' + (currentPage === totalPages ? ' disabled' : '') + '>Вперёд</button>';
+            }
+
+            footer.hidden = !hasControls || totalMatches < 1;
+        }
+
+        function applyFilters(options) {
             if (!grid) {
                 return;
+            }
+
+            options = options || {};
+            if (options.resetCollectionState !== false) {
+                currentPage = 1;
+                visibleLimit = itemsPerPage;
             }
 
             var filters = {
@@ -442,6 +616,8 @@ $section_style = sprintf(
             });
 
             var sortedCards = visibleCards.slice();
+            var displayedCards = [];
+            var totalPages = 1;
             if (filters.sort === 'title-asc') {
                 sortedCards.sort(function(a, b) {
                     return String(a.getAttribute('data-search') || '').localeCompare(String(b.getAttribute('data-search') || ''), 'ru');
@@ -460,10 +636,21 @@ $section_style = sprintf(
                 });
             }
 
+            if (collectionMode === 'pagination') {
+                totalPages = Math.max(1, Math.ceil(sortedCards.length / itemsPerPage));
+                currentPage = Math.min(Math.max(1, currentPage), totalPages);
+                displayedCards = sortedCards.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+            } else if (collectionMode === 'load_more') {
+                visibleLimit = Math.max(itemsPerPage, visibleLimit);
+                displayedCards = sortedCards.slice(0, Math.min(visibleLimit, sortedCards.length));
+            } else {
+                displayedCards = sortedCards.slice();
+            }
+
             cards.forEach(function(card) {
                 card.hidden = true;
             });
-            sortedCards.forEach(function(card) {
+            displayedCards.forEach(function(card) {
                 card.hidden = false;
                 grid.appendChild(card);
             });
@@ -473,20 +660,34 @@ $section_style = sprintf(
             }
 
             renderActiveFilters(filters);
+            renderResults(sortedCards.length, displayedCards.length, totalPages);
+            renderCollectionNavigation(sortedCards.length, displayedCards.length, totalPages);
         }
 
         root.addEventListener('click', function(event) {
             var reset = event.target.closest('[data-role="catalog-reset"]');
-            if (!reset) {
+            if (reset) {
+                if (searchInput) searchInput.value = '';
+                if (categorySelect) categorySelect.value = '';
+                if (priceMinInput) priceMinInput.value = '';
+                if (priceMaxInput) priceMaxInput.value = '';
+                if (sortSelect) sortSelect.value = 'default';
+                applyFilters();
                 return;
             }
 
-            if (searchInput) searchInput.value = '';
-            if (categorySelect) categorySelect.value = '';
-            if (priceMinInput) priceMinInput.value = '';
-            if (priceMaxInput) priceMaxInput.value = '';
-            if (sortSelect) sortSelect.value = 'default';
-            applyFilters();
+            var moreTrigger = event.target.closest('[data-role="catalog-more"]');
+            if (moreTrigger) {
+                visibleLimit += itemsPerPage;
+                applyFilters({ resetCollectionState: false });
+                return;
+            }
+
+            var pageTrigger = event.target.closest('[data-role="catalog-page"]');
+            if (pageTrigger && !pageTrigger.disabled) {
+                currentPage = Math.max(1, parseInt(pageTrigger.getAttribute('data-page') || '1', 10) || 1);
+                applyFilters({ resetCollectionState: false });
+            }
         });
 
         [searchInput, categorySelect, priceMinInput, priceMaxInput, sortSelect].forEach(function(control) {
@@ -538,6 +739,7 @@ $section_style = sprintf(
             renderSlide();
             modal.hidden = false;
             document.documentElement.classList.add('nb-catalog-browser-modal-open');
+            modal.setAttribute('aria-hidden', 'false');
         }
 
         function closeModal() {
@@ -546,6 +748,7 @@ $section_style = sprintf(
             modalCaption.textContent = '';
             modalCounter.textContent = '';
             document.documentElement.classList.remove('nb-catalog-browser-modal-open');
+            modal.setAttribute('aria-hidden', 'true');
         }
 
         function stepModal(direction) {
