@@ -994,12 +994,14 @@ var nbhIconPickerUrl = <?= json_encode(href_to('admin', 'settings', ['theme', cm
 var nbhImagePickerListUrl = <?= json_encode(href_to('nordicblocks', 'media_list'), JSON_UNESCAPED_UNICODE) ?>;
 var nbhImagePickerUploadUrl = <?= json_encode(href_to('nordicblocks', 'media_upload'), JSON_UNESCAPED_UNICODE) ?>;
 var nbhServerBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
+var nbhCssOverlayEnabled = <?= json_encode(!empty($css_overlay_enabled), JSON_UNESCAPED_UNICODE) ?>;
 
 var nbhState = {
     loaded: false,
     server: null,
     inspector: null,
     draft: null,
+    cssOverlay: null,
     blockTitle: document.getElementById('nbh-title-input').value || '',
     selectedEntity: 'title',
     activeTab: 'content',
@@ -1058,6 +1060,7 @@ function nbhHumanSection(sectionKey) {
         section: 'Секция',
         typography: 'Типографика',
         surfaces: 'Поверхности',
+        fineTune: 'Точная CSS-подстройка',
         spacing: 'Отступы',
         alignment: 'Выравнивание',
         bindings: 'Данные'
@@ -4248,6 +4251,8 @@ function nbhScheduleSave() {
     }, 350);
 }
 
+<?php include __DIR__ . '/editor_hero_v2_css_overlay.tpl.php'; ?>
+
 function nbhReloadCanvas() {
     var frame = document.getElementById('nbh-canvas-frame');
     frame.style.height = '';
@@ -4354,12 +4359,14 @@ function nbhLoadState() {
             nbhState.server = payload;
             nbhState.draft = nbhClone(payload.contract);
             nbhState.inspector = nbhBuildInspectorState(payload);
+            nbhState.cssOverlay = nbhCssOverlayBuildState(payload.cssOverlay || {});
             nbhState.activeTab = payload.ui && payload.ui.activeTab ? payload.ui.activeTab : 'content';
             nbhState.activeBreakpoint = payload.ui && payload.ui.activeBreakpoint ? payload.ui.activeBreakpoint : 'desktop';
             nbhState.selectedEntity = payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : 'title';
             primedCatalog = nbhPrimeCatalogBrowserDraft();
             nbhState.loaded = true;
             nbhRender();
+            nbhCssOverlaySyncFrame();
 
             if (primedCatalog) {
                 nbhMarkDirty();

@@ -33,11 +33,12 @@ function nbhResolveControlDefinition(panel) {
 
 <?php include __DIR__ . '/editor_hero_v2_control_renderers_content.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_control_renderers_design.tpl.php'; ?>
+<?php include __DIR__ . '/editor_hero_v2_control_renderers_css.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_control_renderers_layout.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_control_renderers_data.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_control_renderers_repeater.tpl.php'; ?>
 
-var nbhControlComponentRenderers = Object.assign({}, nbhBuildContentControlRenderers(), nbhBuildDesignControlRenderers(), nbhBuildLayoutControlRenderers(), nbhBuildDataControlRenderers(), nbhBuildRepeaterControlRenderers());
+var nbhControlComponentRenderers = Object.assign({}, nbhBuildContentControlRenderers(), nbhBuildDesignControlRenderers(), nbhBuildCssControlRenderers(), nbhBuildLayoutControlRenderers(), nbhBuildDataControlRenderers(), nbhBuildRepeaterControlRenderers());
 
 function nbhRenderPanel(panel) {
     var bp = nbhState.activeBreakpoint;

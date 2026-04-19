@@ -44,6 +44,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
             'save_url'       => href_to($this->controller->root_url, 'block_save', [$block_id]),
             'editor_state_url' => $editor_state_url,
             'canvas_url'     => $canvas_url,
+            'css_overlay_enabled' => ((string) ($block['type'] ?? '') === 'hero_panels_wide'),
             'place_url'      => $place_url,
             'render_version' => $render_version,
             'render_version_label' => (string) ($block['type'] ?? 'block') . ' SSR',

@@ -54,6 +54,29 @@ a{color:inherit;text-decoration:none}
 (function () {
     var selectedNode = null;
     var resizeFrameTimer = null;
+    var overlayStyleNode = null;
+
+    function ensureOverlayStyleNode() {
+        if (overlayStyleNode && overlayStyleNode.parentNode) {
+            return overlayStyleNode;
+        }
+
+        overlayStyleNode = document.getElementById('nbh-css-overlay-style');
+        if (overlayStyleNode) {
+            return overlayStyleNode;
+        }
+
+        overlayStyleNode = document.createElement('style');
+        overlayStyleNode.id = 'nbh-css-overlay-style';
+        document.head.appendChild(overlayStyleNode);
+
+        return overlayStyleNode;
+    }
+
+    function setOverlayCss(cssText) {
+        ensureOverlayStyleNode().textContent = String(cssText || '');
+        scheduleCanvasMetrics();
+    }
 
     function findEntityNode(target) {
         while (target && target !== document.body) {
@@ -155,6 +178,16 @@ a{color:inherit;text-decoration:none}
 
         if (data.type === 'entity:select') {
             selectEntity(data.entity || '', true);
+            return;
+        }
+
+        if (data.type === 'css:set') {
+            setOverlayCss(data.cssText || '');
+            return;
+        }
+
+        if (data.type === 'css:clear') {
+            setOverlayCss('');
         }
     });
 
@@ -200,6 +233,7 @@ JS;
         echo '<style>' . $base_css . '</style>';
         echo '<style>' . $blocks_css . '</style>';
         echo '<style>' . $bridge_css . '</style>';
+        echo '<style id="nbh-css-overlay-style"></style>';
         echo '</head><body>';
         echo $content;
         echo $bridge_js;

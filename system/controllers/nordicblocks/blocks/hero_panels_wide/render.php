@@ -297,6 +297,7 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
     class="nb-section nb-hero-panels <?= htmlspecialchars(implode(' ', $section_modifiers), ENT_QUOTES, 'UTF-8') ?> nb-hero-panels--<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?><?= $reveal['class'] ?>"
     id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>"
     data-nb-entity="section"
+    data-nb-block-root="hero_panels_wide"
     <?= $section_style ? ' style="' . htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
 >
     <div class="nb-container">
