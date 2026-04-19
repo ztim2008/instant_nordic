@@ -418,6 +418,7 @@ class NordicblocksBlockContractNormalizer {
 
     private static function normalizeContentFeed(array $block, array $stored_contract = []) {
         $props = (array) ($block['props'] ?? []);
+        $layout_preset = self::normalizeSelect((string) self::coalesceProp($props, ['layout_preset'], 'default'), ['default', 'swiss'], 'default');
         $theme = self::normalizeSelect($props['theme'] ?? 'light', ['light', 'alt', 'dark'], 'light');
         $align = self::normalizeSelect($props['align'] ?? 'left', ['left', 'center'], 'left');
         $background = self::normalizeBackgroundConfig($props);
@@ -535,6 +536,7 @@ class NordicblocksBlockContractNormalizer {
                 ],
             ],
             'layout' => [
+                'preset' => $layout_preset,
                 'desktop' => [
                     'align' => $align,
                     'contentWidth'=> self::normalizeNumber($props['content_width'] ?? 1080, 320, 1600, 1080),
@@ -561,6 +563,7 @@ class NordicblocksBlockContractNormalizer {
                 'itemSurface' => ['kind' => 'surface', 'styleSlot' => 'itemSurface'],
                 'itemTitle' => ['kind' => 'text', 'styleSlot' => 'itemTitle'],
                 'itemText' => ['kind' => 'text', 'styleSlot' => 'itemText'],
+                'itemLink' => ['kind' => 'text', 'styleSlot' => 'itemLink'],
                 'media' => ['kind' => 'media', 'styleSlot' => 'media'],
                 'meta' => ['kind' => 'text', 'styleSlot' => 'meta'],
             ],
@@ -972,6 +975,7 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'content_feed') {
             return [
+                'layout_preset'           => (string) ($contract['layout']['preset'] ?? 'default'),
                 'theme'                   => (string) ($contract['design']['section']['theme'] ?? 'light'),
                 'background_mode'         => (string) ($contract['design']['section']['background']['mode'] ?? 'theme'),
                 'background_color'        => (string) ($contract['design']['section']['background']['color'] ?? ''),
@@ -1395,6 +1399,7 @@ class NordicblocksBlockContractNormalizer {
             $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
             $category = trim((string) ($item['category'] ?? ''));
             $url = trim((string) ($item['url'] ?? ''));
+            $link_label = trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? '')));
             $date = trim((string) ($item['date'] ?? ''));
             $views = trim((string) ($item['views'] ?? ''));
             $comments = trim((string) ($item['comments'] ?? ''));
@@ -1409,6 +1414,7 @@ class NordicblocksBlockContractNormalizer {
                 'category' => $category,
                 'title' => $title,
                 'excerpt' => $excerpt,
+                'linkLabel' => $link_label,
                 'url' => $url,
                 'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
                 'imageAlt' => $image_alt,
@@ -1442,6 +1448,8 @@ class NordicblocksBlockContractNormalizer {
             'title' => $title,
             'excerpt' => $excerpt,
             'text' => $excerpt,
+            'linkLabel' => trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? ''))),
+            'link_label' => trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? ''))),
             'url' => trim((string) ($item['url'] ?? '')),
             'image' => trim((string) ($item['image'] ?? '')),
             'imageAlt' => trim((string) ($item['imageAlt'] ?? ($item['alt'] ?? ''))),

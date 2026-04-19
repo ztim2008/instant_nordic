@@ -928,6 +928,10 @@ function nbhBlockUiProfile() {
         if (nbhCollectionBlockKind() === 'content_feed') {
             return {
                 kind: 'content_feed',
+                presets: [
+                    { value: 'default', label: 'Default editorial' },
+                    { value: 'swiss', label: 'Swiss grid' }
+                ],
                 themeOptions: [
                     { value: 'light', label: 'Светлая' },
                     { value: 'alt', label: 'Мягкий фон' },

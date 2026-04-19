@@ -70,6 +70,7 @@ if (!function_exists('nb_content_feed_normalize_item')) {
         $title = trim((string) ($item['title'] ?? ''));
         $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
         $category = trim((string) ($item['category'] ?? ''));
+        $link_label = trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? '')));
         $url = trim((string) ($item['url'] ?? ''));
         $date = trim((string) ($item['date'] ?? ''));
         $views = trim((string) ($item['views'] ?? ''));
@@ -84,6 +85,7 @@ if (!function_exists('nb_content_feed_normalize_item')) {
             'category' => htmlspecialchars($category, ENT_QUOTES, 'UTF-8'),
             'title' => htmlspecialchars($title, ENT_QUOTES, 'UTF-8'),
             'excerpt' => nl2br(htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8')),
+            'linkLabel' => htmlspecialchars($link_label, ENT_QUOTES, 'UTF-8'),
             'url' => htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
             'date' => htmlspecialchars($date, ENT_QUOTES, 'UTF-8'),
             'views' => htmlspecialchars($views, ENT_QUOTES, 'UTF-8'),
@@ -95,6 +97,8 @@ if (!function_exists('nb_content_feed_normalize_item')) {
 }
 
 if ($feed_contract) {
+    $layout_preset = in_array($feed_contract['layout']['preset'] ?? 'default', ['default', 'swiss'], true)
+        ? (string) ($feed_contract['layout']['preset'] ?? 'default') : 'default';
     $theme = in_array($feed_contract['design']['section']['theme'] ?? 'light', ['light', 'alt', 'dark'], true)
         ? (string) $feed_contract['design']['section']['theme'] : 'light';
     $align = in_array($feed_contract['layout']['desktop']['align'] ?? 'left', ['left', 'center'], true)
@@ -218,6 +222,7 @@ if ($feed_contract) {
     $header_gap_desktop = (int) ($feed_contract['layout']['desktop']['headerGap'] ?? 18);
     $header_gap_mobile = (int) ($feed_contract['layout']['mobile']['headerGap'] ?? 14);
 } else {
+    $layout_preset = in_array($props['layout_preset'] ?? 'default', ['default', 'swiss'], true) ? (string) ($props['layout_preset'] ?? 'default') : 'default';
     $theme = in_array($props['theme'] ?? 'light', ['light', 'alt', 'dark'], true) ? (string) ($props['theme'] ?? 'light') : 'light';
     $align = in_array($props['align'] ?? 'left', ['left', 'center'], true) ? (string) ($props['align'] ?? 'left') : 'left';
     $background_mode = (string) ($props['background_mode'] ?? 'theme');
@@ -352,7 +357,7 @@ foreach ($items_source as $item) {
 }
 
 $theme_attr = ($theme !== 'light') ? ' data-nb-theme="' . htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') . '"' : '';
-$section_class = 'nb-section nb-content-feed nb-content-feed--align-' . $align . ' nb-content-feed--' . $item_surface_variant . $reveal['class'];
+$section_class = 'nb-section nb-content-feed nb-content-feed--align-' . $align . ' nb-content-feed--' . $item_surface_variant . ' nb-content-feed--preset-' . $layout_preset . $reveal['class'];
 $section_style = '--nb-feed-content-width:' . $content_width . 'px;';
 $section_style = nb_block_append_style($section_style, '--nb-feed-padding-top:' . $padding_top_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-feed-padding-bottom:' . $padding_bottom_desktop . 'px;');
@@ -441,7 +446,7 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
 >
     <div class="nb-container nb-content-feed__container">
         <?php if (($title_visible && $heading) || ($subtitle_visible && $intro_html) || ($show_more_link && $more_label && $more_url && $more_url !== '#')): ?>
-        <div class="nb-content-feed__header">
+        <div class="nb-content-feed__header" data-nb-entity="header">
             <div class="nb-content-feed__copy">
                 <?php if ($title_visible && $heading): ?>
                 <<?= $heading_tag ?> class="nb-content-feed__title" data-nb-entity="title"><?= $heading ?></<?= $heading_tag ?>>
@@ -460,9 +465,13 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
         <div class="nb-content-feed__grid" data-nb-entity="items">
             <?php foreach ($items as $item): ?>
             <article class="nb-content-feed__card nb-card" data-nb-entity="itemSurface">
-                <?php if ($show_image && !empty($item['image'])): ?>
-                <a class="nb-content-feed__media" href="<?= $item['url'] !== '' ? $item['url'] : '#' ?>"<?= $item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                <?php if ($show_image && (!empty($item['image']) || $layout_preset === 'swiss')): ?>
+                <a class="nb-content-feed__media<?= empty($item['image']) ? ' nb-content-feed__media--placeholder' : '' ?>" href="<?= $item['url'] !== '' ? $item['url'] : '#' ?>"<?= $item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                    <?php if (!empty($item['image'])): ?>
                     <img class="nb-content-feed__image" src="<?= $item['image'] ?>" alt="<?= $item['imageAlt'] ?>">
+                    <?php else: ?>
+                    <span class="nb-content-feed__placeholder-icon" aria-hidden="true">+</span>
+                    <?php endif; ?>
                 </a>
                 <?php endif; ?>
                 <div class="nb-content-feed__body">
@@ -480,6 +489,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                     <?php endif; ?>
                     <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
                     <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
+                    <?php endif; ?>
+                    <?php $card_link_label = $item['linkLabel'] !== '' ? $item['linkLabel'] : ($layout_preset === 'swiss' && $item['url'] !== '' ? 'Подробнее' : ''); ?>
+                    <?php if ($card_link_label !== '' && $item['url'] !== ''): ?>
+                    <a class="nb-content-feed__item-link" href="<?= $item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
                     <?php endif; ?>
                     <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
                     <div class="nb-content-feed__meta" data-nb-entity="meta">

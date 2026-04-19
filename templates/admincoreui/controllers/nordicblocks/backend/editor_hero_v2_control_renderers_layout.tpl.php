@@ -33,6 +33,12 @@ function nbhBuildLayoutControlRenderers() {
             if (profile.kind === 'content_feed' || profile.kind === 'category_cards') {
                 if (bp === 'desktop') {
                     return body + '<div class="nbh-grid-2">'
+                        + (profile.kind === 'content_feed'
+                            ? nbhField('Visual preset', nbhSelect('layout.preset', profile.presets || [
+                                { value: 'default', label: 'Default editorial' },
+                                { value: 'swiss', label: 'Swiss grid' }
+                            ], 'default'))
+                            : '')
                         + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
                         + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))
                         + nbhField('Ширина контейнера', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }))
