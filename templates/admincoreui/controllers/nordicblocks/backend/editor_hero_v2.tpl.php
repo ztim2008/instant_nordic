@@ -597,7 +597,7 @@ var nbhCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICO
 var nbhIconPickerUrl = <?= json_encode(href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']), JSON_UNESCAPED_UNICODE) ?>;
 var nbhImagePickerListUrl = <?= json_encode(href_to('nordicblocks', 'media_list'), JSON_UNESCAPED_UNICODE) ?>;
 var nbhImagePickerUploadUrl = <?= json_encode(href_to('nordicblocks', 'media_upload'), JSON_UNESCAPED_UNICODE) ?>;
-var nbhBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
+var nbhServerBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
 
 var nbhState = {
     loaded: false,
@@ -1507,7 +1507,7 @@ function nbhCatalogObjectFitOptions() {
 }
 
 function nbhIsCatalogBrowserBlock() {
-    return nbhBlockType === 'catalog_browser';
+    return nbhServerBlockType === 'catalog_browser' || nbhBlockType() === 'catalog_browser';
 }
 
 function nbhCatalogItemIdValue(item) {

@@ -71,6 +71,7 @@ function nbhRenderPanels() {
 
 function nbhRender() {
     if (!nbhState.loaded) return;
+    nbhEnsureSelectionForActiveTab();
     document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
     nbhRenderTabs();
     nbhSelectEntity(nbhState.selectedEntity, false);

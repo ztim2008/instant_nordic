@@ -37,8 +37,8 @@ function nbhPanelVisible(panel) {
     return true;
 }
 
-function nbhPanelMatchesSelection(panel) {
-    var selected = nbhState.selectedEntity;
+function nbhPanelMatchesSelection(panel, entityKey) {
+    var selected = entityKey || nbhState.selectedEntity;
     var scope = panel.entityScope || 'block';
     var groups = nbhState.inspector && nbhState.inspector.entityGroups ? nbhState.inspector.entityGroups : {};
 
@@ -57,11 +57,11 @@ function nbhPanelMatchesSelection(panel) {
     return false;
 }
 
-function nbhPanelsForTab() {
+function nbhPanelsForTab(entityKey) {
     var panels = (nbhState.inspector && nbhState.inspector.availablePanels ? nbhState.inspector.availablePanels : []).filter(function(panel) {
-        return nbhPanelVisible(panel) && nbhPanelMatchesSelection(panel);
+        return nbhPanelVisible(panel) && nbhPanelMatchesSelection(panel, entityKey);
     });
-    var selected = nbhState.selectedEntity;
+    var selected = entityKey || nbhState.selectedEntity;
 
     return panels.sort(function(a, b) {
         var aScore = a.entityScope === selected ? -1 : 0;
@@ -138,9 +138,45 @@ function nbhRenderAccordionGroup(group, activeKey) {
         + '</section>';
 }
 
+function nbhEntityHasPanelsForActiveTab(entityKey) {
+    return nbhPanelsForTab(entityKey).length > 0;
+}
+
+function nbhFirstEntityForActiveTab() {
+    var resolved = nbhState.server && nbhState.server.resolved && nbhState.server.resolved.entities ? nbhState.server.resolved.entities : {};
+    var entityKeys = Object.keys(resolved);
+    var index;
+
+    for (index = 0; index < entityKeys.length; index++) {
+        if (nbhEntityHasPanelsForActiveTab(entityKeys[index])) {
+            return entityKeys[index];
+        }
+    }
+
+    return nbhState.selectedEntity;
+}
+
+function nbhEnsureSelectionForActiveTab() {
+    var nextEntity;
+
+    if (nbhEntityHasPanelsForActiveTab(nbhState.selectedEntity)) {
+        return false;
+    }
+
+    nextEntity = nbhFirstEntityForActiveTab();
+    if (!nextEntity || nextEntity === nbhState.selectedEntity) {
+        return false;
+    }
+
+    nbhState.selectedEntity = nextEntity;
+    return true;
+}
+
 function nbhEntityChipList() {
     var resolved = nbhState.server.resolved.entities || {};
-    return Object.keys(resolved).map(function(key) {
+    return Object.keys(resolved).filter(function(key) {
+        return nbhEntityHasPanelsForActiveTab(key);
+    }).map(function(key) {
         return '<button type="button" class="nbh-entity-chip' + (nbhState.selectedEntity === key ? ' is-active' : '') + '" data-entity="' + key + '">' + nbhHumanEntity(key) + '</button>';
     }).join('');
 }

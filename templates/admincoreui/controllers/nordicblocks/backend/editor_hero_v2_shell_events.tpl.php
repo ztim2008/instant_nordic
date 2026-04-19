@@ -15,8 +15,10 @@ document.getElementById('nbhTabs').addEventListener('click', function(event) {
     var target = event.target.closest('[data-tab]');
     if (!target) return;
     nbhState.activeTab = target.dataset.tab;
+    nbhEnsureSelectionForActiveTab();
     nbhRenderTabs();
-    nbhRenderPanels();
+    document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
+    nbhSelectEntity(nbhState.selectedEntity, true);
 });
 
 document.getElementById('nbhEntityList').addEventListener('click', function(event) {
