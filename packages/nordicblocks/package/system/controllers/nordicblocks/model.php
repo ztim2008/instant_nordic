@@ -3,6 +3,7 @@
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/BlockPayloadHydrator.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/RenderCacheContext.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/ManagedScaffoldRegistry.php';
 
 class modelNordicblocks extends cmsModel {
 
@@ -273,12 +274,12 @@ class modelNordicblocks extends cmsModel {
     }
 
     public function getFirstWaveBlockTypes() {
-        return self::$first_wave_block_types;
+        return array_values(array_unique(array_merge(self::$first_wave_block_types, NordicblocksManagedScaffoldRegistry::getManagedTypes())));
     }
 
     public function isFirstWaveBlockType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, self::$first_wave_block_types, true);
+        return in_array($type, self::$first_wave_block_types, true) || NordicblocksManagedScaffoldRegistry::isManagedType($type);
     }
 
     public function createBlock($type, $title) {

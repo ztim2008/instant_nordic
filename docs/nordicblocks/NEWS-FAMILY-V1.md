@@ -579,3 +579,15 @@ Package mirror для editor templates обязателен синхронно �
 2. smoke-проверка save/reload блока;
 3. проверка cache invalidation после смены source settings;
 4. проверка package mirror и template copies, чтобы runtime не разъехался между средами.
+
+## Scaffold Registry
+<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->
+Этот раздел обновляется автоматически scaffold apply pipeline и показывает текущие scaffold-managed block types этой family.
+
+| Slug | Title | Status | Checkpoint | Live smoke |
+| --- | --- | --- | --- | --- |
+| category_cards | Рубрика с карточками | in_progress | snapshot/20260418-112025 | yes |
+| content_feed | Лента новостей | in_progress | snapshot/20260418-102305 | yes |
+| headline_feed | Главная статья и лента | in_progress | snapshot/20260418-171903 | yes |
+| swiss_grid | Swiss Grid | in_progress | snapshot/20260419-064131 | no |
+<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->

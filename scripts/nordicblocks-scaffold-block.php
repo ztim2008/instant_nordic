@@ -10,13 +10,14 @@ NordicblocksScaffoldStage1::bootstrap($rootDir);
 $args = NordicblocksScaffoldStage1::parseCliArgs($argv);
 
 if (!empty($args['help'])) {
-    echo "NordicBlocks scaffold block stage 2\n";
+    echo "NordicBlocks scaffold block stage 3\n";
     echo "Usage:\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --slug=<slug> --title=\"Title\" --family=<family> --profile=<profile> [--json]\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --spec=/abs/path/spec.json [--json]\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --slug=<slug> --title=\"Title\" --family=<family> --profile=<profile> --apply --checkpoint=<snapshot/tag> [--json]\n";
     echo "\n";
     echo "Without --apply the script runs in dry-run mode only.\n";
+    echo "Apply mode writes live/package block files and syncs checklist + family doc markers.\n";
     exit(0);
 }
 

@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/ManagedScaffoldRegistry.php';
+
 class NordicblocksDataSourceResolver {
 
     private static $content_item_modes = [
@@ -29,7 +31,7 @@ class NordicblocksDataSourceResolver {
         ];
 
         $block_type = (string) ($contract['meta']['blockType'] ?? '');
-        if ($block_type === 'hero') {
+        if ($block_type === 'hero' || NordicblocksManagedScaffoldRegistry::supportsContentItem($block_type)) {
             $source = is_array($contract['data']['source'] ?? null) ? $contract['data']['source'] : [];
             if (($source['type'] ?? 'manual') !== 'content_item' || empty($source['ctype'])) {
                 return $resolved;
@@ -42,7 +44,8 @@ class NordicblocksDataSourceResolver {
             return $resolved;
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            && !NordicblocksManagedScaffoldRegistry::supportsContentList($block_type)) {
             return $resolved;
         }
 
@@ -75,15 +78,19 @@ class NordicblocksDataSourceResolver {
         ];
 
         $block_type = (string) $block_type;
-        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
+        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            && !NordicblocksManagedScaffoldRegistry::isManagedType($block_type)) {
             return $options;
         }
 
-        foreach (self::$content_item_modes as $key => $label) {
-            $options['itemResolverModes'][] = ['value' => $key, 'label' => $label];
+        if ($block_type === 'hero' || NordicblocksManagedScaffoldRegistry::supportsContentItem($block_type)) {
+            foreach (self::$content_item_modes as $key => $label) {
+                $options['itemResolverModes'][] = ['value' => $key, 'label' => $label];
+            }
         }
 
-        if (in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
+        if (in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            || NordicblocksManagedScaffoldRegistry::supportsContentList($block_type)) {
             foreach (self::$sort_options as $key => $sort) {
                 $options['sortOptions'][] = ['value' => $key, 'label' => $sort['label']];
             }

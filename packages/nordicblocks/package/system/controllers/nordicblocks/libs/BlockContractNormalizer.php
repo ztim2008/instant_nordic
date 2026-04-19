@@ -1,17 +1,21 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/ManagedScaffoldRegistry.php';
+
 class NordicblocksBlockContractNormalizer {
 
     private static $allowed_source_types = ['manual', 'content_item', 'content_list'];
     private static $allowed_list_sorts = ['date_pub_desc', 'date_pub_asc', 'title_asc', 'title_desc', 'hits_desc', 'hits_asc', 'comments_desc', 'comments_asc'];
 
     private static function isCardCollectionType($type) {
-        return in_array($type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true);
+        return in_array($type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            || NordicblocksManagedScaffoldRegistry::usesCardCollectionMapping($type);
     }
 
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true);
+        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            || NordicblocksManagedScaffoldRegistry::isManagedType($type);
     }
 
     public static function isContractPayload($payload) {
@@ -71,6 +75,10 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'catalog_browser') {
             return self::normalizeCatalogBrowser($block);
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::isManagedType($type)) {
+            return self::normalizeManagedScaffold($block);
         }
 
         return self::normalizeFallback($block, $type);
@@ -1026,6 +1034,15 @@ class NordicblocksBlockContractNormalizer {
             ], $contract);
         }
 
+        if (NordicblocksManagedScaffoldRegistry::isManagedType($type)) {
+            return self::normalizeManagedScaffold([
+                'type'   => $type,
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? $type)),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeManagedScaffold($type, $contract),
+            ], $contract);
+        }
+
         return self::mergeStoredContract(self::normalizeFallback($block, $type), $contract);
     }
 
@@ -1393,7 +1410,305 @@ class NordicblocksBlockContractNormalizer {
             ]);
         }
 
+        if (NordicblocksManagedScaffoldRegistry::isManagedType($type)) {
+            return self::denormalizeManagedScaffold($type, $contract);
+        }
+
         return [];
+    }
+
+    private static function normalizeManagedScaffold(array $block, array $stored_contract = []) {
+        $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
+        $props = (array) ($block['props'] ?? []);
+        $defaults = NordicblocksManagedScaffoldRegistry::getSchemaDefaults($type);
+        $profile = NordicblocksManagedScaffoldRegistry::getProfile($type);
+        $generator = NordicblocksManagedScaffoldRegistry::getGeneratorMeta($type);
+        $entity_keys = NordicblocksManagedScaffoldRegistry::getEntityKeys($type);
+        $theme = self::normalizeSelect((string) ($props['theme'] ?? ($defaults['theme'] ?? 'light')), ['light', 'dark', 'accent', 'alt'], 'light');
+        $background = self::normalizeBackgroundConfig($props);
+        $data = self::normalizeDataLayer($type, (array) ($stored_contract['data'] ?? []));
+
+        $contract = [
+            'meta' => [
+                'contractVersion' => 3,
+                'blockType' => $type,
+                'schemaVersion' => 1,
+                'label' => (string) ($block['title'] ?? ($defaults['heading'] ?? $type)),
+                'status' => (string) ($block['status'] ?? 'active'),
+                'generator' => $generator,
+            ],
+            'content' => [
+                'eyebrow' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'eyebrow') ? (string) ($props['eyebrow'] ?? ($defaults['eyebrow'] ?? '')) : '',
+                'title' => (string) ($props['heading'] ?? ($defaults['heading'] ?? ($block['title'] ?? ''))),
+                'subtitle' => (string) ($props['subheading'] ?? ($props['intro'] ?? ($defaults['subheading'] ?? ''))),
+                'body' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'body') ? (string) ($props['body'] ?? ($defaults['body'] ?? '')) : '',
+                'primaryButton' => [
+                    'label' => (string) ($props['btn_primary_label'] ?? ($props['section_link_label'] ?? ($defaults['btn_primary_label'] ?? ($defaults['section_link_label'] ?? '')))),
+                    'url' => (string) ($props['btn_primary_url'] ?? ($props['section_link_url'] ?? ($defaults['btn_primary_url'] ?? ($defaults['section_link_url'] ?? '#')))),
+                ],
+                'secondaryButton' => [
+                    'label' => (string) ($props['btn_secondary_label'] ?? ''),
+                    'url' => (string) ($props['btn_secondary_url'] ?? '#'),
+                ],
+                'tertiaryButton' => [
+                    'label' => (string) ($props['btn_tertiary_label'] ?? ''),
+                    'url' => (string) ($props['btn_tertiary_url'] ?? '#'),
+                ],
+                'media' => [
+                    'image' => (string) ($props['image'] ?? ''),
+                    'alt' => (string) ($props['image_alt'] ?? ''),
+                ],
+                'meta' => [
+                    'category' => '',
+                    'author' => '',
+                    'date' => '',
+                    'views' => '',
+                    'comments' => '',
+                ],
+                'items' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')
+                    ? (NordicblocksManagedScaffoldRegistry::usesFaqMapping($type)
+                        ? self::normalizeFaqItems($props['items'] ?? ($defaults['items'] ?? []))
+                        : self::normalizeContentFeedItems($props['items'] ?? ($defaults['items'] ?? [])))
+                    : [],
+            ],
+            'design' => [
+                'section' => [
+                    'theme' => $theme,
+                    'background' => $background,
+                ],
+                'entities' => self::buildManagedDesignEntities($type, $props),
+            ],
+            'layout' => self::buildManagedLayout($type, $props, $defaults),
+            'data' => $data,
+            'entities' => self::buildManagedEntityMeta($entity_keys),
+            'runtime' => [
+                'renderMode' => 'ssr',
+                'cacheScope' => 'page',
+                'visibility' => [
+                    'image' => self::normalizeBoolean($props['show_image'] ?? '1', true),
+                    'category' => self::normalizeBoolean($props['show_category'] ?? '1', true),
+                    'excerpt' => self::normalizeBoolean($props['show_excerpt'] ?? '1', true),
+                    'date' => self::normalizeBoolean($props['show_date'] ?? '1', true),
+                    'views' => self::normalizeBoolean($props['show_views'] ?? '1', true),
+                    'comments' => self::normalizeBoolean($props['show_comments'] ?? '1', true),
+                    'moreLink' => self::normalizeBoolean($props['show_more_link'] ?? '1', true),
+                ],
+                'animation' => [
+                    'name' => self::normalizeSelect((string) ($props['block_animation'] ?? 'none'), ['none', 'fade-up', 'fade-in', 'zoom-in'], 'none'),
+                    'delay' => self::normalizeNumber($props['block_animation_delay'] ?? 0, 0, 1500, 0),
+                ],
+                'featureFlags' => [
+                    'managedScaffold' => true,
+                    'scaffoldProfile' => $profile,
+                    'sourceModeProfile' => NordicblocksManagedScaffoldRegistry::getSourceModeProfile($type),
+                ],
+            ],
+        ];
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
+    private static function denormalizeManagedScaffold($type, array $contract) {
+        $defaults = NordicblocksManagedScaffoldRegistry::getSchemaDefaults($type);
+        $result = $defaults;
+
+        $result['theme'] = (string) ($contract['design']['section']['theme'] ?? ($defaults['theme'] ?? 'light'));
+        $result['heading'] = (string) ($contract['content']['title'] ?? ($defaults['heading'] ?? ''));
+        $result['subheading'] = (string) ($contract['content']['subtitle'] ?? ($defaults['subheading'] ?? ''));
+        $result['title_visible'] = !empty($contract['design']['entities']['title']['visible']) ? '1' : '0';
+        $result['subtitle_visible'] = !empty($contract['design']['entities']['subtitle']['visible']) ? '1' : '0';
+        $result['padding_top_desktop'] = (string) ($contract['layout']['desktop']['paddingTop'] ?? ($defaults['padding_top_desktop'] ?? 72));
+        $result['padding_bottom_desktop'] = (string) ($contract['layout']['desktop']['paddingBottom'] ?? ($defaults['padding_bottom_desktop'] ?? 72));
+        $result['padding_top_mobile'] = (string) ($contract['layout']['mobile']['paddingTop'] ?? ($defaults['padding_top_mobile'] ?? 48));
+        $result['padding_bottom_mobile'] = (string) ($contract['layout']['mobile']['paddingBottom'] ?? ($defaults['padding_bottom_mobile'] ?? 48));
+        $result['content_width'] = (string) ($contract['layout']['desktop']['contentWidth'] ?? ($defaults['content_width'] ?? 960));
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'eyebrow')) {
+            $result['eyebrow'] = (string) ($contract['content']['eyebrow'] ?? ($defaults['eyebrow'] ?? ''));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'body')) {
+            $result['body'] = (string) ($contract['content']['body'] ?? ($defaults['body'] ?? ''));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'primaryButton')) {
+            $result['btn_primary_label'] = (string) ($contract['content']['primaryButton']['label'] ?? ($defaults['btn_primary_label'] ?? ''));
+            $result['btn_primary_url'] = (string) ($contract['content']['primaryButton']['url'] ?? ($defaults['btn_primary_url'] ?? '#'));
+            $result['section_link_label'] = (string) ($contract['content']['primaryButton']['label'] ?? ($defaults['section_link_label'] ?? ''));
+            $result['section_link_url'] = (string) ($contract['content']['primaryButton']['url'] ?? ($defaults['section_link_url'] ?? '#'));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'media')) {
+            $result['image'] = (string) ($contract['content']['media']['image'] ?? '');
+            $result['image_alt'] = (string) ($contract['content']['media']['alt'] ?? '');
+            $result['media_aspect_ratio'] = (string) ($contract['design']['entities']['media']['aspectRatio'] ?? '16:10');
+            $result['media_object_fit'] = (string) ($contract['design']['entities']['media']['objectFit'] ?? 'cover');
+            $result['media_radius'] = (string) ($contract['design']['entities']['media']['radius'] ?? 24);
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')) {
+            $result['items'] = is_array($contract['content']['items'] ?? null) ? $contract['content']['items'] : [];
+            $result['columns_desktop'] = (string) ($contract['layout']['desktop']['columns'] ?? ($defaults['columns_desktop'] ?? 3));
+            $result['columns_mobile'] = (string) ($contract['layout']['mobile']['columns'] ?? ($defaults['columns_mobile'] ?? 1));
+            $result['card_gap_desktop'] = (string) ($contract['layout']['desktop']['cardGap'] ?? ($defaults['card_gap_desktop'] ?? 24));
+            $result['card_gap_mobile'] = (string) ($contract['layout']['mobile']['cardGap'] ?? ($defaults['card_gap_mobile'] ?? 16));
+            $result['header_gap_desktop'] = (string) ($contract['layout']['desktop']['headerGap'] ?? ($defaults['header_gap_desktop'] ?? 24));
+            $result['header_gap_mobile'] = (string) ($contract['layout']['mobile']['headerGap'] ?? ($defaults['header_gap_mobile'] ?? 18));
+        }
+
+        return $result;
+    }
+
+    private static function buildManagedDesignEntities($type, array $props) {
+        $entities = [];
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'eyebrow')) {
+            $entities['eyebrow'] = [
+                'desktop' => ['fontSize' => 14, 'marginBottom' => 12, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 140, 'letterSpacing' => 1],
+                'mobile' => ['fontSize' => 13, 'marginBottom' => 10, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 140, 'letterSpacing' => 1],
+                'textTransform' => 'uppercase',
+            ];
+        }
+
+        $entities['title'] = [
+            'visible' => self::normalizeBoolean($props['title_visible'] ?? '1', true),
+            'desktop' => ['fontSize' => 42, 'marginBottom' => 12, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'mobile' => ['fontSize' => 30, 'marginBottom' => 10, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'tag' => 'h2',
+        ];
+
+        $entities['subtitle'] = [
+            'visible' => self::normalizeBoolean($props['subtitle_visible'] ?? '1', true),
+            'desktop' => ['fontSize' => 18, 'marginBottom' => 18, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'mobile' => ['fontSize' => 16, 'marginBottom' => 14, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
+        ];
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'body')) {
+            $entities['body'] = [
+                'desktop' => ['fontSize' => 16, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
+                'mobile' => ['fontSize' => 15, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'meta')) {
+            $entities['meta'] = [
+                'desktop' => ['fontSize' => 13, 'weight' => '600', 'color' => '', 'lineHeightPercent' => 140, 'letterSpacing' => 0],
+                'mobile' => ['fontSize' => 12, 'weight' => '600', 'color' => '', 'lineHeightPercent' => 140, 'letterSpacing' => 0],
+            ];
+        }
+
+        foreach (['primaryButton', 'secondaryButton', 'tertiaryButton'] as $button_key) {
+            if (NordicblocksManagedScaffoldRegistry::hasEntity($type, $button_key)) {
+                $entities[$button_key] = ['style' => $button_key === 'primaryButton' ? 'primary' : 'outline'];
+            }
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'media')) {
+            $entities['media'] = [
+                'aspectRatio' => (string) ($props['media_aspect_ratio'] ?? '16:10'),
+                'objectFit' => (string) ($props['media_object_fit'] ?? 'cover'),
+                'radius' => self::normalizeNumber($props['media_radius'] ?? 24, 0, 80, 24),
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'mediaSurface')) {
+            $entities['mediaSurface'] = [
+                'backgroundMode' => 'transparent',
+                'backgroundColor' => '',
+                'padding' => 0,
+                'radius' => self::normalizeNumber($props['media_radius'] ?? 24, 0, 80, 24),
+                'borderWidth' => 0,
+                'borderColor' => '',
+                'shadow' => 'none',
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemSurface')) {
+            $entities['itemSurface'] = [
+                'variant' => 'card',
+                'radius' => 24,
+                'borderWidth' => 1,
+                'borderColor' => '#e2e8f0',
+                'shadow' => 'md',
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemTitle')) {
+            $entities['itemTitle'] = [
+                'desktop' => ['fontSize' => 22, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 125, 'letterSpacing' => 0],
+                'mobile' => ['fontSize' => 18, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 125, 'letterSpacing' => 0],
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemText')) {
+            $entities['itemText'] = [
+                'desktop' => ['fontSize' => 15, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0],
+                'mobile' => ['fontSize' => 14, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0],
+            ];
+        }
+
+        return $entities;
+    }
+
+    private static function buildManagedLayout($type, array $props, array $defaults) {
+        $layout = [
+            'desktop' => [
+                'contentWidth' => self::normalizeNumber($props['content_width'] ?? ($defaults['content_width'] ?? 960), 240, 1600, 960),
+                'paddingTop' => self::normalizeNumber($props['padding_top_desktop'] ?? ($defaults['padding_top_desktop'] ?? 72), 0, 300, 72),
+                'paddingBottom' => self::normalizeNumber($props['padding_bottom_desktop'] ?? ($defaults['padding_bottom_desktop'] ?? 72), 0, 300, 72),
+                'align' => self::normalizeSelect((string) ($props['align'] ?? 'left'), ['left', 'center', 'right'], 'left'),
+            ],
+            'mobile' => [
+                'paddingTop' => self::normalizeNumber($props['padding_top_mobile'] ?? ($defaults['padding_top_mobile'] ?? 48), 0, 300, 48),
+                'paddingBottom' => self::normalizeNumber($props['padding_bottom_mobile'] ?? ($defaults['padding_bottom_mobile'] ?? 48), 0, 300, 48),
+                'align' => self::normalizeSelect((string) ($props['align'] ?? 'left'), ['left', 'center', 'right'], 'left'),
+            ],
+        ];
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')) {
+            $layout['desktop']['columns'] = self::normalizeNumber($props['columns_desktop'] ?? ($defaults['columns_desktop'] ?? 3), 1, 6, 3);
+            $layout['mobile']['columns'] = self::normalizeNumber($props['columns_mobile'] ?? ($defaults['columns_mobile'] ?? 1), 1, 3, 1);
+            $layout['desktop']['cardGap'] = self::normalizeNumber($props['card_gap_desktop'] ?? ($defaults['card_gap_desktop'] ?? 24), 0, 160, 24);
+            $layout['mobile']['cardGap'] = self::normalizeNumber($props['card_gap_mobile'] ?? ($defaults['card_gap_mobile'] ?? 16), 0, 160, 16);
+            $layout['desktop']['headerGap'] = self::normalizeNumber($props['header_gap_desktop'] ?? ($defaults['header_gap_desktop'] ?? 24), 0, 160, 24);
+            $layout['mobile']['headerGap'] = self::normalizeNumber($props['header_gap_mobile'] ?? ($defaults['header_gap_mobile'] ?? 18), 0, 160, 18);
+        }
+
+        return $layout;
+    }
+
+    private static function buildManagedEntityMeta(array $entity_keys) {
+        $meta = [];
+
+        foreach ($entity_keys as $entity_key) {
+            $meta[$entity_key] = [
+                'kind' => self::managedEntityKind($entity_key),
+                'styleSlot' => $entity_key,
+            ];
+        }
+
+        return $meta;
+    }
+
+    private static function managedEntityKind($entity_key) {
+        $map = [
+            'eyebrow' => 'text',
+            'title' => 'text',
+            'subtitle' => 'text',
+            'meta' => 'text',
+            'body' => 'text',
+            'primaryButton' => 'button',
+            'secondaryButton' => 'button',
+            'tertiaryButton' => 'button',
+            'media' => 'media',
+            'mediaSurface' => 'surface',
+            'items' => 'repeater',
+            'itemSurface' => 'surface',
+            'itemTitle' => 'text',
+            'itemText' => 'text',
+        ];
+
+        return (string) ($map[$entity_key] ?? 'text');
     }
 
     private static function normalizeFallback(array $block, $type) {
@@ -1422,10 +1737,16 @@ class NordicblocksBlockContractNormalizer {
             'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if (!in_array($type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
+        $supports_list = in_array($type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            || NordicblocksManagedScaffoldRegistry::supportsContentList($type);
+
+        if (!$supports_list) {
             $normalized['listSource'] = self::normalizeListSource([]);
         } else {
-            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), self::isCardCollectionType($type) ? 'content_feed' : $type);
+            $list_profile_type = self::isCardCollectionType($type)
+                ? 'content_feed'
+                : (NordicblocksManagedScaffoldRegistry::usesFaqMapping($type) ? 'faq' : $type);
+            $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), $list_profile_type);
         }
 
         return $normalized;

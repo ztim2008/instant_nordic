@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/ManagedScaffoldRegistry.php';
+
 class NordicblocksBindingMapper {
 
     private static $hero_slot_definitions = [
@@ -38,12 +40,18 @@ class NordicblocksBindingMapper {
             return self::mapHero($contract, $resolved_sources);
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
+        if (NordicblocksManagedScaffoldRegistry::supportsContentItem($block_type)) {
+            return self::mapManagedContentItem($contract, $resolved_sources);
+        }
+
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            && !NordicblocksManagedScaffoldRegistry::supportsContentList($block_type)) {
             return $mapped;
         }
 
         $list_source = is_array($resolved_sources['listSource'] ?? null) ? $resolved_sources['listSource'] : [];
-        $items = in_array($block_type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+        $items = (in_array($block_type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+            || NordicblocksManagedScaffoldRegistry::usesCardCollectionMapping($block_type))
             ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
             : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
         $empty_behavior = (string) ($list_source['emptyBehavior'] ?? 'fallback');
@@ -61,6 +69,49 @@ class NordicblocksBindingMapper {
             'limit'     => (int) ($list_source['limit'] ?? 0),
             'count'     => count($items),
             'itemIds'   => self::extractRecordIds((array) ($resolved_sources['listItems'] ?? [])),
+        ];
+
+        return $mapped;
+    }
+
+    private static function mapManagedContentItem(array $contract, array $resolved_sources) {
+        $mapped = [
+            'content' => [],
+            'replace' => [],
+            'runtime' => [
+                'adapter' => [
+                    'isDynamic' => true,
+                    'source' => 'content_item',
+                    'ctype' => (string) (($resolved_sources['source']['ctype'] ?? '')),
+                    'resolverMode' => (string) (($resolved_sources['source']['resolver']['mode'] ?? 'current')),
+                    'recordId' => (int) (($resolved_sources['record']['id'] ?? 0)),
+                    'resolved' => !empty($resolved_sources['record']),
+                ],
+            ],
+        ];
+
+        $record = is_array($resolved_sources['record'] ?? null) ? $resolved_sources['record'] : [];
+        if (!$record) {
+            return $mapped;
+        }
+
+        $mapped['content']['title'] = self::normalizeText(self::extractValue($record, 'title'));
+        $mapped['content']['subtitle'] = self::normalizeText(self::extractValue($record, 'teaser'));
+        $mapped['content']['body'] = self::normalizeText(self::extractValue($record, 'body'));
+        $mapped['content']['media'] = [
+            'image' => self::normalizeImageUrl(self::extractValue($record, 'record_image_url')),
+            'alt' => self::normalizeText(self::extractValue($record, 'title')),
+        ];
+        $mapped['content']['primaryButton'] = [
+            'label' => '',
+            'url' => self::normalizeUrl(self::extractValue($record, 'record_url')),
+        ];
+        $mapped['content']['meta'] = [
+            'category' => self::normalizeText(self::extractValue($record, 'category.title')),
+            'author' => self::normalizeText(self::extractValue($record, 'user.nickname')),
+            'date' => self::normalizeDate(self::extractValue($record, 'date_pub')),
+            'views' => self::normalizeNumber(self::extractValue($record, 'hits_count')),
+            'comments' => self::normalizeNumber(self::extractValue($record, 'comments_count')),
         ];
 
         return $mapped;

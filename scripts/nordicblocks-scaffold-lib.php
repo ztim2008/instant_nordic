@@ -5,7 +5,7 @@ declare(strict_types=1);
 final class NordicblocksScaffoldStage1 {
 
     private const GENERATOR_NAME = 'nordicblocks-scaffold';
-    private const GENERATOR_STAGE = 2;
+    private const GENERATOR_STAGE = 3;
     private const DESIGN_SYSTEM_MODE = 'global-first';
     private const REQUIRED_ENTITIES = ['title', 'subtitle'];
     private const REQUIRED_RUNTIME_ROOTS = ['meta', 'content', 'design', 'layout', 'data', 'entities', 'runtime'];
@@ -414,6 +414,9 @@ final class NordicblocksScaffoldStage1 {
             $writtenFiles[] = $path;
         }
 
+        $docsTouched = self::syncDocumentation($blueprint, $checkpointRef);
+        $writtenFiles = array_values(array_unique(array_merge($writtenFiles, $docsTouched)));
+
         return [
             'checkpoint' => $checkpointRef,
             'writtenFiles' => $writtenFiles,
@@ -498,6 +501,121 @@ final class NordicblocksScaffoldStage1 {
             'packageSchema' => $rootDir . '/packages/nordicblocks/package/system/controllers/nordicblocks/blocks/' . $slug . '/schema.json',
             'familyDoc' => $familyDoc,
         ];
+    }
+
+    private static function syncDocumentation(array $blueprint, string $checkpointRef): array {
+        $touched = [];
+        $checklistPath = $blueprint['paths']['rootDir'] . '/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json';
+
+        if (is_file($checklistPath)) {
+            $checklist = json_decode((string) file_get_contents($checklistPath), true);
+            if (!is_array($checklist)) {
+                throw new RuntimeException('Не удалось разобрать NEW_BLOCK_CHECKLIST_STATUS.json.');
+            }
+
+            if (!isset($checklist['blocks']) || !is_array($checklist['blocks'])) {
+                $checklist['blocks'] = [];
+            }
+
+            $existingEntry = is_array($checklist['blocks'][$blueprint['slug']] ?? null) ? $checklist['blocks'][$blueprint['slug']] : [];
+            $checklist['updated_at'] = date('Y-m-d');
+            $checklist['blocks'][$blueprint['slug']] = self::buildChecklistEntry($blueprint, $checkpointRef, $existingEntry);
+            ksort($checklist['blocks']);
+
+            $encodedChecklist = json_encode($checklist, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
+            if (file_put_contents($checklistPath, $encodedChecklist) === false) {
+                throw new RuntimeException('Не удалось обновить checklist: ' . $checklistPath);
+            }
+
+            $touched[] = $checklistPath;
+
+            $familyDocPath = (string) ($blueprint['paths']['familyDoc'] ?? '');
+            if ($familyDocPath !== '' && is_file($familyDocPath)) {
+                $familyDoc = (string) file_get_contents($familyDocPath);
+                $updatedFamilyDoc = self::syncFamilyDoc($familyDoc, $blueprint['family'], $checklist['blocks']);
+                if ($updatedFamilyDoc !== $familyDoc) {
+                    if (file_put_contents($familyDocPath, $updatedFamilyDoc) === false) {
+                        throw new RuntimeException('Не удалось обновить family doc: ' . $familyDocPath);
+                    }
+                    $touched[] = $familyDocPath;
+                }
+            }
+        }
+
+        return $touched;
+    }
+
+    private static function buildChecklistEntry(array $blueprint, string $checkpointRef, array $existingEntry): array {
+        $defaultItems = [
+            'spec_locked' => true,
+            'block_registered' => true,
+            'contract_data_layer' => true,
+            'editor_shell' => true,
+            'shared_runtime_css' => true,
+            'package_mirror' => true,
+            'live_smoke' => false,
+        ];
+
+        $existingItems = is_array($existingEntry['items'] ?? null) ? $existingEntry['items'] : [];
+        $items = array_merge($defaultItems, $existingItems);
+
+        return [
+            'title' => $blueprint['title'],
+            'family' => $blueprint['family'],
+            'status' => (string) ($existingEntry['status'] ?? 'in_progress'),
+            'checkpoint' => $checkpointRef,
+            'items' => $items,
+            'notes' => 'Scaffold-generated managed block. Runtime registration, contract support, data layer and package mirror подключаются через stage 3 pipeline; live smoke остаётся обязательным вручную.',
+        ];
+    }
+
+    private static function syncFamilyDoc(string $content, string $family, array $blocks): string {
+        $familyBlocks = [];
+        foreach ($blocks as $slug => $block) {
+            if (($block['family'] ?? '') !== $family) {
+                continue;
+            }
+
+            $familyBlocks[$slug] = [
+                'title' => (string) ($block['title'] ?? $slug),
+                'status' => (string) ($block['status'] ?? 'in_progress'),
+                'checkpoint' => (string) ($block['checkpoint'] ?? ''),
+                'live_smoke' => !empty($block['items']['live_smoke']),
+            ];
+        }
+
+        if (!$familyBlocks) {
+            return $content;
+        }
+
+        ksort($familyBlocks);
+        $generatedSection = self::renderFamilyRegistrySection($familyBlocks);
+        $pattern = '/\n## Scaffold Registry\n<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->.*?<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->\n/s';
+
+        if (preg_match($pattern, $content)) {
+            return preg_replace($pattern, "\n" . $generatedSection . "\n", $content, 1) ?: $content;
+        }
+
+        return rtrim($content) . "\n\n" . $generatedSection . "\n";
+    }
+
+    private static function renderFamilyRegistrySection(array $familyBlocks): string {
+        $lines = [
+            '## Scaffold Registry',
+            '<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->',
+            'Этот раздел обновляется автоматически scaffold apply pipeline и показывает текущие scaffold-managed block types этой family.',
+            '',
+            '| Slug | Title | Status | Checkpoint | Live smoke |',
+            '| --- | --- | --- | --- | --- |',
+        ];
+
+        foreach ($familyBlocks as $slug => $block) {
+            $lines[] = '| ' . $slug . ' | ' . str_replace('|', '\\|', $block['title']) . ' | ' . $block['status'] . ' | ' . ($block['checkpoint'] !== '' ? $block['checkpoint'] : '-') . ' | ' . ($block['live_smoke'] ? 'yes' : 'no') . ' |';
+        }
+
+        $lines[] = '<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->';
+
+        return implode("\n", $lines);
     }
 
     private static function resolveEntityGroups(array $entities, array $sharedGroups): array {

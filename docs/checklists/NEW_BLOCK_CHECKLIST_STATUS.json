@@ -18,22 +18,6 @@
             },
             "notes": "Первый universal catalog block подключен в first-wave registry, contract/data layer, unified editor shell и shared theme CSS. В runtime уже есть toolbar search/category/price/sort, active filters, fullscreen media modal, repeatable content authoring, design-system entities и shared button classes. После checkpoint snapshot/20260419-094020 закрыт live runtime mismatch: homepage SSR теперь идёт через hydrateBlockForRender + buildRenderCacheProfile + rendererVersion-aware cache key. Дополнительно добавлены admin/CLI flush SSR cache tooling, runtime debug attrs data-nb-render-version/data-nb-grid-desktop/data-nb-grid-mobile/data-nb-collection-mode, hardened defaults для external CTA/primary button и отдельный CLI mobile smoke с desktop/mobile UA parity и проверкой SSR markers against model->getRenderCacheVersion. В editor shell добавлены import/export/demo JSON flow для карточек каталога, stable item ids со skip-on-reimport, явные shortcut controls для media aspect ratio/object fit рядом с карточечными настройками и новый табличный режим: можно собрать текущие карточки в TSV, вставить диапазон из Excel/Google Sheets в spreadsheet-like grid editor, загрузить настоящий xlsx/xls файл прямо в modal, увидеть preview по строкам и импортировать без backend endpoints. Live smoke по главной и в админке подтверждает новые debug markers, shared CTA markup, рабочий table-mode UX и прямой xlsx import. Residual risk: реальную device-level mobile проверку сетки и touch-поведение по-прежнему нужно подтверждать вручную на телефоне; текущий CLI smoke валидирует SSR markers и UA parity, но не browser layout engine на устройстве."
         },
-        "content_feed": {
-            "title": "Лента новостей",
-            "family": "news-family-v1",
-            "status": "in_progress",
-            "checkpoint": "snapshot/20260418-102305",
-            "items": {
-                "spec_locked": true,
-                "block_registered": true,
-                "contract_data_layer": true,
-                "editor_shell": true,
-                "shared_runtime_css": true,
-                "package_mirror": true,
-                "live_smoke": true
-            },
-            "notes": "v1 block type поднят. Live smoke пройден: create, editor, manual repeater, content_list switch и save/reload подтверждены; временные smoke-блоки удалены."
-        },
         "category_cards": {
             "title": "Рубрика с карточками",
             "family": "news-family-v1",
@@ -49,6 +33,22 @@
                 "live_smoke": true
             },
             "notes": "v1 второго news-блока собран поверх card-runtime из content_feed: отдельный type category_cards с compact grid и тем же manual/content_list data mode. Live smoke пройден полностью: create через админку, editor preview и инспектор загрузились, save/reload для manual подтвержден, а content_list для news после фикса normalizer сохраняется и переживает reload с реальными URL /news/...html; временные smoke-блоки удалены после проверки."
+        },
+        "content_feed": {
+            "title": "Лента новостей",
+            "family": "news-family-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260418-102305",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": true,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": true
+            },
+            "notes": "v1 block type поднят. Live smoke пройден: create, editor, manual repeater, content_list switch и save/reload подтверждены; временные smoke-блоки удалены."
         },
         "headline_feed": {
             "title": "Главная статья и лента",
