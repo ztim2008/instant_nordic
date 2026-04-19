@@ -255,7 +255,7 @@ function nbhRepeaterEditor() {
     if (nbhIsCardCollectionBlock()) {
         return (kind === 'headline_feed' ? '<div class="nbh-note">Первая карточка всегда становится главной статьёй. Остальные карточки продолжают ленту и перестраиваются по выбранному visual preset.</div>' : '')
             + (kind === 'catalog_browser'
-                ? '<div class="nbh-note">Каталог можно держать целиком открытым, резать по кнопке Показать ещё или по клиентской пагинации. Поиск тоже можно сузить до нужных полей карточки, а порядок карточек теперь управляется прямо здесь.</div>'
+                ? '<div class="nbh-note">Каталог можно держать целиком открытым, резать по кнопке Показать ещё или по клиентской пагинации. Поиск тоже можно сузить до нужных полей карточки, а порядок карточек теперь управляется прямо здесь.<div style="margin-top:.7rem;display:flex;flex-wrap:wrap;gap:.55rem;"><button type="button" class="nbh-btn nbh-btn--catalog" data-catalog-table-action="open"><i class="fa fa-table"></i> Открыть табличный режим</button><span style="align-self:center;color:#475569;">Вставьте строки из Excel или Google Sheets и проверьте preview перед импортом.</span></div></div>'
                 : '')
             + '<div class="nbh-grid-2">'
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))

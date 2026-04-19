@@ -124,6 +124,15 @@ document.getElementById('nbh-panel-body').addEventListener('change', function(ev
 
 document.getElementById('nbh-panel-body').addEventListener('click', function(event) {
     var pickerAction = event.target.closest('[data-picker-action]');
+    var catalogTableAction = event.target.closest('[data-catalog-table-action]');
+
+    if (catalogTableAction) {
+        if (catalogTableAction.dataset.catalogTableAction === 'open') {
+            nbhOpenCatalogTableModal('current');
+        }
+        return;
+    }
+
     if (pickerAction) {
         event.preventDefault();
         var pickerPath = pickerAction.dataset.path || '';

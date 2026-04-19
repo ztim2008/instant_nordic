@@ -595,6 +595,225 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     color: #64748b;
     font-size: .82rem;
 }
+.nbh-catalog-table-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, .52);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    z-index: 3200;
+}
+.nbh-catalog-table-modal.is-open {
+    display: flex;
+}
+.nbh-catalog-table-modal__dialog {
+    width: min(1180px, 100%);
+    max-height: min(88vh, 900px);
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 30px 70px rgba(15, 23, 42, .28);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.nbh-catalog-table-modal__head,
+.nbh-catalog-table-modal__toolbar,
+.nbh-catalog-table-modal__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .95rem 1rem;
+}
+.nbh-catalog-table-modal__head {
+    border-bottom: 1px solid #e5edf5;
+}
+.nbh-catalog-table-modal__head strong {
+    font-size: .95rem;
+    color: #0f172a;
+}
+.nbh-catalog-table-modal__head span {
+    display: block;
+    margin-top: .18rem;
+    font-size: .76rem;
+    color: #64748b;
+}
+.nbh-catalog-table-modal__help {
+    padding: .9rem 1rem;
+    border-bottom: 1px solid #e5edf5;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    color: #334155;
+    font-size: .78rem;
+    line-height: 1.55;
+}
+.nbh-catalog-table-modal__toolbar {
+    border-bottom: 1px solid #eef2f7;
+    flex-wrap: wrap;
+}
+.nbh-catalog-table-modal__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .55rem;
+}
+.nbh-catalog-table-modal__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+    min-height: 0;
+    flex: 1 1 auto;
+}
+.nbh-catalog-table-modal__editor,
+.nbh-catalog-table-modal__preview {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.nbh-catalog-table-modal__editor {
+    border-right: 1px solid #edf2f7;
+}
+.nbh-catalog-table-modal__section-title {
+    padding: .8rem 1rem .55rem;
+    font-size: .73rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+.nbh-catalog-table-modal textarea {
+    flex: 1 1 auto;
+    width: calc(100% - 2rem);
+    margin: 0 1rem 1rem;
+    min-height: 280px;
+    resize: none;
+    border: 1px solid #d1d9e6;
+    border-radius: 14px;
+    padding: .9rem 1rem;
+    font-size: .78rem;
+    line-height: 1.5;
+    font-family: Menlo, Monaco, Consolas, monospace;
+    color: #0f172a;
+    background: #f8fafc;
+    box-sizing: border-box;
+}
+.nbh-catalog-table-modal textarea:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+    background: #fff;
+}
+.nbh-catalog-table-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0 1rem 1rem;
+    overflow: auto;
+}
+.nbh-catalog-table-preview__metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: .55rem;
+    margin-bottom: .85rem;
+}
+.nbh-catalog-table-preview__metric {
+    border: 1px solid #dbe4ef;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: .7rem .8rem;
+}
+.nbh-catalog-table-preview__metric strong {
+    display: block;
+    font-size: 1rem;
+    color: #0f172a;
+}
+.nbh-catalog-table-preview__metric span {
+    display: block;
+    margin-top: .18rem;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.nbh-catalog-table-preview__metric.is-good {
+    border-color: #86efac;
+    background: #f0fdf4;
+}
+.nbh-catalog-table-preview__metric.is-warn {
+    border-color: #fdba74;
+    background: #fff7ed;
+}
+.nbh-catalog-table-preview__metric.is-bad {
+    border-color: #fca5a5;
+    background: #fef2f2;
+}
+.nbh-catalog-table-preview__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .75rem;
+}
+.nbh-catalog-table-preview__table th,
+.nbh-catalog-table-preview__table td {
+    border: 1px solid #e5edf5;
+    padding: .5rem .55rem;
+    text-align: left;
+    vertical-align: top;
+}
+.nbh-catalog-table-preview__table th {
+    position: sticky;
+    top: 0;
+    background: #f8fafc;
+    z-index: 1;
+    font-size: .68rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.nbh-catalog-table-preview__status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 0 .55rem;
+    border-radius: 999px;
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.nbh-catalog-table-preview__status.is-import {
+    background: #dcfce7;
+    color: #166534;
+}
+.nbh-catalog-table-preview__status.is-skip {
+    background: #ffedd5;
+    color: #9a3412;
+}
+.nbh-catalog-table-preview__status.is-invalid {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+.nbh-catalog-table-modal__status {
+    flex: 1 1 auto;
+    font-size: .77rem;
+    color: #64748b;
+}
+.nbh-catalog-table-modal__status.is-error {
+    color: #b91c1c;
+}
+.nbh-catalog-table-modal__status.is-success {
+    color: #166534;
+}
+@media (max-width: 1100px) {
+    .nbh-catalog-table-modal__body {
+        grid-template-columns: 1fr;
+    }
+    .nbh-catalog-table-modal__editor {
+        border-right: none;
+        border-bottom: 1px solid #edf2f7;
+    }
+}
 .nbh-grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -649,9 +868,10 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
         </div>
         <div class="nbh-sep"></div>
         <?php if (($block['type'] ?? '') === 'catalog_browser'): ?>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogTableBtn"><i class="fa fa-table"></i> Таблица</button>
         <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogDemoBtn"><i class="fa fa-download"></i> Демо JSON</button>
-        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogExportBtn"><i class="fa fa-file-code-o"></i> Экспорт</button>
-        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogImportBtn"><i class="fa fa-upload"></i> Импорт</button>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogExportBtn"><i class="fa fa-file-code-o"></i> Экспорт JSON</button>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogImportBtn"><i class="fa fa-upload"></i> Импорт JSON</button>
         <input type="file" id="nbhCatalogImportInput" accept=".json,application/json" style="display:none;">
         <?php endif; ?>
         <a class="nbh-btn nbh-btn--ghost" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>"><i class="fa fa-thumb-tack"></i> Разместить</a>
@@ -2092,6 +2312,473 @@ function nbhImportCatalogFile(file) {
     reader.readAsText(file, 'utf-8');
 }
 
+var nbhCatalogTableState = {
+    rawText: '',
+    parsed: null
+};
+
+function nbhCatalogTableColumns() {
+    return [
+        { key: 'id', label: 'ID' },
+        { key: 'category', label: 'Категория' },
+        { key: 'title', label: 'Заголовок' },
+        { key: 'excerpt', label: 'Описание' },
+        { key: 'price', label: 'Цена' },
+        { key: 'priceOld', label: 'Старая цена' },
+        { key: 'currency', label: 'Валюта' },
+        { key: 'badge', label: 'Бейдж' },
+        { key: 'availability', label: 'Наличие' },
+        { key: 'tags', label: 'Теги' },
+        { key: 'image', label: 'Изображение' },
+        { key: 'imageAlt', label: 'Alt' },
+        { key: 'url', label: 'URL карточки' },
+        { key: 'ctaLabel', label: 'CTA текст' },
+        { key: 'ctaKind', label: 'CTA тип' },
+        { key: 'ctaUrl', label: 'CTA ссылка' },
+        { key: 'messengerType', label: 'Мессенджер' }
+    ];
+}
+
+function nbhCatalogTableHeaderAliases() {
+    return {
+        id: 'id',
+        itemid: 'id',
+        item_id: 'id',
+        importid: 'id',
+        импортid: 'id',
+        категория: 'category',
+        category: 'category',
+        title: 'title',
+        заголовок: 'title',
+        название: 'title',
+        excerpt: 'excerpt',
+        text: 'excerpt',
+        описание: 'excerpt',
+        анонс: 'excerpt',
+        price: 'price',
+        цена: 'price',
+        priceold: 'priceOld',
+        стараяцена: 'priceOld',
+        currency: 'currency',
+        валюта: 'currency',
+        badge: 'badge',
+        бейдж: 'badge',
+        availability: 'availability',
+        наличие: 'availability',
+        tags: 'tags',
+        теги: 'tags',
+        image: 'image',
+        изображение: 'image',
+        imagealt: 'imageAlt',
+        alt: 'imageAlt',
+        urlкарточки: 'url',
+        url: 'url',
+        ctalabel: 'ctaLabel',
+        ctaтекст: 'ctaLabel',
+        ctakind: 'ctaKind',
+        ctaтип: 'ctaKind',
+        ctaurl: 'ctaUrl',
+        ctaссылка: 'ctaUrl',
+        messengertype: 'messengerType',
+        мессенджер: 'messengerType'
+    };
+}
+
+function nbhCatalogTableNormalizeHeader(value) {
+    return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/ё/g, 'е')
+        .replace(/[^a-z0-9а-я]+/g, '');
+}
+
+function nbhCatalogTableCellValue(value) {
+    if (Array.isArray(value)) {
+        return value.join(', ');
+    }
+
+    return String(value == null ? '' : value)
+        .replace(/\r?\n+/g, ' ')
+        .replace(/\t+/g, ' ')
+        .trim();
+}
+
+function nbhCatalogTableTextFromItems(items) {
+    var columns = nbhCatalogTableColumns();
+    var header = columns.map(function(column) { return column.label; }).join('\t');
+    var lines = [header];
+
+    (items || []).forEach(function(item) {
+        var transferred = nbhCatalogTransferItem(item);
+        lines.push(columns.map(function(column) {
+            return nbhCatalogTableCellValue(transferred[column.key]);
+        }).join('\t'));
+    });
+
+    return lines.join('\n');
+}
+
+function nbhCatalogTableSplitRows(text) {
+    return String(text == null ? '' : text)
+        .replace(/\r\n?/g, '\n')
+        .split('\n');
+}
+
+function nbhCatalogTableHasHeader(cells) {
+    var aliases = nbhCatalogTableHeaderAliases();
+    var recognized = cells.filter(function(cell) {
+        return !!aliases[nbhCatalogTableNormalizeHeader(cell)];
+    }).length;
+
+    return recognized >= 2;
+}
+
+function nbhCatalogTableMapHeaders(cells) {
+    var aliases = nbhCatalogTableHeaderAliases();
+    return cells.map(function(cell) {
+        return aliases[nbhCatalogTableNormalizeHeader(cell)] || '';
+    });
+}
+
+function nbhCatalogTableDefaultHeaders() {
+    return nbhCatalogTableColumns().map(function(column) { return column.key; });
+}
+
+function nbhCatalogTableParseText(text) {
+    var rows = nbhCatalogTableSplitRows(text);
+    var headerKeys = nbhCatalogTableDefaultHeaders();
+    var hasHeader = false;
+    var usedIds = nbhCatalogUsedIdMap();
+    var parsedRows = [];
+    var rawItems = [];
+    var stats = { total: 0, ready: 0, skipped: 0, invalid: 0, generatedIds: 0 };
+    var startIndex = 0;
+
+    while (rows.length && !String(rows[rows.length - 1]).trim()) {
+        rows.pop();
+    }
+
+    if (!rows.length) {
+        return {
+            hasHeader: false,
+            rawItems: [],
+            rows: [],
+            stats: stats
+        };
+    }
+
+    if (nbhCatalogTableHasHeader(rows[0].split('\t'))) {
+        hasHeader = true;
+        headerKeys = nbhCatalogTableMapHeaders(rows[0].split('\t'));
+        startIndex = 1;
+    }
+
+    rows.slice(startIndex).forEach(function(line, offset) {
+        var cells = String(line == null ? '' : line).split('\t');
+        var rawItem = {};
+        var incomingId;
+        var previewId;
+        var normalized;
+        var action = 'import';
+        var reason = '';
+
+        if (!cells.some(function(cell) { return String(cell).trim() !== ''; })) {
+            return;
+        }
+
+        headerKeys.forEach(function(key, index) {
+            var cellValue = String(cells[index] == null ? '' : cells[index]).trim();
+            if (!key || !cellValue) {
+                return;
+            }
+            rawItem[key] = cellValue;
+        });
+
+        stats.total += 1;
+        incomingId = nbhCatalogItemIdValue(rawItem);
+        previewId = incomingId ? (nbhCatalogSlug(incomingId) || incomingId) : '';
+
+        if (previewId && usedIds[previewId]) {
+            action = 'skip';
+            reason = 'Такой ID уже есть в каталоге.';
+            stats.skipped += 1;
+        } else {
+            normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds });
+
+            if (!incomingId) {
+                stats.generatedIds += 1;
+            }
+
+            if (!nbhCatalogItemHasContent(normalized)) {
+                action = 'invalid';
+                reason = 'В строке нет названия, описания или другой полезной информации.';
+                stats.invalid += 1;
+            } else {
+                action = 'import';
+                rawItem = normalized;
+                stats.ready += 1;
+                rawItems.push(rawItem);
+            }
+        }
+
+        parsedRows.push({
+            line: startIndex + offset + 1,
+            action: action,
+            reason: reason,
+            item: rawItem,
+            title: rawItem.title || rawItem.excerpt || '',
+            id: nbhCatalogItemIdValue(rawItem)
+        });
+    });
+
+    return {
+        hasHeader: hasHeader,
+        rawItems: rawItems,
+        rows: parsedRows,
+        stats: stats
+    };
+}
+
+function nbhCatalogTableStatusClass(action) {
+    if (action === 'import') return 'is-import';
+    if (action === 'skip') return 'is-skip';
+    return 'is-invalid';
+}
+
+function nbhCatalogTableStatusLabel(action) {
+    if (action === 'import') return 'Импорт';
+    if (action === 'skip') return 'Пропуск';
+    return 'Ошибка';
+}
+
+function nbhCatalogTableMetricsHtml(parsed) {
+    var stats = parsed.stats;
+    return '<div class="nbh-catalog-table-preview__metrics">'
+        + '<div class="nbh-catalog-table-preview__metric"><strong>' + stats.total + '</strong><span>Строк в таблице</span></div>'
+        + '<div class="nbh-catalog-table-preview__metric is-good"><strong>' + stats.ready + '</strong><span>Будет импортировано</span></div>'
+        + '<div class="nbh-catalog-table-preview__metric is-warn"><strong>' + stats.skipped + '</strong><span>Пропуск по ID</span></div>'
+        + '<div class="nbh-catalog-table-preview__metric is-bad"><strong>' + stats.invalid + '</strong><span>Строк с ошибками</span></div>'
+        + '<div class="nbh-catalog-table-preview__metric"><strong>' + stats.generatedIds + '</strong><span>ID сгенерируется</span></div>'
+        + '</div>';
+}
+
+function nbhCatalogTablePreviewHtml(parsed) {
+    if (!parsed.rows.length) {
+        return '<div class="nbh-note">Вставьте строки из Excel или Google Sheets. Первая строка может быть заголовком колонок на русском языке.</div>';
+    }
+
+    return nbhCatalogTableMetricsHtml(parsed)
+        + '<table class="nbh-catalog-table-preview__table">'
+        + '<thead><tr><th>Строка</th><th>Статус</th><th>ID</th><th>Заголовок</th><th>Комментарий</th></tr></thead>'
+        + '<tbody>' + parsed.rows.slice(0, 18).map(function(row) {
+            return '<tr>'
+                + '<td>' + row.line + '</td>'
+                + '<td><span class="nbh-catalog-table-preview__status ' + nbhCatalogTableStatusClass(row.action) + '">' + nbhCatalogTableStatusLabel(row.action) + '</span></td>'
+                + '<td>' + nbhEscapeHtml(row.id || '') + '</td>'
+                + '<td>' + nbhEscapeHtml(row.title || '') + '</td>'
+                + '<td>' + nbhEscapeHtml(row.reason || (row.action === 'import' ? 'Строка готова к импорту.' : '')) + '</td>'
+                + '</tr>';
+        }).join('') + '</tbody></table>'
+        + (parsed.rows.length > 18 ? '<div class="nbh-note" style="margin-top:.75rem;">Показаны первые 18 строк из ' + parsed.rows.length + '.</div>' : '');
+}
+
+function nbhEnsureCatalogTableModal() {
+    var modal = document.getElementById('nbhCatalogTableModal');
+
+    if (modal) {
+        return modal;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'nbh-catalog-table-modal';
+    modal.id = 'nbhCatalogTableModal';
+    modal.innerHTML = ''
+        + '<div class="nbh-catalog-table-modal__dialog">'
+        + '<div class="nbh-catalog-table-modal__head">'
+        + '<div><strong>Табличный режим каталога</strong><span>Одна строка таблицы = одна карточка. Работает со вставкой из Excel и Google Sheets.</span></div>'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-close="1">Закрыть</button>'
+        + '</div>'
+        + '<div class="nbh-catalog-table-modal__help">Скопируйте диапазон строк из Excel или Google Sheets и вставьте его в левое поле. Можно начинать с заголовка колонок: ID, Категория, Заголовок, Описание, Цена и так далее. Существующие ID будут пропущены автоматически.</div>'
+        + '<div class="nbh-catalog-table-modal__toolbar">'
+        + '<div class="nbh-catalog-table-modal__actions">'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-mode="current">Собрать из текущих карточек</button>'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-mode="demo">Заполнить примером</button>'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-copy="1">Скопировать таблицу</button>'
+        + '<button type="button" class="nbh-picker-btn nbh-picker-btn--clear" data-catalog-table-clear="1">Очистить</button>'
+        + '</div>'
+        + '</div>'
+        + '<div class="nbh-catalog-table-modal__body">'
+        + '<div class="nbh-catalog-table-modal__editor">'
+        + '<div class="nbh-catalog-table-modal__section-title">Таблица</div>'
+        + '<textarea id="nbhCatalogTableTextarea" placeholder="ID	Категория	Заголовок	Описание	Цена\nchair-01	Стулья	Linen Chair	Мягкий стул...	18500"></textarea>'
+        + '</div>'
+        + '<div class="nbh-catalog-table-modal__preview">'
+        + '<div class="nbh-catalog-table-modal__section-title">Предпросмотр импорта</div>'
+        + '<div class="nbh-catalog-table-preview" id="nbhCatalogTablePreview"></div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="nbh-catalog-table-modal__foot">'
+        + '<div class="nbh-catalog-table-modal__status" id="nbhCatalogTableStatus">Соберите текущие карточки или вставьте диапазон из таблицы, чтобы увидеть preview.</div>'
+        + '<div class="nbh-catalog-table-modal__actions">'
+        + '<button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogTableImportNowBtn"><i class="fa fa-upload"></i> Импортировать строки</button>'
+        + '<button type="button" class="nbh-btn nbh-btn--ghost" data-catalog-table-close="1">Закрыть</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal || event.target.closest('[data-catalog-table-close]')) {
+            nbhCloseCatalogTableModal();
+            return;
+        }
+
+        if (event.target.closest('[data-catalog-table-mode="current"]')) {
+            nbhCatalogTableLoadCurrent();
+            return;
+        }
+
+        if (event.target.closest('[data-catalog-table-mode="demo"]')) {
+            nbhCatalogTableLoadDemo();
+            return;
+        }
+
+        if (event.target.closest('[data-catalog-table-copy]')) {
+            nbhCatalogTableCopyText();
+            return;
+        }
+
+        if (event.target.closest('[data-catalog-table-clear]')) {
+            nbhCatalogTableSetText('');
+            return;
+        }
+    });
+
+    document.getElementById('nbhCatalogTableTextarea').addEventListener('input', function() {
+        nbhCatalogTableSetText(this.value, true);
+    });
+
+    document.getElementById('nbhCatalogTableImportNowBtn').addEventListener('click', nbhCatalogTableImportCurrent);
+
+    return modal;
+}
+
+function nbhCatalogTableSetStatus(text, kind) {
+    var status = document.getElementById('nbhCatalogTableStatus');
+
+    if (!status) {
+        return;
+    }
+
+    status.className = 'nbh-catalog-table-modal__status' + (kind ? ' is-' + kind : '');
+    status.textContent = text;
+}
+
+function nbhCatalogTableSetText(text, keepExistingTextareaValue) {
+    var textarea = document.getElementById('nbhCatalogTableTextarea');
+    var preview = document.getElementById('nbhCatalogTablePreview');
+
+    nbhCatalogTableState.rawText = String(text == null ? '' : text);
+    nbhCatalogTableState.parsed = nbhCatalogTableParseText(nbhCatalogTableState.rawText);
+
+    if (textarea && !keepExistingTextareaValue) {
+        textarea.value = nbhCatalogTableState.rawText;
+    }
+
+    if (preview) {
+        preview.innerHTML = nbhCatalogTablePreviewHtml(nbhCatalogTableState.parsed);
+    }
+
+    if (!nbhCatalogTableState.parsed.rows.length) {
+        nbhCatalogTableSetStatus('Вставьте строки из Excel или Google Sheets, чтобы увидеть предпросмотр.', '');
+    } else if (nbhCatalogTableState.parsed.stats.ready) {
+        nbhCatalogTableSetStatus('Готово к импорту: ' + nbhCatalogTableState.parsed.stats.ready + ' строк.', 'success');
+    } else {
+        nbhCatalogTableSetStatus('Импортировать пока нечего: проверьте ID и заполнение строк.', 'error');
+    }
+}
+
+function nbhCatalogTableLoadCurrent() {
+    nbhCatalogTableSetText(nbhCatalogTableTextFromItems(nbhRepeaterItems()));
+    nbhCatalogTableSetStatus('Текущие карточки собраны в таблицу. Скопируйте её в Excel или замените строки перед импортом.', '');
+}
+
+function nbhCatalogTableLoadDemo() {
+    nbhCatalogTableSetText(nbhCatalogTableTextFromItems(nbhBuildCatalogDemoPayload().items));
+    nbhCatalogTableSetStatus('Загружен пример таблицы. Его можно править и сразу импортировать в каталог.', 'success');
+}
+
+function nbhCatalogTableCopyText() {
+    var textarea = document.getElementById('nbhCatalogTableTextarea');
+
+    if (!textarea || !textarea.value) {
+        nbhCatalogTableSetStatus('Нечего копировать: таблица пока пустая.', 'error');
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textarea.value).then(function() {
+            nbhCatalogTableSetStatus('Таблица скопирована в буфер обмена.', 'success');
+        }).catch(function() {
+            textarea.focus();
+            textarea.select();
+            nbhCatalogTableSetStatus('Не удалось скопировать автоматически. Выделение уже сделано, нажмите Ctrl+C.', 'error');
+        });
+        return;
+    }
+
+    textarea.focus();
+    textarea.select();
+    nbhCatalogTableSetStatus('Автокопирование недоступно. Нажмите Ctrl+C.', 'error');
+}
+
+function nbhOpenCatalogTableModal(mode) {
+    var modal;
+
+    if (!nbhIsCatalogBrowserBlock()) {
+        return;
+    }
+
+    modal = nbhEnsureCatalogTableModal();
+    modal.classList.add('is-open');
+
+    if (mode === 'demo') {
+        nbhCatalogTableLoadDemo();
+        return;
+    }
+
+    nbhCatalogTableLoadCurrent();
+}
+
+function nbhCloseCatalogTableModal() {
+    var modal = document.getElementById('nbhCatalogTableModal');
+    if (modal) {
+        modal.classList.remove('is-open');
+    }
+}
+
+function nbhCatalogTableImportCurrent() {
+    var parsed = nbhCatalogTableState.parsed;
+
+    if (!parsed || !parsed.rows.length) {
+        nbhCatalogTableSetStatus('Сначала вставьте таблицу или соберите текущие карточки.', 'error');
+        return;
+    }
+
+    if (!parsed.stats.ready) {
+        nbhCatalogTableSetStatus('Нет строк, готовых к импорту. Исправьте ошибки или удалите дубликаты.', 'error');
+        return;
+    }
+
+    try {
+        nbhImportCatalogPayload({ items: parsed.rawItems });
+        nbhCatalogTableSetStatus('Импорт завершён. Каталог обновлён.', 'success');
+        nbhCloseCatalogTableModal();
+    } catch (error) {
+        nbhCatalogTableSetStatus(error && error.message ? error.message : 'Не удалось импортировать таблицу.', 'error');
+    }
+}
+
 function nbhDataOptions() {
     var options = nbhState.server && nbhState.server.dataOptions ? nbhState.server.dataOptions : null;
     if (!options || typeof options !== 'object') {
@@ -3013,6 +3700,12 @@ function nbhSave(silent) {
 
 <?php include __DIR__ . '/editor_hero_v2_control_dispatch.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_shell_events.tpl.php'; ?>
+
+if (document.getElementById('nbhCatalogTableBtn')) {
+    document.getElementById('nbhCatalogTableBtn').addEventListener('click', function() {
+        nbhOpenCatalogTableModal('current');
+    });
+}
 
 if (document.getElementById('nbhCatalogDemoBtn')) {
     document.getElementById('nbhCatalogDemoBtn').addEventListener('click', nbhDownloadCatalogDemo);
