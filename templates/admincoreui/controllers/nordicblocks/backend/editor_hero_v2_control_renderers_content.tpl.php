@@ -22,7 +22,7 @@ function nbhBuildContentControlRenderers() {
                 return '<div class="nbh-grid-2">'
                     + nbhField('Показывать ссылку', nbhSelect('runtime.visibility.moreLink', nbhYesNoOptions(), '1'))
                     + nbhField('Текст ссылки', nbhInput('content.primaryButton.label'))
-                    + nbhField('URL ссылки', nbhInput('content.primaryButton.url'))
+                    + nbhField('Ссылка кнопки', nbhInput('content.primaryButton.url'))
                     + '</div>';
             }
 

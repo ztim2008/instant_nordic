@@ -159,9 +159,19 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     justify-content: space-between;
     gap: .75rem;
 }
+.nbh-panel-heading {
+    display: flex;
+    flex-direction: column;
+    gap: .18rem;
+}
 .nbh-panel-title strong {
     font-size: .9rem;
     color: #0f172a;
+}
+.nbh-panel-subtitle {
+    font-size: .72rem;
+    color: #64748b;
+    line-height: 1.45;
 }
 .nbh-selection {
     display: inline-flex;
@@ -943,7 +953,7 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
             <input type="text" id="nbh-title-input" value="<?= $block_title_esc ?>" placeholder="Название блока">
             <span class="nbh-type"><?= $block_type ?></span>
             <?php if (!empty($render_version ?? '')): ?>
-            <span class="nbh-runtime-badge"><?= htmlspecialchars((string) ($render_version_label ?? 'SSR'), ENT_QUOTES, 'UTF-8') ?> v<?= htmlspecialchars((string) $render_version, ENT_QUOTES, 'UTF-8') ?></span>
+            <span class="nbh-runtime-badge">Рендер v<?= htmlspecialchars((string) $render_version, ENT_QUOTES, 'UTF-8') ?></span>
             <?php endif; ?>
         </div>
         <div class="nbh-spacer"></div>
@@ -973,8 +983,11 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
         <div id="nbh-panel">
             <div class="nbh-panel-head">
                 <div class="nbh-panel-title">
-                    <strong>Инспектор v2</strong>
-                    <span class="nbh-selection" id="nbhSelectionLabel">Сущность: заголовок</span>
+                    <div class="nbh-panel-heading">
+                        <strong>Универсальный инспектор</strong>
+                        <span class="nbh-panel-subtitle" id="nbhPanelSubtitle">Выберите сущность на превью или в списке справа, затем настройте контент, дизайн, макет или данные.</span>
+                    </div>
+                    <span class="nbh-selection" id="nbhSelectionLabel">Редактируется: заголовок</span>
                 </div>
                 <div class="nbh-entity-list" id="nbhEntityList"></div>
             </div>
@@ -1160,7 +1173,7 @@ function nbhHumanSection(sectionKey) {
         section: 'Секция',
         typography: 'Типографика',
         surfaces: 'Поверхности',
-        fineTune: 'Точная CSS-подстройка',
+        fineTune: 'Тонкая настройка',
         spacing: 'Отступы',
         alignment: 'Выравнивание',
         bindings: 'Данные'
@@ -1216,9 +1229,9 @@ function nbhBlockUiProfile() {
                     { value: 'dark', label: 'Темная' }
                 ],
                 presets: [
-                    { value: 'split', label: 'Lead слева + лента' },
-                    { value: 'stack', label: 'Lead сверху + сетка' },
-                    { value: 'cover', label: 'Lead cover + сетка' }
+                    { value: 'split', label: 'Главный материал слева + лента' },
+                    { value: 'stack', label: 'Главный материал сверху + сетка' },
+                    { value: 'cover', label: 'Обложка главного материала + сетка' }
                 ],
                 contentWidth: 1140,
                 title: {
@@ -1576,8 +1589,8 @@ function nbhBlockUiProfile() {
             return {
                 kind: 'content_feed',
                 presets: [
-                    { value: 'default', label: 'Default editorial' },
-                    { value: 'swiss', label: 'Swiss grid' }
+                    { value: 'default', label: 'Редакционная лента' },
+                    { value: 'swiss', label: 'Швейцарская сетка' }
                 ],
                 themeOptions: [
                     { value: 'light', label: 'Светлая' },
@@ -4402,19 +4415,31 @@ function nbhSelectEntity(entityKey, fromCanvas, options) {
 
     entityKey = nbhResolveSelectedEntity(entityKey);
     if (!entityKey) return;
+
+    var subtitle = document.getElementById('nbhPanelSubtitle');
+    var label = document.getElementById('nbhSelectionLabel');
+
     if (!options.preserveNotice) {
         nbhState.autoSelectionNotice = null;
     }
+
     nbhState.selectedEntity = entityKey;
     nbhState.canvas.selectedEntity = entityKey;
-    var label = document.getElementById('nbhSelectionLabel');
+
     if (label) {
-        label.textContent = 'Сущность: ' + nbhHumanEntity(entityKey);
+        label.textContent = 'Редактируется: ' + nbhHumanEntity(entityKey);
     }
+
+    if (subtitle) {
+        subtitle.textContent = 'Вкладка «' + nbhTabLabel(nbhState.activeTab) + '» показывает настройки для сущности «' + nbhHumanEntity(entityKey) + '».';
+    }
+
     document.querySelectorAll('.nbh-entity-chip').forEach(function(chip) {
         chip.classList.toggle('is-active', chip.dataset.entity === entityKey);
     });
+
     nbhRenderPanels();
+
     if (!fromCanvas && options.syncCanvas !== false) {
         nbhSyncCanvasSelection(options.reason || 'shell-selection');
     }

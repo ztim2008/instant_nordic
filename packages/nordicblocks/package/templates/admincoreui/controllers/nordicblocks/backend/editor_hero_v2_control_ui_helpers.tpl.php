@@ -119,11 +119,11 @@ function nbhCatalogAvailabilityOptions() {
 
 function nbhCatalogCtaKindOptions() {
     return [
-        { value: 'url', label: 'URL' },
+        { value: 'url', label: 'Ссылка' },
         { value: 'whatsapp', label: 'WhatsApp' },
         { value: 'telegram', label: 'Telegram' },
         { value: 'phone', label: 'Телефон' },
-        { value: 'none', label: 'Без CTA' }
+        { value: 'none', label: 'Без кнопки' }
     ];
 }
 
@@ -183,8 +183,8 @@ function nbhRepeaterEditor() {
                     + '<div class="nbh-grid-2">'
                     + nbhField('ID импорта', '<input type="text" data-item-field="id" data-item-index="' + index + '" value="' + nbhEscapeAttr(nbhCollectionItemValue(item, 'id')) + '" placeholder="sku-oak-desk-140">')
                     + nbhField('Категория', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
-                    + nbhField('URL категории', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
-                    + nbhField('Badge', '<input type="text" data-item-field="badge" data-item-index="' + index + '" value="' + nbhEscapeAttr(badge) + '">')
+                    + nbhField('Ссылка категории', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
+                    + nbhField('Бейдж', '<input type="text" data-item-field="badge" data-item-index="' + index + '" value="' + nbhEscapeAttr(badge) + '">')
                     + nbhField('Наличие', nbhItemSelectOptions(nbhCatalogAvailabilityOptions(), availability).replace('__FIELD__', 'availability').replace('__INDEX__', String(index)))
                     + '</div>'
                     + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
@@ -194,11 +194,11 @@ function nbhRepeaterEditor() {
                     + nbhField('Цена', '<input type="text" data-item-field="price" data-item-index="' + index + '" value="' + nbhEscapeAttr(price) + '">')
                     + nbhField('Старая цена', '<input type="text" data-item-field="priceOld" data-item-index="' + index + '" value="' + nbhEscapeAttr(priceOld) + '">')
                     + nbhField('Валюта', '<input type="text" data-item-field="currency" data-item-index="' + index + '" value="' + nbhEscapeAttr(currency) + '">')
-                    + nbhField('CTA', '<input type="text" data-item-field="cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaLabel) + '">')
-                    + nbhField('Тип CTA', nbhItemSelectOptions(nbhCatalogCtaKindOptions(), ctaKind).replace('__FIELD__', 'cta_kind').replace('__INDEX__', String(index)))
-                    + nbhField('URL CTA', '<input type="text" data-item-field="cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaUrl) + '">')
+                    + nbhField('Кнопка карточки', '<input type="text" data-item-field="cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaLabel) + '">')
+                    + nbhField('Тип кнопки', nbhItemSelectOptions(nbhCatalogCtaKindOptions(), ctaKind).replace('__FIELD__', 'cta_kind').replace('__INDEX__', String(index)))
+                    + nbhField('Ссылка кнопки', '<input type="text" data-item-field="cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaUrl) + '">')
                     + nbhField('Тип мессенджера', nbhItemSelectOptions(nbhCatalogMessengerOptions(), messengerType).replace('__FIELD__', 'messenger_type').replace('__INDEX__', String(index)))
-                    + nbhField('URL карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
+                    + nbhField('Ссылка карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
                     + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
                     + '</div>'
                     + nbhField('Теги через запятую', '<input type="text" data-item-field="tags" data-item-index="' + index + '" value="' + nbhEscapeAttr(tags) + '">')
@@ -214,7 +214,7 @@ function nbhRepeaterEditor() {
                 + '</div>'
                 + '<div class="nbh-grid-2">'
                 + nbhField('Рубрика', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
-                + nbhField('URL рубрики', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
+                + nbhField('Ссылка рубрики', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
                 + nbhField('Дата', '<input type="text" data-item-field="date" data-item-index="' + index + '" value="' + nbhEscapeAttr(date) + '">')
                 + '</div>'
                 + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
@@ -222,7 +222,7 @@ function nbhRepeaterEditor() {
                 + nbhField('CTA карточки', '<input type="text" data-item-field="link_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(linkLabel) + '">')
                 + nbhField('Изображение', nbhRepeaterImageField(index, image))
                 + '<div class="nbh-grid-2">'
-                + nbhField('URL', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
+                + nbhField('Ссылка карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
                 + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
                 + nbhField('Просмотры', '<input type="text" data-item-field="views" data-item-index="' + index + '" value="' + nbhEscapeAttr(views) + '">')
                 + nbhField('Комментарии', '<input type="text" data-item-field="comments" data-item-index="' + index + '" value="' + nbhEscapeAttr(comments) + '">')

@@ -229,6 +229,25 @@ function nbhSelectionHintForEntity(entityKey) {
     return 'Инспектор показал ближайшую сущность, для которой в этой вкладке действительно доступны настройки.';
 }
 
+function nbhEmptyStateMessage() {
+    var entityLabel = nbhHumanEntity(nbhState.selectedEntity || 'section');
+    var tabLabel = nbhTabLabel(nbhState.activeTab);
+
+    if (nbhState.activeTab === 'design') {
+        return 'Для сущности «' + entityLabel + '» во вкладке «' + tabLabel + '» пока нет доступных визуальных настроек. Попробуйте выбрать секцию или другую сущность с дизайном.';
+    }
+
+    if (nbhState.activeTab === 'layout') {
+        return 'Для сущности «' + entityLabel + '» во вкладке «' + tabLabel + '» пока нет настроек компоновки. Обычно макет настраивается на уровне секции или группы элементов.';
+    }
+
+    if (nbhState.activeTab === 'data') {
+        return 'Для сущности «' + entityLabel + '» во вкладке «' + tabLabel + '» пока нет источников данных или привязок. Выберите коллекцию, секцию или контентную сущность.';
+    }
+
+    return 'Для сущности «' + entityLabel + '» во вкладке «' + tabLabel + '» пока нет доступных панелей. Выберите другую сущность на превью или в списке справа.';
+}
+
 function nbhSetAutoSelectionNotice(fromEntity, toEntity, mode) {
     nbhState.autoSelectionNotice = {
         tab: nbhState.activeTab,

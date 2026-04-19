@@ -60,7 +60,7 @@ function nbhRenderPanels() {
     var noticeHtml = nbhRenderAutoSelectionNotice();
 
     if (!panels.length) {
-        body.innerHTML = noticeHtml + '<div class="nbh-empty">Для текущего блока и выбранной сущности в этой вкладке нет активных панелей.</div>';
+        body.innerHTML = noticeHtml + '<div class="nbh-empty">' + nbhEscapeHtml(nbhEmptyStateMessage()) + '</div>';
         return;
     }
 
