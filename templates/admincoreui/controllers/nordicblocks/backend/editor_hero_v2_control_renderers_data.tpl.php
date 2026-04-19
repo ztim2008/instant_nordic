@@ -85,24 +85,47 @@ function nbhBuildDataControlRenderers() {
             var numberOptions = nbhFieldOptionsByKinds(fields, ['number', 'text'], 'Скрыть метрику');
             var urlOptions = nbhFieldOptionsByKinds(fields, ['url', 'text'], 'Оставить ручной URL');
 
-            body += '<div class="nbh-grid-2">'
-                + nbhField('Надзаголовок', nbhSelect('data.bindings.eyebrow.field', textOptions, ''))
-                + nbhField('Заголовок', nbhSelect('data.bindings.title.field', textOptions, ''))
-                + nbhField('Подзаголовок', nbhSelect('data.bindings.subtitle.field', textOptions, ''))
-                + nbhField('Изображение', nbhSelect('data.bindings.image.field', imageOptions, ''))
-                + nbhField('Alt изображения', nbhSelect('data.bindings.imageAlt.field', textOptions, ''))
-                + '</div>';
+            var slotBindings = [];
+            if (nbhHasEntity('eyebrow')) {
+                slotBindings.push(nbhField('Надзаголовок', nbhSelect('data.bindings.eyebrow.field', textOptions, '')));
+            }
+            if (nbhHasEntity('title')) {
+                slotBindings.push(nbhField('Заголовок', nbhSelect('data.bindings.title.field', textOptions, '')));
+            }
+            if (nbhHasEntity('subtitle')) {
+                slotBindings.push(nbhField('Подзаголовок', nbhSelect('data.bindings.subtitle.field', textOptions, '')));
+            }
+            if (nbhHasEntity('body')) {
+                slotBindings.push(nbhField('Основной текст', nbhSelect('data.bindings.body.field', textOptions, '')));
+            }
+            if (nbhHasEntity('media')) {
+                slotBindings.push(nbhField('Изображение', nbhSelect('data.bindings.image.field', imageOptions, '')));
+                slotBindings.push(nbhField('Alt изображения', nbhSelect('data.bindings.imageAlt.field', textOptions, '')));
+            }
+            if (slotBindings.length) {
+                body += '<div class="nbh-grid-2">' + slotBindings.join('') + '</div>';
+            }
 
-            body += '<div class="nbh-grid-2">'
-                + nbhField('Категория', nbhSelect('data.bindings.category.field', metaTextOptions, ''))
-                + nbhField('Автор', nbhSelect('data.bindings.author.field', metaTextOptions, ''))
-                + nbhField('Дата', nbhSelect('data.bindings.date.field', dateOptions, ''))
-                + nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, ''))
-                + nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, ''))
-                + nbhField('Ссылка основной кнопки', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, ''))
-                + nbhField('Ссылка вторичной кнопки', nbhSelect('data.bindings.secondaryButtonUrl.field', urlOptions, ''))
-                + nbhField('Ссылка третьей кнопки', nbhSelect('data.bindings.tertiaryButtonUrl.field', urlOptions, ''))
-                + '</div>';
+            var metaBindings = [];
+            if (nbhHasEntity('meta')) {
+                metaBindings.push(nbhField('Категория', nbhSelect('data.bindings.category.field', metaTextOptions, '')));
+                metaBindings.push(nbhField('Автор', nbhSelect('data.bindings.author.field', metaTextOptions, '')));
+                metaBindings.push(nbhField('Дата', nbhSelect('data.bindings.date.field', dateOptions, '')));
+                metaBindings.push(nbhField('Просмотры', nbhSelect('data.bindings.views.field', numberOptions, '')));
+                metaBindings.push(nbhField('Комментарии', nbhSelect('data.bindings.comments.field', numberOptions, '')));
+            }
+            if (nbhHasEntity('primaryButton')) {
+                metaBindings.push(nbhField('Ссылка основной кнопки', nbhSelect('data.bindings.primaryButtonUrl.field', urlOptions, '')));
+            }
+            if (nbhHasEntity('secondaryButton')) {
+                metaBindings.push(nbhField('Ссылка вторичной кнопки', nbhSelect('data.bindings.secondaryButtonUrl.field', urlOptions, '')));
+            }
+            if (nbhHasEntity('tertiaryButton')) {
+                metaBindings.push(nbhField('Ссылка третьей кнопки', nbhSelect('data.bindings.tertiaryButtonUrl.field', urlOptions, '')));
+            }
+            if (metaBindings.length) {
+                body += '<div class="nbh-grid-2">' + metaBindings.join('') + '</div>';
+            }
 
             body += '<div class="nbh-note">Пустой выбор скрывает категорию, автора, дату и метрики. Для надзаголовка, заголовка, подзаголовка и изображения ручные значения остаются резервным слоем. Это же позволяет подключать и кастомные текстовые поля, если они есть у типа контента.</div>';
 

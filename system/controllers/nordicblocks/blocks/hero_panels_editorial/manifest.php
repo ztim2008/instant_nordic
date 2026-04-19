@@ -8,7 +8,7 @@ return [
         'stage' => 3,
         'profile' => 'hero_like',
         'designSystemMode' => 'global-first',
-        'sourceModeProfile' => 'manual',
+        'sourceModeProfile' => 'content_item',
     ],
     'entities' => [
         'eyebrow' => [],
@@ -18,6 +18,8 @@ return [
         'primaryButton' => [],
         'media' => [],
         'mediaSurface' => [],
+        'accentSurface' => [],
+        'bodySurface' => [],
     ],
     'entityGroups' => [
         'content' => [
@@ -42,6 +44,13 @@ return [
                 'mediaSurface',
             ],
         ],
+        'surfaces' => [
+            'label' => 'Панели',
+            'entities' => [
+                'accentSurface',
+                'bodySurface',
+            ],
+        ],
         'narrative' => [
             'label' => 'Текстовая панель',
             'entities' => [
@@ -64,10 +73,13 @@ return [
         'buttonsStyle' => true,
         'mediaStyle' => true,
         'mediaSurface' => true,
+        'accentSurface' => true,
+        'bodySurface' => true,
         'spacingLayout' => true,
         'alignmentLayout' => true,
         'responsiveTypography' => true,
         'responsiveSpacing' => true,
+        'dataBindings' => true,
     ],
     'panels' => [
         'textEyebrowContent' => [],
@@ -85,7 +97,10 @@ return [
         'buttonsStyle' => [],
         'mediaStyle' => [],
         'mediaSurface' => [],
+        'accentSurface' => [],
+        'bodySurface' => [],
         'spacingLayout' => [],
         'alignmentLayout' => [],
+        'dataBindings' => [],
     ],
 ];

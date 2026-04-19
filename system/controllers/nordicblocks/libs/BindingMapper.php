@@ -95,6 +95,9 @@ class NordicblocksBindingMapper {
             return $mapped;
         }
 
+        $bindings = is_array($contract['data']['bindings'] ?? null) ? $contract['data']['bindings'] : [];
+        $block_type = (string) ($contract['meta']['blockType'] ?? '');
+
         $mapped['content']['title'] = self::normalizeText(self::extractValue($record, 'title'));
         $mapped['content']['subtitle'] = self::normalizeText(self::extractValue($record, 'teaser'));
         $mapped['content']['body'] = self::normalizeText(self::extractValue($record, 'body'));
@@ -113,6 +116,31 @@ class NordicblocksBindingMapper {
             'views' => self::normalizeNumber(self::extractValue($record, 'hits_count')),
             'comments' => self::normalizeNumber(self::extractValue($record, 'comments_count')),
         ];
+
+        foreach (self::getManagedContentItemSlotDefinitions($block_type, $contract) as $binding_key => $definition) {
+            $binding = self::resolveHeroBinding($bindings, $binding_key);
+            if (($binding['mode'] ?? 'manual') === 'manual' || empty($binding['field'])) {
+                continue;
+            }
+
+            $manual_value = self::getValueByPath((array) ($contract['content'] ?? []), $definition['path'], self::getValueByPath($mapped['content'], $definition['path'], ''));
+            $value = self::formatValue(
+                self::extractValue($record, (string) $binding['field']),
+                (string) ($binding['formatter'] ?? 'plain_text'),
+                $record
+            );
+
+            if (self::isEmptyValue($value)) {
+                $empty_behavior = (string) ($binding['emptyBehavior'] ?? 'fallback');
+                if ($empty_behavior === 'fallback' || (string) ($binding['mode'] ?? '') === 'mixed') {
+                    $value = $manual_value;
+                } else {
+                    $value = '';
+                }
+            }
+
+            self::setValueByPath($mapped['content'], $definition['path'], $value);
+        }
 
         return $mapped;
     }
@@ -437,6 +465,48 @@ class NordicblocksBindingMapper {
         }
 
         return [];
+    }
+
+    private static function getManagedContentItemSlotDefinitions($block_type, array $contract) {
+        if (!NordicblocksManagedScaffoldRegistry::supportsContentItem($block_type)) {
+            return [];
+        }
+
+        $entities = array_keys((array) ($contract['entities'] ?? []));
+        $definitions = [];
+
+        foreach (['eyebrow', 'title', 'subtitle', 'body'] as $key) {
+            if (in_array($key, $entities, true)) {
+                $definitions[$key] = ['path' => $key];
+            }
+        }
+
+        if (in_array('media', $entities, true)) {
+            $definitions['image'] = ['path' => 'media.image'];
+            $definitions['imageAlt'] = ['path' => 'media.alt'];
+        }
+
+        if (in_array('meta', $entities, true)) {
+            $definitions['category'] = ['path' => 'meta.category'];
+            $definitions['author'] = ['path' => 'meta.author'];
+            $definitions['date'] = ['path' => 'meta.date'];
+            $definitions['views'] = ['path' => 'meta.views'];
+            $definitions['comments'] = ['path' => 'meta.comments'];
+        }
+
+        if (in_array('primaryButton', $entities, true)) {
+            $definitions['primaryButtonUrl'] = ['path' => 'primaryButton.url'];
+        }
+
+        if (in_array('secondaryButton', $entities, true)) {
+            $definitions['secondaryButtonUrl'] = ['path' => 'secondaryButton.url'];
+        }
+
+        if (in_array('tertiaryButton', $entities, true)) {
+            $definitions['tertiaryButtonUrl'] = ['path' => 'tertiaryButton.url'];
+        }
+
+        return $definitions;
     }
 
     private static function formatValue($value, $formatter, array $record) {

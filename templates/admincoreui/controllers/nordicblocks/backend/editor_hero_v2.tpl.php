@@ -1833,6 +1833,18 @@ function nbhBlockUiProfile() {
             desktopMaxWidth: 720,
             mobileMaxWidth: 720,
         },
+        body: {
+            desktopFontSize: 18,
+            mobileFontSize: 17,
+            desktopWeight: '400',
+            mobileWeight: '400',
+            desktopColor: '#f8fafc',
+            mobileColor: '#f8fafc',
+            desktopLineHeightPercent: 170,
+            mobileLineHeightPercent: 170,
+            desktopLetterSpacing: 0,
+            mobileLetterSpacing: 0,
+        },
         meta: {
             desktopFontSize: 14,
             mobileFontSize: 13,
@@ -1872,6 +1884,14 @@ function nbhBlockUiProfile() {
             borderWidth: 0,
             borderColor: '#e2e8f0',
             shadow: 'lg',
+        },
+        accentSurface: {
+            backgroundMode: 'solid',
+            backgroundColor: '#2563eb',
+        },
+        bodySurface: {
+            backgroundMode: 'solid',
+            backgroundColor: '#1d1d1f',
         },
         itemTypography: {
             enabled: false,
@@ -3572,10 +3592,14 @@ function nbhSingleSource() {
 
 function nbhSingleBindings() {
     var defaults = {
+        eyebrow: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
         title: { mode: 'bound', formatter: 'plain_text', emptyBehavior: 'fallback' },
         subtitle: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
+        body: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
         image: { mode: 'mixed', formatter: 'image_url', emptyBehavior: 'fallback' },
         imageAlt: { mode: 'mixed', formatter: 'plain_text', emptyBehavior: 'fallback' },
+        category: { mode: 'bound', formatter: 'plain_text', emptyBehavior: 'hide' },
+        author: { mode: 'bound', formatter: 'plain_text', emptyBehavior: 'hide' },
         date: { mode: 'bound', formatter: 'date_human', emptyBehavior: 'hide' },
         views: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },
         comments: { mode: 'bound', formatter: 'number', emptyBehavior: 'hide' },

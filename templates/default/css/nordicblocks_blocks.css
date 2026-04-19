@@ -3089,30 +3089,35 @@ html.nb-catalog-browser-modal-open {
     color: rgba(255, 255, 255, .9);
 }
 
-.nb-hero-panels__kicker,
-.nb-hero-panels__subtitle {
-    font-size: .86rem;
-    font-weight: 700;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-}
-
 .nb-hero-panels__kicker {
-    margin-bottom: clamp(1rem, 2vw, 2rem);
+    margin: 0 0 clamp(1rem, 2vw, 2rem);
+    font-size: var(--nb-hero-panels-eyebrow-size, .86rem);
+    font-weight: var(--nb-hero-panels-eyebrow-weight, 700);
+    color: var(--nb-hero-panels-eyebrow-color, inherit);
+    line-height: calc(var(--nb-hero-panels-eyebrow-line-height, 140) / 100);
+    letter-spacing: var(--nb-hero-panels-eyebrow-letter-spacing, .18em);
+    text-transform: uppercase;
     opacity: .9;
 }
 
 .nb-hero-panels__title {
     margin: 0;
-    color: inherit;
+    color: var(--nb-hero-panels-title-color, inherit);
     font-family: var(--nb-font-head);
     font-size: var(--nb-hero-panels-title-size, clamp(2.5rem, 5vw, 5.25rem));
-    line-height: .94;
-    letter-spacing: -.04em;
+    font-weight: var(--nb-hero-panels-title-weight, 800);
+    line-height: calc(var(--nb-hero-panels-title-line-height, 94) / 100);
+    letter-spacing: var(--nb-hero-panels-title-letter-spacing, -.04em);
     text-wrap: balance;
 }
 
 .nb-hero-panels__subtitle {
+    font-size: var(--nb-hero-panels-subtitle-size, .86rem);
+    font-weight: var(--nb-hero-panels-subtitle-weight, 700);
+    color: var(--nb-hero-panels-subtitle-color, inherit);
+    line-height: calc(var(--nb-hero-panels-subtitle-line-height, 160) / 100);
+    letter-spacing: var(--nb-hero-panels-subtitle-letter-spacing, .18em);
+    text-transform: none;
     margin-top: clamp(1.25rem, 2.2vw, 2rem);
     opacity: .95;
 }
@@ -3126,7 +3131,10 @@ html.nb-catalog-browser-modal-open {
 
 .nb-hero-panels__body {
     font-size: var(--nb-hero-panels-body-size, 18px);
-    line-height: 1.7;
+    font-weight: var(--nb-hero-panels-body-weight, 400);
+    color: var(--nb-hero-panels-body-color, inherit);
+    line-height: calc(var(--nb-hero-panels-body-line-height, 170) / 100);
+    letter-spacing: var(--nb-hero-panels-body-letter-spacing, 0px);
 }
 
 .nb-hero-panels__body p {
@@ -3488,10 +3496,34 @@ html.nb-catalog-browser-modal-open {
 
     .nb-hero-panels__title {
         font-size: var(--nb-hero-panels-title-size-mobile, clamp(2rem, 12vw, 3rem));
+        font-weight: var(--nb-hero-panels-title-weight-mobile, var(--nb-hero-panels-title-weight, 800));
+        color: var(--nb-hero-panels-title-color-mobile, var(--nb-hero-panels-title-color, inherit));
+        line-height: calc(var(--nb-hero-panels-title-line-height-mobile, var(--nb-hero-panels-title-line-height, 94)) / 100);
+        letter-spacing: var(--nb-hero-panels-title-letter-spacing-mobile, var(--nb-hero-panels-title-letter-spacing, -.04em));
+    }
+
+    .nb-hero-panels__kicker {
+        font-size: var(--nb-hero-panels-eyebrow-size-mobile, var(--nb-hero-panels-eyebrow-size, .86rem));
+        font-weight: var(--nb-hero-panels-eyebrow-weight-mobile, var(--nb-hero-panels-eyebrow-weight, 700));
+        color: var(--nb-hero-panels-eyebrow-color-mobile, var(--nb-hero-panels-eyebrow-color, inherit));
+        line-height: calc(var(--nb-hero-panels-eyebrow-line-height-mobile, var(--nb-hero-panels-eyebrow-line-height, 140)) / 100);
+        letter-spacing: var(--nb-hero-panels-eyebrow-letter-spacing-mobile, var(--nb-hero-panels-eyebrow-letter-spacing, .18em));
+    }
+
+    .nb-hero-panels__subtitle {
+        font-size: var(--nb-hero-panels-subtitle-size-mobile, var(--nb-hero-panels-subtitle-size, .86rem));
+        font-weight: var(--nb-hero-panels-subtitle-weight-mobile, var(--nb-hero-panels-subtitle-weight, 700));
+        color: var(--nb-hero-panels-subtitle-color-mobile, var(--nb-hero-panels-subtitle-color, inherit));
+        line-height: calc(var(--nb-hero-panels-subtitle-line-height-mobile, var(--nb-hero-panels-subtitle-line-height, 160)) / 100);
+        letter-spacing: var(--nb-hero-panels-subtitle-letter-spacing-mobile, var(--nb-hero-panels-subtitle-letter-spacing, .18em));
     }
 
     .nb-hero-panels__body {
         font-size: var(--nb-hero-panels-body-size-mobile, 17px);
+        font-weight: var(--nb-hero-panels-body-weight-mobile, var(--nb-hero-panels-body-weight, 400));
+        color: var(--nb-hero-panels-body-color-mobile, var(--nb-hero-panels-body-color, inherit));
+        line-height: calc(var(--nb-hero-panels-body-line-height-mobile, var(--nb-hero-panels-body-line-height, 170)) / 100);
+        letter-spacing: var(--nb-hero-panels-body-letter-spacing-mobile, var(--nb-hero-panels-body-letter-spacing, 0px));
     }
 
     .nb-hero-panels__actions {

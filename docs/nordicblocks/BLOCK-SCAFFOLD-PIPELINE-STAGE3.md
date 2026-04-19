@@ -127,6 +127,28 @@ Pipeline не отменяет продуктовую дисциплину.
 
 Generated render остаётся stub-реализацией и нужен как безопасная стартовая точка, а не как финальный production markup.
 
+Отдельно важно зафиксировать текущую границу stage 3, чтобы следующий агент не искал проблему не в том слое:
+
+1. stage 3 закрывает structural bootstrap и runtime registration, но не гарантирует мгновенную draft-перерисовку preview в editor shell;
+2. текущий hero v2 shell работает через server-backed iframe preview: draft меняется локально, затем autosave отправляет contract на сервер, после успешного save iframe перезагружается через новый `src`;
+3. если preview визуально обновляется только после autosave и reload iframe, это не признак того, что scaffold не создал block type, а признак текущей preview-архитектуры shell;
+4. `BlockContractNormalizer` для managed scaffold сейчас выполняет роль compatibility bridge между legacy props storage и contract-first runtime, а не должен восприниматься как финальный источник editor preview UX.
+
+Практический вывод: validator `PASS` в текущей архитектуре означает, что block type корректно встроен в managed runtime, но не означает, что editor draft-preview уже доведён до instant rerender parity.
+
+## 7.1 Minimal-change workflow для managed blocks
+
+Чтобы не плодить ручные правки вслепую, для managed scaffold block types используем следующий порядок:
+
+1. scaffold + validator использовать как базовый structural старт, а не как обещание production-complete блока;
+2. сразу после apply подтвердить entity map блока: какие сущности реально есть в manifest, какие из них должны попасть в shared inspector, render markup, CSS vars и save-cycle;
+3. все новые визуальные зоны заводить как явные entity или surface entity, а не как hardcoded render-исключения;
+4. если блок должен обновлять preview мгновенно от draft, это надо чинить в editor-shell transport между draft и iframe canvas, а не маскировать дополнительными patch в `render.php`;
+5. `BlockContractNormalizer` считать временным persistence adapter слоем: через него допустимо поддерживать round-trip contract <-> props, но не стоит строить на нём новые block-specific UX-механики;
+6. ручная сборка с нуля оправдана только когда новый блок не укладывается в supported scaffold profile или требует отдельной editor/runtime mechanics, которую shared shell принципиально не поддерживает.
+
+Архитектурное правило для следующих сессий: если проблема проявляется как `draft не отражается мгновенно в iframe`, сначала проверять editor shell и transport draft -> canvas. Если проблема проявляется как `после save значения теряются или возвращаются не в том виде`, тогда проверять `BlockContractNormalizer` и managed entity round-trip.
+
 ## 8. Rollback и безопасный порядок работы
 
 Перед apply обязателен checkpoint tag.

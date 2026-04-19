@@ -10,7 +10,7 @@
         "stage": 3,
         "profile": "hero_like",
         "designSystemMode": "global-first",
-        "sourceModeProfile": "manual"
+        "sourceModeProfile": "content_item"
     },
     "fields": [
         {

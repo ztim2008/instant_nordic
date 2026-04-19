@@ -140,6 +140,20 @@ function nbhBuildDesignControlRenderers() {
             if (panel.entityScope === 'subtitle') {
                 return body + nbhResponsiveTypographyPanel('design.entities.subtitle', profile.subtitle, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: true, includeBlackWeight: true });
             }
+            if (panel.entityScope === 'body') {
+                return body + nbhResponsiveTypographyPanel('design.entities.body', profile.body || {
+                    desktopFontSize: 18,
+                    mobileFontSize: 17,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#f8fafc',
+                    mobileColor: '#f8fafc',
+                    desktopLineHeightPercent: 170,
+                    mobileLineHeightPercent: 170,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0
+                }, bp, { hasMarginBottom: false, hasMaxWidth: false, includeBlackWeight: false });
+            }
             if (panel.entityScope === 'meta') {
                 return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: false, includeBlackWeight: true });
             }
@@ -314,6 +328,25 @@ function nbhBuildDesignControlRenderers() {
                 }
 
                 return mediaSurfaceBody;
+            }
+
+            if (panel && (panel.entityScope === 'accentSurface' || panel.entityScope === 'bodySurface')) {
+                var surfaceDefaults = panel.entityScope === 'accentSurface'
+                    ? (profile.accentSurface || { backgroundMode: 'solid', backgroundColor: '#2563eb' })
+                    : (profile.bodySurface || { backgroundMode: 'solid', backgroundColor: '#1d1d1f' });
+                var surfacePath = 'design.entities.' + panel.entityScope;
+                var surfaceLabel = panel.entityScope === 'accentSurface' ? 'Акцентная панель' : 'Темная панель';
+                var surfaceBody = '<div class="nbh-grid-2">'
+                    + nbhField('Подложка', nbhSelect(surfacePath + '.backgroundMode', [
+                        { value: 'solid', label: 'Цветная' },
+                        { value: 'transparent', label: 'Прозрачная' }
+                    ], surfaceDefaults.backgroundMode || 'solid'))
+                    + nbhField('Цвет панели', nbhInput(surfacePath + '.backgroundColor', { inputType: 'color', fallback: surfaceDefaults.backgroundColor || '#2563eb' }))
+                    + '</div>';
+
+                surfaceBody += '<div class="nbh-note">Этот контрол управляет заливкой сущности "' + surfaceLabel + '" в live preview и после сохранения.</div>';
+
+                return surfaceBody;
             }
 
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
