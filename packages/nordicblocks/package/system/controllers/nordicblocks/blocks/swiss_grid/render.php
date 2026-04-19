@@ -427,10 +427,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                     <a class="nb-swiss-grid__link" href="<?= $item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
                     <?php endif; ?>
                     <?php if (($show_date && $item['date'] !== '' && $primary_meta !== $item['date']) || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
-                    <div class="nb-swiss-grid__aux-meta">
-                        <?php if ($show_date && $item['date'] !== '' && $primary_meta !== $item['date']): ?><span><?= $item['date'] ?></span><?php endif; ?>
-                        <?php if ($show_views && $item['views'] !== ''): ?><span><?= $item['views'] ?> просмотров</span><?php endif; ?>
-                        <?php if ($show_comments && $item['comments'] !== ''): ?><span><?= $item['comments'] ?> комментариев</span><?php endif; ?>
+                        <div class="nb-swiss-grid__aux-meta" data-nb-entity="meta">
+                            <?php if ($show_date && $item['date'] !== '' && $primary_meta !== $item['date']): ?><span data-nb-entity="meta"><?= $item['date'] ?></span><?php endif; ?>
+                            <?php if ($show_views && $item['views'] !== ''): ?><span data-nb-entity="meta"><?= $item['views'] ?> просмотров</span><?php endif; ?>
+                            <?php if ($show_comments && $item['comments'] !== ''): ?><span data-nb-entity="meta"><?= $item['comments'] ?> комментариев</span><?php endif; ?>
                     </div>
                     <?php endif; ?>
                 </div>

@@ -996,18 +996,18 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
         <?php endif; ?>
 
         <?php if ($items && ($show_search || $show_category_filter || $show_price_filter || $show_sort)): ?>
-        <div class="nb-catalog-browser__toolbar" data-role="catalog-toolbar">
+            <div class="nb-catalog-browser__toolbar" data-role="catalog-toolbar" data-nb-entity="toolbar">
             <?php if ($show_search): ?>
-            <label class="nb-catalog-browser__control nb-catalog-browser__control--search">
-                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Поиск</span>
-                <input type="search" class="nb-catalog-browser__input" placeholder="Найти по названию или описанию" data-role="catalog-search">
+                <label class="nb-catalog-browser__control nb-catalog-browser__control--search" data-nb-entity="searchField">
+                    <span class="nb-catalog-browser__control-label" data-nb-entity="searchField">Поиск</span>
+                    <input type="search" class="nb-catalog-browser__input" placeholder="Найти по названию или описанию" data-role="catalog-search" data-nb-entity="searchField">
             </label>
             <?php endif; ?>
 
             <?php if ($show_category_filter): ?>
-            <label class="nb-catalog-browser__control">
-                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Категория</span>
-                <select class="nb-catalog-browser__select" data-role="catalog-category">
+                <label class="nb-catalog-browser__control" data-nb-entity="categoryFilter">
+                    <span class="nb-catalog-browser__control-label" data-nb-entity="categoryFilter">Категория</span>
+                    <select class="nb-catalog-browser__select" data-role="catalog-category" data-nb-entity="categoryFilter">
                     <option value="">Все категории</option>
                     <?php foreach ($category_options as $category_option): ?>
                     <option value="<?= htmlspecialchars($category_option, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($category_option, ENT_QUOTES, 'UTF-8') ?></option>
@@ -1017,19 +1017,19 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
             <?php endif; ?>
 
             <?php if ($show_price_filter): ?>
-            <div class="nb-catalog-browser__control nb-catalog-browser__control--price">
-                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Цена</span>
+            <div class="nb-catalog-browser__control nb-catalog-browser__control--price" data-nb-entity="priceFilter">
+                <span class="nb-catalog-browser__control-label" data-nb-entity="priceFilter">Цена</span>
                 <div class="nb-catalog-browser__price-filters">
-                    <input type="number" class="nb-catalog-browser__input" placeholder="от" data-role="catalog-price-min">
-                    <input type="number" class="nb-catalog-browser__input" placeholder="до" data-role="catalog-price-max">
+                    <input type="number" class="nb-catalog-browser__input" placeholder="от" data-role="catalog-price-min" data-nb-entity="priceFilter">
+                    <input type="number" class="nb-catalog-browser__input" placeholder="до" data-role="catalog-price-max" data-nb-entity="priceFilter">
                 </div>
             </div>
             <?php endif; ?>
 
             <?php if ($show_sort): ?>
-            <label class="nb-catalog-browser__control">
-                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Сортировка</span>
-                <select class="nb-catalog-browser__select" data-role="catalog-sort">
+            <label class="nb-catalog-browser__control" data-nb-entity="sortControl">
+                <span class="nb-catalog-browser__control-label" data-nb-entity="sortControl">Сортировка</span>
+                <select class="nb-catalog-browser__select" data-role="catalog-sort" data-nb-entity="sortControl">
                     <option value="default">По порядку блока</option>
                     <option value="title-asc">По названию A-Z</option>
                     <option value="price-asc">Сначала дешевле</option>
@@ -1041,7 +1041,7 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
         <?php endif; ?>
 
         <?php if ($show_active_filters && $items): ?>
-        <div class="nb-catalog-browser__active-filters" data-role="catalog-active" hidden></div>
+        <div class="nb-catalog-browser__active-filters" data-role="catalog-active" data-nb-entity="activeFilters" hidden></div>
         <?php endif; ?>
 
         <?php if ($items && $show_results_count): ?>
@@ -1064,7 +1064,7 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
                 <?php endif; ?>
                 <div class="nb-catalog-browser__body">
                     <?php if ($show_badge && $item['badge'] !== ''): ?>
-                    <div class="nb-catalog-browser__badge" data-nb-entity="meta"><?= $item['badge'] ?></div>
+                    <div class="nb-catalog-browser__badge" data-nb-entity="cardBadge"><?= $item['badge'] ?></div>
                     <?php endif; ?>
                     <?php if ($show_category && $item['category'] !== ''): ?>
                     <?php if ($item['categoryUrl'] !== ''): ?>
@@ -1086,12 +1086,12 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
                     <div class="nb-catalog-browser__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
                     <?php endif; ?>
                     <?php if ($show_price && ($item['price'] !== '' || ($show_old_price && $item['priceOld'] !== ''))): ?>
-                    <div class="nb-catalog-browser__price-line" data-nb-entity="meta">
+                    <div class="nb-catalog-browser__price-line" data-nb-entity="cardPrice">
                         <?php if ($show_old_price && $item['priceOld'] !== ''): ?>
-                        <span class="nb-catalog-browser__price-old"><?= $item['priceOld'] ?></span>
+                        <span class="nb-catalog-browser__price-old" data-nb-entity="cardPrice"><?= $item['priceOld'] ?></span>
                         <?php endif; ?>
                         <?php if ($item['price'] !== ''): ?>
-                        <span class="nb-catalog-browser__price"><?= $item['price'] ?></span>
+                        <span class="nb-catalog-browser__price" data-nb-entity="cardPrice"><?= $item['price'] ?></span>
                         <?php endif; ?>
                     </div>
                     <?php endif; ?>
@@ -1099,24 +1099,24 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
                     <div class="nb-catalog-browser__availability" data-nb-entity="meta"><?= $item['availability'] ?></div>
                     <?php endif; ?>
                     <?php if ($show_cta && $item['ctaLabel'] !== '' && $item['ctaHref'] !== ''): ?>
-                    <a class="nb-catalog-browser__button nb-catalog-browser__cta <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= $item['ctaHref'] ?>"<?= $item['ctaTarget'] !== '' ? ' target="' . $item['ctaTarget'] . '"' : '' ?><?= $item['ctaRel'] !== '' ? ' rel="' . $item['ctaRel'] . '"' : '' ?>><?= $item['ctaLabel'] ?></a>
+                    <a class="nb-catalog-browser__button nb-catalog-browser__cta <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= $item['ctaHref'] ?>"<?= $item['ctaTarget'] !== '' ? ' target="' . $item['ctaTarget'] . '"' : '' ?><?= $item['ctaRel'] !== '' ? ' rel="' . $item['ctaRel'] . '"' : '' ?> data-nb-entity="cardPrimaryAction"><?= $item['ctaLabel'] ?></a>
                     <?php endif; ?>
                 </div>
             </article>
             <?php endforeach; ?>
         </div>
-        <div class="nb-catalog-browser__empty nb-catalog-browser__empty--filtered" data-role="catalog-empty" hidden>Ничего не найдено по текущим фильтрам.</div>
+        <div class="nb-catalog-browser__empty nb-catalog-browser__empty--filtered" data-role="catalog-empty" data-nb-entity="emptyState" hidden>Ничего не найдено по текущим фильтрам.</div>
         <div class="nb-catalog-browser__footer" data-role="catalog-footer" hidden>
             <button type="button" class="nb-catalog-browser__button nb-catalog-browser__more <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" data-role="catalog-more" hidden>Показать ещё</button>
             <div class="nb-catalog-browser__pagination" data-role="catalog-pagination" hidden></div>
         </div>
         <?php else: ?>
-        <div class="nb-catalog-browser__empty">Каталог пока пуст. Добавьте первую карточку.</div>
+        <div class="nb-catalog-browser__empty" data-nb-entity="emptyState">Каталог пока пуст. Добавьте первую карточку.</div>
         <?php endif; ?>
     </div>
 
     <?php if ($items): ?>
-    <div class="nb-catalog-browser__modal" data-role="media-modal" hidden>
+    <div class="nb-catalog-browser__modal" data-role="media-modal" data-nb-entity="mediaModal" hidden>
         <div class="nb-catalog-browser__modal-backdrop" data-role="media-close"></div>
         <div class="nb-catalog-browser__modal-dialog" role="dialog" aria-modal="true" aria-label="Просмотр изображений">
             <button type="button" class="nb-catalog-browser__modal-close" data-role="media-close" aria-label="Закрыть">&times;</button>

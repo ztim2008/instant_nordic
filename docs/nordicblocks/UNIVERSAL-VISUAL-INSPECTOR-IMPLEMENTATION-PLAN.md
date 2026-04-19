@@ -186,6 +186,11 @@
 
 1. 4 pilot block types проходят реальный click-to-edit smoke без специальных обходов.
 
+Статус 2026-04-19:
+
+1. выполнено для `hero`, `faq`, `content_feed`, `swiss_grid` и `catalog_browser`;
+2. реальный rollout gap оказался не в registry, а в SSR markup: `catalog_browser` требовал canonical `data-nb-entity` для toolbar/filter/card/modal/empty-state сущностей, а `swiss_grid` — явный `meta` coverage для auxiliary meta.
+
 ### Day 6. Contract-first controls pass
 
 Задача:
