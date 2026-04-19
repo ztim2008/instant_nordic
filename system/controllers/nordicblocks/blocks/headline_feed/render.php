@@ -219,6 +219,25 @@ foreach ($items_source as $item) {
 
 $lead_item = $items ? array_shift($items) : null;
 $rail_items = $items;
+$split_feature_item = null;
+$split_top_items = [];
+$split_bottom_items = [];
+$split_layout_modifier = '';
+
+if ($preset === 'split' && $rail_items) {
+    $split_pool = $rail_items;
+    if (count($split_pool) >= 3) {
+        $split_feature_item = array_pop($split_pool);
+    }
+
+    $split_top_items = array_slice($split_pool, 0, 2);
+    $split_bottom_items = array_slice($split_pool, 2);
+
+    if ($split_feature_item && !$split_bottom_items) {
+        $split_layout_modifier = ' nb-headline-feed__layout--split-minimal';
+    }
+}
+
 $heading_html = htmlspecialchars($heading, ENT_QUOTES, 'UTF-8');
 $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8')) : '';
 $more_label_html = htmlspecialchars($more_label, ENT_QUOTES, 'UTF-8');
@@ -282,7 +301,147 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
         <?php endif; ?>
 
         <?php if ($lead_item): ?>
-        <div class="nb-headline-feed__layout" data-nb-entity="items">
+        <div class="nb-headline-feed__layout<?= htmlspecialchars($preset === 'split' ? $split_layout_modifier : '', ENT_QUOTES, 'UTF-8') ?>" data-nb-entity="items">
+            <?php if ($preset === 'split'): ?>
+            <article class="nb-content-feed__card nb-headline-feed__lead nb-card" data-nb-entity="itemSurface">
+                <?php if ($show_image && $lead_item['image'] !== ''): ?>
+                <a class="nb-content-feed__media nb-headline-feed__lead-media" href="<?= $lead_item['url'] !== '' ? $lead_item['url'] : '#' ?>"<?= $lead_item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                    <img class="nb-content-feed__image" src="<?= $lead_item['image'] ?>" alt="<?= $lead_item['imageAlt'] ?>">
+                </a>
+                <?php endif; ?>
+                <div class="nb-content-feed__body nb-headline-feed__lead-body">
+                    <?php if ($show_category && $lead_item['category'] !== ''): ?>
+                    <div class="nb-content-feed__category" data-nb-entity="meta"><?= $lead_item['category'] ?></div>
+                    <?php endif; ?>
+                    <?php if ($lead_item['title'] !== ''): ?>
+                    <h3 class="nb-content-feed__card-title nb-headline-feed__lead-title" data-nb-entity="itemTitle">
+                        <?php if ($lead_item['url'] !== ''): ?>
+                        <a href="<?= $lead_item['url'] ?>"><?= $lead_item['title'] ?></a>
+                        <?php else: ?>
+                        <?= $lead_item['title'] ?>
+                        <?php endif; ?>
+                    </h3>
+                    <?php endif; ?>
+                    <?php if ($show_excerpt && $lead_item['excerpt'] !== ''): ?>
+                    <div class="nb-content-feed__excerpt nb-headline-feed__lead-excerpt" data-nb-entity="itemText"><?= $lead_item['excerpt'] ?></div>
+                    <?php endif; ?>
+                    <?php if (($show_date && $lead_item['date'] !== '') || ($show_views && $lead_item['views'] !== '') || ($show_comments && $lead_item['comments'] !== '')): ?>
+                    <div class="nb-content-feed__meta" data-nb-entity="meta">
+                        <?php if ($show_date && $lead_item['date'] !== ''): ?><span><?= $lead_item['date'] ?></span><?php endif; ?>
+                        <?php if ($show_views && $lead_item['views'] !== ''): ?><span><?= $lead_item['views'] ?> просмотров</span><?php endif; ?>
+                        <?php if ($show_comments && $lead_item['comments'] !== ''): ?><span><?= $lead_item['comments'] ?> комментариев</span><?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+
+            <?php if ($split_top_items): ?>
+            <div class="nb-headline-feed__cluster nb-headline-feed__cluster--top">
+                <?php foreach ($split_top_items as $item): ?>
+                <article class="nb-content-feed__card nb-headline-feed__minor-card nb-card" data-nb-entity="itemSurface">
+                    <?php if ($show_image && $item['image'] !== ''): ?>
+                    <a class="nb-content-feed__media" href="<?= $item['url'] !== '' ? $item['url'] : '#' ?>"<?= $item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                        <img class="nb-content-feed__image" src="<?= $item['image'] ?>" alt="<?= $item['imageAlt'] ?>">
+                    </a>
+                    <?php endif; ?>
+                    <div class="nb-content-feed__body">
+                        <?php if ($show_category && $item['category'] !== ''): ?>
+                        <div class="nb-content-feed__category" data-nb-entity="meta"><?= $item['category'] ?></div>
+                        <?php endif; ?>
+                        <?php if ($item['title'] !== ''): ?>
+                        <h3 class="nb-content-feed__card-title" data-nb-entity="itemTitle">
+                            <?php if ($item['url'] !== ''): ?>
+                            <a href="<?= $item['url'] ?>"><?= $item['title'] ?></a>
+                            <?php else: ?>
+                            <?= $item['title'] ?>
+                            <?php endif; ?>
+                        </h3>
+                        <?php endif; ?>
+                        <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
+                        <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
+                        <?php endif; ?>
+                        <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
+                        <div class="nb-content-feed__meta" data-nb-entity="meta">
+                            <?php if ($show_date && $item['date'] !== ''): ?><span><?= $item['date'] ?></span><?php endif; ?>
+                            <?php if ($show_views && $item['views'] !== ''): ?><span><?= $item['views'] ?> просмотров</span><?php endif; ?>
+                            <?php if ($show_comments && $item['comments'] !== ''): ?><span><?= $item['comments'] ?> комментариев</span><?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($split_bottom_items): ?>
+            <div class="nb-headline-feed__cluster nb-headline-feed__cluster--bottom">
+                <?php foreach ($split_bottom_items as $item): ?>
+                <article class="nb-content-feed__card nb-headline-feed__minor-card nb-card" data-nb-entity="itemSurface">
+                    <?php if ($show_image && $item['image'] !== ''): ?>
+                    <a class="nb-content-feed__media" href="<?= $item['url'] !== '' ? $item['url'] : '#' ?>"<?= $item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                        <img class="nb-content-feed__image" src="<?= $item['image'] ?>" alt="<?= $item['imageAlt'] ?>">
+                    </a>
+                    <?php endif; ?>
+                    <div class="nb-content-feed__body">
+                        <?php if ($show_category && $item['category'] !== ''): ?>
+                        <div class="nb-content-feed__category" data-nb-entity="meta"><?= $item['category'] ?></div>
+                        <?php endif; ?>
+                        <?php if ($item['title'] !== ''): ?>
+                        <h3 class="nb-content-feed__card-title" data-nb-entity="itemTitle">
+                            <?php if ($item['url'] !== ''): ?>
+                            <a href="<?= $item['url'] ?>"><?= $item['title'] ?></a>
+                            <?php else: ?>
+                            <?= $item['title'] ?>
+                            <?php endif; ?>
+                        </h3>
+                        <?php endif; ?>
+                        <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
+                        <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
+                        <?php endif; ?>
+                        <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
+                        <div class="nb-content-feed__meta" data-nb-entity="meta">
+                            <?php if ($show_date && $item['date'] !== ''): ?><span><?= $item['date'] ?></span><?php endif; ?>
+                            <?php if ($show_views && $item['views'] !== ''): ?><span><?= $item['views'] ?> просмотров</span><?php endif; ?>
+                            <?php if ($show_comments && $item['comments'] !== ''): ?><span><?= $item['comments'] ?> комментариев</span><?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($split_feature_item): ?>
+            <article class="nb-content-feed__card nb-headline-feed__feature nb-card" data-nb-entity="itemSurface">
+                <?php if ($show_image && $split_feature_item['image'] !== ''): ?>
+                <a class="nb-content-feed__media nb-headline-feed__feature-media" href="<?= $split_feature_item['url'] !== '' ? $split_feature_item['url'] : '#' ?>"<?= $split_feature_item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
+                    <img class="nb-content-feed__image" src="<?= $split_feature_item['image'] ?>" alt="<?= $split_feature_item['imageAlt'] ?>">
+                </a>
+                <?php endif; ?>
+                <div class="nb-content-feed__body nb-headline-feed__feature-body">
+                    <?php if ($show_category && $split_feature_item['category'] !== ''): ?>
+                    <div class="nb-content-feed__category" data-nb-entity="meta"><?= $split_feature_item['category'] ?></div>
+                    <?php endif; ?>
+                    <?php if ($split_feature_item['title'] !== ''): ?>
+                    <h3 class="nb-content-feed__card-title nb-headline-feed__feature-title" data-nb-entity="itemTitle">
+                        <?php if ($split_feature_item['url'] !== ''): ?>
+                        <a href="<?= $split_feature_item['url'] ?>"><?= $split_feature_item['title'] ?></a>
+                        <?php else: ?>
+                        <?= $split_feature_item['title'] ?>
+                        <?php endif; ?>
+                    </h3>
+                    <?php endif; ?>
+                    <?php if (($show_date && $split_feature_item['date'] !== '') || ($show_views && $split_feature_item['views'] !== '') || ($show_comments && $split_feature_item['comments'] !== '')): ?>
+                    <div class="nb-content-feed__meta" data-nb-entity="meta">
+                        <?php if ($show_date && $split_feature_item['date'] !== ''): ?><span><?= $split_feature_item['date'] ?></span><?php endif; ?>
+                        <?php if ($show_views && $split_feature_item['views'] !== ''): ?><span><?= $split_feature_item['views'] ?> просмотров</span><?php endif; ?>
+                        <?php if ($show_comments && $split_feature_item['comments'] !== ''): ?><span><?= $split_feature_item['comments'] ?> комментариев</span><?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </article>
+            <?php endif; ?>
+            <?php else: ?>
             <article class="nb-content-feed__card nb-headline-feed__lead nb-card" data-nb-entity="itemSurface">
                 <?php if ($show_image && $lead_item['image'] !== ''): ?>
                 <a class="nb-content-feed__media nb-headline-feed__lead-media" href="<?= $lead_item['url'] !== '' ? $lead_item['url'] : '#' ?>"<?= $lead_item['url'] === '' ? ' aria-disabled="true"' : '' ?> data-nb-entity="media">
@@ -351,6 +510,7 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                 </article>
                 <?php endforeach; ?>
             </div>
+            <?php endif; ?>
             <?php endif; ?>
         </div>
         <?php endif; ?>
