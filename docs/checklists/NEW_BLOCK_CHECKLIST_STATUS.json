@@ -6,7 +6,7 @@
             "title": "Каталог",
             "family": "catalog-family-v1",
             "status": "in_progress",
-            "checkpoint": "snapshot/20260419-094020",
+            "checkpoint": "snapshot/20260419-095918",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
@@ -16,7 +16,7 @@
                 "package_mirror": true,
                 "live_smoke": true
             },
-            "notes": "Первый universal catalog block подключен в first-wave registry, contract/data layer, unified editor shell и shared theme CSS. В runtime уже есть toolbar search/category/price/sort, active filters, fullscreen media modal, repeatable content authoring, design-system entities и shared button classes. После checkpoint snapshot/20260419-094020 закрыт live runtime mismatch: homepage SSR теперь идёт через hydrateBlockForRender + buildRenderCacheProfile + rendererVersion-aware cache key. Дополнительно добавлены admin/CLI flush SSR cache tooling, runtime debug attrs data-nb-render-version/data-nb-grid-desktop/data-nb-grid-mobile/data-nb-collection-mode, hardened defaults для external CTA/primary button и отдельный CLI mobile smoke с desktop/mobile UA parity и проверкой SSR markers against model->getRenderCacheVersion. Live smoke по главной подтверждает новые debug markers и shared CTA markup. Residual risk: реальную device-level mobile проверку сетки и touch-поведение по-прежнему нужно подтверждать вручную на телефоне; текущий CLI smoke валидирует SSR markers и UA parity, но не browser layout engine на устройстве."
+            "notes": "Первый universal catalog block подключен в first-wave registry, contract/data layer, unified editor shell и shared theme CSS. В runtime уже есть toolbar search/category/price/sort, active filters, fullscreen media modal, repeatable content authoring, design-system entities и shared button classes. После checkpoint snapshot/20260419-094020 закрыт live runtime mismatch: homepage SSR теперь идёт через hydrateBlockForRender + buildRenderCacheProfile + rendererVersion-aware cache key. Дополнительно добавлены admin/CLI flush SSR cache tooling, runtime debug attrs data-nb-render-version/data-nb-grid-desktop/data-nb-grid-mobile/data-nb-collection-mode, hardened defaults для external CTA/primary button и отдельный CLI mobile smoke с desktop/mobile UA parity и проверкой SSR markers against model->getRenderCacheVersion. В editor shell добавлены import/export/demo JSON flow для карточек каталога, stable item ids со skip-on-reimport и явные shortcut controls для media aspect ratio/object fit рядом с карточечными настройками. Live smoke по главной подтверждает новые debug markers и shared CTA markup. Residual risk: реальную device-level mobile проверку сетки и touch-поведение по-прежнему нужно подтверждать вручную на телефоне; текущий CLI smoke валидирует SSR markers и UA parity, но не browser layout engine на устройстве."
         },
         "content_feed": {
             "title": "Лента новостей",

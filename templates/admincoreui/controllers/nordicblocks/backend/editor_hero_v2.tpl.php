@@ -99,6 +99,8 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 }
 .nbh-btn--ghost { background: rgba(255,255,255,.08); color: #d7e0eb; }
 .nbh-btn--ghost:hover { background: rgba(255,255,255,.14); }
+.nbh-btn--catalog { background: rgba(255,255,255,.08); color: #d7e0eb; }
+.nbh-btn--catalog:hover { background: rgba(255,255,255,.14); }
 .nbh-btn--save { background: #16a34a; color: #fff; }
 .nbh-btn--save:hover { background: #15803d; }
 .nbh-btn--save.is-dirty { box-shadow: 0 0 0 2px rgba(251,191,36,.55); }
@@ -557,6 +559,12 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
             <button type="button" id="nbhVpMobile">Мобильный</button>
         </div>
         <div class="nbh-sep"></div>
+        <?php if (($block['type'] ?? '') === 'catalog_browser'): ?>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogDemoBtn"><i class="fa fa-download"></i> Демо JSON</button>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogExportBtn"><i class="fa fa-file-code-o"></i> Экспорт</button>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogImportBtn"><i class="fa fa-upload"></i> Импорт</button>
+        <input type="file" id="nbhCatalogImportInput" accept=".json,application/json" style="display:none;">
+        <?php endif; ?>
         <a class="nbh-btn nbh-btn--ghost" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>"><i class="fa fa-thumb-tack"></i> Разместить</a>
         <button class="nbh-btn nbh-btn--save" id="nbhSaveBtn"><i class="fa fa-save"></i> Сохранить</button>
     </div>
@@ -589,6 +597,7 @@ var nbhCsrfToken = <?= json_encode(cmsForm::getCSRFToken(), JSON_UNESCAPED_UNICO
 var nbhIconPickerUrl = <?= json_encode(href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']), JSON_UNESCAPED_UNICODE) ?>;
 var nbhImagePickerListUrl = <?= json_encode(href_to('nordicblocks', 'media_list'), JSON_UNESCAPED_UNICODE) ?>;
 var nbhImagePickerUploadUrl = <?= json_encode(href_to('nordicblocks', 'media_upload'), JSON_UNESCAPED_UNICODE) ?>;
+var nbhBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
 
 var nbhState = {
     loaded: false,
@@ -1479,6 +1488,520 @@ function nbhRepeaterItems() {
     return Array.isArray(items) ? items : [];
 }
 
+function nbhCatalogAspectRatioOptions() {
+    return [
+        { value: 'auto', label: 'По размеру изображения' },
+        { value: '16:10', label: '16:10' },
+        { value: '16:9', label: '16:9' },
+        { value: '4:3', label: '4:3' },
+        { value: '1:1', label: '1:1' },
+        { value: '3:4', label: '3:4' }
+    ];
+}
+
+function nbhCatalogObjectFitOptions() {
+    return [
+        { value: 'cover', label: 'Заполнить кадр' },
+        { value: 'contain', label: 'Показать целиком' }
+    ];
+}
+
+function nbhIsCatalogBrowserBlock() {
+    return nbhBlockType === 'catalog_browser';
+}
+
+function nbhCatalogItemIdValue(item) {
+    if (!item || typeof item !== 'object') {
+        return '';
+    }
+
+    if (typeof item.id === 'string' && item.id.trim()) {
+        return item.id.trim();
+    }
+
+    if (typeof item.itemId === 'string' && item.itemId.trim()) {
+        return item.itemId.trim();
+    }
+
+    if (typeof item.item_id === 'string' && item.item_id.trim()) {
+        return item.item_id.trim();
+    }
+
+    return '';
+}
+
+function nbhCatalogSlug(value) {
+    return String(value == null ? '' : value)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48);
+}
+
+function nbhCatalogUsedIdMap(excludeIndex) {
+    var used = {};
+
+    nbhRepeaterItems().forEach(function(item, index) {
+        var itemId;
+        if (index === excludeIndex) {
+            return;
+        }
+        itemId = nbhCatalogItemIdValue(item);
+        if (itemId) {
+            used[itemId] = true;
+        }
+    });
+
+    return used;
+}
+
+function nbhCatalogCreateItemId(usedIds, seed) {
+    var base = nbhCatalogSlug(seed) || 'catalog-item';
+    var candidate = base;
+    var suffix = 2;
+
+    usedIds = usedIds && typeof usedIds === 'object' ? usedIds : {};
+
+    while (usedIds[candidate]) {
+        candidate = base + '-' + suffix;
+        suffix += 1;
+    }
+
+    usedIds[candidate] = true;
+    return candidate;
+}
+
+function nbhCatalogNormalizeTags(value) {
+    if (Array.isArray(value)) {
+        return value.map(function(tag) {
+            return String(tag == null ? '' : tag).trim();
+        }).filter(Boolean);
+    }
+
+    return String(value == null ? '' : value)
+        .split(',')
+        .map(function(tag) { return tag.trim(); })
+        .filter(Boolean);
+}
+
+function nbhCatalogNormalizeGallery(value) {
+    var slides = value;
+
+    if (typeof slides === 'string' && slides.trim()) {
+        try {
+            slides = JSON.parse(slides);
+        } catch (error) {
+            slides = [];
+        }
+    }
+
+    if (!Array.isArray(slides)) {
+        slides = [];
+    }
+
+    return slides.map(function(slide) {
+        if (!slide || typeof slide !== 'object' || Array.isArray(slide)) {
+            return null;
+        }
+
+        return {
+            src: String(slide.src == null ? '' : slide.src).trim(),
+            alt: String(slide.alt == null ? '' : slide.alt).trim(),
+            caption: String(slide.caption == null ? '' : slide.caption).trim()
+        };
+    }).filter(function(slide) {
+        return slide && (slide.src || slide.alt || slide.caption);
+    });
+}
+
+function nbhCatalogItemHasContent(item) {
+    if (!item || typeof item !== 'object') {
+        return false;
+    }
+
+    return !!(
+        String(item.title == null ? '' : item.title).trim()
+        || String(item.excerpt == null ? '' : item.excerpt).trim()
+        || String(item.category == null ? '' : item.category).trim()
+        || String(item.price == null ? '' : item.price).trim()
+        || String(item.url == null ? '' : item.url).trim()
+        || String(item.image == null ? '' : item.image).trim()
+        || String(item.badge == null ? '' : item.badge).trim()
+    );
+}
+
+function nbhCatalogBaseItem() {
+    return {
+        id: '',
+        itemId: '',
+        item_id: '',
+        category: 'Категория',
+        title: 'Новая позиция каталога',
+        excerpt: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
+        text: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
+        category_url: '',
+        categoryUrl: '',
+        badge: 'Хит',
+        price: '9 900',
+        priceOld: '12 900',
+        price_old: '12 900',
+        currency: '₽',
+        availability: 'available',
+        tags: ['Новинка'],
+        cta_label: 'Открыть',
+        ctaLabel: 'Открыть',
+        cta_kind: 'url',
+        ctaKind: 'url',
+        cta_url: '/catalog/item',
+        ctaUrl: '/catalog/item',
+        messenger_type: 'none',
+        messengerType: 'none',
+        link_label: 'Открыть',
+        linkLabel: 'Открыть',
+        url: '/catalog/item',
+        image: '',
+        imageAlt: '',
+        alt: '',
+        gallery: []
+    };
+}
+
+function nbhNormalizeCatalogItem(item, options) {
+    var normalized = nbhCatalogBaseItem();
+    var source = item && typeof item === 'object' && !Array.isArray(item) ? item : {};
+    var usedIds = options && options.usedIds && typeof options.usedIds === 'object' ? options.usedIds : {};
+    var seed = source.title || source.name || source.category || normalized.title;
+    var itemId = (options && options.forceNewId) ? '' : nbhCatalogItemIdValue(source);
+
+    normalized.category = String(source.category == null ? normalized.category : source.category).trim();
+    normalized.title = String(source.title == null ? normalized.title : source.title).trim();
+    normalized.excerpt = String(source.excerpt == null ? (source.text == null ? normalized.excerpt : source.text) : source.excerpt).trim();
+    normalized.text = normalized.excerpt;
+    normalized.categoryUrl = String(source.categoryUrl == null ? (source.category_url == null ? normalized.categoryUrl : source.category_url) : source.categoryUrl).trim();
+    normalized.category_url = normalized.categoryUrl;
+    normalized.badge = String(source.badge == null ? normalized.badge : source.badge).trim();
+    normalized.price = String(source.price == null ? normalized.price : source.price).trim();
+    normalized.priceOld = String(source.priceOld == null ? (source.price_old == null ? normalized.priceOld : source.price_old) : source.priceOld).trim();
+    normalized.price_old = normalized.priceOld;
+    normalized.currency = String(source.currency == null ? normalized.currency : source.currency).trim();
+    normalized.availability = String(source.availability == null ? normalized.availability : source.availability).trim() || 'available';
+    normalized.tags = nbhCatalogNormalizeTags(source.tags == null ? normalized.tags : source.tags);
+    normalized.ctaLabel = String(source.ctaLabel == null ? (source.cta_label == null ? normalized.ctaLabel : source.cta_label) : source.ctaLabel).trim();
+    normalized.cta_label = normalized.ctaLabel;
+    normalized.ctaKind = String(source.ctaKind == null ? (source.cta_kind == null ? normalized.ctaKind : source.cta_kind) : source.ctaKind).trim() || 'url';
+    normalized.cta_kind = normalized.ctaKind;
+    normalized.ctaUrl = String(source.ctaUrl == null ? (source.cta_url == null ? normalized.ctaUrl : source.cta_url) : source.ctaUrl).trim();
+    normalized.cta_url = normalized.ctaUrl;
+    normalized.messengerType = String(source.messengerType == null ? (source.messenger_type == null ? normalized.messengerType : source.messenger_type) : source.messengerType).trim() || 'none';
+    normalized.messenger_type = normalized.messengerType;
+    normalized.linkLabel = String(source.linkLabel == null ? (source.link_label == null ? normalized.linkLabel : source.link_label) : source.linkLabel).trim() || normalized.ctaLabel;
+    normalized.link_label = normalized.linkLabel;
+    normalized.url = String(source.url == null ? normalized.url : source.url).trim();
+    normalized.image = String(source.image == null ? normalized.image : source.image).trim();
+    normalized.imageAlt = String(source.imageAlt == null ? (source.alt == null ? normalized.imageAlt : source.alt) : source.imageAlt).trim();
+    normalized.alt = normalized.imageAlt;
+    normalized.gallery = nbhCatalogNormalizeGallery(source.gallery == null ? normalized.gallery : source.gallery);
+
+    itemId = String(itemId || '').trim();
+    if (!itemId) {
+        itemId = nbhCatalogCreateItemId(usedIds, seed);
+    } else {
+        itemId = nbhCatalogSlug(itemId) || nbhCatalogCreateItemId(usedIds, seed);
+        if (usedIds[itemId]) {
+            itemId = nbhCatalogCreateItemId(usedIds, seed);
+        } else {
+            usedIds[itemId] = true;
+        }
+    }
+
+    normalized.id = itemId;
+    normalized.itemId = itemId;
+    normalized.item_id = itemId;
+
+    return normalized;
+}
+
+function nbhPrimeCatalogBrowserDraft() {
+    var items;
+    var usedIds;
+    var changed = false;
+
+    if (!nbhIsCatalogBrowserBlock() || !nbhState.draft) {
+        return false;
+    }
+
+    items = nbhRepeaterItems();
+    usedIds = {};
+    items = items.map(function(item) {
+        var normalized = nbhNormalizeCatalogItem(item, { usedIds: usedIds });
+        if (JSON.stringify(normalized) !== JSON.stringify(item)) {
+            changed = true;
+        }
+        return normalized;
+    });
+
+    if (changed) {
+        nbhSet(nbhState.draft, 'content.items', items);
+    }
+
+    if (typeof nbhGet(nbhState.draft, 'design.entities.media.aspectRatio', '') !== 'string' || !nbhGet(nbhState.draft, 'design.entities.media.aspectRatio', '')) {
+        nbhSet(nbhState.draft, 'design.entities.media.aspectRatio', '16:10');
+        changed = true;
+    }
+
+    if (typeof nbhGet(nbhState.draft, 'design.entities.media.objectFit', '') !== 'string' || !nbhGet(nbhState.draft, 'design.entities.media.objectFit', '')) {
+        nbhSet(nbhState.draft, 'design.entities.media.objectFit', 'cover');
+        changed = true;
+    }
+
+    return changed;
+}
+
+function nbhCatalogTransferItem(item) {
+    var normalized = nbhNormalizeCatalogItem(item, { usedIds: {} });
+
+    return {
+        id: normalized.id,
+        category: normalized.category,
+        categoryUrl: normalized.categoryUrl,
+        title: normalized.title,
+        excerpt: normalized.excerpt,
+        badge: normalized.badge,
+        price: normalized.price,
+        priceOld: normalized.priceOld,
+        currency: normalized.currency,
+        availability: normalized.availability,
+        tags: normalized.tags,
+        image: normalized.image,
+        imageAlt: normalized.imageAlt,
+        url: normalized.url,
+        ctaLabel: normalized.ctaLabel,
+        ctaKind: normalized.ctaKind,
+        ctaUrl: normalized.ctaUrl,
+        messengerType: normalized.messengerType,
+        gallery: normalized.gallery
+    };
+}
+
+function nbhCatalogTransferEnvelope(items, mode) {
+    return {
+        format: 'nordicblocks/catalog-browser-items@1',
+        blockType: 'catalog_browser',
+        mode: mode || 'export',
+        mergePolicy: 'skip_existing_ids',
+        generatedAt: new Date().toISOString(),
+        fields: [
+            { name: 'id', required: true, description: 'Стабильный ID позиции. Повторный импорт пропускает уже существующие id.' },
+            { name: 'title', required: true, description: 'Название карточки.' },
+            { name: 'excerpt', required: false, description: 'Короткое описание карточки.' },
+            { name: 'price', required: false, description: 'Текущая цена.' },
+            { name: 'priceOld', required: false, description: 'Старая цена.' },
+            { name: 'image', required: false, description: 'URL изображения.' },
+            { name: 'url', required: false, description: 'URL карточки.' },
+            { name: 'ctaLabel', required: false, description: 'Текст CTA кнопки.' },
+            { name: 'ctaUrl', required: false, description: 'URL CTA кнопки.' },
+            { name: 'gallery', required: false, description: 'Массив слайдов modal gallery.' }
+        ],
+        items: items.map(nbhCatalogTransferItem)
+    };
+}
+
+function nbhDownloadJson(filename, payload) {
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 0);
+}
+
+function nbhBuildCatalogDemoPayload() {
+    return nbhCatalogTransferEnvelope([
+        {
+            id: 'sku-oak-desk-140',
+            category: 'Письменные столы',
+            categoryUrl: '/catalog/desks',
+            title: 'Стол Oak 140',
+            excerpt: 'Компактный стол из массива дуба для домашнего кабинета и студии.',
+            badge: 'Хит',
+            price: '59 900',
+            priceOld: '69 900',
+            currency: '₽',
+            availability: 'available',
+            tags: ['Дуб', 'Склад'],
+            image: '/upload/nordicblocks/demo/oak-desk-140.jpg',
+            imageAlt: 'Стол Oak 140',
+            url: '/catalog/oak-desk-140',
+            ctaLabel: 'Открыть',
+            ctaKind: 'url',
+            ctaUrl: '/catalog/oak-desk-140',
+            messengerType: 'none',
+            gallery: [
+                { src: '/upload/nordicblocks/demo/oak-desk-140.jpg', alt: 'Стол Oak 140', caption: 'Главный ракурс' },
+                { src: '/upload/nordicblocks/demo/oak-desk-140-side.jpg', alt: 'Стол Oak 140 сбоку', caption: 'Боковой ракурс' }
+            ]
+        },
+        {
+            id: 'sku-linen-chair-sand',
+            category: 'Стулья',
+            categoryUrl: '/catalog/chairs',
+            title: 'Linen Chair Sand',
+            excerpt: 'Мягкий стул для кухни или переговорной зоны с нейтральной текстурой ткани.',
+            badge: 'Новинка',
+            price: '18 500',
+            priceOld: '',
+            currency: '₽',
+            availability: 'preorder',
+            tags: ['Ткань', 'Под заказ'],
+            image: '/upload/nordicblocks/demo/linen-chair-sand.jpg',
+            imageAlt: 'Linen Chair Sand',
+            url: '/catalog/linen-chair-sand',
+            ctaLabel: 'Заказать',
+            ctaKind: 'url',
+            ctaUrl: '/catalog/linen-chair-sand',
+            messengerType: 'none',
+            gallery: []
+        }
+    ], 'demo');
+}
+
+function nbhExportCatalogItems() {
+    var changed = nbhPrimeCatalogBrowserDraft();
+    var filename;
+
+    if (!nbhIsCatalogBrowserBlock()) {
+        return;
+    }
+
+    if (changed) {
+        nbhRenderPanels();
+        nbhMarkDirty();
+        nbhScheduleSave();
+    }
+
+    filename = 'catalog-browser-' + String(nbhState.blockTitle || 'items').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '.json';
+    filename = filename.replace(/-+/g, '-');
+
+    nbhDownloadJson(filename || 'catalog-browser-items.json', nbhCatalogTransferEnvelope(nbhRepeaterItems(), 'export'));
+}
+
+function nbhDownloadCatalogDemo() {
+    if (!nbhIsCatalogBrowserBlock()) {
+        return;
+    }
+
+    nbhDownloadJson('catalog-browser-demo.json', nbhBuildCatalogDemoPayload());
+}
+
+function nbhParseCatalogImportItems(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (payload && typeof payload === 'object') {
+        if (Array.isArray(payload.items)) {
+            return payload.items;
+        }
+
+        if (payload.content && Array.isArray(payload.content.items)) {
+            return payload.content.items;
+        }
+    }
+
+    return [];
+}
+
+function nbhImportCatalogPayload(payload) {
+    var importedItems = nbhParseCatalogImportItems(payload);
+    var existingItems = nbhRepeaterItems().slice();
+    var usedIds = nbhCatalogUsedIdMap();
+    var seenImportedIds = {};
+    var stats = { imported: 0, skippedExisting: 0, skippedInvalid: 0, generatedIds: 0 };
+
+    if (!Array.isArray(importedItems) || !importedItems.length) {
+        throw new Error('В JSON не найден массив items для импорта.');
+    }
+
+    importedItems.forEach(function(rawItem) {
+        var incomingId = nbhCatalogItemIdValue(rawItem);
+        var previewId = incomingId ? (nbhCatalogSlug(incomingId) || incomingId) : '';
+        var normalized;
+
+        if (!rawItem || typeof rawItem !== 'object' || Array.isArray(rawItem)) {
+            stats.skippedInvalid += 1;
+            return;
+        }
+
+        if (previewId && (usedIds[previewId] || seenImportedIds[previewId])) {
+            stats.skippedExisting += 1;
+            return;
+        }
+
+        normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds });
+        if (!incomingId) {
+            stats.generatedIds += 1;
+        }
+
+        if (!nbhCatalogItemHasContent(normalized)) {
+            stats.skippedInvalid += 1;
+            return;
+        }
+
+        seenImportedIds[normalized.id] = true;
+        existingItems.push(normalized);
+        stats.imported += 1;
+    });
+
+    if (!stats.imported) {
+        throw new Error('Нечего импортировать: все позиции уже существуют по id или не прошли валидацию.');
+    }
+
+    nbhSet(nbhState.draft, 'content.items', existingItems);
+    nbhMarkDirty();
+    nbhRenderPanels();
+    nbhScheduleSave();
+
+    alert('Импорт завершён. Добавлено: ' + stats.imported + '. Пропущено по существующим id: ' + stats.skippedExisting + '. Невалидных записей: ' + stats.skippedInvalid + '. Сгенерировано новых id: ' + stats.generatedIds + '.');
+}
+
+function nbhImportCatalogFile(file) {
+    var reader;
+
+    if (!file) {
+        return;
+    }
+
+    reader = new FileReader();
+    reader.onload = function(event) {
+        var text = String(event && event.target ? event.target.result : '');
+        var payload;
+
+        try {
+            payload = JSON.parse(text);
+        } catch (error) {
+            alert('Файл не похож на корректный JSON.');
+            return;
+        }
+
+        try {
+            nbhImportCatalogPayload(payload);
+        } catch (error) {
+            alert(error && error.message ? error.message : 'Не удалось импортировать JSON.');
+        }
+    };
+    reader.onerror = function() {
+        alert('Не удалось прочитать файл.');
+    };
+    reader.readAsText(file, 'utf-8');
+}
+
 function nbhDataOptions() {
     var options = nbhState.server && nbhState.server.dataOptions ? nbhState.server.dataOptions : null;
     if (!options || typeof options !== 'object') {
@@ -1547,36 +2070,7 @@ function nbhListSource() {
 function nbhCollectionDefaultItem() {
     if (nbhIsCardCollectionBlock()) {
         if (nbhCollectionBlockKind() === 'catalog_browser') {
-            return {
-                category: 'Категория',
-                title: 'Новая позиция каталога',
-                excerpt: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
-                text: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
-                category_url: '',
-                categoryUrl: '',
-                badge: 'Хит',
-                price: '9 900',
-                priceOld: '12 900',
-                price_old: '12 900',
-                currency: '₽',
-                availability: 'available',
-                tags: ['Новинка'],
-                cta_label: 'Открыть',
-                ctaLabel: 'Открыть',
-                cta_kind: 'url',
-                ctaKind: 'url',
-                cta_url: '/catalog/item',
-                ctaUrl: '/catalog/item',
-                messenger_type: 'none',
-                messengerType: 'none',
-                link_label: 'Открыть',
-                linkLabel: 'Открыть',
-                url: '/catalog/item',
-                image: '',
-                imageAlt: '',
-                alt: '',
-                gallery: [{ src: '', alt: '', caption: '' }]
-            };
+            return nbhNormalizeCatalogItem(nbhCatalogBaseItem(), { usedIds: nbhCatalogUsedIdMap(), forceNewId: true });
         }
 
         return {
@@ -1609,6 +2103,10 @@ function nbhCollectionDefaultItem() {
 function nbhCollectionItemValue(item, key) {
     if (!item || typeof item !== 'object') {
         return '';
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'id') {
+        return nbhCatalogItemIdValue(item);
     }
 
     if (!nbhIsCardCollectionBlock() && key === 'title') {
@@ -2056,11 +2554,17 @@ function nbhRemoveRepeaterItem(index) {
 
 function nbhDuplicateRepeaterItem(index) {
     var items = nbhRepeaterItems().slice();
+    var clone;
     if (index < 0 || index >= items.length) {
         return;
     }
 
-    items.splice(index + 1, 0, nbhClone(items[index]));
+    clone = nbhClone(items[index]);
+    if (nbhCollectionBlockKind() === 'catalog_browser') {
+        clone = nbhNormalizeCatalogItem(clone, { usedIds: nbhCatalogUsedIdMap(), forceNewId: true });
+    }
+
+    items.splice(index + 1, 0, clone);
     nbhSet(nbhState.draft, 'content.items', items);
     nbhMarkDirty();
     nbhRenderPanels();
@@ -2098,6 +2602,7 @@ function nbhUpdateRepeaterItem(index, field, value) {
     } else {
         if (field === 'text') field = 'excerpt';
         if (field === 'alt') field = 'imageAlt';
+        if (field === 'itemId' || field === 'item_id') field = 'id';
     }
 
     item[field] = value;
@@ -2120,6 +2625,10 @@ function nbhUpdateRepeaterItem(index, field, value) {
         }
         if (field === 'category_url') {
             item.categoryUrl = value;
+        }
+        if (field === 'id') {
+            item.itemId = value;
+            item.item_id = value;
         }
         if (field === 'priceOld') {
             item.price_old = value;
@@ -2148,6 +2657,9 @@ function nbhUpdateRepeaterItem(index, field, value) {
         if (typeof item.text !== 'string') item.text = item.excerpt;
         if (typeof item.category_url !== 'string') item.category_url = typeof item.categoryUrl === 'string' ? item.categoryUrl : '';
         if (typeof item.categoryUrl !== 'string') item.categoryUrl = item.category_url;
+        if (typeof item.id !== 'string') item.id = nbhCatalogItemIdValue(item);
+        if (typeof item.itemId !== 'string') item.itemId = item.id;
+        if (typeof item.item_id !== 'string') item.item_id = item.id;
         if (typeof item.priceOld !== 'string') item.priceOld = typeof item.price_old === 'string' ? item.price_old : '';
         if (typeof item.price_old !== 'string') item.price_old = item.priceOld;
         if (typeof item.cta_label !== 'string') item.cta_label = typeof item.ctaLabel === 'string' ? item.ctaLabel : '';
@@ -2162,6 +2674,11 @@ function nbhUpdateRepeaterItem(index, field, value) {
         if (typeof item.linkLabel !== 'string') item.linkLabel = item.link_label;
         if (typeof item.imageAlt !== 'string') item.imageAlt = typeof item.alt === 'string' ? item.alt : '';
         if (typeof item.alt !== 'string') item.alt = item.imageAlt;
+
+        if (nbhCollectionBlockKind() === 'catalog_browser') {
+            item = nbhNormalizeCatalogItem(item, { usedIds: nbhCatalogUsedIdMap(index) });
+            items[index] = item;
+        }
     }
 
     nbhSet(nbhState.draft, 'content.items', items);
@@ -2275,6 +2792,7 @@ function nbhLoadState() {
     return fetch(nbhEditorStateUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(function(response) { return response.json(); })
         .then(function(payload) {
+            var primedCatalog = false;
             if (!payload.ok) {
                 throw new Error(payload.error || 'state_error');
             }
@@ -2284,8 +2802,14 @@ function nbhLoadState() {
             nbhState.activeTab = payload.ui && payload.ui.activeTab ? payload.ui.activeTab : 'content';
             nbhState.activeBreakpoint = payload.ui && payload.ui.activeBreakpoint ? payload.ui.activeBreakpoint : 'desktop';
             nbhState.selectedEntity = payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : 'title';
+            primedCatalog = nbhPrimeCatalogBrowserDraft();
             nbhState.loaded = true;
             nbhRender();
+
+            if (primedCatalog) {
+                nbhMarkDirty();
+                nbhScheduleSave();
+            }
         });
 }
 
@@ -2356,4 +2880,33 @@ function nbhSave(silent) {
 
 <?php include __DIR__ . '/editor_hero_v2_control_dispatch.tpl.php'; ?>
 <?php include __DIR__ . '/editor_hero_v2_shell_events.tpl.php'; ?>
+
+if (document.getElementById('nbhCatalogDemoBtn')) {
+    document.getElementById('nbhCatalogDemoBtn').addEventListener('click', nbhDownloadCatalogDemo);
+}
+
+if (document.getElementById('nbhCatalogExportBtn')) {
+    document.getElementById('nbhCatalogExportBtn').addEventListener('click', nbhExportCatalogItems);
+}
+
+if (document.getElementById('nbhCatalogImportBtn')) {
+    document.getElementById('nbhCatalogImportBtn').addEventListener('click', function() {
+        var input = document.getElementById('nbhCatalogImportInput');
+        if (input) {
+            input.click();
+        }
+    });
+}
+
+if (document.getElementById('nbhCatalogImportInput')) {
+    document.getElementById('nbhCatalogImportInput').addEventListener('change', function() {
+        var file = this.files && this.files[0] ? this.files[0] : null;
+        if (!file) {
+            return;
+        }
+
+        nbhImportCatalogFile(file);
+        this.value = '';
+    });
+}
 </script>

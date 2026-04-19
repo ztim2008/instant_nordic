@@ -31,8 +31,17 @@ function nbhBuildContentControlRenderers() {
                 + '</div>';
         },
         'media-content-panel': function() {
-            return nbhField('Путь к изображению', nbhInput('content.media.image', { picker: 'image' }))
+            var body = nbhField('Путь к изображению', nbhInput('content.media.image', { picker: 'image' }))
                 + nbhField('Alt-текст', nbhInput('content.media.alt'));
+
+            if (nbhIsCardCollectionBlock()) {
+                body += '<div class="nbh-grid-2">'
+                    + nbhField('Формат кадра', nbhSelect('design.entities.media.aspectRatio', nbhCatalogAspectRatioOptions(), '16:10'))
+                    + nbhField('Вписывание', nbhSelect('design.entities.media.objectFit', nbhCatalogObjectFitOptions(), 'cover'))
+                    + '</div>';
+            }
+
+            return body;
         }
     };
 }

@@ -166,6 +166,7 @@ function nbhRepeaterEditor() {
                     + '</div>'
                     + '</div>'
                     + '<div class="nbh-grid-2">'
+                    + nbhField('ID импорта', '<input type="text" data-item-field="id" data-item-index="' + index + '" value="' + nbhEscapeAttr(nbhCollectionItemValue(item, 'id')) + '" placeholder="sku-oak-desk-140">')
                     + nbhField('Категория', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
                     + nbhField('URL категории', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
                     + nbhField('Badge', '<input type="text" data-item-field="badge" data-item-index="' + index + '" value="' + nbhEscapeAttr(badge) + '">')
@@ -248,7 +249,9 @@ function nbhRepeaterEditor() {
             + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))
             + nbhField('Показывать анонс', nbhSelect('runtime.visibility.excerpt', nbhYesNoOptions(), '1'))
             + (kind === 'catalog_browser'
-                ? nbhField('Режим длинного каталога', nbhSelect('runtime.catalog.collectionMode', [
+                ? nbhField('Формат кадра карточек', nbhSelect('design.entities.media.aspectRatio', nbhCatalogAspectRatioOptions(), '16:10'))
+                    + nbhField('Вписывание изображения', nbhSelect('design.entities.media.objectFit', nbhCatalogObjectFitOptions(), 'cover'))
+                    + nbhField('Режим длинного каталога', nbhSelect('runtime.catalog.collectionMode', [
                         { value: 'all', label: 'Все карточки сразу' },
                         { value: 'load_more', label: 'Кнопка Показать ещё' },
                         { value: 'pagination', label: 'Пагинация' }

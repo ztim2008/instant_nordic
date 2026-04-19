@@ -1653,6 +1653,7 @@ class NordicblocksBlockContractNormalizer {
                 continue;
             }
 
+            $item_id = trim((string) ($item['id'] ?? ($item['itemId'] ?? ($item['item_id'] ?? ''))));
             $title = trim((string) ($item['title'] ?? ''));
             $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
             $category = trim((string) ($item['category'] ?? ''));
@@ -1679,6 +1680,7 @@ class NordicblocksBlockContractNormalizer {
             }
 
             $items[] = self::buildContentFeedItemPayload([
+                'id' => $item_id,
                 'category' => $category,
                 'categoryUrl' => $category_url,
                 'title' => $title,
@@ -1718,11 +1720,15 @@ class NordicblocksBlockContractNormalizer {
     }
 
     private static function buildContentFeedItemPayload(array $item) {
+        $item_id = trim((string) ($item['id'] ?? ($item['itemId'] ?? ($item['item_id'] ?? ''))));
         $title = trim((string) ($item['title'] ?? ''));
         $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
         $category_url = trim((string) ($item['categoryUrl'] ?? ($item['category_url'] ?? '')));
 
         return [
+            'id' => $item_id,
+            'itemId' => $item_id,
+            'item_id' => $item_id,
             'category' => trim((string) ($item['category'] ?? '')),
             'categoryUrl' => $category_url,
             'category_url' => $category_url,
