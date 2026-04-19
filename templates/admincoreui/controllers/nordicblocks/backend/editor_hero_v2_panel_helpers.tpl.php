@@ -138,37 +138,167 @@ function nbhRenderAccordionGroup(group, activeKey) {
         + '</section>';
 }
 
+function nbhTabLabel(tabKey) {
+    var labels = {
+        content: 'Контент',
+        design: 'Дизайн',
+        layout: 'Макет',
+        data: 'Данные'
+    };
+
+    return labels[tabKey] || tabKey;
+}
+
+function nbhEntityPriorityForActiveTab(entityKey) {
+    var panels = nbhPanelsForTab(entityKey);
+    var firstPanel = panels.length ? panels[0] : null;
+    var score = 0;
+
+    if (!panels.length) {
+        return -100000;
+    }
+
+    if (nbhState.activeTab === 'content') {
+        if (entityKey === 'items' && nbhHasCapability('repeaterContent')) {
+            score += 500;
+        }
+
+        if (panels.some(function(panel) { return nbhPanelControlKey(panel) === 'repeaterItems' || panel.section === 'repeaters'; })) {
+            score += 450;
+        }
+
+        if (entityKey === 'title') {
+            score += 220;
+        }
+
+        if (panels.some(function(panel) { return nbhPanelControlKey(panel) === 'textContent'; })) {
+            score += 120;
+        }
+    }
+
+    if (nbhState.activeTab === 'data' && entityKey === 'items' && panels.some(function(panel) { return nbhPanelControlKey(panel) === 'dataCollection'; })) {
+        score += 260;
+    }
+
+    if (firstPanel) {
+        score -= (firstPanel.order || 0) / 1000;
+    }
+
+    return score;
+}
+
 function nbhEntityHasPanelsForActiveTab(entityKey) {
     return nbhPanelsForTab(entityKey).length > 0;
 }
 
-function nbhFirstEntityForActiveTab() {
+function nbhPreferredEntityForActiveTab() {
     var resolved = nbhState.server && nbhState.server.resolved && nbhState.server.resolved.entities ? nbhState.server.resolved.entities : {};
     var entityKeys = Object.keys(resolved);
+    var bestKey = nbhState.selectedEntity;
+    var bestScore = -100001;
     var index;
+    var score;
 
     for (index = 0; index < entityKeys.length; index++) {
-        if (nbhEntityHasPanelsForActiveTab(entityKeys[index])) {
-            return entityKeys[index];
+        if (!nbhEntityHasPanelsForActiveTab(entityKeys[index])) {
+            continue;
+        }
+
+        score = nbhEntityPriorityForActiveTab(entityKeys[index]);
+        if (score > bestScore) {
+            bestScore = score;
+            bestKey = entityKeys[index];
         }
     }
 
-    return nbhState.selectedEntity;
+    return bestKey;
 }
 
-function nbhEnsureSelectionForActiveTab() {
-    var nextEntity;
+function nbhSelectionHintForEntity(entityKey) {
+    if (nbhState.activeTab === 'content' && entityKey === 'items') {
+        return 'Здесь начинается работа с повторяющимся списком элементов: добавление, импорт, сортировка и редактирование карточек.';
+    }
 
-    if (nbhEntityHasPanelsForActiveTab(nbhState.selectedEntity)) {
+    if (nbhState.activeTab === 'content') {
+        return 'Здесь редактируется одиночное наполнение выбранной сущности: текст, ссылка, медиа или другая отдельная часть блока.';
+    }
+
+    if (nbhState.activeTab === 'data' && entityKey === 'items') {
+        return 'Здесь настраиваются привязки коллекции и поведение карточек при работе с внешним источником данных.';
+    }
+
+    return 'Инспектор показал ближайшую сущность, для которой в этой вкладке действительно доступны настройки.';
+}
+
+function nbhSetAutoSelectionNotice(fromEntity, toEntity, mode) {
+    nbhState.autoSelectionNotice = {
+        tab: nbhState.activeTab,
+        mode: mode,
+        fromEntity: fromEntity || '',
+        toEntity: toEntity || ''
+    };
+}
+
+function nbhRenderAutoSelectionNotice() {
+    var notice = nbhState.autoSelectionNotice;
+    var toLabel;
+    var fromLabel;
+    var title;
+    var description;
+
+    if (!notice || !notice.toEntity) {
+        return '';
+    }
+
+    toLabel = nbhHumanEntity(notice.toEntity);
+    fromLabel = notice.fromEntity ? nbhHumanEntity(notice.fromEntity) : '';
+    title = notice.mode === 'primary'
+        ? 'Открыт основной сценарий вкладки «' + nbhTabLabel(notice.tab) + '»'
+        : 'Сущность переключена автоматически';
+
+    if (notice.mode === 'primary') {
+        description = 'Инспектор сразу показал «' + toLabel + '», потому что для этой вкладки это самый полезный стартовый сценарий редактирования.';
+    } else {
+        description = 'Для сущности «' + fromLabel + '» во вкладке «' + nbhTabLabel(notice.tab) + '» нет активных настроек, поэтому инспектор переключился на «' + toLabel + '».';
+    }
+
+    return '<div class="nbh-status-block nbh-status-block--auto">'
+        + '<div class="nbh-status-block__head">'
+        + '<span class="nbh-status-block__badge">Автовыбор</span>'
+        + '<div class="nbh-status-block__title">' + nbhEscapeHtml(title) + '</div>'
+        + '</div>'
+        + '<p>' + nbhEscapeHtml(description) + '</p>'
+        + '<div class="nbh-status-block__hint">' + nbhEscapeHtml(nbhSelectionHintForEntity(notice.toEntity)) + '</div>'
+        + '</div>';
+}
+
+function nbhShouldPreferPrimaryEntityOnTabEnter() {
+    return nbhState.activeTab === 'content';
+}
+
+function nbhEnsureSelectionForActiveTab(options) {
+    var settings = options || {};
+    var currentEntity = nbhState.selectedEntity;
+    var currentHasPanels = nbhEntityHasPanelsForActiveTab(currentEntity);
+    var nextEntity = nbhPreferredEntityForActiveTab();
+    var shouldPreferPrimary = !!settings.preferPrimary && nbhShouldPreferPrimaryEntityOnTabEnter();
+
+    if (currentHasPanels && (!shouldPreferPrimary || !nextEntity || nextEntity === currentEntity)) {
+        if (!settings.preserveNotice) {
+            nbhState.autoSelectionNotice = null;
+        }
         return false;
     }
 
-    nextEntity = nbhFirstEntityForActiveTab();
-    if (!nextEntity || nextEntity === nbhState.selectedEntity) {
+    if (!nextEntity || nextEntity === currentEntity) {
+        if (!settings.preserveNotice) {
+            nbhState.autoSelectionNotice = null;
+        }
         return false;
     }
 
     nbhState.selectedEntity = nextEntity;
+    nbhSetAutoSelectionNotice(currentEntity, nextEntity, currentHasPanels ? 'primary' : 'fallback');
     return true;
 }
 

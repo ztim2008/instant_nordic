@@ -56,23 +56,24 @@ function nbhRenderPanels() {
     var body = document.getElementById('nbh-panel-body');
     var groups;
     var activeKey;
+    var noticeHtml = nbhRenderAutoSelectionNotice();
 
     if (!panels.length) {
-        body.innerHTML = '<div class="nbh-empty">Для текущего блока и выбранной сущности в этой вкладке нет активных панелей.</div>';
+        body.innerHTML = noticeHtml + '<div class="nbh-empty">Для текущего блока и выбранной сущности в этой вкладке нет активных панелей.</div>';
         return;
     }
 
     groups = nbhPanelSectionGroups(panels);
     activeKey = nbhActiveAccordionKey(groups);
-    body.innerHTML = '<div class="nbh-accordion">' + groups.map(function(group) {
+    body.innerHTML = noticeHtml + '<div class="nbh-accordion">' + groups.map(function(group) {
         return nbhRenderAccordionGroup(group, activeKey);
     }).join('') + '</div>';
 }
 
 function nbhRender() {
     if (!nbhState.loaded) return;
-    nbhEnsureSelectionForActiveTab();
+    var selectionChanged = nbhEnsureSelectionForActiveTab({ preferPrimary: true });
     document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
     nbhRenderTabs();
-    nbhSelectEntity(nbhState.selectedEntity, false);
+    nbhSelectEntity(nbhState.selectedEntity, false, { preserveNotice: selectionChanged });
 }

@@ -230,6 +230,54 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     font-size: .8rem;
     line-height: 1.5;
 }
+.nbh-status-block {
+    border: 1px solid #fdba74;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%);
+    padding: .95rem 1rem;
+    color: #7c2d12;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+}
+.nbh-status-block__head {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    margin-bottom: .45rem;
+}
+.nbh-status-block__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 0 .55rem;
+    border-radius: 999px;
+    background: #ea580c;
+    color: #fff;
+    font-size: .66rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.nbh-status-block__title {
+    font-size: .8rem;
+    font-weight: 800;
+    color: #7c2d12;
+}
+.nbh-status-block p {
+    margin: 0;
+    font-size: .78rem;
+    line-height: 1.55;
+}
+.nbh-status-block__hint {
+    margin-top: .55rem;
+    padding: .55rem .7rem;
+    border-radius: 10px;
+    background: rgba(255,255,255,.55);
+    color: #9a3412;
+    font-size: .74rem;
+    font-weight: 700;
+}
 .nbh-section {
     border: 1px solid #e5edf5;
     border-radius: 14px;
@@ -360,6 +408,47 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 .nbh-input-row input {
     flex: 1 1 auto;
     min-width: 0;
+}
+.nbh-color-control {
+    display: flex;
+    align-items: stretch;
+    gap: .55rem;
+}
+.nbh-color-swatch {
+    position: relative;
+    flex: 0 0 52px;
+    width: 52px;
+    min-width: 52px;
+    height: 52px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    background: #fff;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+}
+.nbh-color-swatch input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+}
+.nbh-color-swatch__face {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #0f172a;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+}
+.nbh-color-code {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-transform: uppercase;
+    letter-spacing: .02em;
 }
 .nbh-picker-btn {
     flex: 0 0 auto;
@@ -610,6 +699,7 @@ var nbhState = {
     activeBreakpoint: 'desktop',
     dirty: false,
     saving: false,
+    autoSelectionNotice: null,
     queuedSave: false,
     queuedSilent: true,
     debounceTimer: null,
@@ -2288,6 +2378,44 @@ function nbhNormalizeColor(value, fallback) {
     return '#000000';
 }
 
+function nbhColorControlSelector(path) {
+    return '[data-color-control="' + String(path || '').replace(/"/g, '\\"') + '"]';
+}
+
+function nbhSyncColorControls(path, value) {
+    var normalized = nbhNormalizeColor(value, nbhGet(nbhState.draft, path, '#000000'));
+
+    document.querySelectorAll(nbhColorControlSelector(path)).forEach(function(control) {
+        var colorInput = control.querySelector('[data-color-path]');
+        var textInput = control.querySelector('[data-color-text]');
+        var swatchFace = control.querySelector('.nbh-color-swatch__face');
+
+        if (colorInput) {
+            colorInput.value = normalized;
+        }
+
+        if (textInput) {
+            textInput.value = normalized.toUpperCase();
+        }
+
+        if (swatchFace) {
+            swatchFace.style.background = normalized;
+        }
+    });
+
+    return normalized;
+}
+
+function nbhPreviewColorControl(path, value) {
+    var normalized = String(value == null ? '' : value).trim();
+
+    if (!/^#[0-9a-f]{3}$/i.test(normalized) && !/^#[0-9a-f]{6}$/i.test(normalized)) {
+        return null;
+    }
+
+    return nbhSyncColorControls(path, normalized);
+}
+
 function nbhCommitPathValue(path, value, forceRerender) {
     nbhSet(nbhState.draft, path, value);
     if (forceRerender || nbhShouldRerenderPanels(path)) {
@@ -2742,8 +2870,13 @@ function nbhSyncCanvasHeightFromFrame() {
     nbhApplyCanvasHeight(height);
 }
 
-function nbhSelectEntity(entityKey, fromCanvas) {
+function nbhSelectEntity(entityKey, fromCanvas, options) {
+    options = options || {};
+
     if (!entityKey) return;
+    if (!options.preserveNotice) {
+        nbhState.autoSelectionNotice = null;
+    }
     nbhState.selectedEntity = entityKey;
     var label = document.getElementById('nbhSelectionLabel');
     if (label) {

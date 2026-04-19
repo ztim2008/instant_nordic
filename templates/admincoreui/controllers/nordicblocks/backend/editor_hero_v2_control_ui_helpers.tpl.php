@@ -9,6 +9,18 @@ function nbhField(label, controlHtml) {
     return '<div class="nbh-field"><label>' + label + '</label>' + controlHtml + '</div>';
 }
 
+function nbhColorInput(path, value) {
+    var normalized = nbhNormalizeColor(value, '#000000');
+
+    return '<div class="nbh-color-control" data-color-control="' + nbhEscapeAttr(path) + '">'
+        + '<label class="nbh-color-swatch" title="Выбрать цвет">'
+        + '<input data-color-path="' + nbhEscapeAttr(path) + '" type="color" value="' + nbhEscapeAttr(normalized) + '">'
+        + '<span class="nbh-color-swatch__face" style="background:' + nbhEscapeAttr(normalized) + ';"></span>'
+        + '</label>'
+        + '<input class="nbh-color-code" data-path="' + nbhEscapeAttr(path) + '" data-color-text="1" type="text" value="' + nbhEscapeAttr(normalized.toUpperCase()) + '" spellcheck="false" autocapitalize="characters">'
+        + '</div>';
+}
+
 function nbhInput(path, options) {
     options = options || {};
     var fallback = Object.prototype.hasOwnProperty.call(options, 'fallback') ? options.fallback : '';
@@ -18,6 +30,7 @@ function nbhInput(path, options) {
     if (options.type) attrs += ' data-type="' + options.type + '"';
     if (inputType === 'color') {
         value = nbhNormalizeColor(value, fallback || '#000000');
+        return nbhColorInput(path, value);
     }
 
     var inputHtml = '<input ' + attrs + ' type="' + inputType + '" value="' + nbhEscapeAttr(value) + '">';

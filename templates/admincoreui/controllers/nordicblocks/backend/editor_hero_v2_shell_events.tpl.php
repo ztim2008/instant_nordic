@@ -13,12 +13,14 @@ document.getElementById('nbh-title-input').addEventListener('input', function() 
 
 document.getElementById('nbhTabs').addEventListener('click', function(event) {
     var target = event.target.closest('[data-tab]');
+    var selectionChanged;
+
     if (!target) return;
     nbhState.activeTab = target.dataset.tab;
-    nbhEnsureSelectionForActiveTab();
+    selectionChanged = nbhEnsureSelectionForActiveTab({ preferPrimary: true });
     nbhRenderTabs();
     document.getElementById('nbhEntityList').innerHTML = nbhEntityChipList();
-    nbhSelectEntity(nbhState.selectedEntity, true);
+    nbhSelectEntity(nbhState.selectedEntity, true, { preserveNotice: selectionChanged });
 });
 
 document.getElementById('nbhEntityList').addEventListener('click', function(event) {
@@ -29,15 +31,42 @@ document.getElementById('nbhEntityList').addEventListener('click', function(even
 
 document.getElementById('nbh-panel-body').addEventListener('input', function(event) {
     var target = event.target;
+    var path;
+    var value;
+
     if (target.closest('[data-breakpoint]')) return;
+    if (target.dataset.colorPath) {
+        path = target.dataset.colorPath;
+        value = nbhSyncColorControls(path, target.value);
+        nbhSet(nbhState.draft, path, value);
+        if (nbhShouldRerenderPanels(path)) {
+            nbhRenderPanels();
+        }
+        nbhMarkDirty();
+        nbhScheduleSave();
+        return;
+    }
+    if (target.dataset.colorText) {
+        path = target.dataset.path;
+        value = nbhPreviewColorControl(path, target.value);
+        if (value) {
+            nbhSet(nbhState.draft, path, value);
+            if (nbhShouldRerenderPanels(path)) {
+                nbhRenderPanels();
+            }
+            nbhMarkDirty();
+            nbhScheduleSave();
+        }
+        return;
+    }
     if (target.dataset.itemField) {
         nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
         return;
     }
-    var path = target.dataset.path;
+    path = target.dataset.path;
     if (!path) return;
 
-    var value = target.value;
+    value = target.value;
     if (target.dataset.type === 'number') {
         value = parseInt(value || '0', 10);
         if (isNaN(value)) value = 0;
@@ -53,21 +82,38 @@ document.getElementById('nbh-panel-body').addEventListener('input', function(eve
 
 document.getElementById('nbh-panel-body').addEventListener('change', function(event) {
     var breakpointTarget = event.target.closest('[data-breakpoint]');
+    var target = event.target;
+    var path;
+    var value;
+
     if (breakpointTarget) {
         nbhState.activeBreakpoint = breakpointTarget.dataset.breakpoint;
         nbhRenderPanels();
         return;
     }
 
-    var target = event.target;
+    if (target.dataset.colorPath) {
+        path = target.dataset.colorPath;
+        value = nbhSyncColorControls(path, target.value);
+        nbhCommitPathValue(path, value, false);
+        return;
+    }
+
+    if (target.dataset.colorText) {
+        path = target.dataset.path;
+        value = nbhSyncColorControls(path, target.value);
+        nbhCommitPathValue(path, value, false);
+        return;
+    }
+
     if (target.dataset.itemField) {
         nbhUpdateRepeaterItem(parseInt(target.dataset.itemIndex || '0', 10), target.dataset.itemField, target.value);
         return;
     }
-    var path = target.dataset.path;
+    path = target.dataset.path;
     if (!path) return;
 
-    var value = target.value;
+    value = target.value;
     if (target.dataset.type === 'number') {
         value = parseInt(value || '0', 10);
         if (isNaN(value)) value = 0;
