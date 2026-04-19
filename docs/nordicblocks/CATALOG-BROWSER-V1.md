@@ -656,3 +656,150 @@ Media modal является обязательной частью `catalog_brow
 Итоговое правило:
 
 первый проход должен собрать сильный landing-grade catalog block, но не превращать NordicBlocks в ecommerce engine.
+
+## 25. Текущий implementation snapshot
+
+Ниже фиксируется не новое ТЗ, а текущее рабочее состояние `catalog_browser` на 2026-04-19, чтобы пользователи и следующие агенты не восстанавливали картину по коммитам и smoke-логам.
+
+### 25.1 Где лежит source of truth
+
+Для этого блока канонически важны такие точки:
+
+1. runtime block directory: `system/controllers/nordicblocks/blocks/catalog_browser/`;
+2. package mirror block directory: `packages/nordicblocks/package/system/controllers/nordicblocks/blocks/catalog_browser/`;
+3. shared editor shell: `templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2.tpl.php`;
+4. package mirror editor shell: `packages/nordicblocks/package/templates/admincoreui/controllers/nordicblocks/backend/editor_hero_v2.tpl.php`;
+5. contract normalization: `system/controllers/nordicblocks/libs/BlockContractNormalizer.php`;
+6. rollout/checklist status: `docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json`.
+
+Практическое правило:
+
+если меняется UX редактора, contract карточки или import/export поток, сначала правим shared live template и runtime слой, затем синхронизируем package mirror.
+
+### 25.2 Что блок реально умеет сейчас
+
+На текущем этапе `catalog_browser` уже работает как production-grade блок первой волны, а не как черновой prototype.
+
+Подтверждённые возможности:
+
+1. SSR-first render с preview/live parity;
+2. toolbar поиска, category filter, price filter и sort controls;
+3. client-side long-list режимы `all`, `load_more`, `pagination`;
+4. media modal и gallery просмотр карточек;
+5. manual и `content_list` data modes;
+6. desktop/mobile grid настройки;
+7. unified inspector без legacy editor fallback;
+8. package mirror parity для runtime и editor shell.
+
+### 25.3 Канонический editor workflow
+
+Для пользователей и агентов важно считать каноническими именно эти сценарии редактирования.
+
+#### 25.3.1 Ручное редактирование карточек
+
+Если каталог небольшой или лендинговый, основной путь такой:
+
+1. открыть вкладку `Контент`;
+2. работать с сущностью `Список карточек`;
+3. редактировать repeater items прямо в unified inspector;
+4. использовать быстрые media controls рядом с карточкой;
+5. сохранять блок обычным editor flow без отдельного режима публикации.
+
+#### 25.3.2 JSON workflow
+
+JSON остаётся техническим, но поддерживаемым сценарием для power users и агентов.
+
+Сейчас доступны:
+
+1. `Демо JSON` для получения рабочего примера;
+2. `Экспорт JSON` для roundtrip текущих карточек;
+3. `Импорт JSON` для обратной загрузки;
+4. stable item ids и skip-on-reimport semantics.
+
+Это значит:
+
+если в импортируемом payload уже есть карточка с тем же стабильным ID, редактор пропускает дубликат, а не плодит копии.
+
+#### 25.3.3 Табличный режим
+
+Для не технических пользователей канонический сценарий теперь другой:
+
+1. открыть `Таблица` в topbar или кнопку `Открыть табличный режим` в панели повторов;
+2. увидеть spreadsheet-like grid editor, а не plain textarea;
+3. вставить диапазон из Excel или Google Sheets прямо в ячейки;
+4. проверить preview справа по строкам;
+5. импортировать только после проверки статусов `Импорт / Пропуск / Ошибка`.
+
+Текущие свойства этого режима:
+
+1. сетка поддерживает редактирование ячеек напрямую;
+2. Enter переводит фокус вниз по колонке;
+3. можно добавлять и удалять строки;
+4. вставка диапазона в первую ячейку заменяет таблицу целиком;
+5. preview справа показывает, сколько строк будет импортировано, пропущено или отбраковано.
+
+#### 25.3.4 Прямой импорт Excel
+
+Без промежуточного copy-paste поддержан прямой импорт настоящего файла `xlsx/xls`.
+
+Канонический сценарий:
+
+1. нажать `Импорт XLSX` в верхней панели или `Загрузить XLSX` в modal;
+2. выбрать файл Excel;
+3. дождаться загрузки первого листа в grid editor;
+4. проверить строки в preview;
+5. импортировать в карточки блока.
+
+Текущее ограничение этой версии:
+
+используется первый лист книги Excel; отдельный sheet-picker пока не входит в v1.
+
+### 25.4 Нормализация и import semantics
+
+Чтобы блок оставался предсказуемым при повторных загрузках, фиксируем текущие правила.
+
+1. каждая карточка получает стабильный `id/itemId/item_id`;
+2. повторный импорт не дублирует уже существующие карточки с тем же ID;
+3. при отсутствии ID он генерируется автоматически;
+4. JSON/XLSX/табличный import больше не подтягивает demo-default значения в пустые поля;
+5. import preview показывает строковые ошибки до фактического применения изменений.
+
+Практическое следствие:
+
+для операторов безопаснее повторно импортировать каталог с сохранёнными ID, чем удалять и собирать его заново.
+
+### 25.5 Поведение unified inspector
+
+На текущем этапе исправлены важные UX-особенности инспектора, которые нужно считать каноническими.
+
+1. вкладки `Контент / Дизайн / Макет / Данные` работают в одном shell и не должны вести на пустые панели;
+2. для `Контент` блок предпочитает сущность `items`, а не произвольную последнюю selection state;
+3. если editor автоматически выбрал полезную сущность, пользователь видит заметный explanatory notice;
+4. color controls показываются как реальные color swatches, а не как малозаметные текстовые inputs;
+5. media aspect ratio и object-fit доступны рядом с карточечными настройками как быстрые controls.
+
+### 25.6 Что рекомендовать пользователю, а что агенту
+
+Чтобы не путать workflows, фиксируем простое правило выбора режима.
+
+Для обычного пользователя рекомендовать:
+
+1. ручное редактирование в repeater для малого каталога;
+2. табличный режим для bulk-правок;
+3. прямой xlsx import для загрузки из Excel.
+
+Для агента рекомендовать:
+
+1. JSON export/import при массовом контрактном редактировании;
+2. табличный режим, если задача ближе к операторскому UX;
+3. проверку stable IDs перед повторным импортом.
+
+### 25.7 Что ещё не считать частью v1
+
+Несмотря на текущую зрелость, следующие ожидания пока не считаются реализованным каноном:
+
+1. выбор листа Excel из multi-sheet workbook;
+2. импорт настоящего `xlsx` в `content_list` mapping flow как отдельный источник данных;
+3. полноценная excel-like multi-cell selection мышью;
+4. backend faceting и remote pagination;
+5. ecommerce features уровня корзины и checkout.

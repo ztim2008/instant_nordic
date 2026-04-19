@@ -673,6 +673,19 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
 .nbh-catalog-table-modal__editor {
     border-right: 1px solid #edf2f7;
 }
+.nbh-catalog-table-modal__editor-help {
+    padding: 0 1rem .7rem;
+    color: #64748b;
+    font-size: .76rem;
+    line-height: 1.45;
+}
+.nbh-catalog-table-modal__editor-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .55rem;
+    padding: 0 1rem .8rem;
+}
 .nbh-catalog-table-modal__section-title {
     padding: .8rem 1rem .55rem;
     font-size: .73rem;
@@ -681,27 +694,99 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     text-transform: uppercase;
     letter-spacing: .08em;
 }
-.nbh-catalog-table-modal textarea {
+.nbh-catalog-table-grid-wrap {
     flex: 1 1 auto;
-    width: calc(100% - 2rem);
     margin: 0 1rem 1rem;
     min-height: 280px;
-    resize: none;
+    overflow: auto;
     border: 1px solid #d1d9e6;
     border-radius: 14px;
-    padding: .9rem 1rem;
-    font-size: .78rem;
-    line-height: 1.5;
-    font-family: Menlo, Monaco, Consolas, monospace;
-    color: #0f172a;
-    background: #f8fafc;
+    background: #fff;
     box-sizing: border-box;
 }
-.nbh-catalog-table-modal textarea:focus {
-    outline: none;
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+.nbh-catalog-table-grid {
+    min-width: max-content;
+}
+.nbh-catalog-table-grid table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: collapse;
+    font-size: .75rem;
+}
+.nbh-catalog-table-grid th,
+.nbh-catalog-table-grid td {
+    border-right: 1px solid #e5edf5;
+    border-bottom: 1px solid #e5edf5;
+    padding: 0;
+    vertical-align: top;
     background: #fff;
+}
+.nbh-catalog-table-grid th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
+    padding: .55rem .6rem;
+    text-align: left;
+    font-size: .68rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.nbh-catalog-table-grid__rownum,
+.nbh-catalog-table-grid__remove {
+    background: #f8fafc;
+    text-align: center;
+}
+.nbh-catalog-table-grid__rownum {
+    min-width: 44px;
+    padding: .55rem .35rem;
+    font-size: .7rem;
+    font-weight: 800;
+    color: #94a3b8;
+}
+.nbh-catalog-table-grid__remove {
+    min-width: 52px;
+}
+.nbh-catalog-table-grid__input {
+    display: block;
+    width: 100%;
+    min-width: 120px;
+    border: none;
+    padding: .62rem .68rem;
+    font-size: .76rem;
+    line-height: 1.4;
+    color: #0f172a;
+    background: transparent;
+    box-sizing: border-box;
+}
+.nbh-catalog-table-grid__input:focus {
+    outline: none;
+    background: #eff6ff;
+    box-shadow: inset 0 0 0 2px rgba(59,130,246,.25);
+}
+.nbh-catalog-table-grid__remove-btn {
+    width: 100%;
+    min-height: 40px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: .92rem;
+    cursor: pointer;
+}
+.nbh-catalog-table-grid__remove-btn:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+.nbh-catalog-table-modal__textarea-shadow {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 .nbh-catalog-table-preview {
     flex: 1 1 auto;
@@ -869,10 +954,12 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
         <div class="nbh-sep"></div>
         <?php if (($block['type'] ?? '') === 'catalog_browser'): ?>
         <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogTableBtn"><i class="fa fa-table"></i> Таблица</button>
+        <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogXlsxImportBtn"><i class="fa fa-file-excel-o"></i> Импорт XLSX</button>
         <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogDemoBtn"><i class="fa fa-download"></i> Демо JSON</button>
         <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogExportBtn"><i class="fa fa-file-code-o"></i> Экспорт JSON</button>
         <button type="button" class="nbh-btn nbh-btn--catalog" id="nbhCatalogImportBtn"><i class="fa fa-upload"></i> Импорт JSON</button>
         <input type="file" id="nbhCatalogImportInput" accept=".json,application/json" style="display:none;">
+        <input type="file" id="nbhCatalogXlsxImportInput" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" style="display:none;">
         <?php endif; ?>
         <a class="nbh-btn nbh-btn--ghost" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>"><i class="fa fa-thumb-tack"></i> Разместить</a>
         <button class="nbh-btn nbh-btn--save" id="nbhSaveBtn"><i class="fa fa-save"></i> Сохранить</button>
@@ -1976,8 +2063,44 @@ function nbhCatalogBaseItem() {
     };
 }
 
+function nbhCatalogImportBaseItem() {
+    return {
+        id: '',
+        itemId: '',
+        item_id: '',
+        category: '',
+        title: '',
+        excerpt: '',
+        text: '',
+        category_url: '',
+        categoryUrl: '',
+        badge: '',
+        price: '',
+        priceOld: '',
+        price_old: '',
+        currency: '',
+        availability: 'available',
+        tags: [],
+        cta_label: '',
+        ctaLabel: '',
+        cta_kind: 'url',
+        ctaKind: 'url',
+        cta_url: '',
+        ctaUrl: '',
+        messenger_type: 'none',
+        messengerType: 'none',
+        link_label: '',
+        linkLabel: '',
+        url: '',
+        image: '',
+        imageAlt: '',
+        alt: '',
+        gallery: []
+    };
+}
+
 function nbhNormalizeCatalogItem(item, options) {
-    var normalized = nbhCatalogBaseItem();
+    var normalized = options && options.emptyBase ? nbhCatalogImportBaseItem() : nbhCatalogBaseItem();
     var source = item && typeof item === 'object' && !Array.isArray(item) ? item : {};
     var usedIds = options && options.usedIds && typeof options.usedIds === 'object' ? options.usedIds : {};
     var seed = source.title || source.name || source.category || normalized.title;
@@ -2254,7 +2377,7 @@ function nbhImportCatalogPayload(payload) {
             return;
         }
 
-        normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds });
+        normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds, emptyBase: true });
         if (!incomingId) {
             stats.generatedIds += 1;
         }
@@ -2312,9 +2435,64 @@ function nbhImportCatalogFile(file) {
     reader.readAsText(file, 'utf-8');
 }
 
+var nbhCatalogXlsxLibraryPromise = null;
+
+function nbhCatalogXlsxAssetUrl() {
+    return '/static/nordicblocks/vendor/xlsx.full.min.js?v=20260419-1';
+}
+
+function nbhLoadCatalogXlsxLibrary() {
+    if (window.XLSX && typeof window.XLSX.read === 'function') {
+        return Promise.resolve(window.XLSX);
+    }
+
+    if (nbhCatalogXlsxLibraryPromise) {
+        return nbhCatalogXlsxLibraryPromise;
+    }
+
+    nbhCatalogXlsxLibraryPromise = new Promise(function(resolve, reject) {
+        var script = document.querySelector('script[data-nbh-xlsx-loader="1"]');
+
+        if (script) {
+            script.addEventListener('load', function() {
+                if (window.XLSX && typeof window.XLSX.read === 'function') {
+                    resolve(window.XLSX);
+                }
+            }, { once: true });
+            script.addEventListener('error', function() {
+                reject(new Error('Не удалось загрузить библиотеку XLSX.'));
+            }, { once: true });
+            return;
+        }
+
+        script = document.createElement('script');
+        script.src = nbhCatalogXlsxAssetUrl();
+        script.async = true;
+        script.dataset.nbhXlsxLoader = '1';
+        script.onload = function() {
+            if (window.XLSX && typeof window.XLSX.read === 'function') {
+                resolve(window.XLSX);
+                return;
+            }
+            reject(new Error('Библиотека XLSX загрузилась, но не инициализировалась.'));
+        };
+        script.onerror = function() {
+            reject(new Error('Не удалось загрузить библиотеку XLSX.'));
+        };
+        document.head.appendChild(script);
+    }).catch(function(error) {
+        nbhCatalogXlsxLibraryPromise = null;
+        throw error;
+    });
+
+    return nbhCatalogXlsxLibraryPromise;
+}
+
 var nbhCatalogTableState = {
     rawText: '',
-    parsed: null
+    parsed: null,
+    gridRows: [],
+    activeCell: { row: 0, col: 0 }
 };
 
 function nbhCatalogTableColumns() {
@@ -2417,6 +2595,121 @@ function nbhCatalogTableTextFromItems(items) {
     return lines.join('\n');
 }
 
+function nbhCatalogTableEmptyRow() {
+    var row = {};
+
+    nbhCatalogTableColumns().forEach(function(column) {
+        row[column.key] = '';
+    });
+
+    return row;
+}
+
+function nbhCatalogTableRowHasContent(row) {
+    return nbhCatalogTableColumns().some(function(column) {
+        return String(row && row[column.key] != null ? row[column.key] : '').trim() !== '';
+    });
+}
+
+function nbhCatalogTableEnsureRows(rows) {
+    var normalized = (Array.isArray(rows) ? rows : []).map(function(row) {
+        var item = nbhCatalogTableEmptyRow();
+
+        nbhCatalogTableColumns().forEach(function(column) {
+            item[column.key] = nbhCatalogTableCellValue(row && row[column.key] != null ? row[column.key] : '');
+        });
+
+        return item;
+    });
+
+    if (!normalized.length) {
+        normalized.push(nbhCatalogTableEmptyRow());
+    }
+
+    return normalized;
+}
+
+function nbhCatalogTableGridRowsFromParsed(parsed) {
+    var rows = (parsed && Array.isArray(parsed.rows) ? parsed.rows : []).map(function(rowInfo) {
+        var source = rowInfo && rowInfo.item && typeof rowInfo.item === 'object' ? rowInfo.item : {};
+        var row = nbhCatalogTableEmptyRow();
+
+        nbhCatalogTableColumns().forEach(function(column) {
+            row[column.key] = nbhCatalogTableCellValue(source[column.key]);
+        });
+
+        return row;
+    });
+
+    return nbhCatalogTableEnsureRows(rows);
+}
+
+function nbhCatalogTableTextFromGridRows(rows) {
+    var columns = nbhCatalogTableColumns();
+    var header = columns.map(function(column) { return column.label; }).join('\t');
+    var lines = [header];
+
+    nbhCatalogTableEnsureRows(rows).forEach(function(row) {
+        if (!nbhCatalogTableRowHasContent(row)) {
+            return;
+        }
+
+        lines.push(columns.map(function(column) {
+            return nbhCatalogTableCellValue(row[column.key]);
+        }).join('\t'));
+    });
+
+    return lines.join('\n');
+}
+
+function nbhCatalogTableMatrixFromText(text) {
+    return nbhCatalogTableSplitRows(text).filter(function(line, index, lines) {
+        return String(line).trim() !== '' || index < lines.length - 1;
+    }).map(function(line) {
+        return String(line == null ? '' : line).split('\t');
+    });
+}
+
+function nbhCatalogTableNormalizeMatrix(matrix) {
+    return (Array.isArray(matrix) ? matrix : []).map(function(row) {
+        var normalized = Array.isArray(row) ? row.slice() : [row];
+
+        while (normalized.length && String(normalized[normalized.length - 1] == null ? '' : normalized[normalized.length - 1]).trim() === '') {
+            normalized.pop();
+        }
+
+        return normalized.map(function(value) {
+            return nbhCatalogTableCellValue(value);
+        });
+    }).filter(function(row) {
+        return row.some(function(value) {
+            return String(value).trim() !== '';
+        });
+    });
+}
+
+function nbhCatalogTableTextFromMatrix(matrix) {
+    return nbhCatalogTableNormalizeMatrix(matrix).map(function(row) {
+        return row.join('\t');
+    }).join('\n');
+}
+
+function nbhCatalogTableColumnWidth(key) {
+    if (key === 'excerpt' || key === 'image' || key === 'url' || key === 'ctaUrl') {
+        return '240px';
+    }
+
+    if (key === 'title' || key === 'tags' || key === 'imageAlt') {
+        return '180px';
+    }
+
+    if (key === 'category' || key === 'price' || key === 'priceOld' || key === 'currency' || key === 'badge' || key === 'availability' || key === 'ctaLabel' || key === 'ctaKind' || key === 'messengerType' || key === 'id') {
+        return '130px';
+    }
+
+    return '150px';
+}
+
 function nbhCatalogTableSplitRows(text) {
     return String(text == null ? '' : text)
         .replace(/\r\n?/g, '\n')
@@ -2502,7 +2795,7 @@ function nbhCatalogTableParseText(text) {
             reason = 'Такой ID уже есть в каталоге.';
             stats.skipped += 1;
         } else {
-            normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds });
+            normalized = nbhNormalizeCatalogItem(rawItem, { usedIds: usedIds, emptyBase: true });
 
             if (!incomingId) {
                 stats.generatedIds += 1;
@@ -2601,6 +2894,7 @@ function nbhEnsureCatalogTableModal() {
         + '<div class="nbh-catalog-table-modal__toolbar">'
         + '<div class="nbh-catalog-table-modal__actions">'
         + '<button type="button" class="nbh-picker-btn" data-catalog-table-mode="current">Собрать из текущих карточек</button>'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-upload="1">Загрузить XLSX</button>'
         + '<button type="button" class="nbh-picker-btn" data-catalog-table-mode="demo">Заполнить примером</button>'
         + '<button type="button" class="nbh-picker-btn" data-catalog-table-copy="1">Скопировать таблицу</button>'
         + '<button type="button" class="nbh-picker-btn nbh-picker-btn--clear" data-catalog-table-clear="1">Очистить</button>'
@@ -2609,7 +2903,12 @@ function nbhEnsureCatalogTableModal() {
         + '<div class="nbh-catalog-table-modal__body">'
         + '<div class="nbh-catalog-table-modal__editor">'
         + '<div class="nbh-catalog-table-modal__section-title">Таблица</div>'
-        + '<textarea id="nbhCatalogTableTextarea" placeholder="ID	Категория	Заголовок	Описание	Цена\nchair-01	Стулья	Linen Chair	Мягкий стул...	18500"></textarea>'
+        + '<div class="nbh-catalog-table-modal__editor-help">Редактируйте карточки прямо в сетке, как в XLSX. Можно кликнуть в первую ячейку и вставить диапазон из Excel или Google Sheets.</div>'
+        + '<div class="nbh-catalog-table-modal__editor-actions">'
+        + '<button type="button" class="nbh-picker-btn" data-catalog-table-add-row="1">Добавить строку</button>'
+        + '</div>'
+        + '<div class="nbh-catalog-table-grid-wrap"><div class="nbh-catalog-table-grid" id="nbhCatalogTableGrid"></div></div>'
+        + '<textarea id="nbhCatalogTableTextarea" class="nbh-catalog-table-modal__textarea-shadow" placeholder="ID	Категория	Заголовок	Описание	Цена\nchair-01	Стулья	Linen Chair	Мягкий стул...	18500"></textarea>'
         + '</div>'
         + '<div class="nbh-catalog-table-modal__preview">'
         + '<div class="nbh-catalog-table-modal__section-title">Предпросмотр импорта</div>'
@@ -2648,19 +2947,222 @@ function nbhEnsureCatalogTableModal() {
             return;
         }
 
+        if (event.target.closest('[data-catalog-table-upload]')) {
+            nbhTriggerCatalogSpreadsheetInput();
+            return;
+        }
+
         if (event.target.closest('[data-catalog-table-clear]')) {
             nbhCatalogTableSetText('');
             return;
         }
+
+        if (event.target.closest('[data-catalog-table-add-row]')) {
+            nbhCatalogTableState.gridRows.push(nbhCatalogTableEmptyRow());
+            nbhCatalogTableRenderGrid();
+            nbhCatalogTableSyncFromGrid();
+            nbhCatalogTableFocusCell(nbhCatalogTableState.gridRows.length - 1, 0);
+            return;
+        }
+
+        if (event.target.closest('[data-catalog-table-remove-row]')) {
+            var removeIndex = parseInt(event.target.closest('[data-catalog-table-remove-row]').dataset.catalogTableRemoveRow || '0', 10);
+
+            nbhCatalogTableState.gridRows.splice(removeIndex, 1);
+            nbhCatalogTableState.gridRows = nbhCatalogTableEnsureRows(nbhCatalogTableState.gridRows);
+            nbhCatalogTableRenderGrid();
+            nbhCatalogTableSyncFromGrid();
+            nbhCatalogTableFocusCell(Math.max(0, removeIndex - 1), 0);
+            return;
+        }
     });
 
-    document.getElementById('nbhCatalogTableTextarea').addEventListener('input', function() {
-        nbhCatalogTableSetText(this.value, true);
+    document.getElementById('nbhCatalogTableGrid').addEventListener('input', function(event) {
+        var cell = event.target.closest('[data-catalog-table-cell]');
+        var rowIndex;
+        var key;
+
+        if (!cell) {
+            return;
+        }
+
+        rowIndex = parseInt(cell.dataset.row || '0', 10);
+        key = cell.dataset.key || '';
+
+        if (!nbhCatalogTableState.gridRows[rowIndex] || !key) {
+            return;
+        }
+
+        nbhCatalogTableState.gridRows[rowIndex][key] = cell.value;
+        nbhCatalogTableState.activeCell = {
+            row: rowIndex,
+            col: parseInt(cell.dataset.col || '0', 10)
+        };
+        nbhCatalogTableSyncFromGrid();
+    });
+
+    document.getElementById('nbhCatalogTableGrid').addEventListener('focusin', function(event) {
+        var cell = event.target.closest('[data-catalog-table-cell]');
+
+        if (!cell) {
+            return;
+        }
+
+        nbhCatalogTableState.activeCell = {
+            row: parseInt(cell.dataset.row || '0', 10),
+            col: parseInt(cell.dataset.col || '0', 10)
+        };
+    });
+
+    document.getElementById('nbhCatalogTableGrid').addEventListener('keydown', function(event) {
+        var cell = event.target.closest('[data-catalog-table-cell]');
+        var rowIndex;
+        var colIndex;
+
+        if (!cell || event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        rowIndex = parseInt(cell.dataset.row || '0', 10);
+        colIndex = parseInt(cell.dataset.col || '0', 10);
+
+        if (rowIndex >= nbhCatalogTableState.gridRows.length - 1) {
+            nbhCatalogTableState.gridRows.push(nbhCatalogTableEmptyRow());
+            nbhCatalogTableRenderGrid();
+            nbhCatalogTableSyncFromGrid();
+        }
+
+        nbhCatalogTableFocusCell(rowIndex + 1, colIndex);
+    });
+
+    document.getElementById('nbhCatalogTableGrid').addEventListener('paste', function(event) {
+        var cell = event.target.closest('[data-catalog-table-cell]');
+        var text = event.clipboardData ? event.clipboardData.getData('text/plain') : '';
+
+        if (!cell || !text || (text.indexOf('\t') === -1 && text.indexOf('\n') === -1)) {
+            return;
+        }
+
+        event.preventDefault();
+        nbhCatalogTableApplyMatrix(
+            text,
+            parseInt(cell.dataset.row || '0', 10),
+            parseInt(cell.dataset.col || '0', 10)
+        );
     });
 
     document.getElementById('nbhCatalogTableImportNowBtn').addEventListener('click', nbhCatalogTableImportCurrent);
 
     return modal;
+}
+
+function nbhCatalogTableRenderGrid() {
+    var host = document.getElementById('nbhCatalogTableGrid');
+    var columns = nbhCatalogTableColumns();
+    var rows;
+
+    if (!host) {
+        return;
+    }
+
+    nbhCatalogTableState.gridRows = nbhCatalogTableEnsureRows(nbhCatalogTableState.gridRows);
+    rows = nbhCatalogTableState.gridRows;
+
+    host.innerHTML = '<table><thead><tr><th class="nbh-catalog-table-grid__rownum">#</th>'
+        + columns.map(function(column) {
+            return '<th>' + nbhEscapeHtml(column.label) + '</th>';
+        }).join('')
+        + '<th class="nbh-catalog-table-grid__remove"></th></tr></thead><tbody>'
+        + rows.map(function(row, rowIndex) {
+            return '<tr><td class="nbh-catalog-table-grid__rownum">' + (rowIndex + 1) + '</td>'
+                + columns.map(function(column, colIndex) {
+                    return '<td><input type="text" class="nbh-catalog-table-grid__input" data-catalog-table-cell="1" data-row="' + rowIndex + '" data-col="' + colIndex + '" data-key="' + nbhEscapeHtml(column.key) + '" value="' + nbhEscapeHtml(row[column.key] || '') + '" style="min-width:' + nbhCatalogTableColumnWidth(column.key) + ';"></td>';
+                }).join('')
+                + '<td class="nbh-catalog-table-grid__remove">'
+                + (rows.length > 1 ? '<button type="button" class="nbh-catalog-table-grid__remove-btn" data-catalog-table-remove-row="' + rowIndex + '" title="Удалить строку">×</button>' : '')
+                + '</td></tr>';
+        }).join('')
+        + '</tbody></table>';
+}
+
+function nbhCatalogTableFocusCell(rowIndex, colIndex) {
+    var cell = document.querySelector('#nbhCatalogTableGrid [data-row="' + rowIndex + '"][data-col="' + colIndex + '"]');
+
+    if (!cell) {
+        return;
+    }
+
+    cell.focus();
+    if (typeof cell.select === 'function') {
+        cell.select();
+    }
+}
+
+function nbhCatalogTableSyncFromGrid() {
+    var textarea = document.getElementById('nbhCatalogTableTextarea');
+    var preview = document.getElementById('nbhCatalogTablePreview');
+
+    nbhCatalogTableState.gridRows = nbhCatalogTableEnsureRows(nbhCatalogTableState.gridRows);
+    nbhCatalogTableState.rawText = nbhCatalogTableTextFromGridRows(nbhCatalogTableState.gridRows);
+    nbhCatalogTableState.parsed = nbhCatalogTableParseText(nbhCatalogTableState.rawText);
+
+    if (textarea) {
+        textarea.value = nbhCatalogTableState.rawText;
+    }
+
+    if (preview) {
+        preview.innerHTML = nbhCatalogTablePreviewHtml(nbhCatalogTableState.parsed);
+    }
+
+    if (!nbhCatalogTableState.parsed.rows.length) {
+        nbhCatalogTableSetStatus('Вставьте строки из Excel или Google Sheets, чтобы увидеть предпросмотр.', '');
+    } else if (nbhCatalogTableState.parsed.stats.ready) {
+        nbhCatalogTableSetStatus('Готово к импорту: ' + nbhCatalogTableState.parsed.stats.ready + ' строк.', 'success');
+    } else {
+        nbhCatalogTableSetStatus('Импортировать пока нечего: проверьте ID и заполнение строк.', 'error');
+    }
+}
+
+function nbhCatalogTableApplyMatrix(text, startRow, startCol) {
+    var matrix = nbhCatalogTableMatrixFromText(text);
+    var columns = nbhCatalogTableColumns();
+
+    if (!matrix.length) {
+        return;
+    }
+
+    if (startRow === 0 && startCol === 0 && nbhCatalogTableHasHeader(matrix[0])) {
+        nbhCatalogTableSetText(text);
+        nbhCatalogTableFocusCell(0, 0);
+        return;
+    }
+
+    if (startRow === 0 && startCol === 0) {
+        nbhCatalogTableState.gridRows = [];
+    }
+
+    nbhCatalogTableState.gridRows = nbhCatalogTableEnsureRows(nbhCatalogTableState.gridRows);
+
+    matrix.forEach(function(cells, rowOffset) {
+        var targetRow = startRow + rowOffset;
+
+        while (!nbhCatalogTableState.gridRows[targetRow]) {
+            nbhCatalogTableState.gridRows.push(nbhCatalogTableEmptyRow());
+        }
+
+        cells.forEach(function(value, colOffset) {
+            var column = columns[startCol + colOffset];
+            if (!column) {
+                return;
+            }
+            nbhCatalogTableState.gridRows[targetRow][column.key] = String(value == null ? '' : value).trim();
+        });
+    });
+
+    nbhCatalogTableRenderGrid();
+    nbhCatalogTableSyncFromGrid();
+    nbhCatalogTableFocusCell(startRow, startCol);
 }
 
 function nbhCatalogTableSetStatus(text, kind) {
@@ -2680,10 +3182,13 @@ function nbhCatalogTableSetText(text, keepExistingTextareaValue) {
 
     nbhCatalogTableState.rawText = String(text == null ? '' : text);
     nbhCatalogTableState.parsed = nbhCatalogTableParseText(nbhCatalogTableState.rawText);
+    nbhCatalogTableState.gridRows = nbhCatalogTableGridRowsFromParsed(nbhCatalogTableState.parsed);
 
     if (textarea && !keepExistingTextareaValue) {
         textarea.value = nbhCatalogTableState.rawText;
     }
+
+    nbhCatalogTableRenderGrid();
 
     if (preview) {
         preview.innerHTML = nbhCatalogTablePreviewHtml(nbhCatalogTableState.parsed);
@@ -2730,6 +3235,86 @@ function nbhCatalogTableCopyText() {
     textarea.focus();
     textarea.select();
     nbhCatalogTableSetStatus('Автокопирование недоступно. Нажмите Ctrl+C.', 'error');
+}
+
+function nbhTriggerCatalogSpreadsheetInput() {
+    var input = document.getElementById('nbhCatalogXlsxImportInput');
+
+    if (input) {
+        input.click();
+    }
+}
+
+function nbhImportCatalogSpreadsheetFile(file) {
+    var modal;
+
+    if (!file) {
+        return;
+    }
+
+    modal = nbhEnsureCatalogTableModal();
+    modal.classList.add('is-open');
+    nbhCatalogTableSetStatus('Загружаю файл ' + file.name + '...', '');
+
+    nbhLoadCatalogXlsxLibrary().then(function(XLSX) {
+        return new Promise(function(resolve, reject) {
+            var reader = new FileReader();
+
+            reader.onerror = function() {
+                reject(new Error('Не удалось прочитать файл Excel.'));
+            };
+
+            reader.onload = function() {
+                var workbook;
+                var sheetName;
+                var sheet;
+                var matrix;
+                var text;
+
+                try {
+                    workbook = XLSX.read(reader.result, { type: 'array' });
+                    sheetName = workbook && workbook.SheetNames && workbook.SheetNames[0] ? workbook.SheetNames[0] : '';
+
+                    if (!sheetName) {
+                        reject(new Error('В Excel-файле не найдено ни одного листа.'));
+                        return;
+                    }
+
+                    sheet = workbook.Sheets[sheetName];
+                    matrix = XLSX.utils.sheet_to_json(sheet, {
+                        header: 1,
+                        raw: false,
+                        defval: '',
+                        blankrows: false
+                    });
+                    text = nbhCatalogTableTextFromMatrix(matrix);
+
+                    if (!text.trim()) {
+                        reject(new Error('Первый лист Excel-файла пустой.'));
+                        return;
+                    }
+
+                    resolve({
+                        sheetName: sheetName,
+                        text: text
+                    });
+                } catch (error) {
+                    reject(error instanceof Error ? error : new Error('Не удалось разобрать Excel-файл.'));
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    }).then(function(result) {
+        nbhCatalogTableSetText(result.text);
+        nbhCatalogTableSetStatus('Файл ' + file.name + ' загружен. Использован лист: ' + result.sheetName + '.', 'success');
+    }).catch(function(error) {
+        var message = error && error.message ? error.message : 'Не удалось импортировать Excel-файл.';
+        nbhCatalogTableSetStatus(message, 'error');
+        if (window.alert) {
+            window.alert(message);
+        }
+    });
 }
 
 function nbhOpenCatalogTableModal(mode) {
@@ -3711,6 +4296,12 @@ if (document.getElementById('nbhCatalogDemoBtn')) {
     document.getElementById('nbhCatalogDemoBtn').addEventListener('click', nbhDownloadCatalogDemo);
 }
 
+if (document.getElementById('nbhCatalogXlsxImportBtn')) {
+    document.getElementById('nbhCatalogXlsxImportBtn').addEventListener('click', function() {
+        nbhTriggerCatalogSpreadsheetInput();
+    });
+}
+
 if (document.getElementById('nbhCatalogExportBtn')) {
     document.getElementById('nbhCatalogExportBtn').addEventListener('click', nbhExportCatalogItems);
 }
@@ -3732,6 +4323,19 @@ if (document.getElementById('nbhCatalogImportInput')) {
         }
 
         nbhImportCatalogFile(file);
+        this.value = '';
+    });
+}
+
+if (document.getElementById('nbhCatalogXlsxImportInput')) {
+    document.getElementById('nbhCatalogXlsxImportInput').addEventListener('change', function() {
+        var file = this.files && this.files[0] ? this.files[0] : null;
+
+        if (!file) {
+            return;
+        }
+
+        nbhImportCatalogSpreadsheetFile(file);
         this.value = '';
     });
 }
