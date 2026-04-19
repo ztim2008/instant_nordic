@@ -2,12 +2,12 @@
 
 require_once dirname(__DIR__) . '/render_helpers.php';
 
-$nb_hero_panels_wide_contract = (isset($block_contract) && is_array($block_contract) && ((string) ($block_contract['meta']['blockType'] ?? '') === 'hero_panels_wide'))
+$nb_hero_panels_editorial_contract = (isset($block_contract) && is_array($block_contract) && ((string) ($block_contract['meta']['blockType'] ?? '') === 'hero_panels_editorial'))
     ? $block_contract
     : [];
 
-if (!function_exists('nb_hero_panels_wide_visible')) {
-    function nb_hero_panels_wide_visible($value, $default = true) {
+if (!function_exists('nb_hero_panels_editorial_visible')) {
+    function nb_hero_panels_editorial_visible($value, $default = true) {
         if ($value === null || $value === '') {
             return (bool) $default;
         }
@@ -20,8 +20,8 @@ if (!function_exists('nb_hero_panels_wide_visible')) {
     }
 }
 
-if (!function_exists('nb_hero_panels_wide_get')) {
-    function nb_hero_panels_wide_get(array $source, array $path, $default = null) {
+if (!function_exists('nb_hero_panels_editorial_get')) {
+    function nb_hero_panels_editorial_get(array $source, array $path, $default = null) {
         $cursor = $source;
         foreach ($path as $segment) {
             if (!is_array($cursor) || !array_key_exists($segment, $cursor)) {
@@ -34,8 +34,8 @@ if (!function_exists('nb_hero_panels_wide_get')) {
     }
 }
 
-if (!function_exists('nb_hero_panels_wide_prop_int')) {
-    function nb_hero_panels_wide_prop_int($value, $default, $min, $max) {
+if (!function_exists('nb_hero_panels_editorial_prop_int')) {
+    function nb_hero_panels_editorial_prop_int($value, $default, $min, $max) {
         if (!is_numeric($value)) {
             $value = $default;
         }
@@ -46,8 +46,8 @@ if (!function_exists('nb_hero_panels_wide_prop_int')) {
     }
 }
 
-if (!function_exists('nb_hero_panels_wide_paragraphs')) {
-    function nb_hero_panels_wide_paragraphs($value) {
+if (!function_exists('nb_hero_panels_editorial_paragraphs')) {
+    function nb_hero_panels_editorial_paragraphs($value) {
         $value = trim((string) $value);
         if ($value === '') {
             return '';
@@ -69,8 +69,8 @@ if (!function_exists('nb_hero_panels_wide_paragraphs')) {
     }
 }
 
-if (!function_exists('nb_hero_panels_wide_button_class')) {
-    function nb_hero_panels_wide_button_class($style) {
+if (!function_exists('nb_hero_panels_editorial_button_class')) {
+    function nb_hero_panels_editorial_button_class($style) {
         $style = strtolower(trim((string) $style));
 
         if ($style === 'primary') {
@@ -81,14 +81,14 @@ if (!function_exists('nb_hero_panels_wide_button_class')) {
     }
 }
 
-$content = is_array($nb_hero_panels_wide_contract['content'] ?? null) ? $nb_hero_panels_wide_contract['content'] : [];
-$design = is_array($nb_hero_panels_wide_contract['design'] ?? null) ? $nb_hero_panels_wide_contract['design'] : [];
+$content = is_array($nb_hero_panels_editorial_contract['content'] ?? null) ? $nb_hero_panels_editorial_contract['content'] : [];
+$design = is_array($nb_hero_panels_editorial_contract['design'] ?? null) ? $nb_hero_panels_editorial_contract['design'] : [];
 $entities = is_array($design['entities'] ?? null) ? $design['entities'] : [];
-$layout = is_array($nb_hero_panels_wide_contract['layout'] ?? null) ? $nb_hero_panels_wide_contract['layout'] : [];
-$runtime = is_array($nb_hero_panels_wide_contract['runtime'] ?? null) ? $nb_hero_panels_wide_contract['runtime'] : [];
+$layout = is_array($nb_hero_panels_editorial_contract['layout'] ?? null) ? $nb_hero_panels_editorial_contract['layout'] : [];
+$runtime = is_array($nb_hero_panels_editorial_contract['runtime'] ?? null) ? $nb_hero_panels_editorial_contract['runtime'] : [];
 
 $theme = in_array((string) ($design['section']['theme'] ?? 'light'), ['light', 'dark', 'accent'], true)
-    ? (string) $design['section']['theme']
+    ? (string) ($design['section']['theme'] ?? 'light')
     : 'light';
 $background_style = nb_block_build_background_style((array) ($design['section']['background'] ?? []));
 $reveal = nb_block_get_reveal_settings([
@@ -97,59 +97,57 @@ $reveal = nb_block_get_reveal_settings([
 ]);
 
 $eyebrow = htmlspecialchars(trim((string) ($content['eyebrow'] ?? '')), ENT_QUOTES, 'UTF-8');
-$title = trim((string) ($content['title'] ?? 'Hero: широкие панели'));
+$title = trim((string) ($content['title'] ?? 'Hero: editorial 12 колонок'));
 $title_html = $title !== '' ? nl2br(htmlspecialchars($title, ENT_QUOTES, 'UTF-8')) : '';
 $subtitle = trim((string) ($content['subtitle'] ?? ''));
 $subtitle_html = $subtitle !== '' ? htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8') : '';
-$body_html = nb_hero_panels_wide_paragraphs($content['body'] ?? '');
+$body_html = nb_hero_panels_editorial_paragraphs($content['body'] ?? '');
 
-$title_visible = nb_hero_panels_wide_visible($entities['title']['visible'] ?? true, true);
-$subtitle_visible = nb_hero_panels_wide_visible($entities['subtitle']['visible'] ?? true, true);
-$title_tag = htmlspecialchars((string) nb_hero_panels_wide_get($entities, ['title', 'tag'], 'h2'), ENT_QUOTES, 'UTF-8');
+$title_visible = nb_hero_panels_editorial_visible($entities['title']['visible'] ?? true, true);
+$subtitle_visible = nb_hero_panels_editorial_visible($entities['subtitle']['visible'] ?? true, true);
+$title_tag = htmlspecialchars((string) nb_hero_panels_editorial_get($entities, ['title', 'tag'], 'h2'), ENT_QUOTES, 'UTF-8');
 
-$title_weight = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['title', 'desktop', 'weight'], 800), 800, 400, 900);
-$title_size_desktop = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['title', 'desktop', 'fontSize'], 76), 76, 18, 180);
-$title_size_mobile = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['title', 'mobile', 'fontSize'], 42), 42, 16, 140);
+$title_weight = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['title', 'desktop', 'weight'], 800), 800, 400, 900);
+$title_size_desktop = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['title', 'desktop', 'fontSize'], 92), 92, 18, 180);
+$title_size_mobile = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['title', 'mobile', 'fontSize'], 50), 50, 16, 140);
 
-$eyebrow_size_desktop = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['eyebrow', 'desktop', 'fontSize'], 14), 14, 10, 40);
-$eyebrow_size_mobile = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['eyebrow', 'mobile', 'fontSize'], 13), 13, 10, 36);
-$eyebrow_weight = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['eyebrow', 'desktop', 'weight'], 700), 700, 400, 900);
-$eyebrow_color = trim((string) nb_hero_panels_wide_get($entities, ['eyebrow', 'desktop', 'color'], ''));
+$eyebrow_size_desktop = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['eyebrow', 'desktop', 'fontSize'], 14), 14, 10, 40);
+$eyebrow_size_mobile = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['eyebrow', 'mobile', 'fontSize'], 13), 13, 10, 36);
+$eyebrow_weight = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['eyebrow', 'desktop', 'weight'], 700), 700, 400, 900);
+$eyebrow_color = trim((string) nb_hero_panels_editorial_get($entities, ['eyebrow', 'desktop', 'color'], ''));
 
-$subtitle_size_desktop = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['subtitle', 'desktop', 'fontSize'], 14), 14, 10, 48);
-$subtitle_size_mobile = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['subtitle', 'mobile', 'fontSize'], 13), 13, 10, 40);
-$subtitle_weight = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['subtitle', 'desktop', 'weight'], 700), 700, 400, 900);
-$subtitle_color = trim((string) nb_hero_panels_wide_get($entities, ['subtitle', 'desktop', 'color'], ''));
+$subtitle_size_desktop = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['subtitle', 'desktop', 'fontSize'], 14), 14, 10, 48);
+$subtitle_size_mobile = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['subtitle', 'mobile', 'fontSize'], 13), 13, 10, 40);
+$subtitle_weight = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['subtitle', 'desktop', 'weight'], 700), 700, 400, 900);
+$subtitle_color = trim((string) nb_hero_panels_editorial_get($entities, ['subtitle', 'desktop', 'color'], ''));
 
-$body_size_desktop = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['body', 'desktop', 'fontSize'], 18), 18, 12, 56);
-$body_size_mobile = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['body', 'mobile', 'fontSize'], 17), 17, 12, 48);
-$body_weight = nb_hero_panels_wide_prop_int(nb_hero_panels_wide_get($entities, ['body', 'desktop', 'weight'], 400), 400, 400, 900);
-$body_color = trim((string) nb_hero_panels_wide_get($entities, ['body', 'desktop', 'color'], ''));
+$body_size_desktop = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['body', 'desktop', 'fontSize'], 16), 16, 12, 56);
+$body_size_mobile = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['body', 'mobile', 'fontSize'], 16), 16, 12, 48);
+$body_weight = nb_hero_panels_editorial_prop_int(nb_hero_panels_editorial_get($entities, ['body', 'desktop', 'weight'], 400), 400, 400, 900);
+$body_color = trim((string) nb_hero_panels_editorial_get($entities, ['body', 'desktop', 'color'], ''));
 
 $button_label = htmlspecialchars(trim((string) ($content['primaryButton']['label'] ?? '')), ENT_QUOTES, 'UTF-8');
 $button_url = htmlspecialchars(trim((string) ($content['primaryButton']['url'] ?? '#')), ENT_QUOTES, 'UTF-8');
-$button_style = nb_hero_panels_wide_button_class((string) nb_hero_panels_wide_get($entities, ['primaryButton', 'style'], 'outline'));
+$button_style = nb_hero_panels_editorial_button_class((string) nb_hero_panels_editorial_get($entities, ['primaryButton', 'style'], 'outline'));
 
 $image_data = nb_block_extract_media($content['media']['image'] ?? '', $content['media']['alt'] ?? '');
 $image = htmlspecialchars($image_data['display'], ENT_QUOTES, 'UTF-8');
 $image_alt = htmlspecialchars($image_data['alt'], ENT_QUOTES, 'UTF-8');
 
-$layout_preset = strtolower(trim((string) ($layout['preset'] ?? 'split-left')));
+$layout_preset = strtolower(trim((string) ($layout['preset'] ?? 'classic')));
 if (!in_array($layout_preset, ['classic', 'split-left', 'split-right', 'edge-left', 'edge-right', 'strip'], true)) {
-    $layout_preset = 'split-left';
+    $layout_preset = 'classic';
 }
 
-$desktop_media_position = strtolower(trim((string) ($layout['desktop']['mediaPosition'] ?? 'start')));
-if (!in_array($desktop_media_position, ['start', 'end'], true)) {
-    $desktop_media_position = 'start';
-}
-
-if (in_array($layout_preset, ['split-left', 'edge-left', 'classic'], true)) {
-    $desktop_media_position = 'start';
-}
-
-if (in_array($layout_preset, ['split-right', 'edge-right'], true)) {
-    $desktop_media_position = 'end';
+if (in_array($layout_preset, ['split-left', 'edge-left'], true)) {
+    $desktop_order = ['media' => 1, 'red' => 2, 'black' => 3];
+    $editorial_columns = 'minmax(0, 7fr) minmax(0, 3fr) minmax(0, 2fr)';
+} elseif (in_array($layout_preset, ['split-right', 'edge-right'], true)) {
+    $desktop_order = ['media' => 3, 'red' => 1, 'black' => 2];
+    $editorial_columns = 'minmax(0, 3fr) minmax(0, 2fr) minmax(0, 7fr)';
+} else {
+    $desktop_order = ['media' => 2, 'red' => 1, 'black' => 3];
+    $editorial_columns = 'minmax(0, 3fr) minmax(0, 7fr) minmax(0, 2fr)';
 }
 
 $mobile_media_position = strtolower(trim((string) ($layout['mobile']['mediaPosition'] ?? 'top')));
@@ -157,22 +155,19 @@ if (!in_array($mobile_media_position, ['top', 'bottom'], true)) {
     $mobile_media_position = 'top';
 }
 
-$desktop_order = $desktop_media_position === 'end'
-    ? ['media' => 3, 'red' => 1, 'black' => 2]
-    : ['media' => 1, 'red' => 2, 'black' => 3];
 $mobile_order = $mobile_media_position === 'bottom'
     ? ['media' => 3, 'red' => 1, 'black' => 2]
     : ['media' => 1, 'red' => 2, 'black' => 3];
 
-$content_width = nb_hero_panels_wide_prop_int($layout['desktop']['contentWidth'] ?? 1560, 1560, 960, 1800);
-$padding_top_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['paddingTop'] ?? 20, 20, 0, 220);
-$padding_bottom_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['paddingBottom'] ?? 20, 20, 0, 220);
-$padding_top_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['paddingTop'] ?? 12, 12, 0, 160);
-$padding_bottom_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['paddingBottom'] ?? 12, 12, 0, 160);
-$min_height_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['minHeight'] ?? 680, 680, 0, 1400);
-$min_height_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['minHeight'] ?? 0, 0, 0, 1200);
-$actions_gap_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['actionsGap'] ?? 12, 12, 0, 80);
-$actions_gap_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['actionsGap'] ?? 10, 10, 0, 80);
+$content_width = nb_hero_panels_editorial_prop_int($layout['desktop']['contentWidth'] ?? 1320, 1320, 960, 1680);
+$padding_top_desktop = nb_hero_panels_editorial_prop_int($layout['desktop']['paddingTop'] ?? 24, 24, 0, 220);
+$padding_bottom_desktop = nb_hero_panels_editorial_prop_int($layout['desktop']['paddingBottom'] ?? 24, 24, 0, 220);
+$padding_top_mobile = nb_hero_panels_editorial_prop_int($layout['mobile']['paddingTop'] ?? 12, 12, 0, 160);
+$padding_bottom_mobile = nb_hero_panels_editorial_prop_int($layout['mobile']['paddingBottom'] ?? 12, 12, 0, 160);
+$min_height_desktop = nb_hero_panels_editorial_prop_int($layout['desktop']['minHeight'] ?? 760, 760, 0, 1400);
+$min_height_mobile = nb_hero_panels_editorial_prop_int($layout['mobile']['minHeight'] ?? 0, 0, 0, 1200);
+$actions_gap_desktop = nb_hero_panels_editorial_prop_int($layout['desktop']['actionsGap'] ?? 12, 12, 0, 80);
+$actions_gap_mobile = nb_hero_panels_editorial_prop_int($layout['mobile']['actionsGap'] ?? 10, 10, 0, 80);
 
 if ($layout_preset === 'strip') {
     $padding_top_desktop = 0;
@@ -181,14 +176,9 @@ if ($layout_preset === 'strip') {
     $padding_bottom_mobile = 0;
 }
 
-$widths = $content_width >= 1500
-    ? ['media' => '45%', 'red' => '31%', 'black' => '24%']
-    : ['media' => '42%', 'red' => '33%', 'black' => '25%'];
-
-$section_modifiers = ['nb-hero-panels--managed'];
+$section_modifiers = ['nb-hero-panels--managed', 'nb-hero-panels--editorial'];
 if (in_array($layout_preset, ['edge-left', 'edge-right'], true)) {
     $section_modifiers[] = 'nb-hero-panels--edge';
-    $widths = ['media' => '54%', 'red' => '28%', 'black' => '18%'];
 }
 
 $section_style = '--nb-hero-panels-content-width:' . $content_width . 'px;';
@@ -198,11 +188,9 @@ $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding-bottom-mobile:' . $padding_bottom_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-min-height:' . $min_height_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-min-height-mobile:' . $min_height_mobile . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-media-width:' . $widths['media'] . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-red-width:' . $widths['red'] . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-black-width:' . $widths['black'] . ';');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-actions-gap:' . $actions_gap_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-actions-gap-mobile:' . $actions_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-editorial-columns:' . $editorial_columns . ';');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-title-size:' . $title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-title-size-mobile:' . $title_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-body-size:' . $body_size_desktop . 'px;');

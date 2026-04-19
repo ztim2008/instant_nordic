@@ -65,16 +65,27 @@ function nbhBuildLayoutControlRenderers() {
             }
 
             if (bp === 'desktop') {
+                var blockType = nbhBlockType();
+                var heroPresetOptions = (blockType === 'hero_panels_wide' || blockType === 'hero_panels_editorial')
+                    ? [
+                        { value: 'classic', label: 'Широкий baseline' },
+                        { value: 'split-left', label: 'Фото слева' },
+                        { value: 'split-right', label: 'Фото справа' },
+                        { value: 'edge-left', label: 'Full-bleed слева' },
+                        { value: 'edge-right', label: 'Full-bleed справа' },
+                        { value: 'strip', label: 'Без вертикальных отступов' }
+                    ]
+                    : (profile.presets || [
+                        { value: 'classic', label: 'Текст по центру' },
+                        { value: 'split-left', label: 'Фото слева' },
+                        { value: 'split-right', label: 'Фото справа' },
+                        { value: 'edge-left', label: 'Фото слева до края' },
+                        { value: 'edge-right', label: 'Фото справа до края' },
+                        { value: 'strip', label: 'Без вертикальных отступов' }
+                    ]);
                 return body + '<div class="nbh-grid-2">'
                     + (profile.kind === 'hero'
-                        ? nbhField('Hero preset', nbhSelect('layout.preset', profile.presets || [
-                            { value: 'classic', label: 'Текст по центру' },
-                            { value: 'split-left', label: 'Фото слева' },
-                            { value: 'split-right', label: 'Фото справа' },
-                            { value: 'edge-left', label: 'Фото слева до края' },
-                            { value: 'edge-right', label: 'Фото справа до края' },
-                            { value: 'strip', label: 'Без вертикальных отступов' }
-                        ], profile.layoutPreset || 'classic'))
+                        ? nbhField('Hero preset', nbhSelect('layout.preset', heroPresetOptions, profile.layoutPreset || 'classic'))
                         : '')
                     + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
                     + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))

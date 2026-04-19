@@ -12,6 +12,9 @@ function nbhBuildContentControlRenderers() {
                 return nbhField('Отображение', nbhSelect('design.entities.subtitle.visible', nbhYesNoOptions(), '1'))
                     + nbhField('Текст', nbhTextarea('content.subtitle', ''));
             }
+            if (panel.entityScope === 'body') {
+                return nbhField('Текст', nbhTextarea('content.body', ''));
+            }
             return '<div class="nbh-note">Для сущности ' + panel.entityScope + ' пока не подключена отдельная контентная панель.</div>';
         },
         'button-content-panel': function() {

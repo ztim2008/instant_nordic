@@ -134,24 +134,75 @@ $image_data = nb_block_extract_media($content['media']['image'] ?? '', $content[
 $image = htmlspecialchars($image_data['display'], ENT_QUOTES, 'UTF-8');
 $image_alt = htmlspecialchars($image_data['alt'], ENT_QUOTES, 'UTF-8');
 
+$layout_preset = strtolower(trim((string) ($layout['preset'] ?? 'split-left')));
+if (!in_array($layout_preset, ['classic', 'split-left', 'split-right', 'edge-left', 'edge-right', 'strip'], true)) {
+    $layout_preset = 'split-left';
+}
+
+$desktop_media_position = strtolower(trim((string) ($layout['desktop']['mediaPosition'] ?? 'start')));
+if (!in_array($desktop_media_position, ['start', 'end'], true)) {
+    $desktop_media_position = 'start';
+}
+
+if (in_array($layout_preset, ['split-left', 'edge-left', 'classic'], true)) {
+    $desktop_media_position = 'start';
+}
+
+if (in_array($layout_preset, ['split-right', 'edge-right'], true)) {
+    $desktop_media_position = 'end';
+}
+
+$mobile_media_position = strtolower(trim((string) ($layout['mobile']['mediaPosition'] ?? 'top')));
+if (!in_array($mobile_media_position, ['top', 'bottom'], true)) {
+    $mobile_media_position = 'top';
+}
+
+$desktop_order = $desktop_media_position === 'end'
+    ? ['media' => 3, 'red' => 1, 'black' => 2]
+    : ['media' => 1, 'red' => 2, 'black' => 3];
+$mobile_order = $mobile_media_position === 'bottom'
+    ? ['media' => 3, 'red' => 1, 'black' => 2]
+    : ['media' => 1, 'red' => 2, 'black' => 3];
+
 $content_width = nb_hero_panels_wide_prop_int($layout['desktop']['contentWidth'] ?? 1560, 1560, 960, 1800);
 $padding_top_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['paddingTop'] ?? 20, 20, 0, 220);
 $padding_bottom_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['paddingBottom'] ?? 20, 20, 0, 220);
 $padding_top_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['paddingTop'] ?? 12, 12, 0, 160);
 $padding_bottom_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['paddingBottom'] ?? 12, 12, 0, 160);
-$media_width = $content_width >= 1500 ? '45%' : '42%';
-$red_width = $content_width >= 1500 ? '31%' : '33%';
-$black_width = $content_width >= 1500 ? '24%' : '25%';
+$min_height_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['minHeight'] ?? 680, 680, 0, 1400);
+$min_height_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['minHeight'] ?? 0, 0, 0, 1200);
+$actions_gap_desktop = nb_hero_panels_wide_prop_int($layout['desktop']['actionsGap'] ?? 12, 12, 0, 80);
+$actions_gap_mobile = nb_hero_panels_wide_prop_int($layout['mobile']['actionsGap'] ?? 10, 10, 0, 80);
+
+if ($layout_preset === 'strip') {
+    $padding_top_desktop = 0;
+    $padding_bottom_desktop = 0;
+    $padding_top_mobile = 0;
+    $padding_bottom_mobile = 0;
+}
+
+$widths = $content_width >= 1500
+    ? ['media' => '45%', 'red' => '31%', 'black' => '24%']
+    : ['media' => '42%', 'red' => '33%', 'black' => '25%'];
+
+$section_modifiers = ['nb-hero-panels--managed'];
+if (in_array($layout_preset, ['edge-left', 'edge-right'], true)) {
+    $section_modifiers[] = 'nb-hero-panels--edge';
+    $widths = ['media' => '54%', 'red' => '28%', 'black' => '18%'];
+}
 
 $section_style = '--nb-hero-panels-content-width:' . $content_width . 'px;';
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding-top:' . $padding_top_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding-bottom:' . $padding_bottom_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding-top-mobile:' . $padding_top_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-padding-bottom-mobile:' . $padding_bottom_mobile . 'px;');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-min-height:680px;');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-media-width:' . $media_width . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-red-width:' . $red_width . ';');
-$section_style = nb_block_append_style($section_style, '--nb-hero-panels-black-width:' . $black_width . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-min-height:' . $min_height_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-min-height-mobile:' . $min_height_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-media-width:' . $widths['media'] . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-red-width:' . $widths['red'] . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-black-width:' . $widths['black'] . ';');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-actions-gap:' . $actions_gap_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-hero-panels-actions-gap-mobile:' . $actions_gap_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-title-size:' . $title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-title-size-mobile:' . $title_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-hero-panels-body-size:' . $body_size_desktop . 'px;');
@@ -178,13 +229,13 @@ if ($body_color !== '') {
 }
 ?>
 <section
-    class="nb-section nb-hero-panels nb-hero-panels--managed nb-hero-panels--<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?><?= $reveal['class'] ?>"
+    class="nb-section nb-hero-panels <?= htmlspecialchars(implode(' ', $section_modifiers), ENT_QUOTES, 'UTF-8') ?> nb-hero-panels--<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?><?= $reveal['class'] ?>"
     id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>"
     <?= $section_style ? ' style="' . htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
 >
     <div class="nb-container">
         <div class="nb-hero-panels__rail">
-            <div class="nb-hero-panels__media" style="--nb-hero-panels-order:1;--nb-hero-panels-order-mobile:1">
+            <div class="nb-hero-panels__media" style="--nb-hero-panels-order:<?= (int) $desktop_order['media'] ?>;--nb-hero-panels-order-mobile:<?= (int) $mobile_order['media'] ?>">
                 <?php if ($image !== '') { ?>
                     <img src="<?= $image ?>" alt="<?= $image_alt ?>" class="nb-hero-panels__image" loading="lazy" decoding="async">
                 <?php } else { ?>
@@ -192,7 +243,7 @@ if ($body_color !== '') {
                 <?php } ?>
             </div>
 
-            <div class="nb-hero-panels__panel nb-hero-panels__panel--red" style="--nb-hero-panels-order:2;--nb-hero-panels-order-mobile:2">
+            <div class="nb-hero-panels__panel nb-hero-panels__panel--red" style="--nb-hero-panels-order:<?= (int) $desktop_order['red'] ?>;--nb-hero-panels-order-mobile:<?= (int) $mobile_order['red'] ?>">
                 <?php if ($eyebrow !== '') { ?>
                     <div class="nb-hero-panels__kicker" style="<?= htmlspecialchars($eyebrow_style, ENT_QUOTES, 'UTF-8') ?>"><?= $eyebrow ?></div>
                 <?php } ?>
@@ -212,7 +263,7 @@ if ($body_color !== '') {
                 <?php } ?>
             </div>
 
-            <div class="nb-hero-panels__panel nb-hero-panels__panel--dark" style="--nb-hero-panels-order:3;--nb-hero-panels-order-mobile:3">
+            <div class="nb-hero-panels__panel nb-hero-panels__panel--dark" style="--nb-hero-panels-order:<?= (int) $desktop_order['black'] ?>;--nb-hero-panels-order-mobile:<?= (int) $mobile_order['black'] ?>">
                 <?php if ($body_html !== '') { ?>
                     <div class="nb-hero-panels__body" style="<?= htmlspecialchars($body_style, ENT_QUOTES, 'UTF-8') ?>"><?= $body_html ?></div>
                 <?php } ?>
