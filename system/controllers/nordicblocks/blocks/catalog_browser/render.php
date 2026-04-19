@@ -2,6 +2,10 @@
 
 require_once dirname(__DIR__) . '/render_helpers.php';
 
+$catalog_contract = (isset($block_contract) && is_array($block_contract) && (($block_contract['meta']['blockType'] ?? '') === 'catalog_browser'))
+    ? $block_contract
+    : null;
+
 if (!function_exists('nb_catalog_browser_visible')) {
     function nb_catalog_browser_visible($value, $default = true) {
         if ($value === null) {
@@ -13,6 +17,58 @@ if (!function_exists('nb_catalog_browser_visible')) {
         }
 
         return in_array(strtolower(trim((string) $value)), ['1', 'true', 'yes', 'on'], true);
+    }
+}
+
+if (!function_exists('nb_catalog_browser_prop_int')) {
+    function nb_catalog_browser_prop_int(array $props, $key, $default, $min, $max) {
+        $value = $props[$key] ?? $default;
+        if (!is_numeric($value)) {
+            $value = $default;
+        }
+
+        $value = (int) round($value);
+        if ($value < $min) {
+            $value = $min;
+        }
+        if ($value > $max) {
+            $value = $max;
+        }
+
+        return $value;
+    }
+}
+
+if (!function_exists('nb_catalog_browser_prop_value')) {
+    function nb_catalog_browser_prop_value(array $props, array $keys, $default = null) {
+        foreach ($keys as $key) {
+            if ($key !== '' && array_key_exists($key, $props) && $props[$key] !== '' && $props[$key] !== null) {
+                return $props[$key];
+            }
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('nb_catalog_browser_entity_value')) {
+    function nb_catalog_browser_entity_value(array $entity, $branch, $key, $default = null) {
+        if (isset($entity[$branch]) && is_array($entity[$branch]) && array_key_exists($key, $entity[$branch]) && $entity[$branch][$key] !== '' && $entity[$branch][$key] !== null) {
+            return $entity[$branch][$key];
+        }
+
+        if (array_key_exists($key, $entity) && $entity[$key] !== '' && $entity[$key] !== null) {
+            return $entity[$key];
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('nb_catalog_browser_shadow_css')) {
+    function nb_catalog_browser_shadow_css($token, $default = 'md') {
+        $token = in_array($token, ['none', 'sm', 'md', 'lg'], true) ? $token : $default;
+        return $token === 'none' ? 'none' : 'var(--nb-shadow-' . $token . ', none)';
     }
 }
 
@@ -119,21 +175,98 @@ if (!function_exists('nb_catalog_browser_build_search_text')) {
     }
 }
 
+if (!function_exists('nb_catalog_browser_availability_label')) {
+    function nb_catalog_browser_availability_label($value) {
+        $value = trim((string) $value);
+        $map = [
+            'available' => 'Доступно',
+            'limited' => 'Ограничено',
+            'on_request' => 'По запросу',
+            'hidden' => '',
+        ];
+
+        if (array_key_exists($value, $map)) {
+            return $map[$value];
+        }
+
+        return $value;
+    }
+}
+
+if (!function_exists('nb_catalog_browser_build_cta_payload')) {
+    function nb_catalog_browser_build_cta_payload($cta_kind, $cta_url, $fallback_url, $messenger_type = 'none') {
+        $kind = trim((string) $cta_kind);
+        $kind = in_array($kind, ['url', 'whatsapp', 'telegram', 'phone', 'none'], true) ? $kind : 'url';
+        $value = trim((string) $cta_url);
+        $fallback = trim((string) $fallback_url);
+        $messenger_type = trim((string) $messenger_type);
+
+        if ($kind === 'url' && $value === '' && in_array($messenger_type, ['whatsapp', 'telegram'], true)) {
+            $kind = $messenger_type;
+        }
+
+        if ($kind === 'none') {
+            return ['href' => '', 'target' => '', 'rel' => '', 'kind' => $kind];
+        }
+
+        if ($kind === 'url') {
+            $href = $value !== '' ? $value : $fallback;
+            return ['href' => $href, 'target' => '', 'rel' => '', 'kind' => $kind];
+        }
+
+        if ($kind === 'phone') {
+            $phone = preg_replace('/[^0-9\+]/', '', $value !== '' ? $value : $fallback);
+            return ['href' => $phone !== '' ? 'tel:' . $phone : '', 'target' => '', 'rel' => '', 'kind' => $kind];
+        }
+
+        if ($kind === 'whatsapp') {
+            $phone = preg_replace('/[^0-9]/', '', $value !== '' ? $value : $fallback);
+            $href = '';
+            if ($phone !== '') {
+                $href = 'https://wa.me/' . $phone;
+            } elseif (preg_match('~^https?://~i', $value)) {
+                $href = $value;
+            }
+
+            return ['href' => $href, 'target' => '_blank', 'rel' => 'noopener noreferrer', 'kind' => $kind];
+        }
+
+        if ($kind === 'telegram') {
+            $href = '';
+            $candidate = $value !== '' ? $value : $fallback;
+            if (preg_match('~^https?://~i', $candidate)) {
+                $href = $candidate;
+            } else {
+                $handle = ltrim($candidate, '@/');
+                if ($handle !== '') {
+                    $href = 'https://t.me/' . $handle;
+                }
+            }
+
+            return ['href' => $href, 'target' => '_blank', 'rel' => 'noopener noreferrer', 'kind' => $kind];
+        }
+
+        return ['href' => '', 'target' => '', 'rel' => '', 'kind' => 'none'];
+    }
+}
+
 if (!function_exists('nb_catalog_browser_normalize_item')) {
     function nb_catalog_browser_normalize_item(array $item) {
         $title = trim((string) ($item['title'] ?? ''));
-        $excerpt = trim((string) ($item['excerpt'] ?? ''));
+        $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
         $category = trim((string) ($item['category'] ?? ''));
         $category_url = trim((string) ($item['categoryUrl'] ?? ($item['category_url'] ?? '')));
         $url = trim((string) ($item['url'] ?? ''));
         $cta_label = trim((string) ($item['ctaLabel'] ?? ($item['cta_label'] ?? '')));
         $cta_kind = trim((string) ($item['ctaKind'] ?? ($item['cta_kind'] ?? 'url')));
         $cta_url = trim((string) ($item['ctaUrl'] ?? ($item['cta_url'] ?? '')));
+        $messenger_type = trim((string) ($item['messengerType'] ?? ($item['messenger_type'] ?? 'none')));
         $price = trim((string) ($item['price'] ?? ''));
         $price_old = trim((string) ($item['priceOld'] ?? ($item['price_old'] ?? '')));
         $currency = trim((string) ($item['currency'] ?? ''));
         $badge = trim((string) ($item['badge'] ?? ''));
-        $availability = trim((string) ($item['availability'] ?? ''));
+        $availability_value = trim((string) ($item['availability'] ?? ''));
+        $availability = nb_catalog_browser_availability_label($availability_value);
         $tags_value = $item['tags'] ?? '';
         if (is_array($tags_value)) {
             $tags_value = implode(', ', array_filter(array_map('trim', $tags_value)));
@@ -143,10 +276,13 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
         $image_src = (string) ($media['display'] ?: $media['original']);
         $image_alt = (string) ($media['alt'] ?: $title);
         $gallery = nb_catalog_browser_normalize_gallery($item['gallery'] ?? [], $image_src, $image_alt);
+        $cta = nb_catalog_browser_build_cta_payload($cta_kind, $cta_url, $url, $messenger_type);
 
         if ($title === '' && $excerpt === '' && $category === '' && $badge === '' && $price === '' && $image_src === '') {
             return null;
         }
+
+        $normalized_price = nb_catalog_browser_normalize_price($price, $currency);
 
         return [
             'category' => htmlspecialchars($category, ENT_QUOTES, 'UTF-8'),
@@ -156,9 +292,10 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
             'excerpt' => nl2br(htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8')),
             'url' => htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
             'ctaLabel' => htmlspecialchars($cta_label, ENT_QUOTES, 'UTF-8'),
-            'ctaKind' => htmlspecialchars($cta_kind, ENT_QUOTES, 'UTF-8'),
-            'ctaUrl' => htmlspecialchars($cta_url, ENT_QUOTES, 'UTF-8'),
-            'price' => htmlspecialchars(nb_catalog_browser_normalize_price($price, $currency), ENT_QUOTES, 'UTF-8'),
+            'ctaHref' => htmlspecialchars((string) ($cta['href'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'ctaTarget' => htmlspecialchars((string) ($cta['target'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'ctaRel' => htmlspecialchars((string) ($cta['rel'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'price' => htmlspecialchars($normalized_price, ENT_QUOTES, 'UTF-8'),
             'priceOld' => htmlspecialchars(nb_catalog_browser_normalize_price($price_old, $currency), ENT_QUOTES, 'UTF-8'),
             'priceValue' => nb_catalog_browser_price_value($price),
             'badge' => htmlspecialchars($badge, ENT_QUOTES, 'UTF-8'),
@@ -172,7 +309,7 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
                 'category' => mb_strtolower($category, 'UTF-8'),
                 'badge' => mb_strtolower($badge, 'UTF-8'),
                 'tags' => mb_strtolower($tags, 'UTF-8'),
-                'price' => mb_strtolower(nb_catalog_browser_normalize_price($price, $currency), 'UTF-8'),
+                'price' => mb_strtolower($normalized_price, 'UTF-8'),
                 'availability' => mb_strtolower($availability, 'UTF-8'),
             ],
         ];
@@ -180,56 +317,393 @@ if (!function_exists('nb_catalog_browser_normalize_item')) {
 }
 
 $props = (array) ($props ?? []);
-$heading = trim((string) ($props['heading'] ?? 'Каталог'));
-$intro = trim((string) ($props['intro'] ?? ''));
-$theme = trim((string) ($props['theme'] ?? 'light')) ?: 'light';
-$align = trim((string) ($props['align'] ?? 'left')) ?: 'left';
-$section_link_label = trim((string) ($props['section_link_label'] ?? ''));
-$section_link_url = trim((string) ($props['section_link_url'] ?? ''));
-$show_search = nb_catalog_browser_visible($props['show_search'] ?? '1', true);
-$show_category_filter = nb_catalog_browser_visible($props['show_category_filter'] ?? '1', true);
-$show_price_filter = nb_catalog_browser_visible($props['show_price_filter'] ?? '1', true);
-$show_sort = nb_catalog_browser_visible($props['show_sort'] ?? '1', true);
-$show_active_filters = nb_catalog_browser_visible($props['show_active_filters'] ?? '1', true);
-$show_image = nb_catalog_browser_visible($props['show_image'] ?? '1', true);
-$show_category = nb_catalog_browser_visible($props['show_category'] ?? '1', true);
-$show_badge = nb_catalog_browser_visible($props['show_badge'] ?? '1', true);
-$show_price = nb_catalog_browser_visible($props['show_price'] ?? '1', true);
-$show_old_price = nb_catalog_browser_visible($props['show_old_price'] ?? '1', true);
-$show_excerpt = nb_catalog_browser_visible($props['show_excerpt'] ?? '1', true);
-$show_cta = nb_catalog_browser_visible($props['show_cta'] ?? '1', true);
-$collection_mode = trim((string) ($props['collection_mode'] ?? 'all'));
-if (!in_array($collection_mode, ['all', 'load_more', 'pagination'], true)) {
-    $collection_mode = 'all';
+
+if ($catalog_contract) {
+    $theme = in_array($catalog_contract['design']['section']['theme'] ?? 'light', ['light', 'alt', 'dark'], true)
+        ? (string) ($catalog_contract['design']['section']['theme'] ?? 'light')
+        : 'light';
+    $align = in_array($catalog_contract['layout']['desktop']['align'] ?? 'left', ['left', 'center'], true)
+        ? (string) ($catalog_contract['layout']['desktop']['align'] ?? 'left')
+        : 'left';
+    $background_mode = (string) ($catalog_contract['design']['section']['background']['mode'] ?? 'theme');
+    $background_style = nb_block_build_background_style((array) ($catalog_contract['design']['section']['background'] ?? []));
+    $reveal = nb_block_get_reveal_settings([
+        'block_animation' => (string) ($catalog_contract['runtime']['animation']['name'] ?? 'none'),
+        'block_animation_delay' => (int) ($catalog_contract['runtime']['animation']['delay'] ?? 0),
+    ]);
+
+    $heading = trim((string) ($catalog_contract['content']['title'] ?? 'Каталог'));
+    $intro = trim((string) ($catalog_contract['content']['subtitle'] ?? ''));
+    $section_link_label = trim((string) ($catalog_contract['content']['primaryButton']['label'] ?? ''));
+    $section_link_url = trim((string) ($catalog_contract['content']['primaryButton']['url'] ?? ''));
+    $items_source = is_array($catalog_contract['content']['items'] ?? null) ? $catalog_contract['content']['items'] : [];
+
+    $title_visible = !array_key_exists('visible', (array) ($catalog_contract['design']['entities']['title'] ?? [])) || !empty($catalog_contract['design']['entities']['title']['visible']);
+    $subtitle_visible = !array_key_exists('visible', (array) ($catalog_contract['design']['entities']['subtitle'] ?? [])) || !empty($catalog_contract['design']['entities']['subtitle']['visible']);
+    $show_section_link = !array_key_exists('moreLink', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['moreLink']);
+    $show_search = !array_key_exists('search', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['search']);
+    $show_category_filter = !array_key_exists('categoryFilter', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['categoryFilter']);
+    $show_price_filter = !array_key_exists('priceFilter', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['priceFilter']);
+    $show_sort = !array_key_exists('sort', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['sort']);
+    $show_active_filters = !array_key_exists('activeFilters', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['activeFilters']);
+    $show_image = !array_key_exists('image', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['image']);
+    $show_category = !array_key_exists('category', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['category']);
+    $show_badge = !array_key_exists('badge', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['badge']);
+    $show_price = !array_key_exists('price', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['price']);
+    $show_old_price = !array_key_exists('oldPrice', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['oldPrice']);
+    $show_excerpt = !array_key_exists('excerpt', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['excerpt']);
+    $show_cta = !array_key_exists('cta', (array) ($catalog_contract['runtime']['visibility'] ?? [])) || !empty($catalog_contract['runtime']['visibility']['cta']);
+
+    $catalog_runtime = isset($catalog_contract['runtime']['catalog']) && is_array($catalog_contract['runtime']['catalog'])
+        ? $catalog_contract['runtime']['catalog']
+        : [];
+    $collection_mode = in_array($catalog_runtime['collectionMode'] ?? 'all', ['all', 'load_more', 'pagination'], true)
+        ? (string) ($catalog_runtime['collectionMode'] ?? 'all')
+        : 'all';
+    $items_per_page = max(1, min(48, (int) ($catalog_runtime['itemsPerPage'] ?? 6)));
+    $show_results_count = !array_key_exists('showResultsCount', $catalog_runtime) || !empty($catalog_runtime['showResultsCount']);
+    $catalog_search_fields = isset($catalog_runtime['searchFields']) && is_array($catalog_runtime['searchFields'])
+        ? $catalog_runtime['searchFields']
+        : [];
+    $search_fields = [
+        'title' => !array_key_exists('title', $catalog_search_fields) || !empty($catalog_search_fields['title']),
+        'excerpt' => !array_key_exists('excerpt', $catalog_search_fields) || !empty($catalog_search_fields['excerpt']),
+        'category' => !array_key_exists('category', $catalog_search_fields) || !empty($catalog_search_fields['category']),
+        'badge' => !array_key_exists('badge', $catalog_search_fields) || !empty($catalog_search_fields['badge']),
+        'tags' => !array_key_exists('tags', $catalog_search_fields) || !empty($catalog_search_fields['tags']),
+        'price' => !empty($catalog_search_fields['price']),
+        'availability' => !array_key_exists('availability', $catalog_search_fields) || !empty($catalog_search_fields['availability']),
+    ];
+
+    $title_entity = (array) ($catalog_contract['design']['entities']['title'] ?? []);
+    $subtitle_entity = (array) ($catalog_contract['design']['entities']['subtitle'] ?? []);
+    $meta_entity = (array) ($catalog_contract['design']['entities']['meta'] ?? []);
+    $buttons_text_entity = (array) ($catalog_contract['design']['entities']['buttonsText'] ?? []);
+    $item_title_entity = (array) ($catalog_contract['design']['entities']['itemTitle'] ?? []);
+    $item_text_entity = (array) ($catalog_contract['design']['entities']['itemText'] ?? []);
+    $media_entity = (array) ($catalog_contract['design']['entities']['media'] ?? []);
+    $media_surface_entity = (array) ($catalog_contract['design']['entities']['mediaSurface'] ?? []);
+    $item_surface_entity = (array) ($catalog_contract['design']['entities']['itemSurface'] ?? []);
+    $primary_button_entity = (array) ($catalog_contract['design']['entities']['primaryButton'] ?? []);
+    $modal_surface_entity = (array) ($catalog_contract['design']['entities']['mediaModal'] ?? []);
+
+    $heading_tag = in_array((string) ($title_entity['tag'] ?? 'h2'), ['div', 'h1', 'h2', 'h3'], true)
+        ? (string) ($title_entity['tag'] ?? 'h2')
+        : 'h2';
+    $title_weight_desktop = (int) nb_catalog_browser_entity_value($title_entity, 'desktop', 'weight', 800);
+    $title_weight_mobile = (int) nb_catalog_browser_entity_value($title_entity, 'mobile', 'weight', $title_weight_desktop);
+    $title_size_desktop = (int) nb_catalog_browser_entity_value($title_entity, 'desktop', 'fontSize', 34);
+    $title_size_mobile = (int) nb_catalog_browser_entity_value($title_entity, 'mobile', 'fontSize', 26);
+    $title_margin_bottom_desktop = (int) nb_catalog_browser_entity_value($title_entity, 'desktop', 'marginBottom', 0);
+    $title_margin_bottom_mobile = (int) nb_catalog_browser_entity_value($title_entity, 'mobile', 'marginBottom', 0);
+    $title_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($title_entity, 'desktop', 'color', ''));
+    $title_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($title_entity, 'mobile', 'color', $title_color_desktop));
+    $title_line_height_desktop = ((float) nb_catalog_browser_entity_value($title_entity, 'desktop', 'lineHeightPercent', 112)) / 100;
+    $title_line_height_mobile = ((float) nb_catalog_browser_entity_value($title_entity, 'mobile', 'lineHeightPercent', 112)) / 100;
+    $title_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($title_entity, 'desktop', 'letterSpacing', 0);
+    $title_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($title_entity, 'mobile', 'letterSpacing', $title_letter_spacing_desktop);
+    $title_max_width_desktop = (int) nb_catalog_browser_entity_value($title_entity, 'desktop', 'maxWidth', 760);
+    $title_max_width_mobile = (int) nb_catalog_browser_entity_value($title_entity, 'mobile', 'maxWidth', $title_max_width_desktop);
+
+    $subtitle_weight_desktop = (int) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'weight', 400);
+    $subtitle_weight_mobile = (int) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'weight', $subtitle_weight_desktop);
+    $subtitle_size_desktop = (int) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'fontSize', 16);
+    $subtitle_size_mobile = (int) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'fontSize', 14);
+    $subtitle_margin_bottom_desktop = (int) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'marginBottom', 0);
+    $subtitle_margin_bottom_mobile = (int) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'marginBottom', 0);
+    $subtitle_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'color', ''));
+    $subtitle_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'color', $subtitle_color_desktop));
+    $subtitle_line_height_desktop = ((float) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'lineHeightPercent', 160)) / 100;
+    $subtitle_line_height_mobile = ((float) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'lineHeightPercent', 160)) / 100;
+    $subtitle_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'letterSpacing', 0);
+    $subtitle_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'letterSpacing', $subtitle_letter_spacing_desktop);
+    $subtitle_max_width_desktop = (int) nb_catalog_browser_entity_value($subtitle_entity, 'desktop', 'maxWidth', 720);
+    $subtitle_max_width_mobile = (int) nb_catalog_browser_entity_value($subtitle_entity, 'mobile', 'maxWidth', $subtitle_max_width_desktop);
+
+    $meta_size_desktop = (int) nb_catalog_browser_entity_value($meta_entity, 'desktop', 'fontSize', 12);
+    $meta_size_mobile = (int) nb_catalog_browser_entity_value($meta_entity, 'mobile', 'fontSize', 11);
+    $meta_weight_desktop = (int) nb_catalog_browser_entity_value($meta_entity, 'desktop', 'weight', 600);
+    $meta_weight_mobile = (int) nb_catalog_browser_entity_value($meta_entity, 'mobile', 'weight', $meta_weight_desktop);
+    $meta_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($meta_entity, 'desktop', 'color', ''));
+    $meta_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($meta_entity, 'mobile', 'color', $meta_color_desktop));
+    $meta_line_height_desktop = ((float) nb_catalog_browser_entity_value($meta_entity, 'desktop', 'lineHeightPercent', 140)) / 100;
+    $meta_line_height_mobile = ((float) nb_catalog_browser_entity_value($meta_entity, 'mobile', 'lineHeightPercent', 140)) / 100;
+    $meta_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($meta_entity, 'desktop', 'letterSpacing', 0);
+    $meta_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($meta_entity, 'mobile', 'letterSpacing', $meta_letter_spacing_desktop);
+
+    $buttons_text_size_desktop = (int) nb_catalog_browser_entity_value($buttons_text_entity, 'desktop', 'fontSize', 15);
+    $buttons_text_size_mobile = (int) nb_catalog_browser_entity_value($buttons_text_entity, 'mobile', 'fontSize', 14);
+    $buttons_text_weight_desktop = (int) nb_catalog_browser_entity_value($buttons_text_entity, 'desktop', 'weight', 700);
+    $buttons_text_weight_mobile = (int) nb_catalog_browser_entity_value($buttons_text_entity, 'mobile', 'weight', $buttons_text_weight_desktop);
+    $buttons_text_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($buttons_text_entity, 'desktop', 'color', ''));
+    $buttons_text_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($buttons_text_entity, 'mobile', 'color', $buttons_text_color_desktop));
+    $buttons_text_line_height_desktop = ((float) nb_catalog_browser_entity_value($buttons_text_entity, 'desktop', 'lineHeightPercent', 120)) / 100;
+    $buttons_text_line_height_mobile = ((float) nb_catalog_browser_entity_value($buttons_text_entity, 'mobile', 'lineHeightPercent', 120)) / 100;
+    $buttons_text_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($buttons_text_entity, 'desktop', 'letterSpacing', 0);
+    $buttons_text_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($buttons_text_entity, 'mobile', 'letterSpacing', $buttons_text_letter_spacing_desktop);
+    $button_style = in_array($primary_button_entity['style'] ?? 'primary', ['primary', 'outline', 'ghost'], true)
+        ? (string) ($primary_button_entity['style'] ?? 'primary')
+        : 'primary';
+
+    $item_title_size_desktop = (int) nb_catalog_browser_entity_value($item_title_entity, 'desktop', 'fontSize', 20);
+    $item_title_size_mobile = (int) nb_catalog_browser_entity_value($item_title_entity, 'mobile', 'fontSize', 18);
+    $item_title_weight_desktop = (int) nb_catalog_browser_entity_value($item_title_entity, 'desktop', 'weight', 800);
+    $item_title_weight_mobile = (int) nb_catalog_browser_entity_value($item_title_entity, 'mobile', 'weight', $item_title_weight_desktop);
+    $item_title_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($item_title_entity, 'desktop', 'color', ''));
+    $item_title_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($item_title_entity, 'mobile', 'color', $item_title_color_desktop));
+    $item_title_line_height_desktop = ((float) nb_catalog_browser_entity_value($item_title_entity, 'desktop', 'lineHeightPercent', 130)) / 100;
+    $item_title_line_height_mobile = ((float) nb_catalog_browser_entity_value($item_title_entity, 'mobile', 'lineHeightPercent', 130)) / 100;
+    $item_title_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($item_title_entity, 'desktop', 'letterSpacing', 0);
+    $item_title_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($item_title_entity, 'mobile', 'letterSpacing', $item_title_letter_spacing_desktop);
+
+    $item_text_size_desktop = (int) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'fontSize', 14);
+    $item_text_size_mobile = (int) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'fontSize', 13);
+    $item_text_weight_desktop = (int) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'weight', 400);
+    $item_text_weight_mobile = (int) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'weight', $item_text_weight_desktop);
+    $item_text_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'color', ''));
+    $item_text_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'color', $item_text_color_desktop));
+    $item_text_line_height_desktop = ((float) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'lineHeightPercent', 160)) / 100;
+    $item_text_line_height_mobile = ((float) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'lineHeightPercent', 160)) / 100;
+    $item_text_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'letterSpacing', 0);
+    $item_text_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'letterSpacing', $item_text_letter_spacing_desktop);
+
+    $media_aspect_ratio = in_array($media_entity['aspectRatio'] ?? '4:3', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
+        ? (string) ($media_entity['aspectRatio'] ?? '4:3')
+        : '4:3';
+    $media_object_fit = in_array($media_entity['objectFit'] ?? 'cover', ['cover', 'contain'], true)
+        ? (string) ($media_entity['objectFit'] ?? 'cover')
+        : 'cover';
+    $media_radius = (int) ($media_entity['radius'] ?? 20);
+    $media_surface_background_mode = (string) ($media_surface_entity['backgroundMode'] ?? 'transparent');
+    $media_surface_background_color = nb_block_css_color((string) ($media_surface_entity['backgroundColor'] ?? ''), '');
+    $media_surface_padding = (int) ($media_surface_entity['padding'] ?? 0);
+    $media_surface_radius = (int) ($media_surface_entity['radius'] ?? $media_radius);
+    $media_surface_border_width = (int) ($media_surface_entity['borderWidth'] ?? 0);
+    $media_surface_border_color = nb_block_css_color((string) ($media_surface_entity['borderColor'] ?? ''), '');
+    $media_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($media_surface_entity['shadow'] ?? 'none'), 'none');
+
+    $item_surface_variant = in_array($item_surface_entity['variant'] ?? 'card', ['card', 'plain'], true)
+        ? (string) ($item_surface_entity['variant'] ?? 'card')
+        : 'card';
+    $item_surface_radius = (int) ($item_surface_entity['radius'] ?? 22);
+    $item_surface_border_width = (int) ($item_surface_entity['borderWidth'] ?? 1);
+    $item_surface_border_color = nb_block_css_color((string) ($item_surface_entity['borderColor'] ?? '#dbe4ef'), '#dbe4ef');
+    $item_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($item_surface_entity['shadow'] ?? 'md'), 'md');
+
+    $modal_background_mode = (string) ($modal_surface_entity['backgroundMode'] ?? 'solid');
+    $modal_background_color = nb_block_css_color((string) ($modal_surface_entity['backgroundColor'] ?? '#0f172a'), '#0f172a');
+    $modal_padding = (int) ($modal_surface_entity['padding'] ?? 18);
+    $modal_radius = (int) ($modal_surface_entity['radius'] ?? 24);
+    $modal_border_width = (int) ($modal_surface_entity['borderWidth'] ?? 0);
+    $modal_border_color = nb_block_css_color((string) ($modal_surface_entity['borderColor'] ?? ''), '');
+    $modal_shadow_css = nb_catalog_browser_shadow_css((string) ($modal_surface_entity['shadow'] ?? 'lg'), 'lg');
+    $modal_overlay_color = nb_block_color_with_opacity($modal_background_color, 0.82, 'rgba(2,6,23,.88)');
+
+    $content_width = (int) ($catalog_contract['layout']['desktop']['contentWidth'] ?? 1180);
+    $padding_top_desktop = (int) ($catalog_contract['layout']['desktop']['paddingTop'] ?? 64);
+    $padding_bottom_desktop = (int) ($catalog_contract['layout']['desktop']['paddingBottom'] ?? 64);
+    $padding_top_mobile = (int) ($catalog_contract['layout']['mobile']['paddingTop'] ?? 44);
+    $padding_bottom_mobile = (int) ($catalog_contract['layout']['mobile']['paddingBottom'] ?? 44);
+    $columns_desktop = (int) ($catalog_contract['layout']['desktop']['columns'] ?? 3);
+    $columns_mobile = (int) ($catalog_contract['layout']['mobile']['columns'] ?? 1);
+    $card_gap_desktop = (int) ($catalog_contract['layout']['desktop']['cardGap'] ?? 20);
+    $card_gap_mobile = (int) ($catalog_contract['layout']['mobile']['cardGap'] ?? 14);
+    $header_gap_desktop = (int) ($catalog_contract['layout']['desktop']['headerGap'] ?? 20);
+    $header_gap_mobile = (int) ($catalog_contract['layout']['mobile']['headerGap'] ?? 14);
+} else {
+    $theme = in_array($props['theme'] ?? 'light', ['light', 'alt', 'dark'], true) ? (string) ($props['theme'] ?? 'light') : 'light';
+    $align = in_array($props['align'] ?? 'left', ['left', 'center'], true) ? (string) ($props['align'] ?? 'left') : 'left';
+    $background_mode = (string) ($props['background_mode'] ?? 'theme');
+    $background_style = nb_block_build_background_style([
+        'mode' => $background_mode,
+        'color' => $props['background_color'] ?? '',
+        'gradientFrom' => $props['background_gradient_from'] ?? '',
+        'gradientTo' => $props['background_gradient_to'] ?? '',
+        'gradientAngle' => $props['background_gradient_angle'] ?? 135,
+        'image' => $props['background_image'] ?? '',
+        'imagePosition' => $props['background_image_position'] ?? 'center center',
+        'imageSize' => $props['background_image_size'] ?? 'cover',
+        'imageRepeat' => $props['background_image_repeat'] ?? 'no-repeat',
+        'overlayColor' => $props['background_overlay_color'] ?? '#0f172a',
+        'overlayOpacity' => $props['background_overlay_opacity'] ?? 45,
+    ]);
+    $reveal = nb_block_get_reveal_settings((array) $props);
+
+    $heading = trim((string) ($props['heading'] ?? 'Каталог'));
+    $intro = trim((string) ($props['intro'] ?? ''));
+    $section_link_label = trim((string) ($props['section_link_label'] ?? ''));
+    $section_link_url = trim((string) ($props['section_link_url'] ?? ''));
+    $items_source = is_array($props['items'] ?? null) ? $props['items'] : [];
+
+    $title_visible = nb_catalog_browser_visible($props['title_visible'] ?? '1', true);
+    $subtitle_visible = nb_catalog_browser_visible($props['subtitle_visible'] ?? '1', true);
+    $show_section_link = nb_catalog_browser_visible($props['show_more_link'] ?? '1', true);
+    $show_search = nb_catalog_browser_visible($props['show_search'] ?? '1', true);
+    $show_category_filter = nb_catalog_browser_visible($props['show_category_filter'] ?? '1', true);
+    $show_price_filter = nb_catalog_browser_visible($props['show_price_filter'] ?? '1', true);
+    $show_sort = nb_catalog_browser_visible($props['show_sort'] ?? '1', true);
+    $show_active_filters = nb_catalog_browser_visible($props['show_active_filters'] ?? '1', true);
+    $show_image = nb_catalog_browser_visible($props['show_image'] ?? '1', true);
+    $show_category = nb_catalog_browser_visible($props['show_category'] ?? '1', true);
+    $show_badge = nb_catalog_browser_visible($props['show_badge'] ?? '1', true);
+    $show_price = nb_catalog_browser_visible($props['show_price'] ?? '1', true);
+    $show_old_price = nb_catalog_browser_visible($props['show_old_price'] ?? '1', true);
+    $show_excerpt = nb_catalog_browser_visible($props['show_excerpt'] ?? '1', true);
+    $show_cta = nb_catalog_browser_visible($props['show_cta'] ?? '1', true);
+
+    $collection_mode = in_array($props['collection_mode'] ?? 'all', ['all', 'load_more', 'pagination'], true)
+        ? (string) ($props['collection_mode'] ?? 'all')
+        : 'all';
+    $items_per_page = nb_catalog_browser_prop_int($props, 'items_per_page', 6, 1, 48);
+    $show_results_count = nb_catalog_browser_visible($props['show_results_count'] ?? '1', true);
+    $search_fields = [
+        'title' => nb_catalog_browser_visible($props['search_in_title'] ?? '1', true),
+        'excerpt' => nb_catalog_browser_visible($props['search_in_excerpt'] ?? '1', true),
+        'category' => nb_catalog_browser_visible($props['search_in_category'] ?? '1', true),
+        'badge' => nb_catalog_browser_visible($props['search_in_badge'] ?? '1', true),
+        'tags' => nb_catalog_browser_visible($props['search_in_tags'] ?? '1', true),
+        'price' => nb_catalog_browser_visible($props['search_in_price'] ?? '0', false),
+        'availability' => nb_catalog_browser_visible($props['search_in_availability'] ?? '1', true),
+    ];
+
+    $heading_tag = nb_block_get_heading_tag($props, 'heading', 'h2');
+    $title_weight_desktop = nb_catalog_browser_prop_int($props, 'title_weight_desktop', 800, 100, 900);
+    $title_weight_mobile = nb_catalog_browser_prop_int($props, 'title_weight_mobile', $title_weight_desktop, 100, 900);
+    $title_size_desktop = nb_catalog_browser_prop_int($props, 'title_size_desktop', 34, 12, 160);
+    $title_size_mobile = nb_catalog_browser_prop_int($props, 'title_size_mobile', 26, 12, 160);
+    $title_margin_bottom_desktop = nb_catalog_browser_prop_int($props, 'title_margin_bottom_desktop', 0, 0, 240);
+    $title_margin_bottom_mobile = nb_catalog_browser_prop_int($props, 'title_margin_bottom_mobile', 0, 0, 240);
+    $title_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['title_color_desktop', 'title_color'], ''));
+    $title_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['title_color_mobile'], $title_color_desktop));
+    $title_line_height_desktop = nb_catalog_browser_prop_int($props, 'title_line_height_percent_desktop', 112, 80, 220) / 100;
+    $title_line_height_mobile = nb_catalog_browser_prop_int($props, 'title_line_height_percent_mobile', 112, 80, 220) / 100;
+    $title_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['title_letter_spacing_desktop', 'title_letter_spacing'], 0);
+    $title_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['title_letter_spacing_mobile'], $title_letter_spacing_desktop);
+    $title_max_width_desktop = nb_catalog_browser_prop_int($props, 'title_max_width_desktop', 760, 240, 1440);
+    $title_max_width_mobile = nb_catalog_browser_prop_int($props, 'title_max_width_mobile', $title_max_width_desktop, 240, 1440);
+
+    $subtitle_weight_desktop = nb_catalog_browser_prop_int($props, 'subtitle_weight_desktop', 400, 100, 900);
+    $subtitle_weight_mobile = nb_catalog_browser_prop_int($props, 'subtitle_weight_mobile', $subtitle_weight_desktop, 100, 900);
+    $subtitle_size_desktop = nb_catalog_browser_prop_int($props, 'subtitle_size_desktop', 16, 10, 80);
+    $subtitle_size_mobile = nb_catalog_browser_prop_int($props, 'subtitle_size_mobile', 14, 10, 80);
+    $subtitle_margin_bottom_desktop = nb_catalog_browser_prop_int($props, 'subtitle_margin_bottom_desktop', 0, 0, 240);
+    $subtitle_margin_bottom_mobile = nb_catalog_browser_prop_int($props, 'subtitle_margin_bottom_mobile', 0, 0, 240);
+    $subtitle_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['subtitle_color_desktop', 'subtitle_color'], ''));
+    $subtitle_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['subtitle_color_mobile'], $subtitle_color_desktop));
+    $subtitle_line_height_desktop = nb_catalog_browser_prop_int($props, 'subtitle_line_height_percent_desktop', 160, 80, 240) / 100;
+    $subtitle_line_height_mobile = nb_catalog_browser_prop_int($props, 'subtitle_line_height_percent_mobile', 160, 80, 240) / 100;
+    $subtitle_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['subtitle_letter_spacing_desktop', 'subtitle_letter_spacing'], 0);
+    $subtitle_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['subtitle_letter_spacing_mobile'], $subtitle_letter_spacing_desktop);
+    $subtitle_max_width_desktop = nb_catalog_browser_prop_int($props, 'subtitle_max_width_desktop', 720, 240, 1440);
+    $subtitle_max_width_mobile = nb_catalog_browser_prop_int($props, 'subtitle_max_width_mobile', $subtitle_max_width_desktop, 240, 1440);
+
+    $meta_size_desktop = nb_catalog_browser_prop_int($props, 'meta_size_desktop', 12, 10, 120);
+    $meta_size_mobile = nb_catalog_browser_prop_int($props, 'meta_size_mobile', 11, 10, 120);
+    $meta_weight_desktop = nb_catalog_browser_prop_int($props, 'meta_weight_desktop', 600, 100, 900);
+    $meta_weight_mobile = nb_catalog_browser_prop_int($props, 'meta_weight_mobile', $meta_weight_desktop, 100, 900);
+    $meta_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['meta_color_desktop', 'meta_color'], ''));
+    $meta_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['meta_color_mobile'], $meta_color_desktop));
+    $meta_line_height_desktop = nb_catalog_browser_prop_int($props, 'meta_line_height_percent_desktop', 140, 80, 240) / 100;
+    $meta_line_height_mobile = nb_catalog_browser_prop_int($props, 'meta_line_height_percent_mobile', 140, 80, 240) / 100;
+    $meta_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['meta_letter_spacing_desktop', 'meta_letter_spacing'], 0);
+    $meta_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['meta_letter_spacing_mobile'], $meta_letter_spacing_desktop);
+
+    $buttons_text_size_desktop = nb_catalog_browser_prop_int($props, 'button_text_size_desktop', 15, 10, 120);
+    $buttons_text_size_mobile = nb_catalog_browser_prop_int($props, 'button_text_size_mobile', 14, 10, 120);
+    $buttons_text_weight_desktop = nb_catalog_browser_prop_int($props, 'button_text_weight_desktop', 700, 100, 900);
+    $buttons_text_weight_mobile = nb_catalog_browser_prop_int($props, 'button_text_weight_mobile', $buttons_text_weight_desktop, 100, 900);
+    $buttons_text_color_desktop = nb_block_css_color((string) ($props['button_text_color_desktop'] ?? ($props['button_text_color'] ?? '')));
+    $buttons_text_color_mobile = nb_block_css_color((string) ($props['button_text_color_mobile'] ?? $buttons_text_color_desktop));
+    $buttons_text_line_height_desktop = nb_catalog_browser_prop_int($props, 'button_text_line_height_percent_desktop', 120, 80, 220) / 100;
+    $buttons_text_line_height_mobile = nb_catalog_browser_prop_int($props, 'button_text_line_height_percent_mobile', 120, 80, 220) / 100;
+    $buttons_text_letter_spacing_desktop = (float) ($props['button_text_letter_spacing_desktop'] ?? ($props['button_text_letter_spacing'] ?? 0));
+    $buttons_text_letter_spacing_mobile = (float) ($props['button_text_letter_spacing_mobile'] ?? $buttons_text_letter_spacing_desktop);
+    $button_style = in_array($props['btn_primary_style'] ?? 'primary', ['primary', 'outline', 'ghost'], true)
+        ? (string) ($props['btn_primary_style'] ?? 'primary')
+        : 'primary';
+
+    $item_title_size_desktop = nb_catalog_browser_prop_int($props, 'item_title_size_desktop', 20, 10, 80);
+    $item_title_size_mobile = nb_catalog_browser_prop_int($props, 'item_title_size_mobile', 18, 10, 80);
+    $item_title_weight_desktop = nb_catalog_browser_prop_int($props, 'item_title_weight_desktop', 800, 100, 900);
+    $item_title_weight_mobile = nb_catalog_browser_prop_int($props, 'item_title_weight_mobile', $item_title_weight_desktop, 100, 900);
+    $item_title_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['item_title_color_desktop', 'item_title_color'], ''));
+    $item_title_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['item_title_color_mobile'], $item_title_color_desktop));
+    $item_title_line_height_desktop = nb_catalog_browser_prop_int($props, 'item_title_line_height_percent_desktop', 130, 80, 220) / 100;
+    $item_title_line_height_mobile = nb_catalog_browser_prop_int($props, 'item_title_line_height_percent_mobile', 130, 80, 220) / 100;
+    $item_title_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['item_title_letter_spacing_desktop', 'item_title_letter_spacing'], 0);
+    $item_title_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['item_title_letter_spacing_mobile'], $item_title_letter_spacing_desktop);
+
+    $item_text_size_desktop = nb_catalog_browser_prop_int($props, 'item_text_size_desktop', 14, 10, 80);
+    $item_text_size_mobile = nb_catalog_browser_prop_int($props, 'item_text_size_mobile', 13, 10, 80);
+    $item_text_weight_desktop = nb_catalog_browser_prop_int($props, 'item_text_weight_desktop', 400, 100, 900);
+    $item_text_weight_mobile = nb_catalog_browser_prop_int($props, 'item_text_weight_mobile', $item_text_weight_desktop, 100, 900);
+    $item_text_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['item_text_color_desktop', 'item_text_color'], ''));
+    $item_text_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['item_text_color_mobile'], $item_text_color_desktop));
+    $item_text_line_height_desktop = nb_catalog_browser_prop_int($props, 'item_text_line_height_percent_desktop', 160, 80, 260) / 100;
+    $item_text_line_height_mobile = nb_catalog_browser_prop_int($props, 'item_text_line_height_percent_mobile', 160, 80, 260) / 100;
+    $item_text_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['item_text_letter_spacing_desktop', 'item_text_letter_spacing'], 0);
+    $item_text_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['item_text_letter_spacing_mobile'], $item_text_letter_spacing_desktop);
+
+    $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '4:3', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true) ? (string) ($props['media_aspect_ratio'] ?? '4:3') : '4:3';
+    $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true) ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
+    $media_radius = nb_catalog_browser_prop_int($props, 'media_radius', 20, 0, 80);
+    $media_surface_background_mode = (string) ($props['media_surface_background_mode'] ?? 'transparent');
+    $media_surface_background_color = nb_block_css_color((string) ($props['media_surface_background_color'] ?? ''), '');
+    $media_surface_padding = nb_catalog_browser_prop_int($props, 'media_surface_padding', 0, 0, 160);
+    $media_surface_radius = nb_catalog_browser_prop_int($props, 'media_surface_radius', $media_radius, 0, 160);
+    $media_surface_border_width = nb_catalog_browser_prop_int($props, 'media_surface_border_width', 0, 0, 20);
+    $media_surface_border_color = nb_block_css_color((string) ($props['media_surface_border_color'] ?? ''), '');
+    $media_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($props['media_surface_shadow'] ?? 'none'), 'none');
+
+    $item_surface_variant = in_array($props['item_surface_variant'] ?? 'card', ['card', 'plain'], true) ? (string) ($props['item_surface_variant'] ?? 'card') : 'card';
+    $item_surface_radius = nb_catalog_browser_prop_int($props, 'item_surface_radius', 22, 0, 100);
+    $item_surface_border_width = nb_catalog_browser_prop_int($props, 'item_surface_border_width', 1, 0, 20);
+    $item_surface_border_color = nb_block_css_color((string) ($props['item_surface_border_color'] ?? '#dbe4ef'), '#dbe4ef');
+    $item_surface_shadow_css = nb_catalog_browser_shadow_css((string) ($props['item_surface_shadow'] ?? 'md'), 'md');
+
+    $modal_background_mode = 'solid';
+    $modal_background_color = '#0f172a';
+    $modal_padding = 18;
+    $modal_radius = 24;
+    $modal_border_width = 0;
+    $modal_border_color = '';
+    $modal_shadow_css = nb_catalog_browser_shadow_css('lg', 'lg');
+    $modal_overlay_color = 'rgba(2,6,23,.88)';
+
+    $content_width = nb_catalog_browser_prop_int($props, 'content_width', 1180, 320, 1440);
+    $padding_top_desktop = nb_catalog_browser_prop_int($props, 'padding_top_desktop', 64, 0, 300);
+    $padding_bottom_desktop = nb_catalog_browser_prop_int($props, 'padding_bottom_desktop', 64, 0, 300);
+    $padding_top_mobile = nb_catalog_browser_prop_int($props, 'padding_top_mobile', 44, 0, 300);
+    $padding_bottom_mobile = nb_catalog_browser_prop_int($props, 'padding_bottom_mobile', 44, 0, 300);
+    $columns_desktop = nb_catalog_browser_prop_int($props, 'columns_desktop', 3, 1, 6);
+    $columns_mobile = nb_catalog_browser_prop_int($props, 'columns_mobile', 1, 1, 2);
+    $card_gap_desktop = nb_catalog_browser_prop_int($props, 'card_gap_desktop', 20, 0, 120);
+    $card_gap_mobile = nb_catalog_browser_prop_int($props, 'card_gap_mobile', 14, 0, 120);
+    $header_gap_desktop = nb_catalog_browser_prop_int($props, 'header_gap_desktop', 20, 0, 120);
+    $header_gap_mobile = nb_catalog_browser_prop_int($props, 'header_gap_mobile', 14, 0, 120);
 }
-$items_per_page = max(1, min(48, (int) ($props['items_per_page'] ?? 6)));
-$show_results_count = nb_catalog_browser_visible($props['show_results_count'] ?? '1', true);
-$search_fields = [
-    'title' => nb_catalog_browser_visible($props['search_in_title'] ?? '1', true),
-    'excerpt' => nb_catalog_browser_visible($props['search_in_excerpt'] ?? '1', true),
-    'category' => nb_catalog_browser_visible($props['search_in_category'] ?? '1', true),
-    'badge' => nb_catalog_browser_visible($props['search_in_badge'] ?? '1', true),
-    'tags' => nb_catalog_browser_visible($props['search_in_tags'] ?? '1', true),
-    'price' => nb_catalog_browser_visible($props['search_in_price'] ?? '0', false),
-    'availability' => nb_catalog_browser_visible($props['search_in_availability'] ?? '1', true),
-];
-$content_width = max(320, (int) ($props['content_width'] ?? 1180));
-$padding_top_desktop = max(0, (int) ($props['padding_top_desktop'] ?? 64));
-$padding_bottom_desktop = max(0, (int) ($props['padding_bottom_desktop'] ?? 64));
-$padding_top_mobile = max(0, (int) ($props['padding_top_mobile'] ?? 44));
-$padding_bottom_mobile = max(0, (int) ($props['padding_bottom_mobile'] ?? 44));
-$columns_desktop = max(1, min(6, (int) ($props['columns_desktop'] ?? 3)));
-$columns_mobile = max(1, min(2, (int) ($props['columns_mobile'] ?? 1)));
-$card_gap_desktop = max(0, (int) ($props['card_gap_desktop'] ?? 18));
-$card_gap_mobile = max(0, (int) ($props['card_gap_mobile'] ?? 14));
-$header_gap_desktop = max(0, (int) ($props['header_gap_desktop'] ?? 18));
-$header_gap_mobile = max(0, (int) ($props['header_gap_mobile'] ?? 14));
-$media_radius = max(0, (int) ($props['media_radius'] ?? 20));
-$item_surface_radius = max(0, (int) ($props['item_surface_radius'] ?? 22));
+
+$intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8')) : '';
 $layout_variant_class = $columns_desktop >= 5 ? ' nb-catalog-browser--dense' : ($columns_desktop >= 4 ? ' nb-catalog-browser--compact' : '');
+$layout_variant_class .= $item_surface_variant === 'plain' ? ' nb-catalog-browser--plain' : '';
+$button_classes = [
+    'primary' => 'nb-btn nb-btn--primary',
+    'outline' => 'nb-btn nb-btn--outline',
+    'ghost' => 'nb-btn nb-btn--ghost',
+];
+$action_button_class = $button_classes[$button_style] ?? $button_classes['primary'];
+$media_aspect_ratio_map = [
+    'auto' => 'auto',
+    '16:10' => '16 / 10',
+    '16:9' => '16 / 9',
+    '4:3' => '4 / 3',
+    '1:1' => '1 / 1',
+    '3:4' => '3 / 4',
+];
+$media_aspect_ratio_css = $media_aspect_ratio_map[$media_aspect_ratio] ?? '4 / 3';
 
 $items = [];
-foreach ((array) ($props['items'] ?? []) as $item) {
+foreach ($items_source as $item) {
     if (!is_array($item)) {
         continue;
     }
@@ -252,37 +726,165 @@ foreach ($items as $item) {
 }
 ksort($category_options, SORT_NATURAL | SORT_FLAG_CASE);
 
-$section_style = sprintf(
-    '--nb-catalog-width:%dpx;--nb-catalog-padding-top:%dpx;--nb-catalog-padding-bottom:%dpx;--nb-catalog-padding-top-mobile:%dpx;--nb-catalog-padding-bottom-mobile:%dpx;--nb-catalog-columns:%d;--nb-catalog-columns-mobile:%d;--nb-catalog-gap:%dpx;--nb-catalog-gap-mobile:%dpx;--nb-catalog-header-gap:%dpx;--nb-catalog-header-gap-mobile:%dpx;--nb-catalog-media-radius:%dpx;--nb-catalog-card-radius:%dpx;',
-    $content_width,
-    $padding_top_desktop,
-    $padding_bottom_desktop,
-    $padding_top_mobile,
-    $padding_bottom_mobile,
-    $columns_desktop,
-    $columns_mobile,
-    $card_gap_desktop,
-    $card_gap_mobile,
-    $header_gap_desktop,
-    $header_gap_mobile,
-    $media_radius,
-    $item_surface_radius
-);
+$section_class = 'nb-section nb-catalog-browser nb-catalog-browser--align-' . $align . $layout_variant_class . ($reveal['class'] ?? '');
+$section_style = '--nb-catalog-width:' . $content_width . 'px;';
+$section_style = nb_block_append_style($section_style, '--nb-catalog-padding-top:' . $padding_top_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-padding-bottom:' . $padding_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-padding-top-mobile:' . $padding_top_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-padding-bottom-mobile:' . $padding_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-columns:' . $columns_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-columns-mobile:' . $columns_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-gap:' . $card_gap_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-gap-mobile:' . $card_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-header-gap:' . $header_gap_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-header-gap-mobile:' . $header_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-size:' . $title_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-size-mobile:' . $title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-weight:' . $title_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-weight-mobile:' . $title_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-margin-bottom:' . $title_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-line-height:' . max(0.8, min(2.2, $title_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-line-height-mobile:' . max(0.8, min(2.2, $title_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-letter-spacing:' . $title_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-letter-spacing-mobile:' . $title_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-max-width:' . $title_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-title-max-width-mobile:' . $title_max_width_mobile . 'px;');
+if ($title_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-title-color:' . $title_color_desktop . ';');
+}
+if ($title_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-title-color-mobile:' . $title_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-size:' . $subtitle_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-size-mobile:' . $subtitle_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-weight:' . $subtitle_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-weight-mobile:' . $subtitle_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-margin-bottom-mobile:' . $subtitle_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-line-height:' . max(0.8, min(2.4, $subtitle_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-line-height-mobile:' . max(0.8, min(2.4, $subtitle_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-letter-spacing:' . $subtitle_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-letter-spacing-mobile:' . $subtitle_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-max-width:' . $subtitle_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-max-width-mobile:' . $subtitle_max_width_mobile . 'px;');
+if ($subtitle_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-color:' . $subtitle_color_desktop . ';');
+}
+if ($subtitle_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-subtitle-color-mobile:' . $subtitle_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-size:' . $meta_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-size-mobile:' . $meta_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-weight:' . $meta_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-weight-mobile:' . $meta_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-line-height:' . max(0.8, min(2.4, $meta_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-line-height-mobile:' . max(0.8, min(2.4, $meta_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-letter-spacing:' . $meta_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-meta-letter-spacing-mobile:' . $meta_letter_spacing_mobile . 'px;');
+if ($meta_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-meta-color:' . $meta_color_desktop . ';');
+}
+if ($meta_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-meta-color-mobile:' . $meta_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-size:' . $buttons_text_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-size-mobile:' . $buttons_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-weight:' . $buttons_text_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-weight-mobile:' . $buttons_text_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-line-height:' . max(0.8, min(2.2, $buttons_text_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-line-height-mobile:' . max(0.8, min(2.2, $buttons_text_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-letter-spacing:' . $buttons_text_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-letter-spacing-mobile:' . $buttons_text_letter_spacing_mobile . 'px;');
+if ($buttons_text_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-color:' . $buttons_text_color_desktop . ';');
+}
+if ($buttons_text_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-color-mobile:' . $buttons_text_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-size:' . $item_title_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-size-mobile:' . $item_title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-weight:' . $item_title_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-weight-mobile:' . $item_title_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-line-height:' . max(0.8, min(2.2, $item_title_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-line-height-mobile:' . max(0.8, min(2.2, $item_title_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-letter-spacing:' . $item_title_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-letter-spacing-mobile:' . $item_title_letter_spacing_mobile . 'px;');
+if ($item_title_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-color:' . $item_title_color_desktop . ';');
+}
+if ($item_title_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-item-title-color-mobile:' . $item_title_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-size:' . $item_text_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-size-mobile:' . $item_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-weight:' . $item_text_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-weight-mobile:' . $item_text_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-line-height:' . max(0.8, min(2.6, $item_text_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-line-height-mobile:' . max(0.8, min(2.6, $item_text_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-letter-spacing:' . $item_text_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-letter-spacing-mobile:' . $item_text_letter_spacing_mobile . 'px;');
+if ($item_text_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-color:' . $item_text_color_desktop . ';');
+}
+if ($item_text_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-color-mobile:' . $item_text_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-aspect-ratio:' . $media_aspect_ratio_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-radius:' . $media_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-object-fit:' . $media_object_fit . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-padding:' . $media_surface_padding . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-radius:' . $media_surface_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-border-width:' . $media_surface_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-shadow:' . $media_surface_shadow_css . ';');
+if ($media_surface_background_mode === 'solid' && $media_surface_background_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-background:' . $media_surface_background_color . ';');
+}
+if ($media_surface_border_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-media-surface-border-color:' . $media_surface_border_color . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-radius:' . $item_surface_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-width:' . $item_surface_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-border-color:' . $item_surface_border_color . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-card-shadow:' . $item_surface_shadow_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-modal-padding:' . $modal_padding . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-modal-radius:' . $modal_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-modal-border-width:' . $modal_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-modal-shadow:' . $modal_shadow_css . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-modal-overlay:' . $modal_overlay_color . ';');
+if ($modal_background_mode === 'solid' && $modal_background_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-modal-background:' . $modal_background_color . ';');
+}
+if ($modal_border_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-modal-border-color:' . $modal_border_color . ';');
+}
+$section_style = nb_block_append_style($section_style, $background_style);
+$section_style = nb_block_append_style($section_style, $reveal['style'] ?? '');
+
+$theme_attr = $theme !== 'light' ? ' data-nb-theme="' . htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') . '"' : '';
+$block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
 ?>
-<section class="nb-section nb-catalog-browser nb-catalog-browser--align-<?= htmlspecialchars($align, ENT_QUOTES, 'UTF-8') ?><?= $layout_variant_class ?>" id="block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>" data-nb-block="catalog_browser" data-nb-theme="<?= htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') ?>" style="<?= htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') ?>">
+<section
+    class="<?= htmlspecialchars($section_class, ENT_QUOTES, 'UTF-8') ?>"
+    id="<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>"
+    data-nb-block="catalog_browser"
+    data-nb-entity="section"
+    <?= $theme_attr ?>
+    <?= $section_style ? ' style="' . htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
+>
     <div class="nb-container nb-catalog-browser__container">
-        <?php if ($heading !== '' || $intro !== '' || ($section_link_label !== '' && $section_link_url !== '')): ?>
-        <header class="nb-catalog-browser__header">
+        <?php if (($title_visible && $heading !== '') || ($subtitle_visible && $intro_html !== '') || ($show_section_link && $section_link_label !== '' && $section_link_url !== '')): ?>
+        <header class="nb-catalog-browser__header" data-nb-entity="header">
             <div class="nb-catalog-browser__header-main">
-                <?php if ($heading !== ''): ?>
-                <h2 class="nb-catalog-browser__title"><?= htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') ?></h2>
+                <?php if ($title_visible && $heading !== ''): ?>
+                <<?= htmlspecialchars($heading_tag, ENT_QUOTES, 'UTF-8') ?> class="nb-catalog-browser__title" data-nb-entity="title"><?= htmlspecialchars($heading, ENT_QUOTES, 'UTF-8') ?></<?= htmlspecialchars($heading_tag, ENT_QUOTES, 'UTF-8') ?>>
                 <?php endif; ?>
-                <?php if ($intro !== ''): ?>
-                <div class="nb-catalog-browser__subtitle"><?= nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8')) ?></div>
+                <?php if ($subtitle_visible && $intro_html !== ''): ?>
+                <div class="nb-catalog-browser__subtitle" data-nb-entity="subtitle"><?= $intro_html ?></div>
                 <?php endif; ?>
             </div>
-            <?php if ($section_link_label !== '' && $section_link_url !== ''): ?>
-            <a class="nb-catalog-browser__section-link" href="<?= htmlspecialchars($section_link_url, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($section_link_label, ENT_QUOTES, 'UTF-8') ?></a>
+            <?php if ($show_section_link && $section_link_label !== '' && $section_link_url !== ''): ?>
+            <a class="nb-catalog-browser__button nb-catalog-browser__section-link <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= htmlspecialchars($section_link_url, ENT_QUOTES, 'UTF-8') ?>" data-nb-entity="primaryButton"><?= htmlspecialchars($section_link_label, ENT_QUOTES, 'UTF-8') ?></a>
             <?php endif; ?>
         </header>
         <?php endif; ?>
@@ -291,14 +893,14 @@ $section_style = sprintf(
         <div class="nb-catalog-browser__toolbar" data-role="catalog-toolbar">
             <?php if ($show_search): ?>
             <label class="nb-catalog-browser__control nb-catalog-browser__control--search">
-                <span class="nb-catalog-browser__control-label">Поиск</span>
+                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Поиск</span>
                 <input type="search" class="nb-catalog-browser__input" placeholder="Найти по названию или описанию" data-role="catalog-search">
             </label>
             <?php endif; ?>
 
             <?php if ($show_category_filter): ?>
             <label class="nb-catalog-browser__control">
-                <span class="nb-catalog-browser__control-label">Категория</span>
+                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Категория</span>
                 <select class="nb-catalog-browser__select" data-role="catalog-category">
                     <option value="">Все категории</option>
                     <?php foreach ($category_options as $category_option): ?>
@@ -310,7 +912,7 @@ $section_style = sprintf(
 
             <?php if ($show_price_filter): ?>
             <div class="nb-catalog-browser__control nb-catalog-browser__control--price">
-                <span class="nb-catalog-browser__control-label">Цена</span>
+                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Цена</span>
                 <div class="nb-catalog-browser__price-filters">
                     <input type="number" class="nb-catalog-browser__input" placeholder="от" data-role="catalog-price-min">
                     <input type="number" class="nb-catalog-browser__input" placeholder="до" data-role="catalog-price-max">
@@ -320,7 +922,7 @@ $section_style = sprintf(
 
             <?php if ($show_sort): ?>
             <label class="nb-catalog-browser__control">
-                <span class="nb-catalog-browser__control-label">Сортировка</span>
+                <span class="nb-catalog-browser__control-label" data-nb-entity="meta">Сортировка</span>
                 <select class="nb-catalog-browser__select" data-role="catalog-sort">
                     <option value="default">По порядку блока</option>
                     <option value="title-asc">По названию A-Z</option>
@@ -338,33 +940,35 @@ $section_style = sprintf(
 
         <?php if ($items && $show_results_count): ?>
         <div class="nb-catalog-browser__results-row" data-role="catalog-results-row" hidden>
-            <div class="nb-catalog-browser__results" data-role="catalog-results"></div>
+            <div class="nb-catalog-browser__results" data-role="catalog-results" data-nb-entity="meta"></div>
         </div>
         <?php endif; ?>
 
         <?php if ($items): ?>
-        <div class="nb-catalog-browser__grid" data-role="catalog-grid">
+        <div class="nb-catalog-browser__grid" data-role="catalog-grid" data-nb-entity="items">
             <?php foreach ($items as $index => $item): ?>
             <?php $gallery_json = htmlspecialchars(json_encode($item['gallery'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>
-            <article class="nb-catalog-browser__card" data-order="<?= $index ?>" data-search="<?= htmlspecialchars($item['searchText'], ENT_QUOTES, 'UTF-8') ?>" data-category="<?= htmlspecialchars((string) ($item['categoryValue'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-price="<?= htmlspecialchars((string) ($item['priceValue'] ?? 0), ENT_QUOTES, 'UTF-8') ?>">
+            <article class="nb-catalog-browser__card" data-nb-entity="itemSurface" data-order="<?= $index ?>" data-search="<?= htmlspecialchars($item['searchText'], ENT_QUOTES, 'UTF-8') ?>" data-category="<?= htmlspecialchars((string) ($item['categoryValue'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" data-price="<?= htmlspecialchars((string) ($item['priceValue'] ?? 0), ENT_QUOTES, 'UTF-8') ?>">
                 <?php if ($show_image && $item['image'] !== ''): ?>
-                <button type="button" class="nb-catalog-browser__media" data-role="media-open" data-gallery="<?= $gallery_json ?>" data-title="<?= $item['title'] ?>">
-                    <img class="nb-catalog-browser__image" src="<?= $item['image'] ?>" alt="<?= $item['imageAlt'] ?>">
-                </button>
+                <div class="nb-catalog-browser__media-surface" data-nb-entity="mediaSurface">
+                    <button type="button" class="nb-catalog-browser__media" data-nb-entity="media" data-role="media-open" data-gallery="<?= $gallery_json ?>" data-title="<?= $item['title'] ?>">
+                        <img class="nb-catalog-browser__image" src="<?= $item['image'] ?>" alt="<?= $item['imageAlt'] ?>">
+                    </button>
+                </div>
                 <?php endif; ?>
                 <div class="nb-catalog-browser__body">
                     <?php if ($show_badge && $item['badge'] !== ''): ?>
-                    <div class="nb-catalog-browser__badge"><?= $item['badge'] ?></div>
+                    <div class="nb-catalog-browser__badge" data-nb-entity="meta"><?= $item['badge'] ?></div>
                     <?php endif; ?>
                     <?php if ($show_category && $item['category'] !== ''): ?>
                     <?php if ($item['categoryUrl'] !== ''): ?>
-                    <a class="nb-catalog-browser__category" href="<?= $item['categoryUrl'] ?>"><?= $item['category'] ?></a>
+                    <a class="nb-catalog-browser__category" href="<?= $item['categoryUrl'] ?>" data-nb-entity="meta"><?= $item['category'] ?></a>
                     <?php else: ?>
-                    <div class="nb-catalog-browser__category"><?= $item['category'] ?></div>
+                    <div class="nb-catalog-browser__category" data-nb-entity="meta"><?= $item['category'] ?></div>
                     <?php endif; ?>
                     <?php endif; ?>
                     <?php if ($item['title'] !== ''): ?>
-                    <h3 class="nb-catalog-browser__card-title">
+                    <h3 class="nb-catalog-browser__card-title" data-nb-entity="itemTitle">
                         <?php if ($item['url'] !== ''): ?>
                         <a href="<?= $item['url'] ?>"><?= $item['title'] ?></a>
                         <?php else: ?>
@@ -373,10 +977,10 @@ $section_style = sprintf(
                     </h3>
                     <?php endif; ?>
                     <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
-                    <div class="nb-catalog-browser__excerpt"><?= $item['excerpt'] ?></div>
+                    <div class="nb-catalog-browser__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
                     <?php endif; ?>
                     <?php if ($show_price && ($item['price'] !== '' || ($show_old_price && $item['priceOld'] !== ''))): ?>
-                    <div class="nb-catalog-browser__price-line">
+                    <div class="nb-catalog-browser__price-line" data-nb-entity="meta">
                         <?php if ($show_old_price && $item['priceOld'] !== ''): ?>
                         <span class="nb-catalog-browser__price-old"><?= $item['priceOld'] ?></span>
                         <?php endif; ?>
@@ -386,13 +990,10 @@ $section_style = sprintf(
                     </div>
                     <?php endif; ?>
                     <?php if ($item['availability'] !== ''): ?>
-                    <div class="nb-catalog-browser__availability"><?= $item['availability'] ?></div>
+                    <div class="nb-catalog-browser__availability" data-nb-entity="meta"><?= $item['availability'] ?></div>
                     <?php endif; ?>
-                    <?php if ($show_cta && $item['ctaLabel'] !== ''): ?>
-                    <?php $cta_href = $item['ctaUrl'] !== '' ? $item['ctaUrl'] : $item['url']; ?>
-                    <?php if ($cta_href !== ''): ?>
-                    <a class="nb-catalog-browser__cta" href="<?= $cta_href ?>"><?= $item['ctaLabel'] ?></a>
-                    <?php endif; ?>
+                    <?php if ($show_cta && $item['ctaLabel'] !== '' && $item['ctaHref'] !== ''): ?>
+                    <a class="nb-catalog-browser__button nb-catalog-browser__cta <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= $item['ctaHref'] ?>"<?= $item['ctaTarget'] !== '' ? ' target="' . $item['ctaTarget'] . '"' : '' ?><?= $item['ctaRel'] !== '' ? ' rel="' . $item['ctaRel'] . '"' : '' ?>><?= $item['ctaLabel'] ?></a>
                     <?php endif; ?>
                 </div>
             </article>
@@ -400,7 +1001,7 @@ $section_style = sprintf(
         </div>
         <div class="nb-catalog-browser__empty nb-catalog-browser__empty--filtered" data-role="catalog-empty" hidden>Ничего не найдено по текущим фильтрам.</div>
         <div class="nb-catalog-browser__footer" data-role="catalog-footer" hidden>
-            <button type="button" class="nb-catalog-browser__more" data-role="catalog-more" hidden>Показать ещё</button>
+            <button type="button" class="nb-catalog-browser__button nb-catalog-browser__more <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" data-role="catalog-more" hidden>Показать ещё</button>
             <div class="nb-catalog-browser__pagination" data-role="catalog-pagination" hidden></div>
         </div>
         <?php else: ?>
@@ -424,7 +1025,7 @@ $section_style = sprintf(
     </div>
     <script>
     (function() {
-        var root = document.getElementById('block-<?= htmlspecialchars($block_uid, ENT_QUOTES, 'UTF-8') ?>');
+        var root = document.getElementById(<?= json_encode($block_dom_id, JSON_UNESCAPED_UNICODE) ?>);
         if (!root) {
             return;
         }
@@ -443,9 +1044,10 @@ $section_style = sprintf(
         var priceMinInput = root.querySelector('[data-role="catalog-price-min"]');
         var priceMaxInput = root.querySelector('[data-role="catalog-price-max"]');
         var sortSelect = root.querySelector('[data-role="catalog-sort"]');
-        var collectionMode = '<?= htmlspecialchars($collection_mode, ENT_QUOTES, 'UTF-8') ?>';
-        var itemsPerPage = Math.max(1, parseInt('<?= (int) $items_per_page ?>', 10) || 1);
+        var collectionMode = <?= json_encode($collection_mode, JSON_UNESCAPED_UNICODE) ?>;
+        var itemsPerPage = Math.max(1, parseInt(<?= json_encode((int) $items_per_page, JSON_UNESCAPED_UNICODE) ?>, 10) || 1);
         var showResultsCount = <?= $show_results_count ? 'true' : 'false' ?>;
+        var actionButtonClass = <?= json_encode($action_button_class, JSON_UNESCAPED_UNICODE) ?>;
         var currentPage = 1;
         var visibleLimit = itemsPerPage;
 
@@ -562,15 +1164,15 @@ $section_style = sprintf(
                 hasControls = true;
                 pagination.hidden = false;
                 pagination.innerHTML = ''
-                    + '<button type="button" class="nb-catalog-browser__page-control" data-role="catalog-page" data-page="' + Math.max(1, currentPage - 1) + '"' + (currentPage === 1 ? ' disabled' : '') + '>Назад</button>'
+                    + '<button type="button" class="nb-catalog-browser__button nb-catalog-browser__page-control ' + actionButtonClass + '" data-role="catalog-page" data-page="' + Math.max(1, currentPage - 1) + '"' + (currentPage === 1 ? ' disabled' : '') + '>Назад</button>'
                     + buildPaginationItems(totalPages, currentPage).map(function(item) {
                         if (typeof item !== 'number') {
                             return '<span class="nb-catalog-browser__page-gap">…</span>';
                         }
 
-                        return '<button type="button" class="nb-catalog-browser__page' + (item === currentPage ? ' is-active' : '') + '" data-role="catalog-page" data-page="' + item + '"' + (item === currentPage ? ' aria-current="page"' : '') + '>' + item + '</button>';
+                        return '<button type="button" class="nb-catalog-browser__button nb-catalog-browser__page ' + actionButtonClass + (item === currentPage ? ' is-active' : '') + '" data-role="catalog-page" data-page="' + item + '"' + (item === currentPage ? ' aria-current="page"' : '') + '>' + item + '</button>';
                     }).join('')
-                    + '<button type="button" class="nb-catalog-browser__page-control" data-role="catalog-page" data-page="' + Math.min(totalPages, currentPage + 1) + '"' + (currentPage === totalPages ? ' disabled' : '') + '>Вперёд</button>';
+                    + '<button type="button" class="nb-catalog-browser__button nb-catalog-browser__page-control ' + actionButtonClass + '" data-role="catalog-page" data-page="' + Math.min(totalPages, currentPage + 1) + '"' + (currentPage === totalPages ? ' disabled' : '') + '>Вперёд</button>';
             }
 
             footer.hidden = !hasControls || totalMatches < 1;

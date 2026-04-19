@@ -34,7 +34,7 @@ function nbhBuildLayoutControlRenderers() {
                 var desktopColumnsLabel = profile.kind === 'catalog_browser' ? 'Колонки desktop (1-6)' : 'Колонки';
                 var mobileColumnsLabel = profile.kind === 'catalog_browser' ? 'Колонки mobile (1-2)' : 'Колонки';
                 var catalogNote = profile.kind === 'catalog_browser'
-                    ? '<div class="nbh-note">Каталог поддерживает плотную сетку до 6 колонок на desktop и 2 колонок на mobile. При 5-6 колонках runtime автоматически уплотняет карточки.</div>'
+                    ? '<div class="nbh-note">Сетка каталога задаётся отдельно для desktop и mobile. Оба поля обязательны: desktop поддерживает 1-6 колонок, mobile 1-2. При 5-6 колонках runtime автоматически уплотняет карточки.</div>'
                     : '';
                 if (bp === 'desktop') {
                     return body + '<div class="nbh-grid-2">'

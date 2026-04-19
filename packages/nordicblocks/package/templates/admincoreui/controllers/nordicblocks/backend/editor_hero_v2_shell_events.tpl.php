@@ -100,6 +100,15 @@ document.getElementById('nbh-panel-body').addEventListener('click', function(eve
         if (repeaterAction.dataset.repeaterAction === 'add') {
             nbhAddRepeaterItem();
         }
+        if (repeaterAction.dataset.repeaterAction === 'duplicate') {
+            nbhDuplicateRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10));
+        }
+        if (repeaterAction.dataset.repeaterAction === 'move-up') {
+            nbhMoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10), -1);
+        }
+        if (repeaterAction.dataset.repeaterAction === 'move-down') {
+            nbhMoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10), 1);
+        }
         if (repeaterAction.dataset.repeaterAction === 'remove') {
             nbhRemoveRepeaterItem(parseInt(repeaterAction.dataset.itemIndex || '0', 10));
         }

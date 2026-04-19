@@ -1225,10 +1225,31 @@ function nbhBlockUiProfile() {
                     desktopLetterSpacing: 0,
                     mobileLetterSpacing: 0,
                 },
+                buttonsText: {
+                    desktopFontSize: 15,
+                    mobileFontSize: 14,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#ffffff',
+                    mobileColor: '#ffffff',
+                    desktopLineHeightPercent: 120,
+                    mobileLineHeightPercent: 120,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                },
                 media: {
                     aspectRatio: '4:3',
                     objectFit: 'cover',
                     radius: 20,
+                },
+                mediaSurface: {
+                    backgroundMode: 'transparent',
+                    backgroundColor: '#ffffff',
+                    padding: 0,
+                    radius: 20,
+                    borderWidth: 0,
+                    borderColor: '#dbe4ef',
+                    shadow: 'none',
                 },
                 itemSurface: {
                     radius: 22,
@@ -1489,7 +1510,9 @@ function nbhListSource() {
             if (typeof source.map.badge !== 'string') source.map.badge = 'badge';
             if (typeof source.map.tags !== 'string') source.map.tags = 'tags';
             if (typeof source.map.ctaLabel !== 'string') source.map.ctaLabel = 'cta_label';
+            if (typeof source.map.ctaKind !== 'string') source.map.ctaKind = 'cta_kind';
             if (typeof source.map.ctaUrl !== 'string') source.map.ctaUrl = 'cta_url';
+            if (typeof source.map.messengerType !== 'string') source.map.messengerType = 'messenger_type';
             if (typeof source.map.availability !== 'string') source.map.availability = 'availability';
             if (typeof source.map.gallery !== 'string') source.map.gallery = 'gallery';
         }
@@ -1521,12 +1544,16 @@ function nbhCollectionDefaultItem() {
                 priceOld: '12 900',
                 price_old: '12 900',
                 currency: '₽',
-                availability: 'В наличии',
+                availability: 'available',
                 tags: ['Новинка'],
                 cta_label: 'Открыть',
                 ctaLabel: 'Открыть',
+                cta_kind: 'url',
+                ctaKind: 'url',
                 cta_url: '/catalog/item',
                 ctaUrl: '/catalog/item',
+                messenger_type: 'none',
+                messengerType: 'none',
                 link_label: 'Открыть',
                 linkLabel: 'Открыть',
                 url: '/catalog/item',
@@ -1601,8 +1628,16 @@ function nbhCollectionItemValue(item, key) {
         return typeof item.cta_label === 'string' ? item.cta_label : (typeof item.ctaLabel === 'string' ? item.ctaLabel : '');
     }
 
+    if (nbhIsCardCollectionBlock() && key === 'cta_kind') {
+        return typeof item.cta_kind === 'string' ? item.cta_kind : (typeof item.ctaKind === 'string' ? item.ctaKind : 'url');
+    }
+
     if (nbhIsCardCollectionBlock() && key === 'cta_url') {
         return typeof item.cta_url === 'string' ? item.cta_url : (typeof item.ctaUrl === 'string' ? item.ctaUrl : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'messenger_type') {
+        return typeof item.messenger_type === 'string' ? item.messenger_type : (typeof item.messengerType === 'string' ? item.messengerType : 'none');
     }
 
     if (nbhIsCardCollectionBlock() && key === 'tags') {
@@ -2004,6 +2039,37 @@ function nbhRemoveRepeaterItem(index) {
     nbhScheduleSave();
 }
 
+function nbhDuplicateRepeaterItem(index) {
+    var items = nbhRepeaterItems().slice();
+    if (index < 0 || index >= items.length) {
+        return;
+    }
+
+    items.splice(index + 1, 0, nbhClone(items[index]));
+    nbhSet(nbhState.draft, 'content.items', items);
+    nbhMarkDirty();
+    nbhRenderPanels();
+    nbhScheduleSave();
+}
+
+function nbhMoveRepeaterItem(index, direction) {
+    var items = nbhRepeaterItems().slice();
+    var nextIndex = index + direction;
+    var current;
+
+    if (index < 0 || index >= items.length || nextIndex < 0 || nextIndex >= items.length) {
+        return;
+    }
+
+    current = items[index];
+    items[index] = items[nextIndex];
+    items[nextIndex] = current;
+    nbhSet(nbhState.draft, 'content.items', items);
+    nbhMarkDirty();
+    nbhRenderPanels();
+    nbhScheduleSave();
+}
+
 function nbhUpdateRepeaterItem(index, field, value) {
     var items = nbhRepeaterItems().slice();
     if (!items[index] || typeof items[index] !== 'object') {
@@ -2037,11 +2103,48 @@ function nbhUpdateRepeaterItem(index, field, value) {
         if (field === 'excerpt') {
             item.text = value;
         }
+        if (field === 'category_url') {
+            item.categoryUrl = value;
+        }
+        if (field === 'priceOld') {
+            item.price_old = value;
+        }
+        if (field === 'cta_label') {
+            item.ctaLabel = value;
+            item.link_label = value;
+            item.linkLabel = value;
+        }
+        if (field === 'cta_kind') {
+            item.ctaKind = value;
+        }
+        if (field === 'cta_url') {
+            item.ctaUrl = value;
+        }
+        if (field === 'messenger_type') {
+            item.messengerType = value;
+        }
         if (field === 'imageAlt') {
             item.alt = value;
         }
+        if (field === 'link_label') {
+            item.linkLabel = value;
+        }
         if (typeof item.excerpt !== 'string') item.excerpt = typeof item.text === 'string' ? item.text : '';
         if (typeof item.text !== 'string') item.text = item.excerpt;
+        if (typeof item.category_url !== 'string') item.category_url = typeof item.categoryUrl === 'string' ? item.categoryUrl : '';
+        if (typeof item.categoryUrl !== 'string') item.categoryUrl = item.category_url;
+        if (typeof item.priceOld !== 'string') item.priceOld = typeof item.price_old === 'string' ? item.price_old : '';
+        if (typeof item.price_old !== 'string') item.price_old = item.priceOld;
+        if (typeof item.cta_label !== 'string') item.cta_label = typeof item.ctaLabel === 'string' ? item.ctaLabel : '';
+        if (typeof item.ctaLabel !== 'string') item.ctaLabel = item.cta_label;
+        if (typeof item.cta_kind !== 'string') item.cta_kind = typeof item.ctaKind === 'string' ? item.ctaKind : 'url';
+        if (typeof item.ctaKind !== 'string') item.ctaKind = item.cta_kind;
+        if (typeof item.cta_url !== 'string') item.cta_url = typeof item.ctaUrl === 'string' ? item.ctaUrl : '';
+        if (typeof item.ctaUrl !== 'string') item.ctaUrl = item.cta_url;
+        if (typeof item.messenger_type !== 'string') item.messenger_type = typeof item.messengerType === 'string' ? item.messengerType : 'none';
+        if (typeof item.messengerType !== 'string') item.messengerType = item.messenger_type;
+        if (typeof item.link_label !== 'string') item.link_label = typeof item.linkLabel === 'string' ? item.linkLabel : item.cta_label;
+        if (typeof item.linkLabel !== 'string') item.linkLabel = item.link_label;
         if (typeof item.imageAlt !== 'string') item.imageAlt = typeof item.alt === 'string' ? item.alt : '';
         if (typeof item.alt !== 'string') item.alt = item.imageAlt;
     }

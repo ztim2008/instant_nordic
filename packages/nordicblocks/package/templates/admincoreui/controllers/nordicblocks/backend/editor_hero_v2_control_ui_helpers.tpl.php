@@ -85,6 +85,45 @@ function nbhRepeaterImageField(index, image) {
         + '</div>';
 }
 
+function nbhItemSelectOptions(options, value) {
+    value = String(value == null ? '' : value);
+    return '<select data-item-field="__FIELD__" data-item-index="__INDEX__">' + options.map(function(option) {
+        var optionValue = String(option.value == null ? '' : option.value);
+        return '<option value="' + nbhEscapeAttr(optionValue) + '"' + (value === optionValue ? ' selected' : '') + '>' + option.label + '</option>';
+    }).join('') + '</select>';
+}
+
+function nbhCatalogAvailabilityOptions() {
+    return [
+        { value: 'available', label: 'Доступно' },
+        { value: 'limited', label: 'Ограничено' },
+        { value: 'on_request', label: 'По запросу' },
+        { value: 'hidden', label: 'Скрыто' }
+    ];
+}
+
+function nbhCatalogCtaKindOptions() {
+    return [
+        { value: 'url', label: 'URL' },
+        { value: 'whatsapp', label: 'WhatsApp' },
+        { value: 'telegram', label: 'Telegram' },
+        { value: 'phone', label: 'Телефон' },
+        { value: 'none', label: 'Без CTA' }
+    ];
+}
+
+function nbhCatalogMessengerOptions() {
+    return [
+        { value: 'none', label: 'Нет' },
+        { value: 'whatsapp', label: 'WhatsApp' },
+        { value: 'telegram', label: 'Telegram' }
+    ];
+}
+
+function nbhRepeaterActionButton(action, index, label, disabled) {
+    return '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="' + action + '" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;"' + (disabled ? ' disabled' : '') + '>' + label + '</button>';
+}
+
 function nbhRepeaterEditor() {
     var items = nbhRepeaterItems();
     var listSource = nbhListSource();
@@ -107,7 +146,9 @@ function nbhRepeaterEditor() {
             var priceOld = nbhCollectionItemValue(item, 'priceOld');
             var availability = nbhCollectionItemValue(item, 'availability');
             var ctaLabel = nbhCollectionItemValue(item, 'cta_label');
+            var ctaKind = nbhCollectionItemValue(item, 'cta_kind') || 'url';
             var ctaUrl = nbhCollectionItemValue(item, 'cta_url');
+            var messengerType = nbhCollectionItemValue(item, 'messenger_type') || 'none';
             var tags = nbhCollectionItemValue(item, 'tags');
             var gallery = nbhCollectionItemValue(item, 'gallery');
             var currency = nbhCollectionItemValue(item, 'currency');
@@ -117,13 +158,18 @@ function nbhRepeaterEditor() {
                 return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
                     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
                     + '<strong>' + cardLabel + '</strong>'
-                    + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
+                    + '<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.4rem;">'
+                    + nbhRepeaterActionButton('move-up', index, 'Выше', index === 0)
+                    + nbhRepeaterActionButton('move-down', index, 'Ниже', index === items.length - 1)
+                    + nbhRepeaterActionButton('duplicate', index, 'Дублировать', false)
+                    + nbhRepeaterActionButton('remove', index, 'Удалить', false)
+                    + '</div>'
                     + '</div>'
                     + '<div class="nbh-grid-2">'
                     + nbhField('Категория', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
                     + nbhField('URL категории', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
                     + nbhField('Badge', '<input type="text" data-item-field="badge" data-item-index="' + index + '" value="' + nbhEscapeAttr(badge) + '">')
-                    + nbhField('Наличие', '<input type="text" data-item-field="availability" data-item-index="' + index + '" value="' + nbhEscapeAttr(availability) + '">')
+                    + nbhField('Наличие', nbhItemSelectOptions(nbhCatalogAvailabilityOptions(), availability).replace('__FIELD__', 'availability').replace('__INDEX__', String(index)))
                     + '</div>'
                     + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
                     + nbhField('Описание', '<textarea data-item-field="excerpt" data-item-index="' + index + '">' + nbhEscapeHtml(excerpt) + '</textarea>')
@@ -131,15 +177,17 @@ function nbhRepeaterEditor() {
                     + '<div class="nbh-grid-2">'
                     + nbhField('Цена', '<input type="text" data-item-field="price" data-item-index="' + index + '" value="' + nbhEscapeAttr(price) + '">')
                     + nbhField('Старая цена', '<input type="text" data-item-field="priceOld" data-item-index="' + index + '" value="' + nbhEscapeAttr(priceOld) + '">')
-                        + nbhField('Валюта', '<input type="text" data-item-field="currency" data-item-index="' + index + '" value="' + nbhEscapeAttr(currency) + '">')
+                    + nbhField('Валюта', '<input type="text" data-item-field="currency" data-item-index="' + index + '" value="' + nbhEscapeAttr(currency) + '">')
                     + nbhField('CTA', '<input type="text" data-item-field="cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaLabel) + '">')
+                    + nbhField('Тип CTA', nbhItemSelectOptions(nbhCatalogCtaKindOptions(), ctaKind).replace('__FIELD__', 'cta_kind').replace('__INDEX__', String(index)))
                     + nbhField('URL CTA', '<input type="text" data-item-field="cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaUrl) + '">')
+                    + nbhField('Тип мессенджера', nbhItemSelectOptions(nbhCatalogMessengerOptions(), messengerType).replace('__FIELD__', 'messenger_type').replace('__INDEX__', String(index)))
                     + nbhField('URL карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
                     + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
                     + '</div>'
                     + nbhField('Теги через запятую', '<input type="text" data-item-field="tags" data-item-index="' + index + '" value="' + nbhEscapeAttr(tags) + '">')
-                        + nbhField('Галерея JSON', '<textarea data-item-field="gallery" data-item-index="' + index + '" placeholder="[{&quot;src&quot;:&quot;/upload/...jpg&quot;,&quot;alt&quot;:&quot;Слайд&quot;,&quot;caption&quot;:&quot;Подпись&quot;}]">' + nbhEscapeHtml(gallery) + '</textarea>')
-                        + '<div class="nbh-note" style="margin-top:.75rem;">Для полноэкранного modal можно передать JSON-массив слайдов. Если поле пустое, блок использует cover image карточки.</div>'
+                    + nbhField('Галерея JSON', '<textarea data-item-field="gallery" data-item-index="' + index + '" placeholder="[{&quot;src&quot;:&quot;/upload/...jpg&quot;,&quot;alt&quot;:&quot;Слайд&quot;,&quot;caption&quot;:&quot;Подпись&quot;}]">' + nbhEscapeHtml(gallery) + '</textarea>')
+                    + '<div class="nbh-note" style="margin-top:.75rem;">Карточки можно переставлять, дублировать и настраивать отдельно для URL, телефона и мессенджеров. Для полноэкранного modal передайте JSON-массив слайдов; если поле пустое, блок использует cover image карточки.</div>'
                     + '</div>';
             }
 
@@ -193,7 +241,7 @@ function nbhRepeaterEditor() {
     if (nbhIsCardCollectionBlock()) {
         return (kind === 'headline_feed' ? '<div class="nbh-note">Первая карточка всегда становится главной статьёй. Остальные карточки продолжают ленту и перестраиваются по выбранному visual preset.</div>' : '')
             + (kind === 'catalog_browser'
-                ? '<div class="nbh-note">Каталог можно держать целиком открытым, резать по кнопке Показать ещё или по клиентской пагинации. Поиск тоже можно сузить до нужных полей карточки.</div>'
+                ? '<div class="nbh-note">Каталог можно держать целиком открытым, резать по кнопке Показать ещё или по клиентской пагинации. Поиск тоже можно сузить до нужных полей карточки, а порядок карточек теперь управляется прямо здесь.</div>'
                 : '')
             + '<div class="nbh-grid-2">'
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))

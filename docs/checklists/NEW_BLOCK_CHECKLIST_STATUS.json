@@ -6,7 +6,7 @@
             "title": "Каталог",
             "family": "catalog-family-v1",
             "status": "in_progress",
-            "checkpoint": "snapshot/20260419-082751",
+            "checkpoint": "snapshot/20260419-090342",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
@@ -16,7 +16,7 @@
                 "package_mirror": true,
                 "live_smoke": true
             },
-            "notes": "Первый block type каталожной линейки уже подключен в first-wave registry, contract/data layer, unified editor shell, shared theme CSS и package mirror. В SSR/runtime добавлены toolbar search/category/price/sort, active filters и fullscreen media modal со swipe-навигацией. Admin smoke пройден после checkpoint snapshot/20260419-082751: create, editor load, save/reload, content_list mapping/persistence и preview runtime. Для content_list на текущем окружении подтверждён рендер через ctype Статьи; search/category/price/sort/reset и empty-state проверены на ручном наборе, а modal/swipe прогнаны в preview runtime с временной multi-slide gallery подстановкой, потому что demo seed сейчас одноизображенный. После smoke добавлен взрослый polish-слой: dense visual treatment, desktop grid до 6 колонок, mobile grid до 2 колонок, client-side режимы all/load_more/pagination, results counter, настраиваемые search fields и ручной gallery JSON input в editor shell."
+            "notes": "Первый block type каталожной линейки уже подключен в first-wave registry, contract/data layer, unified editor shell, shared theme CSS и package mirror. В SSR/runtime добавлены toolbar search/category/price/sort, active filters и fullscreen media modal со swipe-навигацией. Admin smoke пройден после checkpoint snapshot/20260419-082751: create, editor load, save/reload, content_list mapping/persistence и preview runtime. Для content_list на текущем окружении подтверждён рендер через ctype Статьи; search/category/price/sort/reset и empty-state проверены на ручном наборе, а modal/swipe прогнаны в preview runtime с временной multi-slide gallery подстановкой, потому что demo seed сейчас одноизображенный. После checkpoint snapshot/20260419-090342 блок дополнительно доведён до contract-driven design-system pass: в editor shell появились duplicate/reorder для repeatable content, CTA kind/messenger/availability controls, расширенная design-панель для meta/buttons/media surface, а runtime render и shared CSS переведены на token/contract vars без hardcoded button palette. Package/template mirrors синхронизированы. Повторный live smoke по главной подтвердил search, load_more, modal и telegram CTA на demo card, но сам public runtime пока продолжает отдавать старую HTML-версию catalog_browser без новых data-nb-entity/design vars; это выглядит как отдельный runtime path или server-side cache mismatch и остаётся открытым residual issue текущего прохода."
         },
         "content_feed": {
             "title": "Лента новостей",
