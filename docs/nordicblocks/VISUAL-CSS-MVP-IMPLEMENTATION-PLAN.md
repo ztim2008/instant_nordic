@@ -84,7 +84,10 @@ Scope:
     "enabled": true,
     "scopeSelector": "[data-nb-block-root=\"hero_panels_wide\"]",
     "allowedTargets": ["title", "body", "accentSurface", "bodySurface"],
-    "cssText": "",
+    "targetCss": {
+      "title": "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;"
+    },
+    "cssText": "[data-nb-block-root=\"hero_panels_wide\"] [data-nb-entity=\"title\"] {font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;}",
     "version": 0
   }
 }
@@ -94,10 +97,28 @@ Scope:
 
 ```json
 {
-  "cssText": "[data-nb-block-root=\"hero_panels_wide\"] .nb-hero-panels__title{font-size:clamp(2.8rem,5vw,4.5rem);}",
+  "targetCss": {
+    "title": "font-size: clamp(2.8rem, 5vw, 4.5rem);"
+  },
   "version": 3
 }
 ```
+
+### Implementation note for MVP-B
+
+В production-safe реализации persisted storage должен хранить не «готовый CSS для всего документа», а canonical target-document по разрешённым target keys.
+
+Причина:
+
+1. один и тот же `hero_panels_wide` может встречаться несколько раз на странице;
+2. runtime scope должен компилироваться server-side под конкретный instance root, например `#block-<uid>`;
+3. иначе одно сохранённое fine-tune правило потечёт на все блоки того же type.
+
+Практически это означает:
+
+1. в БД хранится сериализованный target map;
+2. editor получает target map + compiled preview CSS под editor scope;
+3. runtime/page/widget/canvas получают compiled CSS уже под instance-specific selector.
 
 ## 4. JS Modules
 
@@ -231,6 +252,8 @@ CREATE TABLE cms_nordicblocks_block_css (
     KEY idx_block_type (block_type)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+В фактической реализации `css_text` может использоваться как serialized canonical target-document, а не как final CSS string. Final CSS должен компилироваться backend-ом на чтении под нужный scope.
 
 Этого достаточно, чтобы:
 

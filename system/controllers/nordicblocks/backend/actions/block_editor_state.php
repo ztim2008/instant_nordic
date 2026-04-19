@@ -58,7 +58,7 @@ class actionNordicblocksBlockEditorState extends cmsAction {
             'activeBreakpoint'    => 'desktop',
         ];
         $inspector = NordicblocksInspectorStateBuilder::build($registry, $resolved_entities, $resolved_capabilities, $ui_state);
-        $css_overlay = $this->buildCssOverlayMeta($block);
+        $css_overlay = $this->model->buildBlockCssOverlayMeta((string) ($block['type'] ?? ''));
 
         echo json_encode([
             'ok' => true,
@@ -89,49 +89,5 @@ class actionNordicblocksBlockEditorState extends cmsAction {
             'inspector' => $inspector,
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
-    }
-
-    private function buildCssOverlayMeta(array $block) {
-        $block_type = (string) ($block['type'] ?? '');
-
-        if ($block_type !== 'hero_panels_wide') {
-            return [
-                'enabled' => false,
-                'mode'    => 'disabled',
-            ];
-        }
-
-        return [
-            'enabled'        => true,
-            'mode'           => 'session',
-            'scopeSelector'  => '[data-nb-block-root="hero_panels_wide"]',
-            'allowedTargets' => ['title', 'body', 'accentSurface', 'bodySurface'],
-            'targets'        => [
-                'title' => [
-                    'label'       => 'Заголовок',
-                    'selector'    => '[data-nb-entity="title"]',
-                    'placeholder' => "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;",
-                    'example'     => "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;\ntext-wrap: balance;",
-                ],
-                'body' => [
-                    'label'       => 'Основной текст',
-                    'selector'    => '[data-nb-entity="body"]',
-                    'placeholder' => "font-size: 1.125rem;\nline-height: 1.8;",
-                    'example'     => "font-size: 1.125rem;\nline-height: 1.8;\nmax-width: 34ch;",
-                ],
-                'accentSurface' => [
-                    'label'       => 'Акцентная панель',
-                    'selector'    => '[data-nb-entity="accentSurface"]',
-                    'placeholder' => "background: linear-gradient(135deg, #ff5a36, #c81e1e);",
-                    'example'     => "background: linear-gradient(135deg, #ff5a36, #c81e1e);\nbox-shadow: 0 24px 60px rgba(200, 30, 30, 0.24);",
-                ],
-                'bodySurface' => [
-                    'label'       => 'Темная панель',
-                    'selector'    => '[data-nb-entity="bodySurface"]',
-                    'placeholder' => "background: #111827;\ncolor: #f8fafc;",
-                    'example'     => "background: #111827;\ncolor: #f8fafc;\nborder-top: 1px solid rgba(255,255,255,0.12);",
-                ],
-            ],
-        ];
     }
 }

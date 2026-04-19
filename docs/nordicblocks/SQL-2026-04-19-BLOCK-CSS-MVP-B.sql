@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS cms_nordicblocks_block_css (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    block_id INT UNSIGNED NOT NULL,
+    block_type VARCHAR(64) NOT NULL,
+    scope_type VARCHAR(32) NOT NULL DEFAULT 'block',
+    css_text MEDIUMTEXT NOT NULL,
+    version INT UNSIGNED NOT NULL DEFAULT 1,
+    updated_by INT UNSIGNED DEFAULT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uniq_block_id (block_id),
+    KEY idx_block_type (block_type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

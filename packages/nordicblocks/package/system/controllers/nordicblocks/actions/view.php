@@ -80,7 +80,7 @@ class actionNordicblocksView extends cmsAction {
 
             $props          = isset($block['props']) && is_array($block['props']) ? $block['props'] : [];
             $block_contract = isset($block['contract']) && is_array($block['contract']) ? $block['contract'] : [];
-            $block_html     = $this->renderBlock($render_file, $type, $uid, $props, $block_contract);
+            $block_html     = $this->renderBlock($render_file, $type, $uid, $props, $block_contract, $this->model->buildBlockCssOverlayRuntimeCss($block, $uid));
 
             if (!empty($cache_profile['cacheEligible'])) {
                 $this->model->setCachedBlock((string) $cache_profile['cacheKey'], $block_html, 3600);
@@ -91,12 +91,18 @@ class actionNordicblocksView extends cmsAction {
         return $html;
     }
 
-    private function renderBlock($render_file, $type, $uid, array $props, array $block_contract = []) {
+    private function renderBlock($render_file, $type, $uid, array $props, array $block_contract = [], $block_css_overlay_css = '') {
         // Каждый блок получает $props и $uid; возвращает HTML-строку
         ob_start();
         $block_type = $type;
         $block_uid  = $uid;
         include $render_file;
-        return ob_get_clean();
+        $block_html = ob_get_clean();
+
+        if ($block_css_overlay_css !== '') {
+            $block_html = '<style data-nb-block-css-overlay="' . htmlspecialchars((string) $uid, ENT_QUOTES, 'UTF-8') . '">' . str_ireplace('</style', '<\\/style', (string) $block_css_overlay_css) . '</style>' . $block_html;
+        }
+
+        return $block_html;
     }
 }

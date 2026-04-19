@@ -30,16 +30,17 @@ a{color:inherit;text-decoration:none}
 ';
 
         $block_html = $this->renderSingleBlock($block);
+        $overlay_css = $this->model->buildBlockCssOverlayRuntimeCss($block, 'block_' . (int) ($block['id'] ?? 0));
         $empty_html = $block_html ? '' : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:1rem;color:#94a3b8;text-align:center;padding:2rem">'
             . '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg>'
             . '<p style="font-size:1.1rem;font-weight:600;color:#64748b;margin:0">Блок пустой</p>'
             . '<p style="font-size:.9rem;margin:0">Настройте параметры в инспекторе справа</p>'
             . '</div>';
 
-        $this->outputHtml($tokens_css, $inline_css, $base_css, $blocks_css, $block_html ?: $empty_html);
+        $this->outputHtml($tokens_css, $inline_css, $base_css, $blocks_css, $block_html ?: $empty_html, $overlay_css);
     }
 
-    private function outputHtml($tokens_css, $inline_css, $base_css, $blocks_css, $content) {
+    private function outputHtml($tokens_css, $inline_css, $base_css, $blocks_css, $content, $overlay_css = '') {
         header('Content-Type: text/html; charset=utf-8');
         header('X-Frame-Options: SAMEORIGIN');
 
@@ -233,7 +234,7 @@ JS;
         echo '<style>' . $base_css . '</style>';
         echo '<style>' . $blocks_css . '</style>';
         echo '<style>' . $bridge_css . '</style>';
-        echo '<style id="nbh-css-overlay-style"></style>';
+        echo '<style id="nbh-css-overlay-style">' . str_ireplace('</style', '<\\/style', (string) $overlay_css) . '</style>';
         echo '</head><body>';
         echo $content;
         echo $bridge_js;

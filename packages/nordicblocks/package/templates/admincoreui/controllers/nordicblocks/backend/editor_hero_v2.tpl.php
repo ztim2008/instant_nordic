@@ -995,6 +995,8 @@ var nbhImagePickerListUrl = <?= json_encode(href_to('nordicblocks', 'media_list'
 var nbhImagePickerUploadUrl = <?= json_encode(href_to('nordicblocks', 'media_upload'), JSON_UNESCAPED_UNICODE) ?>;
 var nbhServerBlockType = <?= json_encode((string) ($block['type'] ?? ''), JSON_UNESCAPED_UNICODE) ?>;
 var nbhCssOverlayEnabled = <?= json_encode(!empty($css_overlay_enabled), JSON_UNESCAPED_UNICODE) ?>;
+var nbhCssOverlayStateUrl = <?= json_encode($css_overlay_state_url ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+var nbhCssOverlaySaveUrl = <?= json_encode($css_overlay_save_url ?? null, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 var nbhState = {
     loaded: false,
@@ -4364,14 +4366,16 @@ function nbhLoadState() {
             nbhState.activeBreakpoint = payload.ui && payload.ui.activeBreakpoint ? payload.ui.activeBreakpoint : 'desktop';
             nbhState.selectedEntity = payload.ui && payload.ui.selectedEntity ? payload.ui.selectedEntity : 'title';
             primedCatalog = nbhPrimeCatalogBrowserDraft();
-            nbhState.loaded = true;
-            nbhRender();
-            nbhCssOverlaySyncFrame();
+            return nbhCssOverlayLoadPersisted().then(function() {
+                nbhState.loaded = true;
+                nbhRender();
+                nbhCssOverlaySyncFrame();
 
-            if (primedCatalog) {
-                nbhMarkDirty();
-                nbhScheduleSave();
-            }
+                if (primedCatalog) {
+                    nbhMarkDirty();
+                    nbhScheduleSave();
+                }
+            });
         });
 }
 

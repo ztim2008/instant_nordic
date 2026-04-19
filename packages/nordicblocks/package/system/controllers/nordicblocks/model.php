@@ -13,6 +13,7 @@ class modelNordicblocks extends cmsModel {
     const TBL_BLOCKS = 'nordicblocks_blocks';
     const TBL_DESIGN = 'nordicblocks_design';
     const TBL_CACHE  = 'nordicblocks_cache';
+    const TBL_BLOCK_CSS = 'nordicblocks_block_css';
 
     // ── СТРАНИЦЫ ──────────────────────────────────────────────────
 
@@ -113,6 +114,7 @@ class modelNordicblocks extends cmsModel {
         }
 
         $row['props'] = $this->normalizeImagePropsByType((string) ($row['type'] ?? ''), (array) ($row['props'] ?? []));
+        $row['css_overlay'] = $this->getBlockCssOverlayState((int) ($row['id'] ?? 0), (string) ($row['type'] ?? ''));
         return $row;
     }
 
@@ -134,8 +136,182 @@ class modelNordicblocks extends cmsModel {
 
         $block['contract'] = NordicblocksBlockPayloadHydrator::hydrate($contract, $context);
         $block['props'] = $this->normalizeImagePropsByType($type, (array) NordicblocksBlockContractNormalizer::denormalizeProps($type, (array) $block['contract']));
+        $block['css_overlay'] = $this->getBlockCssOverlayState((int) ($block['id'] ?? 0), $type);
 
         return $block;
+    }
+
+    public function supportsBlockCssOverlay($type) {
+        return $this->normalizeBlockType((string) $type) === 'hero_panels_wide';
+    }
+
+    public function hasBlockCssOverlayStorage() {
+        return $this->db->isTableExists(self::TBL_BLOCK_CSS);
+    }
+
+    public function buildBlockCssOverlayMeta($type, $scope_selector = null) {
+        $config = $this->getBlockCssOverlayConfig($type);
+
+        if (!$config) {
+            return [
+                'enabled' => false,
+                'mode'    => 'disabled',
+            ];
+        }
+
+        $scope_selector = trim((string) $scope_selector);
+        if ($scope_selector === '') {
+            $scope_selector = (string) ($config['scopeSelector'] ?? '');
+        }
+
+        return [
+            'enabled'        => true,
+            'mode'           => $this->hasBlockCssOverlayStorage() ? 'persistent' : 'session',
+            'scopeSelector'  => $scope_selector,
+            'allowedTargets' => array_values($config['allowedTargets']),
+            'targets'        => $config['targets'],
+        ];
+    }
+
+    public function getBlockCssOverlayState($block_id, $block_type, $scope_selector = null) {
+        $block_id = (int) $block_id;
+        $meta = $this->buildBlockCssOverlayMeta($block_type, $scope_selector);
+
+        if (empty($meta['enabled'])) {
+            return $meta;
+        }
+
+        $target_css = [];
+        $version    = 0;
+        $updated_at = '';
+        $updated_by = 0;
+
+        if ($block_id > 0 && $this->hasBlockCssOverlayStorage()) {
+            $row = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+            if ($row) {
+                $target_css = $this->decodeBlockCssOverlayTargetCss((string) ($row['css_text'] ?? ''), (string) $block_type);
+                $version    = max(0, (int) ($row['version'] ?? 0));
+                $updated_at = (string) ($row['updated_at'] ?? '');
+                $updated_by = max(0, (int) ($row['updated_by'] ?? 0));
+            }
+        }
+
+        $meta['targetCss'] = $target_css;
+        $meta['cssText']   = $this->compileBlockCssOverlayCss((string) $block_type, $target_css, (string) ($meta['scopeSelector'] ?? ''));
+        $meta['version']   = $version;
+        $meta['updatedAt'] = $updated_at;
+        $meta['updatedBy'] = $updated_by;
+        $meta['persisted'] = ($version > 0);
+
+        return $meta;
+    }
+
+    public function saveBlockCssOverlayState($block_id, $block_type, array $target_css, $expected_version = null, $updated_by = 0, $scope_selector = null) {
+        $block_id    = (int) $block_id;
+        $block_type  = $this->normalizeBlockType((string) $block_type);
+        $updated_by  = (int) $updated_by;
+
+        if ($block_id < 1 || !$this->supportsBlockCssOverlay($block_type)) {
+            return ['ok' => false, 'error' => 'unsupported_block_type'];
+        }
+
+        if (!$this->hasBlockCssOverlayStorage()) {
+            return ['ok' => false, 'error' => 'schema_missing'];
+        }
+
+        $normalized_target_css = $this->normalizeBlockCssOverlayTargetCss($block_type, $target_css);
+        $existing = $this->db->getRow(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+        $current_version = $existing ? max(0, (int) ($existing['version'] ?? 0)) : 0;
+
+        if ($expected_version !== null && (int) $expected_version !== $current_version) {
+            return [
+                'ok'         => false,
+                'error'      => 'version_conflict',
+                'cssOverlay' => $this->getBlockCssOverlayState($block_id, $block_type, $scope_selector),
+            ];
+        }
+
+        if ($existing) {
+            $stored_target_css = $this->decodeBlockCssOverlayTargetCss((string) ($existing['css_text'] ?? ''), $block_type);
+            if ($this->stableJsonEncode($stored_target_css) === $this->stableJsonEncode($normalized_target_css)) {
+                return [
+                    'ok'         => true,
+                    'cssOverlay' => $this->getBlockCssOverlayState($block_id, $block_type, $scope_selector),
+                ];
+            }
+        }
+
+        if (!$normalized_target_css) {
+            if ($existing) {
+                $this->db->delete(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+                $this->invalidateBlockCache($block_id);
+            }
+
+            return [
+                'ok'         => true,
+                'cssOverlay' => $this->getBlockCssOverlayState($block_id, $block_type, $scope_selector),
+            ];
+        }
+
+        $payload = [
+            'block_id'    => $block_id,
+            'block_type'  => $block_type,
+            'scope_type'  => 'block',
+            'css_text'    => json_encode($normalized_target_css, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'version'     => $current_version + 1,
+            'updated_by'  => $updated_by > 0 ? $updated_by : null,
+            'updated_at'  => date('Y-m-d H:i:s'),
+        ];
+
+        if ($existing) {
+            $this->db->update(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}", $payload, true);
+        } else {
+            $payload['created_at'] = date('Y-m-d H:i:s');
+            $this->db->insert(self::TBL_BLOCK_CSS, $payload, true);
+        }
+
+        $this->invalidateBlockCache($block_id);
+
+        return [
+            'ok'         => true,
+            'cssOverlay' => $this->getBlockCssOverlayState($block_id, $block_type, $scope_selector),
+        ];
+    }
+
+    public function deleteBlockCssOverlay($block_id) {
+        $block_id = (int) $block_id;
+        if ($block_id < 1 || !$this->hasBlockCssOverlayStorage()) {
+            return;
+        }
+
+        $this->db->delete(self::TBL_BLOCK_CSS, "`block_id` = {$block_id}");
+    }
+
+    public function buildBlockCssOverlayRuntimeCss(array $block, $block_uid) {
+        $block_type = $this->normalizeBlockType((string) ($block['type'] ?? ''));
+        if (!$this->supportsBlockCssOverlay($block_type)) {
+            return '';
+        }
+
+        $target_css = is_array($block['css_overlay']['targetCss'] ?? null)
+            ? $block['css_overlay']['targetCss']
+            : $this->decodeBlockCssOverlayTargetCss('', $block_type);
+
+        if (!$target_css && !empty($block['id'])) {
+            $state = $this->getBlockCssOverlayState((int) $block['id'], $block_type);
+            $target_css = is_array($state['targetCss'] ?? null) ? $state['targetCss'] : [];
+        }
+
+        if (!$target_css) {
+            return '';
+        }
+
+        $safe_uid = preg_replace('/[^a-zA-Z0-9_\-]/', '', (string) $block_uid);
+        if ($safe_uid === '') {
+            return '';
+        }
+
+        return $this->compileBlockCssOverlayCss($block_type, $target_css, '#block-' . $safe_uid);
     }
 
     public function getDesignCacheVersion() {
@@ -322,6 +498,7 @@ class modelNordicblocks extends cmsModel {
     public function deleteBlock($id) {
         $id = (int) $id;
         $removed_widget_binds = $this->deleteBlockWidgetBindings($id);
+        $this->deleteBlockCssOverlay($id);
         $this->db->delete(self::TBL_BLOCKS, "`id` = {$id}");
         $this->invalidateBlockCache($id);
 
@@ -1507,6 +1684,125 @@ class modelNordicblocks extends cmsModel {
         }
 
         return array_keys($value) !== range(0, count($value) - 1);
+    }
+
+    private function getBlockCssOverlayConfig($type) {
+        $type = $this->normalizeBlockType((string) $type);
+
+        if ($type !== 'hero_panels_wide') {
+            return [];
+        }
+
+        return [
+            'scopeSelector'  => '[data-nb-block-root="hero_panels_wide"]',
+            'allowedTargets' => ['title', 'body', 'accentSurface', 'bodySurface'],
+            'targets'        => [
+                'title' => [
+                    'label'       => 'Заголовок',
+                    'selector'    => '[data-nb-entity="title"]',
+                    'placeholder' => "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;",
+                    'example'     => "font-size: clamp(3rem, 5vw, 4.5rem);\nletter-spacing: -0.04em;\ntext-wrap: balance;",
+                ],
+                'body' => [
+                    'label'       => 'Основной текст',
+                    'selector'    => '[data-nb-entity="body"]',
+                    'placeholder' => "font-size: 1.125rem;\nline-height: 1.8;",
+                    'example'     => "font-size: 1.125rem;\nline-height: 1.8;\nmax-width: 34ch;",
+                ],
+                'accentSurface' => [
+                    'label'       => 'Акцентная панель',
+                    'selector'    => '[data-nb-entity="accentSurface"]',
+                    'placeholder' => "background: linear-gradient(135deg, #ff5a36, #c81e1e);",
+                    'example'     => "background: linear-gradient(135deg, #ff5a36, #c81e1e);\nbox-shadow: 0 24px 60px rgba(200, 30, 30, 0.24);",
+                ],
+                'bodySurface' => [
+                    'label'       => 'Темная панель',
+                    'selector'    => '[data-nb-entity="bodySurface"]',
+                    'placeholder' => "background: #111827;\ncolor: #f8fafc;",
+                    'example'     => "background: #111827;\ncolor: #f8fafc;\nborder-top: 1px solid rgba(255,255,255,0.12);",
+                ],
+            ],
+        ];
+    }
+
+    private function decodeBlockCssOverlayTargetCss($stored_payload, $block_type) {
+        $decoded = json_decode((string) $stored_payload, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        return $this->normalizeBlockCssOverlayTargetCss($block_type, $decoded);
+    }
+
+    private function normalizeBlockCssOverlayTargetCss($block_type, array $target_css) {
+        $config = $this->getBlockCssOverlayConfig($block_type);
+        if (!$config) {
+            return [];
+        }
+
+        $normalized_map = [];
+        foreach ((array) ($config['allowedTargets'] ?? []) as $target_key) {
+            if (!array_key_exists($target_key, $target_css)) {
+                continue;
+            }
+
+            $normalized = $this->normalizeBlockCssOverlayDeclarations($target_css[$target_key] ?? '');
+            if ($normalized !== '') {
+                $normalized_map[$target_key] = $normalized;
+            }
+        }
+
+        return $normalized_map;
+    }
+
+    private function normalizeBlockCssOverlayDeclarations($value) {
+        if (!is_scalar($value) && $value !== null) {
+            return '';
+        }
+
+        $normalized = preg_replace('/<\/?style[^>]*>/i', '', (string) $value);
+        $normalized = str_replace(["\r\n", "\r"], "\n", trim($normalized));
+
+        $open_brace = strpos($normalized, '{');
+        $close_brace = strrpos($normalized, '}');
+        if ($open_brace !== false && $close_brace !== false && $close_brace > $open_brace) {
+            $normalized = substr($normalized, $open_brace + 1, $close_brace - $open_brace - 1);
+        }
+
+        if (function_exists('mb_substr')) {
+            $normalized = mb_substr($normalized, 0, 16000);
+        } else {
+            $normalized = substr($normalized, 0, 16000);
+        }
+
+        return trim($normalized);
+    }
+
+    private function compileBlockCssOverlayCss($block_type, array $target_css, $scope_selector = null) {
+        $meta = $this->buildBlockCssOverlayMeta($block_type, $scope_selector);
+        if (empty($meta['enabled'])) {
+            return '';
+        }
+
+        $scope_selector = trim((string) ($meta['scopeSelector'] ?? ''));
+        if ($scope_selector === '') {
+            return '';
+        }
+
+        $css_parts = [];
+        foreach ((array) ($meta['allowedTargets'] ?? []) as $target_key) {
+            $target_meta = (array) ($meta['targets'][$target_key] ?? []);
+            $selector = trim((string) ($target_meta['selector'] ?? ''));
+            $declarations = $this->normalizeBlockCssOverlayDeclarations($target_css[$target_key] ?? '');
+
+            if ($selector === '' || $declarations === '') {
+                continue;
+            }
+
+            $css_parts[] = $scope_selector . ' ' . $selector . ' {' . $declarations . '}';
+        }
+
+        return implode("\n\n", $css_parts);
     }
 
     private function sanitizeColor($hex, $fallback = '#b42318') {
