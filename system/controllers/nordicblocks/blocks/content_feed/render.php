@@ -70,6 +70,7 @@ if (!function_exists('nb_content_feed_normalize_item')) {
         $title = trim((string) ($item['title'] ?? ''));
         $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
         $category = trim((string) ($item['category'] ?? ''));
+        $category_url = trim((string) ($item['categoryUrl'] ?? ($item['category_url'] ?? '')));
         $link_label = trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? '')));
         $url = trim((string) ($item['url'] ?? ''));
         $date = trim((string) ($item['date'] ?? ''));
@@ -83,6 +84,7 @@ if (!function_exists('nb_content_feed_normalize_item')) {
 
         return [
             'category' => htmlspecialchars($category, ENT_QUOTES, 'UTF-8'),
+            'categoryUrl' => htmlspecialchars($category_url, ENT_QUOTES, 'UTF-8'),
             'title' => htmlspecialchars($title, ENT_QUOTES, 'UTF-8'),
             'excerpt' => nl2br(htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8')),
             'linkLabel' => htmlspecialchars($link_label, ENT_QUOTES, 'UTF-8'),
@@ -476,7 +478,11 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                 <?php endif; ?>
                 <div class="nb-content-feed__body">
                     <?php if ($show_category && $item['category'] !== ''): ?>
+                    <?php if ($item['categoryUrl'] !== ''): ?>
+                    <a class="nb-content-feed__category" href="<?= $item['categoryUrl'] ?>" data-nb-entity="meta"><?= $item['category'] ?></a>
+                    <?php else: ?>
                     <div class="nb-content-feed__category" data-nb-entity="meta"><?= $item['category'] ?></div>
+                    <?php endif; ?>
                     <?php endif; ?>
                     <?php if ($item['title'] !== ''): ?>
                     <h3 class="nb-content-feed__card-title" data-nb-entity="itemTitle">

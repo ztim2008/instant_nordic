@@ -11,7 +11,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
         }
 
         if (!$this->model->isFirstWaveBlockType((string) ($block['type'] ?? ''))) {
-            cmsCore::addFlashMessage('info', 'Этот тип блока выведен из активного потока первой волны. Сейчас редактор поддерживается для hero, faq, content_feed, category_cards и headline_feed.');
+            cmsCore::addFlashMessage('info', 'Этот тип блока выведен из активного потока первой волны. Сейчас редактор поддерживается для hero, faq, content_feed, category_cards, headline_feed, swiss_grid и catalog_browser.');
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 

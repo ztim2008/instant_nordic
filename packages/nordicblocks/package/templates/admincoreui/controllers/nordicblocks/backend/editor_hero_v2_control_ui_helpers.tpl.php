@@ -92,15 +92,51 @@ function nbhRepeaterEditor() {
     var cards = items.map(function(item, index) {
         if (nbhIsCardCollectionBlock()) {
             var category = nbhCollectionItemValue(item, 'category');
+            var categoryUrl = nbhCollectionItemValue(item, 'category_url');
             var title = nbhCollectionItemValue(item, 'title');
             var excerpt = nbhCollectionItemValue(item, 'excerpt');
+            var linkLabel = nbhCollectionItemValue(item, 'link_label');
             var url = nbhCollectionItemValue(item, 'url');
             var image = nbhCollectionItemValue(item, 'image');
             var imageAlt = nbhCollectionItemValue(item, 'imageAlt');
             var date = nbhCollectionItemValue(item, 'date');
             var views = nbhCollectionItemValue(item, 'views');
             var comments = nbhCollectionItemValue(item, 'comments');
+            var badge = nbhCollectionItemValue(item, 'badge');
+            var price = nbhCollectionItemValue(item, 'price');
+            var priceOld = nbhCollectionItemValue(item, 'priceOld');
+            var availability = nbhCollectionItemValue(item, 'availability');
+            var ctaLabel = nbhCollectionItemValue(item, 'cta_label');
+            var ctaUrl = nbhCollectionItemValue(item, 'cta_url');
+            var tags = nbhCollectionItemValue(item, 'tags');
             var cardLabel = (kind === 'headline_feed' && index === 0) ? 'Главная статья' : 'Карточка ' + (index + 1);
+
+            if (kind === 'catalog_browser') {
+                return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
+                    + '<strong>' + cardLabel + '</strong>'
+                    + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="remove" data-item-index="' + index + '" style="padding:.32rem .7rem;font-size:.72rem;">Удалить</button>'
+                    + '</div>'
+                    + '<div class="nbh-grid-2">'
+                    + nbhField('Категория', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
+                    + nbhField('URL категории', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
+                    + nbhField('Badge', '<input type="text" data-item-field="badge" data-item-index="' + index + '" value="' + nbhEscapeAttr(badge) + '">')
+                    + nbhField('Наличие', '<input type="text" data-item-field="availability" data-item-index="' + index + '" value="' + nbhEscapeAttr(availability) + '">')
+                    + '</div>'
+                    + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
+                    + nbhField('Описание', '<textarea data-item-field="excerpt" data-item-index="' + index + '">' + nbhEscapeHtml(excerpt) + '</textarea>')
+                    + nbhField('Изображение', nbhRepeaterImageField(index, image))
+                    + '<div class="nbh-grid-2">'
+                    + nbhField('Цена', '<input type="text" data-item-field="price" data-item-index="' + index + '" value="' + nbhEscapeAttr(price) + '">')
+                    + nbhField('Старая цена', '<input type="text" data-item-field="priceOld" data-item-index="' + index + '" value="' + nbhEscapeAttr(priceOld) + '">')
+                    + nbhField('CTA', '<input type="text" data-item-field="cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaLabel) + '">')
+                    + nbhField('URL CTA', '<input type="text" data-item-field="cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(ctaUrl) + '">')
+                    + nbhField('URL карточки', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
+                    + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
+                    + '</div>'
+                    + nbhField('Теги через запятую', '<input type="text" data-item-field="tags" data-item-index="' + index + '" value="' + nbhEscapeAttr(tags) + '">')
+                    + '</div>';
+            }
 
             return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
                 + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
@@ -109,10 +145,12 @@ function nbhRepeaterEditor() {
                 + '</div>'
                 + '<div class="nbh-grid-2">'
                 + nbhField('Рубрика', '<input type="text" data-item-field="category" data-item-index="' + index + '" value="' + nbhEscapeAttr(category) + '">')
+                + nbhField('URL рубрики', '<input type="text" data-item-field="category_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(categoryUrl) + '">')
                 + nbhField('Дата', '<input type="text" data-item-field="date" data-item-index="' + index + '" value="' + nbhEscapeAttr(date) + '">')
                 + '</div>'
                 + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
                 + nbhField('Анонс', '<textarea data-item-field="excerpt" data-item-index="' + index + '">' + nbhEscapeHtml(excerpt) + '</textarea>')
+                + nbhField('CTA карточки', '<input type="text" data-item-field="link_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(linkLabel) + '">')
                 + nbhField('Изображение', nbhRepeaterImageField(index, image))
                 + '<div class="nbh-grid-2">'
                 + nbhField('URL', '<input type="text" data-item-field="url" data-item-index="' + index + '" value="' + nbhEscapeAttr(url) + '">')
@@ -137,7 +175,7 @@ function nbhRepeaterEditor() {
 
     if (!cards) {
         cards = nbhIsCardCollectionBlock()
-            ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Секция пока пуста. Добавьте главную статью и продолжение ленты.' : 'Лента пока пустая. Добавьте первую карточку.') + '</div>'
+            ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Секция пока пуста. Добавьте главную статью и продолжение ленты.' : (kind === 'swiss_grid' ? 'Swiss grid пока пуст. Добавьте первую карточку.' : 'Лента пока пустая. Добавьте первую карточку.')) + '</div>'
             : '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
     }
 
@@ -153,9 +191,19 @@ function nbhRepeaterEditor() {
             + nbhField('Показывать изображение', nbhSelect('runtime.visibility.image', nbhYesNoOptions(), '1'))
             + nbhField('Показывать рубрику', nbhSelect('runtime.visibility.category', nbhYesNoOptions(), '1'))
             + nbhField('Показывать анонс', nbhSelect('runtime.visibility.excerpt', nbhYesNoOptions(), '1'))
-            + nbhField('Показывать дату', nbhSelect('runtime.visibility.date', nbhYesNoOptions(), '1'))
-            + nbhField('Показывать просмотры', nbhSelect('runtime.visibility.views', nbhYesNoOptions(), '1'))
-            + nbhField('Показывать комментарии', nbhSelect('runtime.visibility.comments', nbhYesNoOptions(), '1'))
+            + (kind === 'catalog_browser'
+                ? nbhField('Показывать поиск', nbhSelect('runtime.visibility.search', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать фильтр категорий', nbhSelect('runtime.visibility.categoryFilter', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать фильтр цены', nbhSelect('runtime.visibility.priceFilter', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать сортировку', nbhSelect('runtime.visibility.sort', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать активные фильтры', nbhSelect('runtime.visibility.activeFilters', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать badge', nbhSelect('runtime.visibility.badge', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать цену', nbhSelect('runtime.visibility.price', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать старую цену', nbhSelect('runtime.visibility.oldPrice', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать CTA', nbhSelect('runtime.visibility.cta', nbhYesNoOptions(), '1'))
+                : nbhField('Показывать дату', nbhSelect('runtime.visibility.date', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать просмотры', nbhSelect('runtime.visibility.views', nbhYesNoOptions(), '1'))
+                    + nbhField('Показывать комментарии', nbhSelect('runtime.visibility.comments', nbhYesNoOptions(), '1')))
             + '</div>'
             + cards
             + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить карточку</button>';

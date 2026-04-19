@@ -6,7 +6,7 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 
 class modelNordicblocks extends cmsModel {
 
-    private static $first_wave_block_types = ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed'];
+    private static $first_wave_block_types = ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'];
 
     const TBL_PAGES  = 'nordicblocks_pages';
     const TBL_BLOCKS = 'nordicblocks_blocks';

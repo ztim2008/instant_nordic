@@ -115,7 +115,7 @@ function nbhBuildDesignControlRenderers() {
                 return body;
             }
             if (panel.entityScope === 'title') {
-                body += nbhResponsiveTypographyPanel('design.entities.title', profile.title, bp, { hasMaxWidth: true, includeBlackWeight: true });
+                body += nbhResponsiveTypographyPanel('design.entities.title', profile.title, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: true, includeBlackWeight: true });
                 if (bp === 'desktop') {
                     body += nbhField('HTML тег', nbhSelect('design.entities.title.tag', [
                         { value: 'div', label: 'DIV' },
@@ -127,13 +127,13 @@ function nbhBuildDesignControlRenderers() {
                 return body;
             }
             if (panel.entityScope === 'subtitle') {
-                return body + nbhResponsiveTypographyPanel('design.entities.subtitle', profile.subtitle, bp, { hasMaxWidth: true, includeBlackWeight: true });
+                return body + nbhResponsiveTypographyPanel('design.entities.subtitle', profile.subtitle, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: true, includeBlackWeight: true });
             }
             if (panel.entityScope === 'meta') {
-                return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMaxWidth: false, includeBlackWeight: true });
+                return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: false, includeBlackWeight: true });
             }
             if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText') && profile.itemTypography.enabled) {
-                if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed') {
+                if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed' || profile.kind === 'swiss_grid' || profile.kind === 'catalog_browser') {
                     var titleDefaults = profile.itemTypography.title || {};
                     var textDefaults = profile.itemTypography.text || {};
 

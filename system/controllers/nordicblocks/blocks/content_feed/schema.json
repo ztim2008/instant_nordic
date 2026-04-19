@@ -48,6 +48,7 @@
             "default": [
                 {
                     "category": "События",
+                    "category_url": "/news/category/sobytiya",
                     "title": "Весенний релиз NordicBlocks вышел в живую сборку",
                     "excerpt": "Обновили SSR-слой, привели preview к live и подготовили основу для новых контентных блоков.",
                     "link_label": "Подробнее",
@@ -60,6 +61,7 @@
                 },
                 {
                     "category": "Продукт",
+                    "category_url": "/news/category/product",
                     "title": "Новая лента новостей работает в ручном и data-режиме",
                     "excerpt": "Один и тот же блок подходит и для демо-наполнения, и для боевой привязки к типу контента news.",
                     "link_label": "Изучить",
@@ -72,6 +74,7 @@
                 },
                 {
                     "category": "Гайды",
+                    "category_url": "/news/category/guides",
                     "title": "Как собрать редакционную главную без второго page builder",
                     "excerpt": "Секции, карточки и типографика теперь живут в одном SSR-runtime и не расходятся между редактором и фронтом.",
                     "link_label": "Читать",
@@ -85,6 +88,7 @@
             ],
             "fields": [
                 { "key": "category", "label": "Рубрика", "type": "text", "default": "Новости" },
+                { "key": "category_url", "label": "URL рубрики", "type": "text", "default": "" },
                 { "key": "title", "label": "Заголовок", "type": "text", "default": "Новая карточка" },
                 { "key": "excerpt", "label": "Анонс", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
                 { "key": "link_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },

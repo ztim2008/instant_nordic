@@ -39,6 +39,10 @@ NordicBlocks задуман не как второй page-builder поверх I
 
 Если задача касается глобальных токенов, кнопок, радиусов, карточек, hover-механики или foundation для новых блоков, сначала опираться именно на этот документ.
 
+Если задача касается news/editorial блоков, плотной grid-подачи, reusable visual profile для news-линейки или новой сложной контентной линейки, сначала опираться ещё и на:
+
+- `docs/nordicblocks/NEWS-VISUAL-BASELINE-SWISS-V1.md`
+
 **NordicBlocks — это набор независимых блоков-виджетов.**
 
 Не конструктор страниц. Страницы строятся стандартным способом — через **Структуру (схему) InstantCMS**. NordicBlocks добавляет красиво оформленные секции (hero, features, CTA и т.д.) которые вставляются в эту схему как обычные виджеты.
@@ -2478,6 +2482,12 @@ Donor-first подход даёт:
 Первая утверждённая рабочая спецификация для этого шага вынесена в отдельный документ:
 
 1. `docs/nordicblocks/NEWS-FAMILY-V1.md`
+2. `docs/nordicblocks/NEWS-VISUAL-BASELINE-SWISS-V1.md`
+
+Следующее family-level направление после news/editorial, когда понадобится commerce-lite / услуги / работы / мини-каталог на лендингах, фиксируем через отдельный spec:
+
+1. `docs/nordicblocks/CATALOG-FAMILY-V1.md`
+2. `docs/nordicblocks/CATALOG-BROWSER-V1.md`
 
 ### 20.4 Repeaters — обязательны для повторяющихся элементов
 

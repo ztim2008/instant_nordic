@@ -134,9 +134,20 @@ function nbhBuildDataControlRenderers() {
                     + nbhField('Изображение карточки', nbhSelect('data.listSource.map.image', fieldOptions, 'photo'))
                     + nbhField('Alt изображения', nbhSelect('data.listSource.map.imageAlt', fieldOptions, 'title'))
                     + nbhField('Рубрика', nbhSelect('data.listSource.map.category', fieldOptions, 'category.title'))
-                    + nbhField('Дата', nbhSelect('data.listSource.map.date', fieldOptions, 'date_pub'))
-                    + nbhField('Просмотры', nbhSelect('data.listSource.map.views', fieldOptions, 'hits_count'))
-                    + nbhField('Комментарии', nbhSelect('data.listSource.map.comments', fieldOptions, 'comments_count'))
+                    + nbhField('URL рубрики', nbhSelect('data.listSource.map.categoryUrl', fieldOptions, 'category.url'))
+                    + (nbhCollectionBlockKind() === 'catalog_browser'
+                        ? nbhField('Цена', nbhSelect('data.listSource.map.price', fieldOptions, 'price'))
+                            + nbhField('Старая цена', nbhSelect('data.listSource.map.priceOld', fieldOptions, 'price_old'))
+                            + nbhField('Валюта', nbhSelect('data.listSource.map.currency', fieldOptions, 'currency'))
+                            + nbhField('Badge', nbhSelect('data.listSource.map.badge', fieldOptions, 'badge'))
+                            + nbhField('Теги', nbhSelect('data.listSource.map.tags', fieldOptions, 'tags'))
+                            + nbhField('Наличие', nbhSelect('data.listSource.map.availability', fieldOptions, 'availability'))
+                            + nbhField('Текст CTA', nbhSelect('data.listSource.map.ctaLabel', fieldOptions, 'cta_label'))
+                            + nbhField('URL CTA', nbhSelect('data.listSource.map.ctaUrl', fieldOptions, 'cta_url'))
+                            + nbhField('Галерея', nbhSelect('data.listSource.map.gallery', fieldOptions, 'gallery'))
+                        : nbhField('Дата', nbhSelect('data.listSource.map.date', fieldOptions, 'date_pub'))
+                            + nbhField('Просмотры', nbhSelect('data.listSource.map.views', fieldOptions, 'hits_count'))
+                            + nbhField('Комментарии', nbhSelect('data.listSource.map.comments', fieldOptions, 'comments_count')))
                     + nbhField('URL карточки', nbhSelect('data.listSource.map.url', fieldOptions, 'record_url'));
             } else {
                 if (nbhHasEntity('itemTitle')) {

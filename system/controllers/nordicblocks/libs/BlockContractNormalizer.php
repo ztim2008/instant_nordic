@@ -6,12 +6,12 @@ class NordicblocksBlockContractNormalizer {
     private static $allowed_list_sorts = ['date_pub_desc', 'date_pub_asc', 'title_asc', 'title_desc', 'hits_desc', 'hits_asc', 'comments_desc', 'comments_asc'];
 
     private static function isCardCollectionType($type) {
-        return in_array($type, ['content_feed', 'category_cards', 'headline_feed'], true);
+        return in_array($type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true);
     }
 
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed'], true);
+        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true);
     }
 
     public static function isContractPayload($payload) {
@@ -63,6 +63,14 @@ class NordicblocksBlockContractNormalizer {
 
         if ($type === 'headline_feed') {
             return self::normalizeHeadlineFeed($block);
+        }
+
+        if ($type === 'swiss_grid') {
+            return self::normalizeSwissGrid($block);
+        }
+
+        if ($type === 'catalog_browser') {
+            return self::normalizeCatalogBrowser($block);
         }
 
         return self::normalizeFallback($block, $type);
@@ -738,6 +746,166 @@ class NordicblocksBlockContractNormalizer {
         return self::mergeStoredContract($contract, $stored_contract);
     }
 
+    private static function normalizeSwissGrid(array $block, array $stored_contract = []) {
+        $block['props'] = array_merge([
+            'heading' => 'Swiss Style Grid',
+            'intro' => 'Минимализм. Порядок. Типографика.',
+            'theme' => 'light',
+            'align' => 'left',
+            'content_width' => 1400,
+            'padding_top_desktop' => 0,
+            'padding_bottom_desktop' => 0,
+            'padding_top_mobile' => 0,
+            'padding_bottom_mobile' => 0,
+            'columns_desktop' => 3,
+            'columns_mobile' => 1,
+            'card_gap_desktop' => 0,
+            'card_gap_mobile' => 0,
+            'header_gap_desktop' => 0,
+            'header_gap_mobile' => 0,
+            'title_size_desktop' => 48,
+            'title_size_mobile' => 32,
+            'heading_weight' => 700,
+            'title_max_width' => 1400,
+            'subtitle_size_desktop' => 16,
+            'subtitle_size_mobile' => 12,
+            'subtitle_weight_desktop' => '500',
+            'subtitle_weight_mobile' => '500',
+            'subtitle_max_width' => 1400,
+            'meta_size_desktop' => 11,
+            'meta_size_mobile' => 11,
+            'meta_weight_desktop' => '700',
+            'meta_weight_mobile' => '700',
+            'item_title_size_desktop' => 20,
+            'item_title_size_mobile' => 17,
+            'item_title_weight' => 700,
+            'item_text_size_desktop' => 14,
+            'item_text_size_mobile' => 13,
+            'media_aspect_ratio' => '4:3',
+            'media_object_fit' => 'cover',
+            'media_radius' => 0,
+            'item_surface_variant' => 'card',
+            'item_surface_radius' => 0,
+            'item_surface_border_width' => 1,
+            'item_surface_border_color' => '#eaeaea',
+            'item_surface_shadow' => 'none',
+            'show_more_link' => '0',
+            'show_image' => '1',
+            'show_category' => '1',
+            'show_excerpt' => '1',
+            'show_date' => '0',
+            'show_views' => '0',
+            'show_comments' => '0',
+        ], (array) ($block['props'] ?? []));
+
+        $props = (array) $block['props'];
+        $contract = self::normalizeContentFeed([
+            'type'   => 'content_feed',
+            'title'  => (string) ($block['title'] ?? 'Swiss Grid'),
+            'status' => (string) ($block['status'] ?? 'active'),
+            'props'  => $props,
+        ], $stored_contract);
+
+        $contract['meta']['blockType'] = 'swiss_grid';
+        $contract['meta']['label'] = (string) ($block['title'] ?? 'Swiss Grid');
+        $contract['runtime']['visibility']['moreLink'] = false;
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
+    private static function normalizeCatalogBrowser(array $block, array $stored_contract = []) {
+        $block['props'] = array_merge([
+            'heading' => 'Каталог',
+            'intro' => 'Управляемый каталог услуг, работ или товаров без checkout, но с сильной карточечной подачей.',
+            'section_link_label' => 'Открыть все',
+            'section_link_url' => '/catalog',
+            'theme' => 'light',
+            'align' => 'left',
+            'content_width' => 1180,
+            'padding_top_desktop' => 64,
+            'padding_bottom_desktop' => 64,
+            'padding_top_mobile' => 44,
+            'padding_bottom_mobile' => 44,
+            'columns_desktop' => 3,
+            'columns_mobile' => 1,
+            'card_gap_desktop' => 18,
+            'card_gap_mobile' => 14,
+            'header_gap_desktop' => 18,
+            'header_gap_mobile' => 14,
+            'title_size_desktop' => 34,
+            'title_size_mobile' => 26,
+            'subtitle_size_desktop' => 16,
+            'subtitle_size_mobile' => 14,
+            'subtitle_max_width' => 720,
+            'media_aspect_ratio' => '4:3',
+            'media_radius' => 20,
+            'item_surface_radius' => 22,
+            'item_surface_border_width' => 1,
+            'item_surface_border_color' => '#dbe4ef',
+            'item_surface_shadow' => 'md',
+            'item_title_size_desktop' => 20,
+            'item_title_size_mobile' => 18,
+            'item_title_weight' => 800,
+            'item_text_size_desktop' => 14,
+            'item_text_size_mobile' => 13,
+            'meta_size_desktop' => 12,
+            'meta_size_mobile' => 11,
+            'show_more_link' => '1',
+            'show_search' => '1',
+            'show_category_filter' => '1',
+            'show_price_filter' => '1',
+            'show_sort' => '1',
+            'show_active_filters' => '1',
+            'show_image' => '1',
+            'show_category' => '1',
+            'show_badge' => '1',
+            'show_price' => '1',
+            'show_old_price' => '1',
+            'show_excerpt' => '1',
+            'show_cta' => '1',
+        ], (array) ($block['props'] ?? []));
+
+        $props = (array) $block['props'];
+        $props['more_link_label'] = (string) ($props['section_link_label'] ?? ($props['more_link_label'] ?? 'Открыть все'));
+        $props['more_link_url'] = (string) ($props['section_link_url'] ?? ($props['more_link_url'] ?? '/catalog'));
+
+        $contract = self::normalizeContentFeed([
+            'type'   => 'content_feed',
+            'title'  => (string) ($block['title'] ?? 'Каталог'),
+            'status' => (string) ($block['status'] ?? 'active'),
+            'props'  => $props,
+        ], $stored_contract);
+
+        $contract['meta']['blockType'] = 'catalog_browser';
+        $contract['meta']['label'] = (string) ($block['title'] ?? 'Каталог');
+        $contract['entities'] = array_merge((array) ($contract['entities'] ?? []), [
+            'toolbar' => ['kind' => 'group', 'styleSlot' => 'toolbar'],
+            'searchField' => ['kind' => 'text', 'styleSlot' => 'searchField'],
+            'categoryFilter' => ['kind' => 'text', 'styleSlot' => 'categoryFilter'],
+            'priceFilter' => ['kind' => 'text', 'styleSlot' => 'priceFilter'],
+            'sortControl' => ['kind' => 'text', 'styleSlot' => 'sortControl'],
+            'activeFilters' => ['kind' => 'text', 'styleSlot' => 'activeFilters'],
+            'cardBadge' => ['kind' => 'text', 'styleSlot' => 'cardBadge'],
+            'cardPrice' => ['kind' => 'text', 'styleSlot' => 'cardPrice'],
+            'cardPrimaryAction' => ['kind' => 'text', 'styleSlot' => 'cardPrimaryAction'],
+            'mediaModal' => ['kind' => 'surface', 'styleSlot' => 'mediaModal'],
+            'emptyState' => ['kind' => 'text', 'styleSlot' => 'emptyState'],
+        ]);
+        $contract['runtime']['visibility'] = array_merge((array) ($contract['runtime']['visibility'] ?? []), [
+            'search' => self::normalizeBoolean($props['show_search'] ?? '1', true),
+            'categoryFilter' => self::normalizeBoolean($props['show_category_filter'] ?? '1', true),
+            'priceFilter' => self::normalizeBoolean($props['show_price_filter'] ?? '1', true),
+            'sort' => self::normalizeBoolean($props['show_sort'] ?? '1', true),
+            'activeFilters' => self::normalizeBoolean($props['show_active_filters'] ?? '1', true),
+            'badge' => self::normalizeBoolean($props['show_badge'] ?? '1', true),
+            'price' => self::normalizeBoolean($props['show_price'] ?? '1', true),
+            'oldPrice' => self::normalizeBoolean($props['show_old_price'] ?? '1', true),
+            'cta' => self::normalizeBoolean($props['show_cta'] ?? '1', true),
+        ]);
+
+        return self::mergeStoredContract($contract, $stored_contract);
+    }
+
     private static function normalizeStoredContract(array $block, array $contract) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? ($contract['meta']['blockType'] ?? ''))));
 
@@ -783,6 +951,24 @@ class NordicblocksBlockContractNormalizer {
                 'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Главная статья и лента')),
                 'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
                 'props'  => self::denormalizeProps('headline_feed', $contract),
+            ], $contract);
+        }
+
+        if ($type === 'swiss_grid') {
+            return self::normalizeSwissGrid([
+                'type'   => 'swiss_grid',
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Swiss Grid')),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeProps('swiss_grid', $contract),
+            ], $contract);
+        }
+
+        if ($type === 'catalog_browser') {
+            return self::normalizeCatalogBrowser([
+                'type'   => 'catalog_browser',
+                'title'  => (string) ($block['title'] ?? ($contract['meta']['label'] ?? 'Каталог')),
+                'status' => (string) ($block['status'] ?? ($contract['meta']['status'] ?? 'active')),
+                'props'  => self::denormalizeProps('catalog_browser', $contract),
             ], $contract);
         }
 
@@ -1089,6 +1275,26 @@ class NordicblocksBlockContractNormalizer {
             ]);
         }
 
+        if ($type === 'swiss_grid') {
+            return array_merge(self::denormalizeProps('content_feed', $contract), []);
+        }
+
+        if ($type === 'catalog_browser') {
+            return array_merge(self::denormalizeProps('content_feed', $contract), [
+                'section_link_label' => (string) ($contract['content']['primaryButton']['label'] ?? 'Открыть все'),
+                'section_link_url' => (string) ($contract['content']['primaryButton']['url'] ?? '/catalog'),
+                'show_search' => !empty($contract['runtime']['visibility']['search']) ? '1' : '0',
+                'show_category_filter' => !empty($contract['runtime']['visibility']['categoryFilter']) ? '1' : '0',
+                'show_price_filter' => !empty($contract['runtime']['visibility']['priceFilter']) ? '1' : '0',
+                'show_sort' => !empty($contract['runtime']['visibility']['sort']) ? '1' : '0',
+                'show_active_filters' => !empty($contract['runtime']['visibility']['activeFilters']) ? '1' : '0',
+                'show_badge' => !empty($contract['runtime']['visibility']['badge']) ? '1' : '0',
+                'show_price' => !empty($contract['runtime']['visibility']['price']) ? '1' : '0',
+                'show_old_price' => !empty($contract['runtime']['visibility']['oldPrice']) ? '1' : '0',
+                'show_cta' => !empty($contract['runtime']['visibility']['cta']) ? '1' : '0',
+            ]);
+        }
+
         return [];
     }
 
@@ -1118,7 +1324,7 @@ class NordicblocksBlockContractNormalizer {
             'listSource'=> self::normalizeListSource((array) ($data['listSource'] ?? [])),
         ];
 
-        if (!in_array($type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
+        if (!in_array($type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
             $normalized['listSource'] = self::normalizeListSource([]);
         } else {
             $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), self::isCardCollectionType($type) ? 'content_feed' : $type);
@@ -1279,10 +1485,20 @@ class NordicblocksBlockContractNormalizer {
                     'image' => self::normalizeFieldReference($map['image'] ?? 'record_image_url'),
                     'imageAlt' => self::normalizeFieldReference($map['imageAlt'] ?? 'title'),
                     'category' => self::normalizeFieldReference($map['category'] ?? 'category.title'),
+                    'categoryUrl' => self::normalizeFieldReference($map['categoryUrl'] ?? 'category.url'),
+                    'price' => self::normalizeFieldReference($map['price'] ?? 'price'),
+                    'priceOld' => self::normalizeFieldReference($map['priceOld'] ?? 'price_old'),
+                    'currency' => self::normalizeFieldReference($map['currency'] ?? 'currency'),
+                    'badge' => self::normalizeFieldReference($map['badge'] ?? 'badge'),
+                    'tags' => self::normalizeFieldReference($map['tags'] ?? 'tags'),
                     'date' => self::normalizeFieldReference($map['date'] ?? 'date_pub'),
                     'views' => self::normalizeFieldReference($map['views'] ?? 'hits_count'),
                     'comments' => self::normalizeFieldReference($map['comments'] ?? 'comments_count'),
                     'url' => self::normalizeFieldReference($map['url'] ?? 'record_url'),
+                    'ctaLabel' => self::normalizeFieldReference($map['ctaLabel'] ?? 'cta_label'),
+                    'ctaUrl' => self::normalizeFieldReference($map['ctaUrl'] ?? 'cta_url'),
+                    'availability' => self::normalizeFieldReference($map['availability'] ?? 'availability'),
+                    'gallery' => self::normalizeFieldReference($map['gallery'] ?? 'gallery'),
                 ],
                 'emptyBehavior' => self::normalizeSelect((string) ($config['emptyBehavior'] ?? 'fallback'), ['fallback', 'empty'], 'fallback'),
             ];
@@ -1398,11 +1614,21 @@ class NordicblocksBlockContractNormalizer {
             $title = trim((string) ($item['title'] ?? ''));
             $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
             $category = trim((string) ($item['category'] ?? ''));
+            $category_url = trim((string) ($item['categoryUrl'] ?? ($item['category_url'] ?? '')));
             $url = trim((string) ($item['url'] ?? ''));
             $link_label = trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? '')));
             $date = trim((string) ($item['date'] ?? ''));
             $views = trim((string) ($item['views'] ?? ''));
             $comments = trim((string) ($item['comments'] ?? ''));
+            $price = trim((string) ($item['price'] ?? ''));
+            $price_old = trim((string) ($item['priceOld'] ?? ($item['price_old'] ?? '')));
+            $currency = trim((string) ($item['currency'] ?? ''));
+            $badge = trim((string) ($item['badge'] ?? ''));
+            $tags = $item['tags'] ?? [];
+            $cta_label = trim((string) ($item['ctaLabel'] ?? ($item['cta_label'] ?? '')));
+            $cta_url = trim((string) ($item['ctaUrl'] ?? ($item['cta_url'] ?? '')));
+            $availability = trim((string) ($item['availability'] ?? ''));
+            $gallery = $item['gallery'] ?? [];
             $image = self::normalizeImagePayload($item['image'] ?? '');
             $image_alt = trim((string) ($item['imageAlt'] ?? ($item['alt'] ?? ($image['alt'] ?? ''))));
 
@@ -1412,6 +1638,7 @@ class NordicblocksBlockContractNormalizer {
 
             $items[] = self::buildContentFeedItemPayload([
                 'category' => $category,
+                'categoryUrl' => $category_url,
                 'title' => $title,
                 'excerpt' => $excerpt,
                 'linkLabel' => $link_label,
@@ -1421,6 +1648,15 @@ class NordicblocksBlockContractNormalizer {
                 'date' => $date,
                 'views' => $views,
                 'comments' => $comments,
+                'price' => $price,
+                'priceOld' => $price_old,
+                'currency' => $currency,
+                'badge' => $badge,
+                'tags' => is_array($tags) ? $tags : preg_split('/\s*,\s*/', trim((string) $tags), -1, PREG_SPLIT_NO_EMPTY),
+                'ctaLabel' => $cta_label,
+                'ctaUrl' => $cta_url,
+                'availability' => $availability,
+                'gallery' => is_array($gallery) ? $gallery : [],
             ]);
         }
 
@@ -1442,9 +1678,12 @@ class NordicblocksBlockContractNormalizer {
     private static function buildContentFeedItemPayload(array $item) {
         $title = trim((string) ($item['title'] ?? ''));
         $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
+        $category_url = trim((string) ($item['categoryUrl'] ?? ($item['category_url'] ?? '')));
 
         return [
             'category' => trim((string) ($item['category'] ?? '')),
+            'categoryUrl' => $category_url,
+            'category_url' => $category_url,
             'title' => $title,
             'excerpt' => $excerpt,
             'text' => $excerpt,
@@ -1457,6 +1696,18 @@ class NordicblocksBlockContractNormalizer {
             'date' => trim((string) ($item['date'] ?? '')),
             'views' => trim((string) ($item['views'] ?? '')),
             'comments' => trim((string) ($item['comments'] ?? '')),
+            'price' => trim((string) ($item['price'] ?? '')),
+            'priceOld' => trim((string) ($item['priceOld'] ?? ($item['price_old'] ?? ''))),
+            'price_old' => trim((string) ($item['priceOld'] ?? ($item['price_old'] ?? ''))),
+            'currency' => trim((string) ($item['currency'] ?? '')),
+            'badge' => trim((string) ($item['badge'] ?? '')),
+            'tags' => is_array($item['tags'] ?? null) ? array_values($item['tags']) : preg_split('/\s*,\s*/', trim((string) ($item['tags'] ?? '')), -1, PREG_SPLIT_NO_EMPTY),
+            'ctaLabel' => trim((string) ($item['ctaLabel'] ?? ($item['cta_label'] ?? ''))),
+            'cta_label' => trim((string) ($item['ctaLabel'] ?? ($item['cta_label'] ?? ''))),
+            'ctaUrl' => trim((string) ($item['ctaUrl'] ?? ($item['cta_url'] ?? ''))),
+            'cta_url' => trim((string) ($item['ctaUrl'] ?? ($item['cta_url'] ?? ''))),
+            'availability' => trim((string) ($item['availability'] ?? '')),
+            'gallery' => is_array($item['gallery'] ?? null) ? array_values($item['gallery']) : [],
         ];
     }
 

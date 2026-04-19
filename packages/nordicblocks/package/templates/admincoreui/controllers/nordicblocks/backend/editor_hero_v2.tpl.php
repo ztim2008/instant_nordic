@@ -665,12 +665,20 @@ function nbhCollectionBlockKind() {
         return 'headline_feed';
     }
 
+    if (nbhBlockType() === 'swiss_grid') {
+        return 'swiss_grid';
+    }
+
+    if (nbhBlockType() === 'catalog_browser') {
+        return 'catalog_browser';
+    }
+
     return 'faq';
 }
 
 function nbhIsCardCollectionBlock() {
     var kind = nbhCollectionBlockKind();
-    return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed';
+    return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed' || kind === 'swiss_grid' || kind === 'catalog_browser';
 }
 
 function nbhBlockUiProfile() {
@@ -925,6 +933,121 @@ function nbhBlockUiProfile() {
             };
         }
 
+        if (nbhCollectionBlockKind() === 'swiss_grid') {
+            return {
+                kind: 'swiss_grid',
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                contentWidth: 1400,
+                title: {
+                    desktopFontSize: 48,
+                    mobileFontSize: 32,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#111827',
+                    mobileColor: '#111827',
+                    desktopLineHeightPercent: 110,
+                    mobileLineHeightPercent: 110,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 1400,
+                    mobileMaxWidth: 1400,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 16,
+                    mobileFontSize: 12,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '500',
+                    mobileWeight: '500',
+                    desktopColor: '#5b6472',
+                    mobileColor: '#5b6472',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 1,
+                    mobileLetterSpacing: 1,
+                    desktopMaxWidth: 1400,
+                    mobileMaxWidth: 1400,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 11,
+                    mobileFontSize: 11,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#d92e1c',
+                    mobileColor: '#d92e1c',
+                    desktopLineHeightPercent: 120,
+                    mobileLineHeightPercent: 120,
+                    desktopLetterSpacing: 1,
+                    mobileLetterSpacing: 1,
+                },
+                media: {
+                    aspectRatio: '4:3',
+                    objectFit: 'cover',
+                    radius: 0,
+                },
+                itemSurface: {
+                    radius: 0,
+                    borderWidth: 1,
+                    borderColor: '#eaeaea',
+                    shadow: 'none',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовок карточки',
+                    textLabel: 'Текст карточки',
+                    title: {
+                        desktopFontSize: 20,
+                        mobileFontSize: 17,
+                        desktopWeight: '700',
+                        mobileWeight: '700',
+                        desktopColor: '#111827',
+                        mobileColor: '#111827',
+                        desktopLineHeightPercent: 124,
+                        mobileLineHeightPercent: 124,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 14,
+                        mobileFontSize: 13,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#475569',
+                        mobileColor: '#475569',
+                        desktopLineHeightPercent: 148,
+                        mobileLineHeightPercent: 148,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 0,
+                    desktopPaddingBottom: 0,
+                    mobilePaddingTop: 0,
+                    mobilePaddingBottom: 0,
+                    supportsMinHeight: false,
+                    primaryControl: 'feed-grid',
+                    desktopColumns: 3,
+                    mobileColumns: 1,
+                    desktopCardGap: 0,
+                    mobileCardGap: 0,
+                    desktopHeaderGap: 0,
+                    mobileHeaderGap: 0,
+                },
+            };
+        }
+
         if (nbhCollectionBlockKind() === 'content_feed') {
             return {
                 kind: 'content_feed',
@@ -1023,6 +1146,121 @@ function nbhBlockUiProfile() {
                         mobileColor: '#475569',
                         desktopLineHeightPercent: 165,
                         mobileLineHeightPercent: 165,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 64,
+                    desktopPaddingBottom: 64,
+                    mobilePaddingTop: 44,
+                    mobilePaddingBottom: 44,
+                    supportsMinHeight: false,
+                    primaryControl: 'feed-grid',
+                    desktopColumns: 3,
+                    mobileColumns: 1,
+                    desktopCardGap: 18,
+                    mobileCardGap: 14,
+                    desktopHeaderGap: 18,
+                    mobileHeaderGap: 14,
+                },
+            };
+        }
+
+        if (nbhCollectionBlockKind() === 'catalog_browser') {
+            return {
+                kind: 'catalog_browser',
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                contentWidth: 1180,
+                title: {
+                    desktopFontSize: 34,
+                    mobileFontSize: 26,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 112,
+                    mobileLineHeightPercent: 112,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 760,
+                    mobileMaxWidth: 760,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 16,
+                    mobileFontSize: 14,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 160,
+                    mobileLineHeightPercent: 160,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 720,
+                    mobileMaxWidth: 720,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 12,
+                    mobileFontSize: 11,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#64748b',
+                    mobileColor: '#64748b',
+                    desktopLineHeightPercent: 140,
+                    mobileLineHeightPercent: 140,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                },
+                media: {
+                    aspectRatio: '4:3',
+                    objectFit: 'cover',
+                    radius: 20,
+                },
+                itemSurface: {
+                    radius: 22,
+                    borderWidth: 1,
+                    borderColor: '#dbe4ef',
+                    shadow: 'md',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовок карточки',
+                    textLabel: 'Описание карточки',
+                    title: {
+                        desktopFontSize: 20,
+                        mobileFontSize: 18,
+                        desktopWeight: '800',
+                        mobileWeight: '800',
+                        desktopColor: '#0f172a',
+                        mobileColor: '#0f172a',
+                        desktopLineHeightPercent: 130,
+                        mobileLineHeightPercent: 130,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 14,
+                        mobileFontSize: 13,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#475569',
+                        mobileColor: '#475569',
+                        desktopLineHeightPercent: 160,
+                        mobileLineHeightPercent: 160,
                         desktopLetterSpacing: 0,
                         mobileLetterSpacing: 0,
                     },
@@ -1239,10 +1477,22 @@ function nbhListSource() {
         if (typeof source.map.image !== 'string') source.map.image = 'record_image_url';
         if (typeof source.map.imageAlt !== 'string') source.map.imageAlt = 'title';
         if (typeof source.map.category !== 'string') source.map.category = 'category.title';
+        if (typeof source.map.categoryUrl !== 'string') source.map.categoryUrl = 'category.url';
         if (typeof source.map.date !== 'string') source.map.date = 'date_pub';
         if (typeof source.map.views !== 'string') source.map.views = 'hits_count';
         if (typeof source.map.comments !== 'string') source.map.comments = 'comments_count';
         if (typeof source.map.url !== 'string') source.map.url = 'record_url';
+        if (nbhCollectionBlockKind() === 'catalog_browser') {
+            if (typeof source.map.price !== 'string') source.map.price = 'price';
+            if (typeof source.map.priceOld !== 'string') source.map.priceOld = 'price_old';
+            if (typeof source.map.currency !== 'string') source.map.currency = 'currency';
+            if (typeof source.map.badge !== 'string') source.map.badge = 'badge';
+            if (typeof source.map.tags !== 'string') source.map.tags = 'tags';
+            if (typeof source.map.ctaLabel !== 'string') source.map.ctaLabel = 'cta_label';
+            if (typeof source.map.ctaUrl !== 'string') source.map.ctaUrl = 'cta_url';
+            if (typeof source.map.availability !== 'string') source.map.availability = 'availability';
+            if (typeof source.map.gallery !== 'string') source.map.gallery = 'gallery';
+        }
         source.map.text = source.map.excerpt;
     } else {
         if (typeof source.map.title !== 'string') source.map.title = typeof source.map.question === 'string' ? source.map.question : 'title';
@@ -1258,11 +1508,44 @@ function nbhListSource() {
 
 function nbhCollectionDefaultItem() {
     if (nbhIsCardCollectionBlock()) {
+        if (nbhCollectionBlockKind() === 'catalog_browser') {
+            return {
+                category: 'Категория',
+                title: 'Новая позиция каталога',
+                excerpt: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
+                text: 'Короткое описание позиции, чтобы объяснить ценность карточки и сценарий перехода.',
+                category_url: '',
+                categoryUrl: '',
+                badge: 'Хит',
+                price: '9 900',
+                priceOld: '12 900',
+                price_old: '12 900',
+                currency: '₽',
+                availability: 'В наличии',
+                tags: ['Новинка'],
+                cta_label: 'Открыть',
+                ctaLabel: 'Открыть',
+                cta_url: '/catalog/item',
+                ctaUrl: '/catalog/item',
+                link_label: 'Открыть',
+                linkLabel: 'Открыть',
+                url: '/catalog/item',
+                image: '',
+                imageAlt: '',
+                alt: '',
+                gallery: []
+            };
+        }
+
         return {
-            category: nbhCollectionBlockKind() === 'category_cards' ? 'Раздел' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Тема' : 'Новости'),
-            title: nbhCollectionBlockKind() === 'category_cards' ? 'Новая карточка раздела' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Новый материал ленты' : 'Новая карточка'),
+            category: nbhCollectionBlockKind() === 'category_cards' ? 'Раздел' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Тема' : (nbhCollectionBlockKind() === 'swiss_grid' ? 'Проект' : 'Новости')),
+            title: nbhCollectionBlockKind() === 'category_cards' ? 'Новая карточка раздела' : (nbhCollectionBlockKind() === 'headline_feed' ? 'Новый материал ленты' : (nbhCollectionBlockKind() === 'swiss_grid' ? 'Новая swiss-карточка' : 'Новая карточка')),
             excerpt: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
             text: 'Короткий анонс материала, который объясняет, почему в него стоит перейти.',
+            category_url: '',
+            categoryUrl: '',
+            link_label: 'Подробнее',
+            linkLabel: 'Подробнее',
             url: '/news',
             image: '',
             imageAlt: '',
@@ -1300,6 +1583,33 @@ function nbhCollectionItemValue(item, key) {
 
     if (nbhIsCardCollectionBlock() && key === 'imageAlt') {
         return typeof item.imageAlt === 'string' ? item.imageAlt : (typeof item.alt === 'string' ? item.alt : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'link_label') {
+        return typeof item.link_label === 'string' ? item.link_label : (typeof item.linkLabel === 'string' ? item.linkLabel : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'category_url') {
+        return typeof item.category_url === 'string' ? item.category_url : (typeof item.categoryUrl === 'string' ? item.categoryUrl : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'priceOld') {
+        return typeof item.priceOld === 'string' ? item.priceOld : (typeof item.price_old === 'string' ? item.price_old : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'cta_label') {
+        return typeof item.cta_label === 'string' ? item.cta_label : (typeof item.ctaLabel === 'string' ? item.ctaLabel : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'cta_url') {
+        return typeof item.cta_url === 'string' ? item.cta_url : (typeof item.ctaUrl === 'string' ? item.ctaUrl : '');
+    }
+
+    if (nbhIsCardCollectionBlock() && key === 'tags') {
+        if (Array.isArray(item.tags)) {
+            return item.tags.join(', ');
+        }
+        return typeof item.tags === 'string' ? item.tags : '';
     }
 
     return typeof item[key] === 'string' ? item[key] : '';

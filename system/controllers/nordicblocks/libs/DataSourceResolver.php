@@ -42,7 +42,7 @@ class NordicblocksDataSourceResolver {
             return $resolved;
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
             return $resolved;
         }
 
@@ -75,7 +75,7 @@ class NordicblocksDataSourceResolver {
         ];
 
         $block_type = (string) $block_type;
-        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
+        if (!in_array($block_type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
             return $options;
         }
 
@@ -83,7 +83,7 @@ class NordicblocksDataSourceResolver {
             $options['itemResolverModes'][] = ['value' => $key, 'label' => $label];
         }
 
-        if (in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
+        if (in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
             foreach (self::$sort_options as $key => $sort) {
                 $options['sortOptions'][] = ['value' => $key, 'label' => $sort['label']];
             }
@@ -245,6 +245,12 @@ class NordicblocksDataSourceResolver {
                 'label' => 'Категория',
                 'type'  => 'system',
                 'kinds' => ['text'],
+            ],
+            [
+                'name'  => 'category.url',
+                'label' => 'URL категории',
+                'type'  => 'system',
+                'kinds' => ['url', 'text'],
             ],
             [
                 'name'  => 'user.nickname',

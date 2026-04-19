@@ -36,12 +36,12 @@ class NordicblocksBindingMapper {
             return self::mapHero($contract, $resolved_sources);
         }
 
-        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed'], true)) {
+        if (!in_array($block_type, ['faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)) {
             return $mapped;
         }
 
         $list_source = is_array($resolved_sources['listSource'] ?? null) ? $resolved_sources['listSource'] : [];
-        $items = in_array($block_type, ['content_feed', 'category_cards', 'headline_feed'], true)
+        $items = in_array($block_type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
             ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
             : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
         $empty_behavior = (string) ($list_source['emptyBehavior'] ?? 'fallback');
@@ -151,12 +151,22 @@ class NordicblocksBindingMapper {
             $title = self::normalizeText(self::extractValue($record, (string) ($map['title'] ?? 'title')));
             $excerpt = self::normalizeText(self::extractValue($record, (string) ($map['excerpt'] ?? 'teaser')));
             $category = self::normalizeText(self::extractValue($record, (string) ($map['category'] ?? 'category.title')));
+            $category_url = self::normalizeUrl(self::extractValue($record, (string) ($map['categoryUrl'] ?? 'category.url')));
             $date = self::normalizeDate(self::extractValue($record, (string) ($map['date'] ?? 'date_pub')));
             $views = self::normalizeNumber(self::extractValue($record, (string) ($map['views'] ?? 'hits_count')));
             $comments = self::normalizeNumber(self::extractValue($record, (string) ($map['comments'] ?? 'comments_count')));
+            $price = self::normalizeText(self::extractValue($record, (string) ($map['price'] ?? 'price')));
+            $price_old = self::normalizeText(self::extractValue($record, (string) ($map['priceOld'] ?? 'price_old')));
+            $currency = self::normalizeText(self::extractValue($record, (string) ($map['currency'] ?? 'currency')));
+            $badge = self::normalizeText(self::extractValue($record, (string) ($map['badge'] ?? 'badge')));
+            $tags = self::normalizeTags(self::extractValue($record, (string) ($map['tags'] ?? 'tags')));
             $url = self::normalizeUrl(self::extractValue($record, (string) ($map['url'] ?? 'record_url')));
             $image = self::normalizeImageUrl(self::extractValue($record, (string) ($map['image'] ?? 'record_image_url')));
             $image_alt = self::normalizeText(self::extractValue($record, (string) ($map['imageAlt'] ?? 'title')));
+            $cta_label = self::normalizeText(self::extractValue($record, (string) ($map['ctaLabel'] ?? 'cta_label')));
+            $cta_url = self::normalizeUrl(self::extractValue($record, (string) ($map['ctaUrl'] ?? 'cta_url')));
+            $availability = self::normalizeText(self::extractValue($record, (string) ($map['availability'] ?? 'availability')));
+            $gallery = self::normalizeGallery(self::extractValue($record, (string) ($map['gallery'] ?? 'gallery')));
 
             if ($url === '') {
                 $url = self::normalizeUrl(self::extractValue($record, 'record_url'));
@@ -172,6 +182,7 @@ class NordicblocksBindingMapper {
 
             $items[] = self::buildContentFeedItemPayload([
                 'category' => $category,
+                'categoryUrl' => $category_url,
                 'title' => $title,
                 'excerpt' => $excerpt,
                 'url' => $url,
@@ -180,6 +191,15 @@ class NordicblocksBindingMapper {
                 'date' => $date,
                 'views' => $views,
                 'comments' => $comments,
+                'price' => $price,
+                'priceOld' => $price_old,
+                'currency' => $currency,
+                'badge' => $badge,
+                'tags' => $tags,
+                'ctaLabel' => $cta_label,
+                'ctaUrl' => $cta_url,
+                'availability' => $availability,
+                'gallery' => $gallery,
             ]);
         }
 
@@ -201,9 +221,21 @@ class NordicblocksBindingMapper {
         $title = self::normalizeText($item['title'] ?? '');
         $excerpt = self::normalizeText($item['excerpt'] ?? ($item['text'] ?? ''));
         $image_alt = self::normalizeText($item['imageAlt'] ?? ($item['alt'] ?? ''));
+        $category_url = self::normalizeUrl($item['categoryUrl'] ?? ($item['category_url'] ?? ''));
+        $price = self::normalizeText($item['price'] ?? '');
+        $price_old = self::normalizeText($item['priceOld'] ?? ($item['price_old'] ?? ''));
+        $currency = self::normalizeText($item['currency'] ?? '');
+        $badge = self::normalizeText($item['badge'] ?? '');
+        $cta_label = self::normalizeText($item['ctaLabel'] ?? ($item['cta_label'] ?? ''));
+        $cta_url = self::normalizeUrl($item['ctaUrl'] ?? ($item['cta_url'] ?? ''));
+        $availability = self::normalizeText($item['availability'] ?? '');
+        $tags = self::normalizeTags($item['tags'] ?? []);
+        $gallery = self::normalizeGallery($item['gallery'] ?? []);
 
         return [
             'category' => self::normalizeText($item['category'] ?? ''),
+            'categoryUrl' => $category_url,
+            'category_url' => $category_url,
             'title' => $title,
             'excerpt' => $excerpt,
             'text' => $excerpt,
@@ -214,7 +246,76 @@ class NordicblocksBindingMapper {
             'date' => self::normalizeText($item['date'] ?? ''),
             'views' => self::normalizeText($item['views'] ?? ''),
             'comments' => self::normalizeText($item['comments'] ?? ''),
+            'price' => $price,
+            'priceOld' => $price_old,
+            'price_old' => $price_old,
+            'currency' => $currency,
+            'badge' => $badge,
+            'ctaLabel' => $cta_label,
+            'cta_label' => $cta_label,
+            'ctaUrl' => $cta_url,
+            'cta_url' => $cta_url,
+            'availability' => $availability,
+            'tags' => $tags,
+            'gallery' => $gallery,
         ];
+    }
+
+    private static function normalizeTags($value) {
+        if (is_string($value)) {
+            $parts = preg_split('/\s*,\s*/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+            return array_values(array_map([__CLASS__, 'normalizeText'], is_array($parts) ? $parts : []));
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $tags = [];
+        foreach ($value as $tag) {
+            $tag = self::normalizeText($tag);
+            if ($tag !== '') {
+                $tags[] = $tag;
+            }
+        }
+
+        return $tags;
+    }
+
+    private static function normalizeGallery($value) {
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            } else {
+                return [];
+            }
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $gallery = [];
+        foreach ($value as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $src = self::normalizeImageUrl($item['src'] ?? ($item['image'] ?? ''));
+            if ($src === '') {
+                continue;
+            }
+
+            $gallery[] = [
+                'src' => $src,
+                'alt' => self::normalizeText($item['alt'] ?? ''),
+                'type' => self::normalizeText($item['type'] ?? 'image'),
+                'caption' => self::normalizeText($item['caption'] ?? ''),
+            ];
+        }
+
+        return $gallery;
     }
     private static function extractRecordIds(array $records) {
         $ids = [];

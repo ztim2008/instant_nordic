@@ -30,7 +30,7 @@ function nbhBuildLayoutControlRenderers() {
                     + '</div>';
             }
 
-            if (profile.kind === 'content_feed' || profile.kind === 'category_cards') {
+            if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'swiss_grid' || profile.kind === 'catalog_browser') {
                 if (bp === 'desktop') {
                     return body + '<div class="nbh-grid-2">'
                         + (profile.kind === 'content_feed'
