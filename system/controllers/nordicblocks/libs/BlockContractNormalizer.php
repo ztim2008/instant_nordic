@@ -1572,21 +1572,21 @@ class NordicblocksBlockContractNormalizer {
 
         $entities['title'] = [
             'visible' => self::normalizeBoolean($props['title_visible'] ?? '1', true),
-            'desktop' => ['fontSize' => 42, 'marginBottom' => 12, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
-            'mobile' => ['fontSize' => 30, 'marginBottom' => 10, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'desktop' => ['fontSize' => self::normalizeNumber($props['title_size_desktop'] ?? 42, 18, 180, 42), 'marginBottom' => 12, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'mobile' => ['fontSize' => self::normalizeNumber($props['title_size_mobile'] ?? 30, 16, 140, 30), 'marginBottom' => 10, 'weight' => '800', 'color' => '', 'lineHeightPercent' => 110, 'letterSpacing' => 0, 'maxWidth' => 760],
             'tag' => 'h2',
         ];
 
         $entities['subtitle'] = [
             'visible' => self::normalizeBoolean($props['subtitle_visible'] ?? '1', true),
-            'desktop' => ['fontSize' => 18, 'marginBottom' => 18, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
-            'mobile' => ['fontSize' => 16, 'marginBottom' => 14, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'desktop' => ['fontSize' => self::normalizeNumber($props['subtitle_size_desktop'] ?? 18, 12, 80, 18), 'marginBottom' => 18, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
+            'mobile' => ['fontSize' => self::normalizeNumber($props['subtitle_size_mobile'] ?? 16, 12, 64, 16), 'marginBottom' => 14, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0, 'maxWidth' => 760],
         ];
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'body')) {
             $entities['body'] = [
-                'desktop' => ['fontSize' => 16, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
-                'mobile' => ['fontSize' => 15, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
+                'desktop' => ['fontSize' => self::normalizeNumber($props['body_size_desktop'] ?? 16, 12, 56, 16), 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
+                'mobile' => ['fontSize' => self::normalizeNumber($props['body_size_mobile'] ?? 15, 12, 48, 15), 'weight' => '400', 'color' => '', 'lineHeightPercent' => 165, 'letterSpacing' => 0],
             ];
         }
 

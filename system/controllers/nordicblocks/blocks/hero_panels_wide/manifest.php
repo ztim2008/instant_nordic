@@ -1,0 +1,91 @@
+<?php
+
+return [
+    'title' => 'Hero: широкие панели inspector manifest',
+    'generator' => [
+        'name' => 'nordicblocks-scaffold',
+        'managed' => true,
+        'stage' => 3,
+        'profile' => 'hero_like',
+        'designSystemMode' => 'global-first',
+        'sourceModeProfile' => 'manual',
+    ],
+    'entities' => [
+        'eyebrow' => [],
+        'title' => [],
+        'subtitle' => [],
+        'body' => [],
+        'primaryButton' => [],
+        'media' => [],
+        'mediaSurface' => [],
+    ],
+    'entityGroups' => [
+        'content' => [
+            'label' => 'Текст',
+            'entities' => [
+                'eyebrow',
+                'title',
+                'subtitle',
+                'body',
+            ],
+        ],
+        'buttons' => [
+            'label' => 'Кнопки',
+            'entities' => [
+                'primaryButton',
+            ],
+        ],
+        'media' => [
+            'label' => 'Медиа',
+            'entities' => [
+                'media',
+                'mediaSurface',
+            ],
+        ],
+        'narrative' => [
+            'label' => 'Текстовая панель',
+            'entities' => [
+                'body',
+            ],
+        ],
+    ],
+    'capabilities' => [
+        'sectionBackground' => true,
+        'sectionContainer' => true,
+        'titleContent' => true,
+        'subtitleContent' => true,
+        'bodyContent' => true,
+        'buttonsContent' => true,
+        'mediaContent' => true,
+        'eyebrowTypography' => true,
+        'titleTypography' => true,
+        'subtitleTypography' => true,
+        'bodyTypography' => true,
+        'buttonsStyle' => true,
+        'mediaStyle' => true,
+        'mediaSurface' => true,
+        'spacingLayout' => true,
+        'alignmentLayout' => true,
+        'responsiveTypography' => true,
+        'responsiveSpacing' => true,
+    ],
+    'panels' => [
+        'textEyebrowContent' => [],
+        'textTitleContent' => [],
+        'textSubtitleContent' => [],
+        'bodyContent' => [],
+        'buttonsContent' => [],
+        'mediaContent' => [],
+        'sectionBackground' => [],
+        'sectionContainer' => [],
+        'eyebrowTypography' => [],
+        'titleTypography' => [],
+        'subtitleTypography' => [],
+        'bodyTypography' => [],
+        'buttonsStyle' => [],
+        'mediaStyle' => [],
+        'mediaSurface' => [],
+        'spacingLayout' => [],
+        'alignmentLayout' => [],
+    ],
+];

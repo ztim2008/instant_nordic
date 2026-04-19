@@ -590,13 +590,10 @@ final class NordicblocksScaffoldStage1 {
 
         ksort($familyBlocks);
         $generatedSection = self::renderFamilyRegistrySection($familyBlocks);
-        $pattern = '/\n## Scaffold Registry\n<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->.*?<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->\n/s';
+        $pattern = '/(?:\n|^)## Scaffold Registry\n<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->.*?<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->\n?/s';
+        $cleanedContent = preg_replace($pattern, "\n", $content);
 
-        if (preg_match($pattern, $content)) {
-            return preg_replace($pattern, "\n" . $generatedSection . "\n", $content, 1) ?: $content;
-        }
-
-        return rtrim($content) . "\n\n" . $generatedSection . "\n";
+        return rtrim((string) $cleanedContent) . "\n\n" . $generatedSection . "\n";
     }
 
     private static function renderFamilyRegistrySection(array $familyBlocks): string {

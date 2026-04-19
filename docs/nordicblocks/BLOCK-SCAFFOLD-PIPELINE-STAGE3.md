@@ -1,5 +1,16 @@
 # NordicBlocks Block Scaffold Pipeline Stage 3
 
+## 0. Текущий рабочий статус
+
+На текущем этапе этот pipeline принят как стандартный рабочий путь для новых NordicBlocks managed block types в рамках поддерживаемых scaffold profiles и manifest-first family.
+
+Это означает:
+
+1. новый поддерживаемый block type по умолчанию создаётся через scaffold, а не ручным копированием donor-блока;
+2. validator обязателен сразу после apply и считается частью штатного процесса, а не опциональной проверкой;
+3. ручная сборка с нуля остаётся допустимой только как исключение для неподдерживаемых или явно нестандартных блоков;
+4. сам pipeline не отменяет ручную продуктовую доводку и live smoke.
+
 ## 1. Что закрывает этот pipeline
 
 Pipeline нужен для того, чтобы новый NordicBlocks block type не начинался каждый раз с ручного копирования существующего блока и ручного патча central registries.
@@ -129,6 +140,8 @@ Generated render остаётся stub-реализацией и нужен ка
 5. доработать runtime/editor markup;
 6. выполнить manual live smoke;
 7. обновить checklist status и family docs, если появился новый продуктовый статус beyond scaffold baseline.
+
+Операционное правило для следующих сессий: если новый block type укладывается в поддерживаемые profiles и family rules, агент не должен начинать работу с ручного копирования block directory. Базовый стартовый путь здесь именно scaffold + validator.
 
 ## 9. Критерий завершения
 

@@ -27,6 +27,15 @@
 3. При добавлении нового блока обновить [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
 4. Поддерживать docs в актуальном состоянии, если меняется архитектура, contracts или workflow.
 
+## NordicBlocks Scaffold Policy
+
+Если агент создаёт новый block type для NordicBlocks в рамках поддерживаемых scaffold profiles и manifest-first family:
+
+1. По умолчанию использовать `scripts/nordicblocks-scaffold-block.php`, а не ручное копирование существующего блока.
+2. После scaffold apply обязательно прогонять `scripts/nordicblocks-validate-block.php --block=<slug>`.
+3. Считать scaffold + validator стандартным путём для новых managed block types, а ручную сборку с нуля использовать только как осознанное исключение.
+4. Не считать scaffold финальной работой: после него всё ещё обязательны доработка production markup при необходимости и ручной live smoke в editor/runtime.
+
 ## Repo Hygiene
 
 - Не коммитить runtime secrets.
