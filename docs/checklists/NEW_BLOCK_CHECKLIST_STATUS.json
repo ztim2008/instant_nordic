@@ -6,7 +6,7 @@
             "title": "Каталог",
             "family": "catalog-family-v1",
             "status": "in_progress",
-            "checkpoint": "snapshot/20260419-090342",
+            "checkpoint": "snapshot/20260419-094020",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
@@ -16,7 +16,7 @@
                 "package_mirror": true,
                 "live_smoke": true
             },
-            "notes": "Первый block type каталожной линейки уже подключен в first-wave registry, contract/data layer, unified editor shell, shared theme CSS и package mirror. В SSR/runtime добавлены toolbar search/category/price/sort, active filters и fullscreen media modal со swipe-навигацией. Admin smoke пройден после checkpoint snapshot/20260419-082751: create, editor load, save/reload, content_list mapping/persistence и preview runtime. Для content_list на текущем окружении подтверждён рендер через ctype Статьи; search/category/price/sort/reset и empty-state проверены на ручном наборе, а modal/swipe прогнаны в preview runtime с временной multi-slide gallery подстановкой, потому что demo seed сейчас одноизображенный. После checkpoint snapshot/20260419-090342 блок дополнительно доведён до contract-driven design-system pass: в editor shell появились duplicate/reorder для repeatable content, CTA kind/messenger/availability controls, расширенная design-панель для meta/buttons/media surface, а runtime render и shared CSS переведены на token/contract vars без hardcoded button palette. Package/template mirrors синхронизированы. Повторный live smoke по главной подтвердил search, load_more, modal и telegram CTA на demo card, но сам public runtime пока продолжает отдавать старую HTML-версию catalog_browser без новых data-nb-entity/design vars; это выглядит как отдельный runtime path или server-side cache mismatch и остаётся открытым residual issue текущего прохода."
+            "notes": "Первый universal catalog block подключен в first-wave registry, contract/data layer, unified editor shell и shared theme CSS. В runtime уже есть toolbar search/category/price/sort, active filters, fullscreen media modal, repeatable content authoring, design-system entities и shared button classes. После checkpoint snapshot/20260419-094020 закрыт live runtime mismatch: homepage SSR теперь идёт через hydrateBlockForRender + buildRenderCacheProfile + rendererVersion-aware cache key. Дополнительно добавлены admin/CLI flush SSR cache tooling, runtime debug attrs data-nb-render-version/data-nb-grid-desktop/data-nb-grid-mobile/data-nb-collection-mode, hardened defaults для external CTA/primary button и отдельный CLI mobile smoke с desktop/mobile UA parity и проверкой SSR markers against model->getRenderCacheVersion. Live smoke по главной подтверждает новые debug markers и shared CTA markup. Residual risk: реальную device-level mobile проверку сетки и touch-поведение по-прежнему нужно подтверждать вручную на телефоне; текущий CLI smoke валидирует SSR markers и UA parity, но не browser layout engine на устройстве."
         },
         "content_feed": {
             "title": "Лента новостей",

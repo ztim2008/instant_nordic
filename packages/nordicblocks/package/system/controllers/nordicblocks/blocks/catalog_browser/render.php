@@ -211,7 +211,7 @@ if (!function_exists('nb_catalog_browser_build_cta_payload')) {
 
         if ($kind === 'url') {
             $href = $value !== '' ? $value : $fallback;
-            return ['href' => $href, 'target' => '', 'rel' => '', 'kind' => $kind];
+            return nb_catalog_browser_harden_link_payload($href, '', '', $kind);
         }
 
         if ($kind === 'phone') {
@@ -247,6 +247,61 @@ if (!function_exists('nb_catalog_browser_build_cta_payload')) {
         }
 
         return ['href' => '', 'target' => '', 'rel' => '', 'kind' => 'none'];
+    }
+}
+
+if (!function_exists('nb_catalog_browser_harden_link_payload')) {
+    function nb_catalog_browser_harden_link_payload($href, $target = '', $rel = '', $kind = 'url') {
+        $href = trim((string) $href);
+        $target = trim((string) $target);
+        $rel = trim((string) $rel);
+        $kind = trim((string) $kind);
+
+        if ($href === '') {
+            return ['href' => '', 'target' => '', 'rel' => '', 'kind' => $kind !== '' ? $kind : 'url'];
+        }
+
+        $host = strtolower((string) parse_url($href, PHP_URL_HOST));
+        $site_host = strtolower((string) parse_url((string) cmsConfig::getInstance()->host, PHP_URL_HOST));
+        $is_http = preg_match('~^(https?:)?//~i', $href) === 1;
+        $is_external = $is_http && $host !== '' && $site_host !== ''
+            && $host !== $site_host
+            && $host !== 'www.' . $site_host
+            && $site_host !== 'www.' . $host;
+
+        if ($is_external && $target === '') {
+            $target = '_blank';
+        }
+
+        if ($target === '_blank') {
+            $rel_parts = preg_split('/\s+/', $rel, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            foreach (['noopener', 'noreferrer'] as $required_rel) {
+                if (!in_array($required_rel, $rel_parts, true)) {
+                    $rel_parts[] = $required_rel;
+                }
+            }
+            $rel = trim(implode(' ', $rel_parts));
+        }
+
+        return ['href' => $href, 'target' => $target, 'rel' => $rel, 'kind' => $kind !== '' ? $kind : 'url'];
+    }
+}
+
+if (!function_exists('nb_catalog_browser_render_debug_version')) {
+    function nb_catalog_browser_render_debug_version() {
+        static $version = null;
+
+        if ($version !== null) {
+            return $version;
+        }
+
+        $parts = [
+            'helpers:' . (@filemtime(dirname(__DIR__) . '/render_helpers.php') ?: 0),
+            'catalog_browser:' . (@filemtime(__FILE__) ?: 0),
+        ];
+
+        $version = substr(md5(implode('|', $parts)), 0, 16);
+        return $version;
     }
 }
 
@@ -692,6 +747,10 @@ $button_classes = [
     'ghost' => 'nb-btn nb-btn--ghost',
 ];
 $action_button_class = $button_classes[$button_style] ?? $button_classes['primary'];
+$section_link_payload = nb_catalog_browser_harden_link_payload($section_link_url);
+$section_link_url = (string) ($section_link_payload['href'] ?? '');
+$section_link_target = (string) ($section_link_payload['target'] ?? '');
+$section_link_rel = (string) ($section_link_payload['rel'] ?? '');
 $media_aspect_ratio_map = [
     'auto' => 'auto',
     '16:10' => '16 / 10',
@@ -863,12 +922,18 @@ $section_style = nb_block_append_style($section_style, $reveal['style'] ?? '');
 
 $theme_attr = $theme !== 'light' ? ' data-nb-theme="' . htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') . '"' : '';
 $block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
+$render_debug_version = nb_catalog_browser_render_debug_version();
 ?>
 <section
     class="<?= htmlspecialchars($section_class, ENT_QUOTES, 'UTF-8') ?>"
     id="<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>"
     data-nb-block="catalog_browser"
     data-nb-entity="section"
+    data-nb-render-version="<?= htmlspecialchars($render_debug_version, ENT_QUOTES, 'UTF-8') ?>"
+    data-nb-grid-desktop="<?= (int) $columns_desktop ?>"
+    data-nb-grid-mobile="<?= (int) $columns_mobile ?>"
+    data-nb-collection-mode="<?= htmlspecialchars($collection_mode, ENT_QUOTES, 'UTF-8') ?>"
+    data-nb-items-per-page="<?= (int) $items_per_page ?>"
     <?= $theme_attr ?>
     <?= $section_style ? ' style="' . htmlspecialchars($section_style, ENT_QUOTES, 'UTF-8') . '"' : '' ?>
 >
@@ -884,7 +949,7 @@ $block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_
                 <?php endif; ?>
             </div>
             <?php if ($show_section_link && $section_link_label !== '' && $section_link_url !== ''): ?>
-            <a class="nb-catalog-browser__button nb-catalog-browser__section-link <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= htmlspecialchars($section_link_url, ENT_QUOTES, 'UTF-8') ?>" data-nb-entity="primaryButton"><?= htmlspecialchars($section_link_label, ENT_QUOTES, 'UTF-8') ?></a>
+            <a class="nb-catalog-browser__button nb-catalog-browser__section-link <?= htmlspecialchars($action_button_class, ENT_QUOTES, 'UTF-8') ?>" href="<?= htmlspecialchars($section_link_url, ENT_QUOTES, 'UTF-8') ?>"<?= $section_link_target !== '' ? ' target="' . htmlspecialchars($section_link_target, ENT_QUOTES, 'UTF-8') . '"' : '' ?><?= $section_link_rel !== '' ? ' rel="' . htmlspecialchars($section_link_rel, ENT_QUOTES, 'UTF-8') . '"' : '' ?> data-nb-entity="primaryButton"><?= htmlspecialchars($section_link_label, ENT_QUOTES, 'UTF-8') ?></a>
             <?php endif; ?>
         </header>
         <?php endif; ?>

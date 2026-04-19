@@ -1365,6 +1365,47 @@ class modelNordicblocks extends cmsModel {
         $this->db->query("DELETE FROM `{#}" . self::TBL_CACHE . "`");
     }
 
+    public function getCacheStats() {
+        $stats = [
+            'total'   => 0,
+            'active'  => 0,
+            'expired' => 0,
+            'page'    => 0,
+            'block'   => 0,
+            'runtime' => 0,
+            'other'   => 0,
+        ];
+
+        $result = $this->db->query(
+            "SELECT"
+            . " COUNT(*) AS `total`,"
+            . " SUM(`expires_at` > NOW()) AS `active`,"
+            . " SUM(`expires_at` <= NOW()) AS `expired`,"
+            . " SUM(`cache_key` LIKE 'page\\_%') AS `page_entries`,"
+            . " SUM(`cache_key` LIKE 'block\\_%') AS `block_entries`,"
+            . " SUM(`cache_key` LIKE 'runtime\\_%') AS `runtime_entries`"
+            . " FROM `{#}" . self::TBL_CACHE . "`",
+            [],
+            true
+        );
+
+        if (!$result || $result->num_rows < 1) {
+            return $stats;
+        }
+
+        $row = $result->fetch_assoc();
+
+        $stats['total'] = (int) ($row['total'] ?? 0);
+        $stats['active'] = (int) ($row['active'] ?? 0);
+        $stats['expired'] = (int) ($row['expired'] ?? 0);
+        $stats['page'] = (int) ($row['page_entries'] ?? 0);
+        $stats['block'] = (int) ($row['block_entries'] ?? 0);
+        $stats['runtime'] = (int) ($row['runtime_entries'] ?? 0);
+        $stats['other'] = max(0, $stats['total'] - $stats['page'] - $stats['block'] - $stats['runtime']);
+
+        return $stats;
+    }
+
     // ── УТИЛИТЫ ───────────────────────────────────────────────────
 
     public function getRenderCacheVersion($block_type = '') {

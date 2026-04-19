@@ -57,6 +57,18 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
     padding: .18rem .55rem;
     font-family: monospace;
 }
+.nbh-runtime-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .68rem;
+    color: #93c5fd;
+    background: rgba(29, 78, 216, .16);
+    border: 1px solid rgba(96, 165, 250, .32);
+    border-radius: 999px;
+    padding: .18rem .55rem;
+    font-family: monospace;
+}
 .nbh-spacer { flex: 1; }
 .nbh-vp {
     display: inline-flex;
@@ -535,6 +547,9 @@ $block_type      = htmlspecialchars($block['type'], ENT_QUOTES, 'UTF-8');
         <div class="nbh-title-wrap">
             <input type="text" id="nbh-title-input" value="<?= $block_title_esc ?>" placeholder="Название блока">
             <span class="nbh-type"><?= $block_type ?></span>
+            <?php if (!empty($render_version ?? '')): ?>
+            <span class="nbh-runtime-badge"><?= htmlspecialchars((string) ($render_version_label ?? 'SSR'), ENT_QUOTES, 'UTF-8') ?> v<?= htmlspecialchars((string) $render_version, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
         </div>
         <div class="nbh-spacer"></div>
         <div class="nbh-vp">
