@@ -10,18 +10,14 @@ NordicblocksScaffoldStage1::bootstrap($rootDir);
 $args = NordicblocksScaffoldStage1::parseCliArgs($argv);
 
 if (!empty($args['help'])) {
-    echo "NordicBlocks scaffold block stage 1\n";
+    echo "NordicBlocks scaffold block stage 2\n";
     echo "Usage:\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --slug=<slug> --title=\"Title\" --family=<family> --profile=<profile> [--json]\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --spec=/abs/path/spec.json [--json]\n";
+    echo "  /opt/php84/bin/php scripts/nordicblocks-scaffold-block.php --slug=<slug> --title=\"Title\" --family=<family> --profile=<profile> --apply --checkpoint=<snapshot/tag> [--json]\n";
     echo "\n";
-    echo "Stage 1 supports dry-run only and does not write files.\n";
+    echo "Without --apply the script runs in dry-run mode only.\n";
     exit(0);
-}
-
-if (!empty($args['apply'])) {
-    fwrite(STDERR, "Stage 1 scaffold supports dry-run only. Apply mode will be added in the next stage.\n");
-    exit(2);
 }
 
 try {
@@ -29,6 +25,10 @@ try {
         NordicblocksScaffoldStage1::buildBlueprint($args, $rootDir),
         $rootDir
     );
+
+    if (!empty($args['apply']) && !in_array($report['status'], ['FAIL', 'FAILED_DS_GUARD'], true)) {
+        $report['applied'] = NordicblocksScaffoldStage1::applyBlueprint($report, (string) ($args['checkpoint'] ?? ''), $rootDir);
+    }
 
     if (!empty($args['json'])) {
         echo json_encode($report, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
@@ -43,6 +43,13 @@ try {
             foreach ((array) ($report['plan']['patch'] ?? []) as $path) {
                 echo " - " . $path . "\n";
             }
+        }
+        if (!empty($report['applied']['writtenFiles'])) {
+            echo "\nWritten files:\n";
+            foreach ((array) $report['applied']['writtenFiles'] as $path) {
+                echo " - " . $path . "\n";
+            }
+            echo "\nCheckpoint: " . (string) ($report['applied']['checkpoint'] ?? '') . "\n";
         }
     }
 

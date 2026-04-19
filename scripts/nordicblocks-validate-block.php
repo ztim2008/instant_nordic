@@ -10,11 +10,13 @@ NordicblocksScaffoldStage1::bootstrap($rootDir);
 $args = NordicblocksScaffoldStage1::parseCliArgs($argv);
 
 if (!empty($args['help'])) {
-    echo "NordicBlocks validate block stage 1\n";
+    echo "NordicBlocks validate block stage 2\n";
     echo "Usage:\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-validate-block.php --block=<slug> [--json]\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-validate-block.php --slug=<slug> --title=\"Title\" --family=<family> --profile=<profile> [--json]\n";
     echo "  /opt/php84/bin/php scripts/nordicblocks-validate-block.php --spec=/abs/path/spec.json [--json]\n";
+    echo "\n";
+    echo "For existing blocks the validator distinguishes managed scaffold blocks from legacy debt.\n";
     exit(0);
 }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 final class NordicblocksScaffoldStage1 {
 
+    private const GENERATOR_NAME = 'nordicblocks-scaffold';
+    private const GENERATOR_STAGE = 2;
     private const DESIGN_SYSTEM_MODE = 'global-first';
     private const REQUIRED_ENTITIES = ['title', 'subtitle'];
     private const REQUIRED_RUNTIME_ROOTS = ['meta', 'content', 'design', 'layout', 'data', 'entities', 'runtime'];
@@ -285,38 +287,43 @@ final class NordicblocksScaffoldStage1 {
             }
         }
 
+        $schema = [];
+        if (is_file($paths['liveSchema'])) {
+            $schema = json_decode((string) file_get_contents($paths['liveSchema']), true);
+            if (!is_array($schema)) {
+                $issues[] = self::issue('error', 'contract', 'invalid_schema_json', 'schema.json не является валидным JSON.');
+                $schema = [];
+            }
+        }
+
+        $generatorMeta = self::detectGeneratorMeta($manifest, $schema);
+        $isManagedBlock = !empty($generatorMeta['managed']);
+
         if ($manifest) {
             $manifestEntities = array_keys((array) ($manifest['entities'] ?? []));
             foreach (self::REQUIRED_ENTITIES as $requiredEntity) {
                 if (!in_array($requiredEntity, $manifestEntities, true)) {
-                    $issues[] = self::issue('error', 'contract', 'manifest_missing_' . $requiredEntity, 'Manifest существующего блока не содержит сущность ' . $requiredEntity . '.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'contract', 'manifest_missing_' . $requiredEntity, 'Manifest существующего блока не содержит сущность ' . $requiredEntity . '.');
                 }
             }
 
             $registry = self::getRegistry();
             foreach ($manifestEntities as $entityKey) {
                 if (!isset($registry['entities'][$entityKey])) {
-                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_entity_' . $entityKey, 'Manifest ссылается на неизвестную сущность ' . $entityKey . '.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'registry', 'unknown_manifest_entity_' . $entityKey, 'Manifest ссылается на неизвестную сущность ' . $entityKey . '.');
                 }
             }
 
             foreach (array_keys((array) ($manifest['capabilities'] ?? [])) as $capabilityKey) {
                 if (!isset($registry['capabilities'][$capabilityKey])) {
-                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_capability_' . $capabilityKey, 'Manifest ссылается на неизвестную capability ' . $capabilityKey . '.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'registry', 'unknown_manifest_capability_' . $capabilityKey, 'Manifest ссылается на неизвестную capability ' . $capabilityKey . '.');
                 }
             }
 
             foreach (array_keys((array) ($manifest['panels'] ?? [])) as $panelKey) {
                 if (!isset($registry['panelMap'][$panelKey])) {
-                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_panel_' . $panelKey, 'Manifest ссылается на неизвестную panel ' . $panelKey . '.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'registry', 'unknown_manifest_panel_' . $panelKey, 'Manifest ссылается на неизвестную panel ' . $panelKey . '.');
                 }
-            }
-        }
-
-        if (is_file($paths['liveSchema'])) {
-            $schema = json_decode((string) file_get_contents($paths['liveSchema']), true);
-            if (!is_array($schema)) {
-                $issues[] = self::issue('error', 'contract', 'invalid_schema_json', 'schema.json не является валидным JSON.');
             }
         }
 
@@ -324,7 +331,7 @@ final class NordicblocksScaffoldStage1 {
             try {
                 $registryBuild = NordicblocksInspectorRegistryBuilder::build($slug);
                 if (empty($registryBuild['entities']) || empty($registryBuild['panels'])) {
-                    $issues[] = self::issue('error', 'runtime', 'empty_registry_build', 'InspectorRegistryBuilder не смог собрать полноценный registry для блока.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'runtime', 'empty_registry_build', 'InspectorRegistryBuilder не смог собрать полноценный registry для блока.');
                 }
             } catch (Throwable $exception) {
                 $issues[] = self::issue('error', 'runtime', 'registry_builder_failure', 'InspectorRegistryBuilder завершился ошибкой: ' . $exception->getMessage());
@@ -332,20 +339,20 @@ final class NordicblocksScaffoldStage1 {
         }
 
         if (class_exists('NordicblocksBlockContractNormalizer') && !NordicblocksBlockContractNormalizer::supportsContractType($slug)) {
-            $issues[] = self::issue('error', 'runtime', 'normalizer_missing_support', 'BlockContractNormalizer не поддерживает этот block type.');
+            $issues[] = self::compatibilityIssue($isManagedBlock, 'runtime', 'normalizer_missing_support', 'BlockContractNormalizer не поддерживает этот block type.');
         }
 
         if (class_exists('cmsCore')) {
             $model = cmsCore::getModel('nordicblocks');
             if ($model && method_exists($model, 'isFirstWaveBlockType') && !$model->isFirstWaveBlockType($slug)) {
-                $issues[] = self::issue('error', 'runtime', 'missing_first_wave_registration', 'modelNordicblocks не считает block type частью first-wave registry.');
+                $issues[] = self::compatibilityIssue($isManagedBlock, 'runtime', 'missing_first_wave_registration', 'modelNordicblocks не считает block type частью first-wave registry.');
             }
         }
 
         foreach ([['live' => $paths['liveManifest'], 'package' => $paths['packageManifest']], ['live' => $paths['liveRender'], 'package' => $paths['packageRender']], ['live' => $paths['liveSchema'], 'package' => $paths['packageSchema']]] as $pair) {
             if (is_file($pair['live']) && is_file($pair['package'])) {
                 if ((string) file_get_contents($pair['live']) !== (string) file_get_contents($pair['package'])) {
-                    $issues[] = self::issue('error', 'sync', 'mirror_mismatch_' . basename($pair['live']), 'Live и package mirror расходятся: ' . basename($pair['live']) . '.');
+                    $issues[] = self::compatibilityIssue($isManagedBlock, 'sync', 'mirror_mismatch_' . basename($pair['live']), 'Live и package mirror расходятся: ' . basename($pair['live']) . '.');
                 }
             }
         }
@@ -362,8 +369,55 @@ final class NordicblocksScaffoldStage1 {
         return self::finalizeValidation($issues, [
             'mode' => 'existing_block',
             'slug' => $slug,
+            'managedBlock' => $isManagedBlock,
+            'generator' => $generatorMeta,
             'paths' => $paths,
         ]);
+    }
+
+    public static function applyBlueprint(array $report, string $checkpointRef, string $rootDir): array {
+        if (($report['mode'] ?? '') !== 'scaffold_blueprint') {
+            throw new RuntimeException('Apply mode supports scaffold_blueprint reports only.');
+        }
+
+        if (in_array((string) ($report['status'] ?? ''), ['FAIL', 'FAILED_DS_GUARD'], true)) {
+            throw new RuntimeException('Scaffold apply aborted because blueprint validation did not pass.');
+        }
+
+        $checkpointRef = trim($checkpointRef);
+        if ($checkpointRef === '') {
+            throw new RuntimeException('Apply mode requires --checkpoint=<git-tag>.');
+        }
+
+        if (!self::checkpointExists($rootDir, $checkpointRef)) {
+            throw new RuntimeException('Checkpoint tag not found: ' . $checkpointRef);
+        }
+
+        $blueprint = (array) ($report['blueprint'] ?? []);
+        $generated = (array) ($report['generated'] ?? []);
+        $fileMap = self::buildGeneratedFileMap($blueprint, $generated);
+
+        foreach ([$blueprint['paths']['liveBlockDir'] ?? '', $blueprint['paths']['packageBlockDir'] ?? ''] as $dirPath) {
+            if ($dirPath === '') {
+                continue;
+            }
+            if (!is_dir($dirPath) && !mkdir($dirPath, 0775, true) && !is_dir($dirPath)) {
+                throw new RuntimeException('Не удалось создать директорию: ' . $dirPath);
+            }
+        }
+
+        $writtenFiles = [];
+        foreach ($fileMap as $path => $content) {
+            if (file_put_contents($path, $content) === false) {
+                throw new RuntimeException('Не удалось записать файл: ' . $path);
+            }
+            $writtenFiles[] = $path;
+        }
+
+        return [
+            'checkpoint' => $checkpointRef,
+            'writtenFiles' => $writtenFiles,
+        ];
     }
 
     public static function buildScaffoldPlan(array $blueprint): array {
@@ -402,7 +456,8 @@ final class NordicblocksScaffoldStage1 {
         }
 
         foreach ($report['issues'] as $issue) {
-            $lines[] = strtoupper((string) $issue['severity']) . ' [' . $issue['category'] . '] ' . $issue['message'];
+            $prefix = !empty($issue['legacyDebt']) ? 'LEGACY ' : '';
+            $lines[] = $prefix . strtoupper((string) $issue['severity']) . ' [' . $issue['category'] . '] ' . $issue['message'];
         }
 
         return implode(PHP_EOL, $lines) . PHP_EOL;
@@ -466,6 +521,7 @@ final class NordicblocksScaffoldStage1 {
     private static function generateManifest(array $blueprint): string {
         $manifest = [
             'title' => $blueprint['title'] . ' inspector manifest',
+            'generator' => self::buildGeneratorMeta($blueprint),
             'entities' => array_fill_keys($blueprint['entities'], []),
             'entityGroups' => $blueprint['entityGroups'],
             'capabilities' => array_fill_keys($blueprint['capabilities'], true),
@@ -480,6 +536,7 @@ final class NordicblocksScaffoldStage1 {
             'title' => $blueprint['title'],
             'type' => $blueprint['slug'],
             'profile' => $blueprint['profile'],
+            'generator' => self::buildGeneratorMeta($blueprint),
             'fields' => self::buildSchemaFields($blueprint),
         ];
 
@@ -493,6 +550,8 @@ final class NordicblocksScaffoldStage1 {
 
         $template = <<<'PHP'
 <?php
+
+    /* Generated by __GENERATOR_NAME__ stage __GENERATOR_STAGE__. */
 
 $__FUNCTION_PREFIX___contract = (isset($block_contract) && is_array($block_contract) && ((string) ($block_contract['meta']['blockType'] ?? '') === '__BLOCK_SLUG__'))
     ? $block_contract
@@ -533,6 +592,8 @@ PHP;
 
         return strtr($template, [
             '__FUNCTION_PREFIX__' => $functionPrefix,
+            '__GENERATOR_NAME__' => self::GENERATOR_NAME,
+            '__GENERATOR_STAGE__' => (string) self::GENERATOR_STAGE,
             '__BLOCK_SLUG__' => self::escapePhpString($blueprint['slug']),
             '__TITLE_DEFAULT__' => $titleDefault,
             '__CSS_CLASS__' => self::escapePhpString($cssClass),
@@ -649,13 +710,59 @@ PHP;
         return $default;
     }
 
-    private static function issue(string $severity, string $category, string $code, string $message): array {
-        return [
+    private static function issue(string $severity, string $category, string $code, string $message, array $meta = []): array {
+        return array_merge([
             'severity' => $severity,
             'category' => $category,
             'code' => $code,
             'message' => $message,
+        ], $meta);
+    }
+
+    private static function compatibilityIssue(bool $isManagedBlock, string $category, string $code, string $message): array {
+        if ($isManagedBlock) {
+            return self::issue('error', $category, $code, $message);
+        }
+
+        return self::issue('warning', $category, $code, $message . ' Обнаружено как legacy debt существующего блока.', [
+            'legacyDebt' => true,
+        ]);
+    }
+
+    private static function buildGeneratorMeta(array $blueprint): array {
+        return [
+            'name' => self::GENERATOR_NAME,
+            'managed' => true,
+            'stage' => self::GENERATOR_STAGE,
+            'profile' => (string) ($blueprint['profile'] ?? ''),
+            'designSystemMode' => (string) ($blueprint['designSystemMode'] ?? self::DESIGN_SYSTEM_MODE),
+            'sourceModeProfile' => (string) ($blueprint['sourceModeProfile'] ?? 'manual'),
         ];
+    }
+
+    private static function detectGeneratorMeta(array $manifest, array $schema): array {
+        $manifestMeta = is_array($manifest['generator'] ?? null) ? $manifest['generator'] : [];
+        $schemaMeta = is_array($schema['generator'] ?? null) ? $schema['generator'] : [];
+
+        return $manifestMeta ?: $schemaMeta;
+    }
+
+    private static function buildGeneratedFileMap(array $blueprint, array $generated): array {
+        return [
+            (string) ($blueprint['paths']['liveManifest'] ?? '') => (string) ($generated['manifest.php'] ?? ''),
+            (string) ($blueprint['paths']['liveRender'] ?? '') => (string) ($generated['render.php'] ?? ''),
+            (string) ($blueprint['paths']['liveSchema'] ?? '') => (string) ($generated['schema.json'] ?? ''),
+            (string) ($blueprint['paths']['packageManifest'] ?? '') => (string) ($generated['manifest.php'] ?? ''),
+            (string) ($blueprint['paths']['packageRender'] ?? '') => (string) ($generated['render.php'] ?? ''),
+            (string) ($blueprint['paths']['packageSchema'] ?? '') => (string) ($generated['schema.json'] ?? ''),
+        ];
+    }
+
+    private static function checkpointExists(string $rootDir, string $checkpointRef): bool {
+        $command = 'git -C ' . escapeshellarg($rootDir) . ' tag -l ' . escapeshellarg($checkpointRef);
+        $result = trim((string) shell_exec($command));
+
+        return $result === $checkpointRef;
     }
 
     private static function exportPhp($value, int $depth = 0): string {
