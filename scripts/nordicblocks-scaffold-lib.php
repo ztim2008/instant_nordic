@@ -1,0 +1,688 @@
+<?php
+
+declare(strict_types=1);
+
+final class NordicblocksScaffoldStage1 {
+
+    private const DESIGN_SYSTEM_MODE = 'global-first';
+    private const REQUIRED_ENTITIES = ['title', 'subtitle'];
+    private const REQUIRED_RUNTIME_ROOTS = ['meta', 'content', 'design', 'layout', 'data', 'entities', 'runtime'];
+
+    public static function bootstrap(string $rootDir): void {
+        require_once $rootDir . '/bootstrap.php';
+        require_once $rootDir . '/system/controllers/nordicblocks/libs/InspectorDefinitionRegistry.php';
+        require_once $rootDir . '/system/controllers/nordicblocks/libs/InspectorRegistryBuilder.php';
+        require_once $rootDir . '/system/controllers/nordicblocks/libs/BlockContractNormalizer.php';
+    }
+
+    public static function parseCliArgs(array $argv): array {
+        $parsed = [];
+
+        foreach (array_slice($argv, 1) as $argument) {
+            if ($argument === '--help' || $argument === '-h') {
+                $parsed['help'] = true;
+                continue;
+            }
+
+            if (strpos($argument, '--') !== 0) {
+                $parsed['_'][] = $argument;
+                continue;
+            }
+
+            $argument = substr($argument, 2);
+            if ($argument === '') {
+                continue;
+            }
+
+            if (strpos($argument, '=') === false) {
+                $parsed[$argument] = true;
+                continue;
+            }
+
+            [$key, $value] = explode('=', $argument, 2);
+            $parsed[$key] = $value;
+        }
+
+        return $parsed;
+    }
+
+    public static function getProfileDefinitions(): array {
+        return [
+            'hero_like' => [
+                'sourceModeProfile' => 'manual',
+                'entities' => ['eyebrow', 'title', 'subtitle', 'meta', 'primaryButton', 'secondaryButton', 'media', 'mediaSurface'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'buttonsContent', 'mediaContent', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'metaTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing', 'dataBindings'],
+                'panels' => ['textEyebrowContent', 'textTitleContent', 'textSubtitleContent', 'buttonsContent', 'mediaContent', 'sectionBackground', 'sectionContainer', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'metaTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'spacingLayout', 'alignmentLayout', 'dataBindings'],
+            ],
+            'faq_like' => [
+                'sourceModeProfile' => 'content_list',
+                'entities' => ['eyebrow', 'title', 'subtitle', 'items', 'itemSurface', 'itemTitle', 'itemText'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'repeaterContent', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing', 'dataBindings', 'repeaterBindings'],
+                'panels' => ['textEyebrowContent', 'textTitleContent', 'textSubtitleContent', 'repeaterItems', 'sectionBackground', 'sectionContainer', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'dataBindings', 'repeaterBindings'],
+            ],
+            'card_collection' => [
+                'sourceModeProfile' => 'content_list',
+                'entities' => ['title', 'subtitle', 'items', 'itemSurface', 'itemTitle', 'itemText', 'media'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'repeaterContent', 'titleTypography', 'subtitleTypography', 'mediaStyle', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing', 'dataBindings', 'repeaterBindings'],
+                'panels' => ['textTitleContent', 'textSubtitleContent', 'repeaterItems', 'sectionBackground', 'sectionContainer', 'titleTypography', 'subtitleTypography', 'mediaStyle', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'dataBindings', 'repeaterBindings'],
+            ],
+            'catalog_like' => [
+                'sourceModeProfile' => 'content_list',
+                'entities' => ['title', 'subtitle', 'primaryButton', 'items', 'itemSurface', 'itemTitle', 'itemText', 'media', 'mediaSurface'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'buttonsContent', 'repeaterContent', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing', 'dataBindings', 'repeaterBindings'],
+                'panels' => ['textTitleContent', 'textSubtitleContent', 'buttonsContent', 'repeaterItems', 'sectionBackground', 'sectionContainer', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'dataBindings', 'repeaterBindings'],
+            ],
+            'text_section' => [
+                'sourceModeProfile' => 'manual',
+                'entities' => ['eyebrow', 'title', 'subtitle', 'body', 'primaryButton'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'bodyContent', 'buttonsContent', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'bodyTypography', 'buttonsStyle', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing'],
+                'panels' => ['textEyebrowContent', 'textTitleContent', 'textSubtitleContent', 'buttonsContent', 'sectionBackground', 'sectionContainer', 'eyebrowTypography', 'titleTypography', 'subtitleTypography', 'bodyTypography', 'buttonsStyle', 'spacingLayout', 'alignmentLayout'],
+            ],
+        ];
+    }
+
+    public static function getRegistry(): array {
+        return [
+            'entities' => NordicblocksInspectorDefinitionRegistry::getEntities(),
+            'entityGroups' => NordicblocksInspectorDefinitionRegistry::getEntityGroups(),
+            'capabilities' => NordicblocksInspectorDefinitionRegistry::getCapabilities(),
+            'panelMap' => NordicblocksInspectorDefinitionRegistry::getPanelMap(),
+        ];
+    }
+
+    public static function buildBlueprint(array $args, string $rootDir): array {
+        $input = self::loadInputSpec($args);
+        $profiles = self::getProfileDefinitions();
+        $profileKey = self::normalizeSlug((string) ($input['profile'] ?? $args['profile'] ?? ''));
+        $profile = $profiles[$profileKey] ?? [];
+
+        $slug = self::normalizeSlug((string) ($input['slug'] ?? $args['slug'] ?? ''));
+        $title = trim((string) ($input['title'] ?? $args['title'] ?? ''));
+        $family = trim((string) ($input['family'] ?? $args['family'] ?? ''));
+        $sourceModeProfile = trim((string) ($input['sourceModeProfile'] ?? $args['source-mode'] ?? $profile['sourceModeProfile'] ?? 'manual'));
+
+        $entities = self::normalizeList($input['entities'] ?? ($args['entities'] ?? ($profile['entities'] ?? [])));
+        $capabilities = self::normalizeList($input['capabilities'] ?? ($args['capabilities'] ?? ($profile['capabilities'] ?? [])));
+        $panels = self::normalizeList($input['panels'] ?? ($args['panels'] ?? ($profile['panels'] ?? [])));
+
+        $entityGroups = self::resolveEntityGroups($entities, self::getRegistry()['entityGroups']);
+
+        return [
+            'slug' => $slug,
+            'title' => $title,
+            'family' => $family,
+            'profile' => $profileKey,
+            'sourceModeProfile' => $sourceModeProfile,
+            'designSystemMode' => (string) ($input['designSystemMode'] ?? $args['design-system-mode'] ?? self::DESIGN_SYSTEM_MODE),
+            'allowLocalOverrides' => self::normalizeBool($input['allowLocalOverrides'] ?? ($args['allow-local-overrides'] ?? true), true),
+            'requireExplicitInheritToggle' => self::normalizeBool($input['requireExplicitInheritToggle'] ?? ($args['require-inherit-toggle'] ?? true), true),
+            'entities' => $entities,
+            'entityGroups' => $entityGroups,
+            'capabilities' => $capabilities,
+            'panels' => $panels,
+            'paths' => self::buildPaths($rootDir, $slug, $family),
+        ];
+    }
+
+    public static function validateBlueprint(array $blueprint, string $rootDir): array {
+        $registry = self::getRegistry();
+        $issues = [];
+
+        if ($blueprint['slug'] === '') {
+            $issues[] = self::issue('error', 'structure', 'missing_slug', 'Не передан slug блока.');
+        } elseif (!preg_match('/^[a-z0-9_-]+$/', $blueprint['slug'])) {
+            $issues[] = self::issue('error', 'structure', 'invalid_slug', 'Slug должен содержать только a-z, 0-9, _ и -.');
+        }
+
+        if ($blueprint['title'] === '') {
+            $issues[] = self::issue('error', 'structure', 'missing_title', 'Не передан title блока.');
+        }
+
+        if ($blueprint['family'] === '') {
+            $issues[] = self::issue('error', 'docs', 'missing_family', 'Не передан family блока.');
+        }
+
+        if ($blueprint['profile'] === '') {
+            $issues[] = self::issue('error', 'structure', 'missing_profile', 'Не передан profile блока.');
+        } elseif (!isset(self::getProfileDefinitions()[$blueprint['profile']])) {
+            $issues[] = self::issue('error', 'structure', 'unknown_profile', 'Указан неизвестный profile scaffold-а.');
+        }
+
+        foreach (self::REQUIRED_ENTITIES as $requiredEntity) {
+            if (!in_array($requiredEntity, $blueprint['entities'], true)) {
+                $issues[] = self::issue('error', 'contract', 'missing_required_entity_' . $requiredEntity, 'Blueprint обязан содержать сущность ' . $requiredEntity . '.');
+            }
+        }
+
+        $unknownEntities = array_values(array_diff($blueprint['entities'], array_keys($registry['entities'])));
+        foreach ($unknownEntities as $entityKey) {
+            $issues[] = self::issue('error', 'registry', 'unknown_entity_' . $entityKey, 'Сущность ' . $entityKey . ' отсутствует в InspectorDefinitionRegistry.');
+        }
+
+        $unknownCapabilities = array_values(array_diff($blueprint['capabilities'], array_keys($registry['capabilities'])));
+        foreach ($unknownCapabilities as $capabilityKey) {
+            $issues[] = self::issue('error', 'registry', 'unknown_capability_' . $capabilityKey, 'Capability ' . $capabilityKey . ' отсутствует в InspectorDefinitionRegistry.');
+        }
+
+        $unknownPanels = array_values(array_diff($blueprint['panels'], array_keys($registry['panelMap'])));
+        foreach ($unknownPanels as $panelKey) {
+            $issues[] = self::issue('error', 'registry', 'unknown_panel_' . $panelKey, 'Панель ' . $panelKey . ' отсутствует в InspectorDefinitionRegistry.');
+        }
+
+        if (in_array('itemSurface', $blueprint['entities'], true) || in_array('itemTitle', $blueprint['entities'], true) || in_array('itemText', $blueprint['entities'], true)) {
+            if (!in_array('items', $blueprint['entities'], true)) {
+                $issues[] = self::issue('error', 'contract', 'missing_items_entity', 'Item-level сущности допустимы только вместе с сущностью items.');
+            }
+        }
+
+        foreach ($blueprint['panels'] as $panelKey) {
+            if (!isset($registry['panelMap'][$panelKey])) {
+                continue;
+            }
+
+            $panel = $registry['panelMap'][$panelKey];
+            foreach ((array) ($panel['requiresCapabilities'] ?? []) as $capabilityKey) {
+                if (!in_array($capabilityKey, $blueprint['capabilities'], true)) {
+                    $issues[] = self::issue('error', 'registry', 'panel_requires_capability_' . $panelKey . '_' . $capabilityKey, 'Панель ' . $panelKey . ' требует capability ' . $capabilityKey . '.');
+                }
+            }
+
+            foreach ((array) ($panel['requiresEntities'] ?? []) as $entityKey) {
+                if (!in_array($entityKey, $blueprint['entities'], true)) {
+                    $issues[] = self::issue('error', 'registry', 'panel_requires_entity_' . $panelKey . '_' . $entityKey, 'Панель ' . $panelKey . ' требует сущность ' . $entityKey . '.');
+                }
+            }
+
+            $requiresAnyEntities = (array) ($panel['requiresAnyEntities'] ?? []);
+            if ($requiresAnyEntities && !array_intersect($requiresAnyEntities, $blueprint['entities'])) {
+                $issues[] = self::issue('error', 'registry', 'panel_requires_any_entity_' . $panelKey, 'Панель ' . $panelKey . ' требует хотя бы одну из сущностей: ' . implode(', ', $requiresAnyEntities) . '.');
+            }
+        }
+
+        if (!in_array($blueprint['sourceModeProfile'], ['manual', 'content_item', 'content_list'], true)) {
+            $issues[] = self::issue('error', 'contract', 'invalid_source_mode_profile', 'sourceModeProfile должен быть manual, content_item или content_list.');
+        }
+
+        if ($blueprint['sourceModeProfile'] === 'content_item' && !in_array('dataBindings', $blueprint['capabilities'], true)) {
+            $issues[] = self::issue('error', 'runtime', 'content_item_requires_data_bindings', 'Профиль content_item требует capability dataBindings.');
+        }
+
+        if ($blueprint['sourceModeProfile'] === 'content_list') {
+            if (!in_array('items', $blueprint['entities'], true)) {
+                $issues[] = self::issue('error', 'runtime', 'content_list_requires_items', 'Профиль content_list требует repeater сущность items.');
+            }
+            if (!in_array('dataBindings', $blueprint['capabilities'], true)) {
+                $issues[] = self::issue('error', 'runtime', 'content_list_requires_data_bindings', 'Профиль content_list требует capability dataBindings.');
+            }
+            if (!in_array('repeaterBindings', $blueprint['capabilities'], true)) {
+                $issues[] = self::issue('error', 'runtime', 'content_list_requires_repeater_bindings', 'Профиль content_list требует capability repeaterBindings.');
+            }
+        }
+
+        if ($blueprint['designSystemMode'] !== self::DESIGN_SYSTEM_MODE) {
+            $issues[] = self::issue('error', 'design_system', 'non_global_first_design_mode', 'Stage 1 scaffold допускает только global-first design mode.');
+        }
+
+        if (!empty($blueprint['allowLocalOverrides']) && empty($blueprint['requireExplicitInheritToggle'])) {
+            $issues[] = self::issue('error', 'design_system', 'local_override_without_inherit_toggle', 'Локальные override запрещены без явного inherit toggle.');
+        }
+
+        if ($blueprint['slug'] !== '' && is_dir($blueprint['paths']['liveBlockDir'])) {
+            $issues[] = self::issue('error', 'structure', 'slug_already_exists', 'Блок с таким slug уже существует в live директории.');
+        }
+
+        if ($blueprint['slug'] !== '' && is_dir($blueprint['paths']['packageBlockDir'])) {
+            $issues[] = self::issue('error', 'sync', 'package_slug_already_exists', 'Блок с таким slug уже существует в package mirror.');
+        }
+
+        if ($blueprint['family'] !== '' && !is_file($blueprint['paths']['familyDoc'])) {
+            $issues[] = self::issue('error', 'docs', 'missing_family_doc', 'Для family не найден канонический family-doc: ' . basename($blueprint['paths']['familyDoc']) . '.');
+        }
+
+        return self::finalizeValidation($issues, [
+            'mode' => 'scaffold_blueprint',
+            'blueprint' => $blueprint,
+            'plan' => self::buildScaffoldPlan($blueprint),
+            'generated' => [
+                'manifest.php' => self::generateManifest($blueprint),
+                'schema.json' => self::generateSchema($blueprint),
+                'render.php' => self::generateRenderStub($blueprint),
+            ],
+        ]);
+    }
+
+    public static function validateExistingBlock(string $slug, string $rootDir): array {
+        $slug = self::normalizeSlug($slug);
+        $issues = [];
+        $paths = self::buildPaths($rootDir, $slug, '');
+
+        if ($slug === '') {
+            $issues[] = self::issue('error', 'structure', 'missing_block', 'Не передан slug существующего блока.');
+            return self::finalizeValidation($issues, ['mode' => 'existing_block', 'slug' => $slug]);
+        }
+
+        $requiredFiles = [
+            'manifest' => $paths['liveManifest'],
+            'render' => $paths['liveRender'],
+            'schema' => $paths['liveSchema'],
+            'packageManifest' => $paths['packageManifest'],
+            'packageRender' => $paths['packageRender'],
+            'packageSchema' => $paths['packageSchema'],
+        ];
+
+        foreach ($requiredFiles as $label => $path) {
+            if (!is_file($path)) {
+                $issues[] = self::issue('error', 'structure', 'missing_' . $label, 'Отсутствует обязательный файл: ' . $path . '.');
+            }
+        }
+
+        $manifest = [];
+        if (is_file($paths['liveManifest'])) {
+            $manifest = require $paths['liveManifest'];
+            if (!is_array($manifest)) {
+                $issues[] = self::issue('error', 'contract', 'invalid_manifest_type', 'manifest.php должен возвращать массив.');
+                $manifest = [];
+            }
+        }
+
+        if ($manifest) {
+            $manifestEntities = array_keys((array) ($manifest['entities'] ?? []));
+            foreach (self::REQUIRED_ENTITIES as $requiredEntity) {
+                if (!in_array($requiredEntity, $manifestEntities, true)) {
+                    $issues[] = self::issue('error', 'contract', 'manifest_missing_' . $requiredEntity, 'Manifest существующего блока не содержит сущность ' . $requiredEntity . '.');
+                }
+            }
+
+            $registry = self::getRegistry();
+            foreach ($manifestEntities as $entityKey) {
+                if (!isset($registry['entities'][$entityKey])) {
+                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_entity_' . $entityKey, 'Manifest ссылается на неизвестную сущность ' . $entityKey . '.');
+                }
+            }
+
+            foreach (array_keys((array) ($manifest['capabilities'] ?? [])) as $capabilityKey) {
+                if (!isset($registry['capabilities'][$capabilityKey])) {
+                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_capability_' . $capabilityKey, 'Manifest ссылается на неизвестную capability ' . $capabilityKey . '.');
+                }
+            }
+
+            foreach (array_keys((array) ($manifest['panels'] ?? [])) as $panelKey) {
+                if (!isset($registry['panelMap'][$panelKey])) {
+                    $issues[] = self::issue('error', 'registry', 'unknown_manifest_panel_' . $panelKey, 'Manifest ссылается на неизвестную panel ' . $panelKey . '.');
+                }
+            }
+        }
+
+        if (is_file($paths['liveSchema'])) {
+            $schema = json_decode((string) file_get_contents($paths['liveSchema']), true);
+            if (!is_array($schema)) {
+                $issues[] = self::issue('error', 'contract', 'invalid_schema_json', 'schema.json не является валидным JSON.');
+            }
+        }
+
+        if (class_exists('NordicblocksInspectorRegistryBuilder')) {
+            try {
+                $registryBuild = NordicblocksInspectorRegistryBuilder::build($slug);
+                if (empty($registryBuild['entities']) || empty($registryBuild['panels'])) {
+                    $issues[] = self::issue('error', 'runtime', 'empty_registry_build', 'InspectorRegistryBuilder не смог собрать полноценный registry для блока.');
+                }
+            } catch (Throwable $exception) {
+                $issues[] = self::issue('error', 'runtime', 'registry_builder_failure', 'InspectorRegistryBuilder завершился ошибкой: ' . $exception->getMessage());
+            }
+        }
+
+        if (class_exists('NordicblocksBlockContractNormalizer') && !NordicblocksBlockContractNormalizer::supportsContractType($slug)) {
+            $issues[] = self::issue('error', 'runtime', 'normalizer_missing_support', 'BlockContractNormalizer не поддерживает этот block type.');
+        }
+
+        if (class_exists('cmsCore')) {
+            $model = cmsCore::getModel('nordicblocks');
+            if ($model && method_exists($model, 'isFirstWaveBlockType') && !$model->isFirstWaveBlockType($slug)) {
+                $issues[] = self::issue('error', 'runtime', 'missing_first_wave_registration', 'modelNordicblocks не считает block type частью first-wave registry.');
+            }
+        }
+
+        foreach ([['live' => $paths['liveManifest'], 'package' => $paths['packageManifest']], ['live' => $paths['liveRender'], 'package' => $paths['packageRender']], ['live' => $paths['liveSchema'], 'package' => $paths['packageSchema']]] as $pair) {
+            if (is_file($pair['live']) && is_file($pair['package'])) {
+                if ((string) file_get_contents($pair['live']) !== (string) file_get_contents($pair['package'])) {
+                    $issues[] = self::issue('error', 'sync', 'mirror_mismatch_' . basename($pair['live']), 'Live и package mirror расходятся: ' . basename($pair['live']) . '.');
+                }
+            }
+        }
+
+        $checklistPath = $rootDir . '/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json';
+        if (is_file($checklistPath)) {
+            $checklist = json_decode((string) file_get_contents($checklistPath), true);
+            $blocks = is_array($checklist['blocks'] ?? null) ? $checklist['blocks'] : [];
+            if (!array_key_exists($slug, $blocks)) {
+                $issues[] = self::issue('warning', 'docs', 'missing_checklist_entry', 'В NEW_BLOCK_CHECKLIST_STATUS.json нет записи для блока ' . $slug . '. Для legacy block types это допустимо, для новых block types запись обязательна.');
+            }
+        }
+
+        return self::finalizeValidation($issues, [
+            'mode' => 'existing_block',
+            'slug' => $slug,
+            'paths' => $paths,
+        ]);
+    }
+
+    public static function buildScaffoldPlan(array $blueprint): array {
+        return [
+            'create' => [
+                $blueprint['paths']['liveManifest'],
+                $blueprint['paths']['liveRender'],
+                $blueprint['paths']['liveSchema'],
+                $blueprint['paths']['packageManifest'],
+                $blueprint['paths']['packageRender'],
+                $blueprint['paths']['packageSchema'],
+            ],
+            'patch' => [
+                $blueprint['paths']['rootDir'] . '/system/controllers/nordicblocks/model.php',
+                $blueprint['paths']['rootDir'] . '/packages/nordicblocks/package/system/controllers/nordicblocks/model.php',
+                $blueprint['paths']['rootDir'] . '/system/controllers/nordicblocks/libs/BlockContractNormalizer.php',
+                $blueprint['paths']['rootDir'] . '/packages/nordicblocks/package/system/controllers/nordicblocks/libs/BlockContractNormalizer.php',
+                $blueprint['paths']['rootDir'] . '/system/controllers/nordicblocks/libs/BindingMapper.php',
+                $blueprint['paths']['rootDir'] . '/packages/nordicblocks/package/system/controllers/nordicblocks/libs/BindingMapper.php',
+                $blueprint['paths']['rootDir'] . '/system/controllers/nordicblocks/libs/DataSourceResolver.php',
+                $blueprint['paths']['rootDir'] . '/packages/nordicblocks/package/system/controllers/nordicblocks/libs/DataSourceResolver.php',
+                $blueprint['paths']['rootDir'] . '/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json',
+                $blueprint['paths']['familyDoc'],
+            ],
+        ];
+    }
+
+    public static function formatReport(array $report): string {
+        $lines = [];
+        $lines[] = 'Status: ' . $report['status'];
+        if (!empty($report['summary']['errors'])) {
+            $lines[] = 'Errors: ' . $report['summary']['errors'];
+        }
+        if (!empty($report['summary']['warnings'])) {
+            $lines[] = 'Warnings: ' . $report['summary']['warnings'];
+        }
+
+        foreach ($report['issues'] as $issue) {
+            $lines[] = strtoupper((string) $issue['severity']) . ' [' . $issue['category'] . '] ' . $issue['message'];
+        }
+
+        return implode(PHP_EOL, $lines) . PHP_EOL;
+    }
+
+    private static function loadInputSpec(array $args): array {
+        $specPath = trim((string) ($args['spec'] ?? ''));
+        if ($specPath === '') {
+            return [];
+        }
+
+        if (!is_file($specPath)) {
+            throw new RuntimeException('Spec file not found: ' . $specPath);
+        }
+
+        $decoded = json_decode((string) file_get_contents($specPath), true);
+        if (!is_array($decoded)) {
+            throw new RuntimeException('Spec file is not a valid JSON object: ' . $specPath);
+        }
+
+        return $decoded;
+    }
+
+    private static function buildPaths(string $rootDir, string $slug, string $family): array {
+        $familyDoc = $family !== ''
+            ? $rootDir . '/docs/nordicblocks/' . strtoupper($family) . '.md'
+            : $rootDir . '/docs/nordicblocks/.missing-family.md';
+
+        return [
+            'rootDir' => $rootDir,
+            'liveBlockDir' => $rootDir . '/system/controllers/nordicblocks/blocks/' . $slug,
+            'packageBlockDir' => $rootDir . '/packages/nordicblocks/package/system/controllers/nordicblocks/blocks/' . $slug,
+            'liveManifest' => $rootDir . '/system/controllers/nordicblocks/blocks/' . $slug . '/manifest.php',
+            'liveRender' => $rootDir . '/system/controllers/nordicblocks/blocks/' . $slug . '/render.php',
+            'liveSchema' => $rootDir . '/system/controllers/nordicblocks/blocks/' . $slug . '/schema.json',
+            'packageManifest' => $rootDir . '/packages/nordicblocks/package/system/controllers/nordicblocks/blocks/' . $slug . '/manifest.php',
+            'packageRender' => $rootDir . '/packages/nordicblocks/package/system/controllers/nordicblocks/blocks/' . $slug . '/render.php',
+            'packageSchema' => $rootDir . '/packages/nordicblocks/package/system/controllers/nordicblocks/blocks/' . $slug . '/schema.json',
+            'familyDoc' => $familyDoc,
+        ];
+    }
+
+    private static function resolveEntityGroups(array $entities, array $sharedGroups): array {
+        $resolved = [];
+
+        foreach ($sharedGroups as $groupKey => $group) {
+            $groupEntities = array_values(array_intersect((array) ($group['entities'] ?? []), $entities));
+            if (!$groupEntities) {
+                continue;
+            }
+
+            $resolved[$groupKey] = [
+                'label' => (string) ($group['label'] ?? $groupKey),
+                'entities' => $groupEntities,
+            ];
+        }
+
+        return $resolved;
+    }
+
+    private static function generateManifest(array $blueprint): string {
+        $manifest = [
+            'title' => $blueprint['title'] . ' inspector manifest',
+            'entities' => array_fill_keys($blueprint['entities'], []),
+            'entityGroups' => $blueprint['entityGroups'],
+            'capabilities' => array_fill_keys($blueprint['capabilities'], true),
+            'panels' => array_fill_keys($blueprint['panels'], []),
+        ];
+
+        return "<?php\n\nreturn " . self::exportPhp($manifest) . ";\n";
+    }
+
+    private static function generateSchema(array $blueprint): string {
+        $schema = [
+            'title' => $blueprint['title'],
+            'type' => $blueprint['slug'],
+            'profile' => $blueprint['profile'],
+            'fields' => self::buildSchemaFields($blueprint),
+        ];
+
+        return json_encode($schema, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+
+    private static function generateRenderStub(array $blueprint): string {
+        $functionPrefix = 'nb_' . str_replace('-', '_', $blueprint['slug']);
+        $cssClass = str_replace('_', '-', $blueprint['slug']);
+        $titleDefault = self::escapePhpString($blueprint['title']);
+
+        $template = <<<'PHP'
+<?php
+
+$__FUNCTION_PREFIX___contract = (isset($block_contract) && is_array($block_contract) && ((string) ($block_contract['meta']['blockType'] ?? '') === '__BLOCK_SLUG__'))
+    ? $block_contract
+    : [];
+
+if (!function_exists('__FUNCTION_PREFIX___visible')) {
+    function __FUNCTION_PREFIX___visible($value, $default = true) {
+        if ($value === null || $value === '') {
+            return (bool) $default;
+        }
+
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return !in_array(strtolower((string) $value), ['0', 'false', 'off', 'no'], true);
+    }
+}
+
+$__FUNCTION_PREFIX___content = is_array($__FUNCTION_PREFIX___contract['content'] ?? null) ? $__FUNCTION_PREFIX___contract['content'] : [];
+$__FUNCTION_PREFIX___design = is_array($__FUNCTION_PREFIX___contract['design']['entities'] ?? null) ? $__FUNCTION_PREFIX___contract['design']['entities'] : [];
+$__FUNCTION_PREFIX___title_visible = __FUNCTION_PREFIX___visible($__FUNCTION_PREFIX___design['title']['visible'] ?? true, true);
+$__FUNCTION_PREFIX___subtitle_visible = __FUNCTION_PREFIX___visible($__FUNCTION_PREFIX___design['subtitle']['visible'] ?? true, true);
+$__FUNCTION_PREFIX___title = (string) ($__FUNCTION_PREFIX___content['title'] ?? '__TITLE_DEFAULT__');
+$__FUNCTION_PREFIX___subtitle = (string) ($__FUNCTION_PREFIX___content['subtitle'] ?? 'Подзаголовок блока');
+?>
+<section class="nb-section nb-__CSS_CLASS__">
+    <div class="nb-container">
+        <?php if ($__FUNCTION_PREFIX___title_visible && $__FUNCTION_PREFIX___title !== '') { ?>
+            <h2 class="nb-__CSS_CLASS____title"><?php echo htmlspecialchars($__FUNCTION_PREFIX___title, ENT_QUOTES, 'UTF-8'); ?></h2>
+        <?php } ?>
+        <?php if ($__FUNCTION_PREFIX___subtitle_visible && $__FUNCTION_PREFIX___subtitle !== '') { ?>
+            <div class="nb-__CSS_CLASS____subtitle"><?php echo nl2br(htmlspecialchars($__FUNCTION_PREFIX___subtitle, ENT_QUOTES, 'UTF-8')); ?></div>
+        <?php } ?>
+    </div>
+</section>
+PHP;
+
+        return strtr($template, [
+            '__FUNCTION_PREFIX__' => $functionPrefix,
+            '__BLOCK_SLUG__' => self::escapePhpString($blueprint['slug']),
+            '__TITLE_DEFAULT__' => $titleDefault,
+            '__CSS_CLASS__' => self::escapePhpString($cssClass),
+        ]) . "\n";
+    }
+
+    private static function buildSchemaFields(array $blueprint): array {
+        $common = [
+            ['key' => 'heading', 'type' => 'text', 'default' => $blueprint['title']],
+            ['key' => 'subheading', 'type' => 'textarea', 'default' => 'Подзаголовок блока'],
+            ['key' => 'theme', 'type' => 'select', 'default' => 'light'],
+        ];
+
+        if ($blueprint['profile'] === 'hero_like') {
+            array_unshift($common, ['key' => 'eyebrow', 'type' => 'text', 'default' => '']);
+            $common[] = ['key' => 'btn_primary_label', 'type' => 'text', 'default' => 'Подробнее'];
+            $common[] = ['key' => 'btn_primary_url', 'type' => 'text', 'default' => '#'];
+            $common[] = ['key' => 'image', 'type' => 'text', 'default' => ''];
+        }
+
+        if ($blueprint['profile'] === 'faq_like') {
+            array_unshift($common, ['key' => 'eyebrow', 'type' => 'text', 'default' => 'FAQ']);
+            $common[] = ['key' => 'items', 'type' => 'repeater', 'default' => []];
+        }
+
+        if (in_array($blueprint['profile'], ['card_collection', 'catalog_like'], true)) {
+            $common[] = ['key' => 'section_link_label', 'type' => 'text', 'default' => 'Открыть все'];
+            $common[] = ['key' => 'section_link_url', 'type' => 'text', 'default' => '#'];
+            $common[] = ['key' => 'items', 'type' => 'repeater', 'default' => []];
+        }
+
+        if ($blueprint['profile'] === 'text_section') {
+            array_unshift($common, ['key' => 'eyebrow', 'type' => 'text', 'default' => '']);
+            $common[] = ['key' => 'body', 'type' => 'textarea', 'default' => 'Основной текст блока'];
+            $common[] = ['key' => 'btn_primary_label', 'type' => 'text', 'default' => 'Подробнее'];
+            $common[] = ['key' => 'btn_primary_url', 'type' => 'text', 'default' => '#'];
+        }
+
+        return $common;
+    }
+
+    private static function finalizeValidation(array $issues, array $payload): array {
+        $summary = ['errors' => 0, 'warnings' => 0];
+
+        foreach ($issues as $issue) {
+            if ($issue['severity'] === 'error') {
+                $summary['errors']++;
+            }
+            if ($issue['severity'] === 'warning') {
+                $summary['warnings']++;
+            }
+        }
+
+        $status = 'PASS';
+        if ($summary['errors'] > 0) {
+            $designErrors = array_filter($issues, static function (array $issue): bool {
+                return $issue['severity'] === 'error' && $issue['category'] === 'design_system';
+            });
+            $status = $designErrors ? 'FAILED_DS_GUARD' : 'FAIL';
+        } elseif ($summary['warnings'] > 0) {
+            $status = 'PASS_WITH_WARNINGS';
+        }
+
+        return array_merge($payload, [
+            'status' => $status,
+            'summary' => $summary,
+            'issues' => $issues,
+        ]);
+    }
+
+    private static function normalizeSlug(string $value): string {
+        return preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($value)));
+    }
+
+    private static function normalizeList($value): array {
+        if (is_string($value)) {
+            $value = preg_split('/\s*,\s*/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($value as $item) {
+            $item = trim((string) $item);
+            if ($item === '') {
+                continue;
+            }
+            $normalized[] = $item;
+        }
+
+        return array_values(array_unique($normalized));
+    }
+
+    private static function normalizeBool($value, bool $default): bool {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+        if ($normalized === '') {
+            return $default;
+        }
+
+        if (in_array($normalized, ['1', 'true', 'yes', 'on'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['0', 'false', 'no', 'off'], true)) {
+            return false;
+        }
+
+        return $default;
+    }
+
+    private static function issue(string $severity, string $category, string $code, string $message): array {
+        return [
+            'severity' => $severity,
+            'category' => $category,
+            'code' => $code,
+            'message' => $message,
+        ];
+    }
+
+    private static function exportPhp($value, int $depth = 0): string {
+        if (!is_array($value)) {
+            return var_export($value, true);
+        }
+
+        if ($value === []) {
+            return '[]';
+        }
+
+        $indent = str_repeat('    ', $depth);
+        $childIndent = str_repeat('    ', $depth + 1);
+        $isList = array_keys($value) === range(0, count($value) - 1);
+        $lines = ['['];
+
+        foreach ($value as $key => $item) {
+            $prefix = $isList ? '' : var_export((string) $key, true) . ' => ';
+            $lines[] = $childIndent . $prefix . self::exportPhp($item, $depth + 1) . ',';
+        }
+
+        $lines[] = $indent . ']';
+
+        return implode("\n", $lines);
+    }
+
+    private static function escapePhpString(string $value): string {
+        return str_replace(["\\", "'"], ["\\\\", "\\'"], $value);
+    }
+}
