@@ -529,6 +529,9 @@ if ($catalog_contract) {
         ? (string) ($media_entity['objectFit'] ?? 'cover')
         : 'cover';
     $media_radius = (int) ($media_entity['radius'] ?? 20);
+    $media_inherit_global = array_key_exists('inheritGlobalStyle', $media_entity)
+        ? nb_catalog_browser_visible($media_entity['inheritGlobalStyle'], true)
+        : ($media_radius === 20);
     $media_surface_background_mode = (string) ($media_surface_entity['backgroundMode'] ?? 'transparent');
     $media_surface_background_color = nb_block_css_color((string) ($media_surface_entity['backgroundColor'] ?? ''), '');
     $media_surface_padding = (int) ($media_surface_entity['padding'] ?? 0);
@@ -546,6 +549,12 @@ if ($catalog_contract) {
     $item_surface_border_color = nb_block_css_color((string) ($item_surface_entity['borderColor'] ?? '#dbe4ef'), '#dbe4ef');
     $item_surface_shadow_token = (string) ($item_surface_entity['shadow'] ?? 'md');
     $item_surface_shadow_css = nb_catalog_browser_shadow_css($item_surface_shadow_token, 'md');
+    $item_surface_inherit_global = array_key_exists('inheritGlobalStyle', $item_surface_entity)
+        ? nb_catalog_browser_visible($item_surface_entity['inheritGlobalStyle'], true)
+        : (($item_surface_radius === 22 || $item_surface_radius === 1)
+            && $item_surface_border_width === 1
+            && strtolower($item_surface_border_color) === '#dbe4ef'
+            && $item_surface_shadow_token === 'md');
 
     $modal_background_mode = (string) ($modal_surface_entity['backgroundMode'] ?? 'solid');
     $modal_background_color = nb_block_css_color((string) ($modal_surface_entity['backgroundColor'] ?? '#0f172a'), '#0f172a');
@@ -704,6 +713,9 @@ if ($catalog_contract) {
     $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '4:3', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true) ? (string) ($props['media_aspect_ratio'] ?? '4:3') : '4:3';
     $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true) ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
     $media_radius = nb_catalog_browser_prop_int($props, 'media_radius', 20, 0, 80);
+    $media_inherit_global = array_key_exists('media_inherit_global', $props)
+        ? nb_catalog_browser_visible($props['media_inherit_global'], true)
+        : ($media_radius === 20);
     $media_surface_background_mode = (string) ($props['media_surface_background_mode'] ?? 'transparent');
     $media_surface_background_color = nb_block_css_color((string) ($props['media_surface_background_color'] ?? ''), '');
     $media_surface_padding = nb_catalog_browser_prop_int($props, 'media_surface_padding', 0, 0, 160);
@@ -719,6 +731,12 @@ if ($catalog_contract) {
     $item_surface_border_color = nb_block_css_color((string) ($props['item_surface_border_color'] ?? '#dbe4ef'), '#dbe4ef');
     $item_surface_shadow_token = (string) ($props['item_surface_shadow'] ?? 'md');
     $item_surface_shadow_css = nb_catalog_browser_shadow_css($item_surface_shadow_token, 'md');
+    $item_surface_inherit_global = array_key_exists('item_surface_inherit_global', $props)
+        ? nb_catalog_browser_visible($props['item_surface_inherit_global'], true)
+        : (($item_surface_radius === 22 || $item_surface_radius === 1)
+            && $item_surface_border_width === 1
+            && strtolower($item_surface_border_color) === '#dbe4ef'
+            && $item_surface_shadow_token === 'md');
 
     $modal_background_mode = 'solid';
     $modal_background_color = '#0f172a';
@@ -742,22 +760,22 @@ if ($catalog_contract) {
     $header_gap_mobile = nb_catalog_browser_prop_int($props, 'header_gap_mobile', 14, 0, 120);
 }
 
-$catalog_media_radius_css = $media_radius === 20
+$catalog_media_radius_css = $media_inherit_global
     ? 'var(--nb-radius-media, 20px)'
     : $media_radius . 'px';
-$catalog_media_surface_radius_css = $media_surface_radius === $media_radius
+$catalog_media_surface_radius_css = $media_inherit_global || $media_surface_radius === $media_radius
     ? 'var(--nb-catalog-media-radius, var(--nb-radius-media, 20px))'
     : $media_surface_radius . 'px';
-$catalog_item_surface_radius_css = ($item_surface_radius === 22 || $item_surface_radius === 1)
+$catalog_item_surface_radius_css = $item_surface_inherit_global
     ? 'var(--nb-radius-card, 22px)'
     : $item_surface_radius . 'px';
-$catalog_item_surface_border_width_css = $item_surface_border_width === 1
+$catalog_item_surface_border_width_css = $item_surface_inherit_global
     ? 'var(--nb-border-width, 1px)'
     : $item_surface_border_width . 'px';
-$catalog_item_surface_border_color_css = strtolower($item_surface_border_color) === '#dbe4ef'
+$catalog_item_surface_border_color_css = $item_surface_inherit_global
     ? 'var(--nb-color-border, #dbe4ef)'
     : $item_surface_border_color;
-$catalog_item_surface_shadow_css = $item_surface_shadow_token === 'md'
+$catalog_item_surface_shadow_css = $item_surface_inherit_global
     ? 'var(--nb-shadow-card, ' . nb_catalog_browser_shadow_css('md', 'md') . ')'
     : $item_surface_shadow_css;
 

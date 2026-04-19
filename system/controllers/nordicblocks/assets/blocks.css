@@ -909,13 +909,14 @@
 }
 
 .nb-section.nb-swiss-grid {
-    --nb-swiss-surface: #ffffff;
-    --nb-swiss-surface-alt: #f3f4f6;
-    --nb-swiss-title-default: #111827;
-    --nb-swiss-subtitle-default: #5b6472;
-    --nb-swiss-meta-default: #d92e1c;
-    --nb-swiss-text-default: #475569;
-    --nb-swiss-link-default: #111827;
+    --nb-swiss-surface: var(--nb-color-surface, #ffffff);
+    --nb-swiss-surface-alt: var(--nb-color-surface-alt, #f3f4f6);
+    --nb-swiss-title-default: var(--nb-color-text, #111827);
+    --nb-swiss-subtitle-default: var(--nb-color-text-muted, #5b6472);
+    --nb-swiss-meta-default: var(--nb-color-accent, #d92e1c);
+    --nb-swiss-text-default: var(--nb-color-text-muted, #475569);
+    --nb-swiss-link-default: var(--nb-color-text, #111827);
+    --nb-swiss-border-color: var(--nb-color-border, #eaeaea);
     position: relative;
     padding-top: var(--nb-swiss-padding-top, 0);
     padding-bottom: var(--nb-swiss-padding-bottom, 0);
@@ -965,7 +966,7 @@
 .nb-swiss-grid__title {
     margin: 0;
     max-width: min(100%, var(--nb-swiss-title-max-width, 1400px));
-    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--nb-font-head, "Helvetica Neue", Arial, sans-serif);
     font-size: var(--nb-swiss-title-size, 48px);
     font-weight: var(--nb-swiss-title-weight, 700);
     line-height: var(--nb-swiss-title-line-height, 1.1);
@@ -976,6 +977,7 @@
 
 .nb-swiss-grid__subtitle {
     max-width: min(100%, var(--nb-swiss-subtitle-max-width, 1400px));
+    font-family: var(--nb-font-body, "Helvetica Neue", Arial, sans-serif);
     font-size: var(--nb-swiss-subtitle-size, 16px);
     font-weight: var(--nb-swiss-subtitle-weight, 500);
     line-height: var(--nb-swiss-subtitle-line-height, 1.4);
@@ -1058,6 +1060,7 @@
 
 .nb-swiss-grid__meta,
 .nb-swiss-grid__aux-meta {
+    font-family: var(--nb-font-body, "Helvetica Neue", Arial, sans-serif);
     font-size: var(--nb-swiss-meta-size, 11px);
     font-weight: var(--nb-swiss-meta-weight, 700);
     line-height: var(--nb-swiss-meta-line-height, 1.2);
@@ -1084,7 +1087,7 @@
 
 .nb-swiss-grid__item-title {
     margin: 0;
-    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--nb-font-head, "Helvetica Neue", Arial, sans-serif);
     font-size: var(--nb-swiss-item-title-size, 20px);
     font-weight: var(--nb-swiss-item-title-weight, 700);
     line-height: var(--nb-swiss-item-title-line-height, 1.24);
@@ -1105,6 +1108,7 @@
 }
 
 .nb-swiss-grid__excerpt {
+    font-family: var(--nb-font-body, "Helvetica Neue", Arial, sans-serif);
     color: var(--nb-swiss-item-text-color, var(--nb-swiss-text-default));
     font-size: var(--nb-swiss-item-text-size, 14px);
     font-weight: var(--nb-swiss-item-text-weight, 400);
@@ -1119,6 +1123,7 @@
     gap: .35rem;
     margin-top: auto;
     color: var(--nb-swiss-link-color, var(--nb-swiss-link-default));
+    font-family: var(--nb-font-body, "Helvetica Neue", Arial, sans-serif);
     font-size: .76rem;
     font-weight: 700;
     letter-spacing: .12em;

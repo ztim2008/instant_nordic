@@ -235,7 +235,14 @@ function nbhBuildDesignControlRenderers() {
                 return '<div class="nbh-note">Панель стиля медиа активируется только для сущности изображения.</div>';
             }
 
-            return '<div class="nbh-grid-2">'
+            var isCatalogBrowser = nbhCollectionBlockKind() === 'catalog_browser';
+            var mediaInheritGlobal = String(nbhGet(
+                nbhState.draft,
+                'design.entities.media.inheritGlobalStyle',
+                profile.media && profile.media.inheritGlobalStyle === false ? '0' : '1'
+            )) !== '0';
+
+            var body = '<div class="nbh-grid-2">'
                 + nbhField('Формат кадра', nbhSelect('design.entities.media.aspectRatio', [
                     { value: 'auto', label: 'По размеру изображения' },
                     { value: '16:10', label: '16:10' },
@@ -247,22 +254,45 @@ function nbhBuildDesignControlRenderers() {
                 + nbhField('Вписывание', nbhSelect('design.entities.media.objectFit', [
                     { value: 'cover', label: 'Заполнить кадр' },
                     { value: 'contain', label: 'Показать целиком' }
-                ], profile.media.objectFit))
-                + nbhField('Скругление изображения', nbhInput('design.entities.media.radius', { inputType: 'number', type: 'number', fallback: profile.media.radius }))
-                + '</div>'
-                + '<div class="nbh-note">Эти настройки управляют самим изображением: форматом кадра, способом вписывания и собственным радиусом.</div>';
+                ], profile.media.objectFit));
+
+            if (isCatalogBrowser) {
+                body += nbhField('Источник скругления', nbhSelect('design.entities.media.inheritGlobalStyle', [
+                    { value: '1', label: 'Наследовать глобальную дизайн-систему' },
+                    { value: '0', label: 'Локально переопределить' }
+                ], mediaInheritGlobal ? '1' : '0'));
+            }
+
+            if (!isCatalogBrowser || !mediaInheritGlobal) {
+                body += nbhField('Скругление изображения', nbhInput('design.entities.media.radius', { inputType: 'number', type: 'number', fallback: profile.media.radius }));
+            }
+
+            body += '</div>';
+
+            if (isCatalogBrowser && mediaInheritGlobal) {
+                body += '<div class="nbh-note">Изображение и его базовое скругление сейчас берутся из глобальной дизайн-системы. Чтобы задать локальный radius, переключите режим на локальное переопределение.</div>';
+            } else {
+                body += '<div class="nbh-note">Эти настройки управляют самим изображением: форматом кадра, способом вписывания и собственным радиусом.</div>';
+            }
+
+            return body;
         },
         'surface-style-panel': function(panel) {
             var profile = nbhBlockUiProfile();
             if (panel && panel.entityScope === 'mediaSurface') {
-                return '<div class="nbh-grid-2">'
+                var catalogMediaInheritGlobal = nbhCollectionBlockKind() === 'catalog_browser'
+                    && String(nbhGet(
+                        nbhState.draft,
+                        'design.entities.media.inheritGlobalStyle',
+                        profile.media && profile.media.inheritGlobalStyle === false ? '0' : '1'
+                    )) !== '0';
+                var mediaSurfaceBody = '<div class="nbh-grid-2">'
                     + nbhField('Подложка', nbhSelect('design.entities.mediaSurface.backgroundMode', [
                         { value: 'transparent', label: 'Прозрачная' },
                         { value: 'solid', label: 'Цветная' }
                     ], profile.mediaSurface.backgroundMode))
                     + nbhField('Фон поверхности', nbhInput('design.entities.mediaSurface.backgroundColor', { inputType: 'color', fallback: profile.mediaSurface.backgroundColor }))
                     + nbhField('Внутренний отступ', nbhInput('design.entities.mediaSurface.padding', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.padding }))
-                    + nbhField('Скругление поверхности', nbhInput('design.entities.mediaSurface.radius', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.radius }))
                     + nbhField('Толщина рамки', nbhInput('design.entities.mediaSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.borderWidth }))
                     + nbhField('Цвет рамки', nbhInput('design.entities.mediaSurface.borderColor', { inputType: 'color', fallback: profile.mediaSurface.borderColor }))
                     + nbhField('Тень', nbhSelect('design.entities.mediaSurface.shadow', [
@@ -270,29 +300,59 @@ function nbhBuildDesignControlRenderers() {
                         { value: 'sm', label: 'Мягкая' },
                         { value: 'md', label: 'Средняя' },
                         { value: 'lg', label: 'Выразительная' }
-                    ], profile.mediaSurface.shadow))
-                        + '</div>'
-                        + '<div class="nbh-note">По умолчанию подложка прозрачная. Это удобно для PNG без фона. Если нужен цветной фон под изображением, переключите подложку в режим "Цветная".</div>';
+                    ], profile.mediaSurface.shadow));
+
+                if (!catalogMediaInheritGlobal) {
+                    mediaSurfaceBody += nbhField('Скругление поверхности', nbhInput('design.entities.mediaSurface.radius', { inputType: 'number', type: 'number', fallback: profile.mediaSurface.radius }));
+                }
+
+                mediaSurfaceBody += '</div>';
+                if (catalogMediaInheritGlobal) {
+                    mediaSurfaceBody += '<div class="nbh-note">Скругление подложки сейчас следует за глобальным radius для медиа. Если нужен отдельный локальный radius, переключите изображение в режим локального переопределения.</div>';
+                } else {
+                    mediaSurfaceBody += '<div class="nbh-note">По умолчанию подложка прозрачная. Это удобно для PNG без фона. Если нужен цветной фон под изображением, переключите подложку в режим "Цветная".</div>';
+                }
+
+                return mediaSurfaceBody;
             }
 
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {
+                var isCatalogBrowser = nbhCollectionBlockKind() === 'catalog_browser';
+                var itemSurfaceInheritGlobal = String(nbhGet(
+                    nbhState.draft,
+                    'design.entities.itemSurface.inheritGlobalStyle',
+                    profile.itemSurface && profile.itemSurface.inheritGlobalStyle === false ? '0' : '1'
+                )) !== '0';
                 var body = nbhField('Стиль карточек', nbhSelect('design.entities.itemSurface.variant', [
                     { value: 'card', label: 'Карточки' },
                     { value: 'plain', label: 'Без карточек' }
                 ], 'card'));
 
+                if (isCatalogBrowser) {
+                    body += nbhField('Источник оформления', nbhSelect('design.entities.itemSurface.inheritGlobalStyle', [
+                        { value: '1', label: 'Наследовать глобальную дизайн-систему' },
+                        { value: '0', label: 'Локально переопределить' }
+                    ], itemSurfaceInheritGlobal ? '1' : '0'));
+                }
+
                 if (nbhIsCardCollectionBlock()) {
-                    body += '<div class="nbh-grid-2">'
-                        + nbhField('Скругление карточки', nbhInput('design.entities.itemSurface.radius', { inputType: 'number', type: 'number', fallback: profile.itemSurface.radius }))
-                        + nbhField('Толщина рамки', nbhInput('design.entities.itemSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.itemSurface.borderWidth }))
-                        + nbhField('Цвет рамки', nbhInput('design.entities.itemSurface.borderColor', { inputType: 'color', fallback: profile.itemSurface.borderColor }))
-                        + nbhField('Тень', nbhSelect('design.entities.itemSurface.shadow', [
-                            { value: 'none', label: 'Без тени' },
-                            { value: 'sm', label: 'Мягкая' },
-                            { value: 'md', label: 'Средняя' },
-                            { value: 'lg', label: 'Выразительная' }
-                        ], profile.itemSurface.shadow))
-                        + '</div>';
+                    if (!isCatalogBrowser || !itemSurfaceInheritGlobal) {
+                        body += '<div class="nbh-grid-2">'
+                            + nbhField('Скругление карточки', nbhInput('design.entities.itemSurface.radius', { inputType: 'number', type: 'number', fallback: profile.itemSurface.radius }))
+                            + nbhField('Толщина рамки', nbhInput('design.entities.itemSurface.borderWidth', { inputType: 'number', type: 'number', fallback: profile.itemSurface.borderWidth }))
+                            + nbhField('Цвет рамки', nbhInput('design.entities.itemSurface.borderColor', { inputType: 'color', fallback: profile.itemSurface.borderColor }))
+                            + nbhField('Тень', nbhSelect('design.entities.itemSurface.shadow', [
+                                { value: 'none', label: 'Без тени' },
+                                { value: 'sm', label: 'Мягкая' },
+                                { value: 'md', label: 'Средняя' },
+                                { value: 'lg', label: 'Выразительная' }
+                            ], profile.itemSurface.shadow))
+                            + '</div>';
+                    }
+                }
+
+                if (isCatalogBrowser && itemSurfaceInheritGlobal) {
+                    body += '<div class="nbh-note">Карточки сейчас используют глобальные radius, border и shadow из дизайн-системы. Переключите режим на локальный, если нужен отдельный стиль именно для этого каталога.</div>';
                 }
 
                 return body;

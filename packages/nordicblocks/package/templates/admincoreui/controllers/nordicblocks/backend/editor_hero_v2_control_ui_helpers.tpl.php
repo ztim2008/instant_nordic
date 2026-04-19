@@ -66,7 +66,9 @@ function nbhShouldRerenderPanels(path) {
     return path.indexOf('data.listSource.') === 0
         || path.indexOf('data.source.') === 0
         || path.indexOf('data.bindings.') === 0
-        || path.indexOf('design.section.background.') === 0;
+    || path.indexOf('design.section.background.') === 0
+    || path === 'design.entities.media.inheritGlobalStyle'
+    || path === 'design.entities.itemSurface.inheritGlobalStyle';
 }
 
 function nbhYesNoOptions() {

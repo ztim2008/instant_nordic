@@ -890,6 +890,20 @@ class NordicblocksBlockContractNormalizer {
         $props = (array) $block['props'];
         $props['more_link_label'] = (string) ($props['section_link_label'] ?? ($props['more_link_label'] ?? 'Открыть все'));
         $props['more_link_url'] = (string) ($props['section_link_url'] ?? ($props['more_link_url'] ?? '/catalog'));
+        $catalog_media_radius = self::normalizeNumber($props['media_radius'] ?? 20, 0, 80, 20);
+        $catalog_item_surface_radius = self::normalizeNumber($props['item_surface_radius'] ?? 22, 0, 100, 22);
+        $catalog_item_surface_border_width = self::normalizeNumber($props['item_surface_border_width'] ?? 1, 0, 20, 1);
+        $catalog_item_surface_border_color = strtolower(self::normalizeFlatString($props['item_surface_border_color'] ?? '#dbe4ef'));
+        $catalog_item_surface_shadow = self::normalizeSelect((string) ($props['item_surface_shadow'] ?? 'md'), ['none', 'sm', 'md', 'lg'], 'md');
+        $catalog_media_inherit_global = array_key_exists('media_inherit_global', $props)
+            ? self::normalizeBoolean($props['media_inherit_global'], true)
+            : ($catalog_media_radius === 20);
+        $catalog_item_surface_inherit_global = array_key_exists('item_surface_inherit_global', $props)
+            ? self::normalizeBoolean($props['item_surface_inherit_global'], true)
+            : (($catalog_item_surface_radius === 22 || $catalog_item_surface_radius === 1)
+                && $catalog_item_surface_border_width === 1
+                && $catalog_item_surface_border_color === '#dbe4ef'
+                && $catalog_item_surface_shadow === 'md');
 
         $contract = self::normalizeContentFeed([
             'type'   => 'content_feed',
@@ -940,6 +954,8 @@ class NordicblocksBlockContractNormalizer {
                 'availability' => self::normalizeBoolean($props['search_in_availability'] ?? '1', true),
             ],
         ]);
+        $contract['design']['entities']['media']['inheritGlobalStyle'] = $catalog_media_inherit_global;
+        $contract['design']['entities']['itemSurface']['inheritGlobalStyle'] = $catalog_item_surface_inherit_global;
 
         return self::mergeStoredContract($contract, $stored_contract);
     }
@@ -1331,9 +1347,30 @@ class NordicblocksBlockContractNormalizer {
             $catalog_search_fields = isset($catalog_runtime['searchFields']) && is_array($catalog_runtime['searchFields'])
                 ? $catalog_runtime['searchFields']
                 : [];
+            $catalog_media_entity = isset($contract['design']['entities']['media']) && is_array($contract['design']['entities']['media'])
+                ? $contract['design']['entities']['media']
+                : [];
+            $catalog_item_surface_entity = isset($contract['design']['entities']['itemSurface']) && is_array($contract['design']['entities']['itemSurface'])
+                ? $contract['design']['entities']['itemSurface']
+                : [];
+            $catalog_media_inherit_global = array_key_exists('inheritGlobalStyle', $catalog_media_entity)
+                ? (!empty($catalog_media_entity['inheritGlobalStyle']) ? '1' : '0')
+                : (((int) ($catalog_media_entity['radius'] ?? 20)) === 20 ? '1' : '0');
+            $catalog_item_surface_radius = (int) ($catalog_item_surface_entity['radius'] ?? 22);
+            $catalog_item_surface_border_width = (int) ($catalog_item_surface_entity['borderWidth'] ?? 1);
+            $catalog_item_surface_border_color = strtolower((string) ($catalog_item_surface_entity['borderColor'] ?? '#dbe4ef'));
+            $catalog_item_surface_shadow = (string) ($catalog_item_surface_entity['shadow'] ?? 'md');
+            $catalog_item_surface_inherit_global = array_key_exists('inheritGlobalStyle', $catalog_item_surface_entity)
+                ? (!empty($catalog_item_surface_entity['inheritGlobalStyle']) ? '1' : '0')
+                : ((($catalog_item_surface_radius === 22 || $catalog_item_surface_radius === 1)
+                    && $catalog_item_surface_border_width === 1
+                    && $catalog_item_surface_border_color === '#dbe4ef'
+                    && $catalog_item_surface_shadow === 'md') ? '1' : '0');
             return array_merge(self::denormalizeProps('content_feed', $contract), [
                 'section_link_label' => (string) ($contract['content']['primaryButton']['label'] ?? 'Открыть все'),
                 'section_link_url' => (string) ($contract['content']['primaryButton']['url'] ?? '/catalog'),
+                'media_inherit_global' => $catalog_media_inherit_global,
+                'item_surface_inherit_global' => $catalog_item_surface_inherit_global,
                 'show_search' => !empty($contract['runtime']['visibility']['search']) ? '1' : '0',
                 'show_category_filter' => !empty($contract['runtime']['visibility']['categoryFilter']) ? '1' : '0',
                 'show_price_filter' => !empty($contract['runtime']['visibility']['priceFilter']) ? '1' : '0',

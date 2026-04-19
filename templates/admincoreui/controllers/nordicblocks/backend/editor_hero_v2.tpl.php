@@ -1662,6 +1662,7 @@ function nbhBlockUiProfile() {
                     aspectRatio: '4:3',
                     objectFit: 'cover',
                     radius: 20,
+                    inheritGlobalStyle: true,
                 },
                 mediaSurface: {
                     backgroundMode: 'transparent',
@@ -1677,6 +1678,7 @@ function nbhBlockUiProfile() {
                     borderWidth: 1,
                     borderColor: '#dbe4ef',
                     shadow: 'md',
+                    inheritGlobalStyle: true,
                 },
                 itemTypography: {
                     enabled: true,
