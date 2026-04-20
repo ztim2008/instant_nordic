@@ -27,12 +27,12 @@ class actionNordicblocksBlockCreate extends cmsAction {
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 
-        if (!$this->model->isFirstWaveBlockType($type)) {
-            cmsCore::addFlashMessage('error', 'Этот тип блока временно выведен из первой волны продукта. Сейчас доступны hero, faq, content_feed, category_cards, headline_feed, swiss_grid и catalog_browser.');
+        if (!$this->model->isEditorSupportedBlockType($type)) {
+            cmsCore::addFlashMessage('error', 'Этот тип блока сейчас недоступен в активном backend-потоке NordicBlocks.');
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 
-        $definition = $this->model->getFirstWaveBlockDefinitions()[$type] ?? null;
+        $definition = $this->model->getEditorSupportedBlockDefinitions()[$type] ?? null;
         if (!$definition) {
             cmsCore::addFlashMessage('error', 'Неизвестный тип блока: ' . htmlspecialchars($type));
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
@@ -51,7 +51,7 @@ class actionNordicblocksBlockCreate extends cmsAction {
 
         $block_id = $this->model->createBlock($type, $title);
 
-        if ($block_id && $default_props) {
+        if ($block_id) {
             if (NordicblocksBlockContractNormalizer::supportsContractType($type)) {
                 $contract = NordicblocksBlockContractNormalizer::normalize([
                     'id'     => (int) $block_id,
@@ -61,7 +61,7 @@ class actionNordicblocksBlockCreate extends cmsAction {
                     'props'  => $default_props,
                 ]);
                 $this->model->saveBlockContract($block_id, $title, $contract);
-            } else {
+            } elseif ($default_props) {
                 $this->model->saveBlock($block_id, $title, $default_props);
             }
         }

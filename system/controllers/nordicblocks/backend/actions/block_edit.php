@@ -10,12 +10,34 @@ class actionNordicblocksBlockEdit extends cmsAction {
             return cmsCore::error404();
         }
 
-        if (!$this->model->isFirstWaveBlockType((string) ($block['type'] ?? ''))) {
-            cmsCore::addFlashMessage('info', 'Этот тип блока выведен из активного потока первой волны. Сейчас редактор поддерживается для hero, faq, content_feed, category_cards, headline_feed, swiss_grid и catalog_browser.');
+        if (!$this->model->isEditorSupportedBlockType((string) ($block['type'] ?? ''))) {
+            cmsCore::addFlashMessage('info', 'Этот тип блока сейчас не поддерживается в активном editor flow NordicBlocks.');
             return $this->redirect(href_to($this->controller->root_url, 'blocks'));
         }
 
         $block['props'] = $this->model->normalizeImagePropsByType((string) ($block['type'] ?? ''), (array) ($block['props'] ?? []));
+
+        if ($this->model->isDesignBlockType((string) ($block['type'] ?? ''))) {
+            $template_name  = (string) cmsConfig::get('template');
+            $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
+                'template_name'               => $template_name,
+                'open_tab'                    => 'all-widgets',
+                'highlight_widget'            => 'nordicblocks_block',
+                'highlight_widget_controller' => '',
+                'nb_block_id'                 => $block_id,
+                'nb_block_title'              => (string) ($block['title'] ?? ''),
+            ]);
+
+            return $this->cms_template->render('backend/editor_design_block', [
+                'menu'       => $this->controller->getBackendMenu(),
+                'block'      => $block,
+                'save_url'   => href_to($this->controller->root_url, 'block_save', [$block_id]),
+                'state_url'  => href_to($this->controller->root_url, 'block_design_state', $block_id),
+                'canvas_url' => href_to($this->controller->root_url, 'block_design_canvas', $block_id),
+                'place_url'  => $place_url,
+                'back_url'   => href_to($this->controller->root_url, 'blocks'),
+            ]);
+        }
 
         $block_registry = $this->loadBlockRegistry();
         $tokens         = $this->model->getDesignTokens();
@@ -68,7 +90,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
     }
 
     private function loadBlockRegistry() {
-        return $this->model->getFirstWaveBlockDefinitions();
+        return $this->model->getEditorSupportedBlockDefinitions();
     }
 
     private function getImagePresetOptions() {

@@ -34,6 +34,22 @@
             },
             "notes": "Production-oriented cards_slider SSR rail теперь реализован в live runtime и package mirror поверх уже готового managed slider contract/data layer. Admin smoke подтверждён через create-flow block #161, после чего блок размещён штатным NordicBlocks placement flow на homepage position pos_38 и переименован из временного smoke-title в Cards Slider Editorial Rail. Public live smoke пройден: на главной подтверждены section heading, section link, slide titles/links, navigation arrows, pagination dots и SSR marker data-nb-block=cards_slider. Residual risk: отдельная device-level touch/mobile проверка по-прежнему желательна, но базовый public runtime smoke уже закрыт."
         },
+        "design_block": {
+            "title": "Design Block",
+            "family": "design-block-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260420-161001",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": false,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": false
+            },
+            "notes": "Запущен первый implementation slice по design_block: type виден в backend create/list flow, contract-first normalizer и SSR renderer подключены, добавлены dedicated backend actions block_design_state/block_design_canvas и package mirror parity. Текущий editor layer пока остаётся переходным JSON/preview shell без donor-level freeform canvas interactions; отдельный visual shell, element pickers и live smoke остаются следующими шагами."
+        },
         "catalog_browser": {
             "title": "Каталог",
             "family": "catalog-family-v1",

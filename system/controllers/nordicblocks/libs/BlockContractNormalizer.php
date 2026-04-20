@@ -1,6 +1,7 @@
 <?php
 
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/ManagedScaffoldRegistry.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockContractNormalizer.php';
 
 class NordicblocksBlockContractNormalizer {
 
@@ -14,7 +15,7 @@ class NordicblocksBlockContractNormalizer {
 
     public static function supportsContractType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
-        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
+        return in_array($type, ['hero', 'faq', 'content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser', 'design_block'], true)
             || NordicblocksManagedScaffoldRegistry::isManagedType($type);
     }
 
@@ -43,6 +44,11 @@ class NordicblocksBlockContractNormalizer {
 
     public static function normalize(array $block) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($block['type'] ?? '')));
+
+        if (NordicblocksDesignBlockContractNormalizer::supportsType($type)) {
+            return NordicblocksDesignBlockContractNormalizer::normalize($block);
+        }
+
         $payload = (array) ($block['props'] ?? []);
 
         if (self::isContractPayload($payload)) {
@@ -1128,6 +1134,10 @@ class NordicblocksBlockContractNormalizer {
 
     public static function denormalizeProps($type, array $contract) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
+
+        if (NordicblocksDesignBlockContractNormalizer::supportsType($type)) {
+            return NordicblocksDesignBlockContractNormalizer::denormalizeProps($contract);
+        }
 
         if ($type === 'hero') {
             return [

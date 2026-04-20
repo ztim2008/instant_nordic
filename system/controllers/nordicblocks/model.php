@@ -728,6 +728,20 @@ class modelNordicblocks extends cmsModel {
         return $definitions;
     }
 
+    public function getEditorSupportedBlockDefinitions() {
+        $definitions = [];
+
+        foreach ($this->getBlockDefinitions() as $block_name => $definition) {
+            if (!$this->isEditorSupportedBlockType($block_name)) {
+                continue;
+            }
+
+            $definitions[$block_name] = $definition;
+        }
+
+        return $definitions;
+    }
+
     public function getFirstWaveBlockTypes() {
         return array_values(array_unique(array_merge(self::$first_wave_block_types, NordicblocksManagedScaffoldRegistry::getManagedTypes())));
     }
@@ -735,6 +749,14 @@ class modelNordicblocks extends cmsModel {
     public function isFirstWaveBlockType($type) {
         $type = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $type));
         return in_array($type, self::$first_wave_block_types, true) || NordicblocksManagedScaffoldRegistry::isManagedType($type);
+    }
+
+    public function isDesignBlockType($type) {
+        return $this->normalizeBlockType((string) $type) === 'design_block';
+    }
+
+    public function isEditorSupportedBlockType($type) {
+        return $this->isFirstWaveBlockType($type) || $this->isDesignBlockType($type);
     }
 
     public function createBlock($type, $title) {

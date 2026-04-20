@@ -4,7 +4,7 @@ class actionNordicblocksBlocks extends cmsAction {
 
     public function run() {
         $blocks                  = $this->model->getBlocks();
-        $block_definitions       = $this->model->getFirstWaveBlockDefinitions();
+        $block_definitions       = $this->model->getEditorSupportedBlockDefinitions();
         $cache_stats             = $this->model->getCacheStats();
         $catalog_renderer_version = $this->model->getRenderCacheVersion('catalog_browser');
         $block_types             = [];
@@ -20,7 +20,7 @@ class actionNordicblocksBlocks extends cmsAction {
         foreach ($blocks as $block) {
             $block_type = (string) ($block['type'] ?? '');
 
-            if (!$this->model->isFirstWaveBlockType($block_type)) {
+            if (!$this->model->isEditorSupportedBlockType($block_type)) {
                 $hidden_legacy_count++;
                 continue;
             }
