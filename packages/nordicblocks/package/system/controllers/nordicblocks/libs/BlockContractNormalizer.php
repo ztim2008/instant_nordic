@@ -1614,7 +1614,13 @@ class NordicblocksBlockContractNormalizer {
                     'views' => self::normalizeBoolean($props['show_views'] ?? '1', true),
                     'comments' => self::normalizeBoolean($props['show_comments'] ?? '1', true),
                     'moreLink' => self::normalizeBoolean($props['show_more_link'] ?? '1', true),
+                    'itemLink' => self::normalizeBoolean($props['show_item_link'] ?? '1', true),
                 ],
+                'collectionMode' => self::normalizeSelect((string) ($props['collection_mode'] ?? ($defaults['collection_mode'] ?? 'all')), ['all', 'load_more', 'pagination'], 'all'),
+                'itemsPerPage' => self::normalizeNumber($props['items_per_page'] ?? ($defaults['items_per_page'] ?? 6), 1, 48, 6),
+                'initialItemsCount' => self::normalizeNumber($props['items_initial'] ?? ($defaults['items_initial'] ?? ($defaults['items_per_page'] ?? 6)), 1, 48, 6),
+                'loadMoreLabel' => trim((string) ($props['load_more_label'] ?? ($defaults['load_more_label'] ?? 'Показать ещё'))),
+                'showBottomNavigation' => self::normalizeBoolean($props['show_bottom_navigation'] ?? ($defaults['show_bottom_navigation'] ?? '1'), true),
                 'animation' => [
                     'name' => self::normalizeSelect((string) ($props['block_animation'] ?? 'none'), ['none', 'fade-up', 'fade-in', 'zoom-in'], 'none'),
                     'delay' => self::normalizeNumber($props['block_animation_delay'] ?? 0, 0, 1500, 0),
@@ -1639,6 +1645,13 @@ class NordicblocksBlockContractNormalizer {
         $result['subheading'] = (string) ($contract['content']['subtitle'] ?? ($defaults['subheading'] ?? ''));
         $result['title_visible'] = !empty($contract['design']['entities']['title']['visible']) ? '1' : '0';
         $result['subtitle_visible'] = !empty($contract['design']['entities']['subtitle']['visible']) ? '1' : '0';
+        $result['show_image'] = !array_key_exists('image', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['image']) ? '1' : '0';
+        $result['show_category'] = !array_key_exists('category', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['category']) ? '1' : '0';
+        $result['show_excerpt'] = !array_key_exists('excerpt', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['excerpt']) ? '1' : '0';
+        $result['show_date'] = !array_key_exists('date', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['date']) ? '1' : '0';
+        $result['show_views'] = !array_key_exists('views', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['views']) ? '1' : '0';
+        $result['show_comments'] = !array_key_exists('comments', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['comments']) ? '1' : '0';
+        $result['show_more_link'] = !array_key_exists('moreLink', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['moreLink']) ? '1' : '0';
         $result['padding_top_desktop'] = (string) ($contract['layout']['desktop']['paddingTop'] ?? ($defaults['padding_top_desktop'] ?? 72));
         $result['padding_bottom_desktop'] = (string) ($contract['layout']['desktop']['paddingBottom'] ?? ($defaults['padding_bottom_desktop'] ?? 72));
         $result['padding_top_mobile'] = (string) ($contract['layout']['mobile']['paddingTop'] ?? ($defaults['padding_top_mobile'] ?? 48));
@@ -1732,12 +1745,22 @@ class NordicblocksBlockContractNormalizer {
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')) {
             $result['items'] = is_array($contract['content']['items'] ?? null) ? $contract['content']['items'] : [];
+            $result['layout_preset'] = (string) ($contract['layout']['preset'] ?? ($defaults['layout_preset'] ?? 'default'));
             $result['columns_desktop'] = (string) ($contract['layout']['desktop']['columns'] ?? ($defaults['columns_desktop'] ?? 3));
             $result['columns_mobile'] = (string) ($contract['layout']['mobile']['columns'] ?? ($defaults['columns_mobile'] ?? 1));
             $result['card_gap_desktop'] = (string) ($contract['layout']['desktop']['cardGap'] ?? ($defaults['card_gap_desktop'] ?? 24));
             $result['card_gap_mobile'] = (string) ($contract['layout']['mobile']['cardGap'] ?? ($defaults['card_gap_mobile'] ?? 16));
             $result['header_gap_desktop'] = (string) ($contract['layout']['desktop']['headerGap'] ?? ($defaults['header_gap_desktop'] ?? 24));
             $result['header_gap_mobile'] = (string) ($contract['layout']['mobile']['headerGap'] ?? ($defaults['header_gap_mobile'] ?? 18));
+            $result['collection_mode'] = (string) ($contract['runtime']['collectionMode'] ?? ($defaults['collection_mode'] ?? 'all'));
+            $result['items_per_page'] = (string) ($contract['runtime']['itemsPerPage'] ?? ($defaults['items_per_page'] ?? 6));
+            $result['items_initial'] = (string) ($contract['runtime']['initialItemsCount'] ?? ($defaults['items_initial'] ?? ($defaults['items_per_page'] ?? 6)));
+            $result['load_more_label'] = (string) ($contract['runtime']['loadMoreLabel'] ?? ($defaults['load_more_label'] ?? 'Показать ещё'));
+            $result['show_bottom_navigation'] = !array_key_exists('showBottomNavigation', (array) ($contract['runtime'] ?? [])) || !empty($contract['runtime']['showBottomNavigation']) ? '1' : '0';
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemLink')) {
+            $result['show_item_link'] = !array_key_exists('itemLink', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['itemLink']) ? '1' : '0';
         }
 
         return $result;
@@ -1895,25 +1918,68 @@ class NordicblocksBlockContractNormalizer {
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemSurface')) {
             $entities['itemSurface'] = [
-                'variant' => 'card',
-                'radius' => 24,
-                'borderWidth' => 1,
-                'borderColor' => '#e2e8f0',
-                'shadow' => 'md',
+                'variant' => self::normalizeSelect((string) ($props['item_surface_variant'] ?? 'card'), ['card', 'plain'], 'card'),
+                'radius' => self::normalizeNumber($props['item_surface_radius'] ?? 24, 0, 80, 24),
+                'borderWidth' => self::normalizeNumber($props['item_surface_border_width'] ?? 1, 0, 20, 1),
+                'borderColor' => self::normalizeFlatString($props['item_surface_border_color'] ?? '#e2e8f0'),
+                'shadow' => self::normalizeSelect((string) ($props['item_surface_shadow'] ?? 'md'), ['none', 'sm', 'md', 'lg'], 'md'),
             ];
         }
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemTitle')) {
             $entities['itemTitle'] = [
-                'desktop' => ['fontSize' => 22, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 125, 'letterSpacing' => 0],
-                'mobile' => ['fontSize' => 18, 'weight' => '700', 'color' => '', 'lineHeightPercent' => 125, 'letterSpacing' => 0],
+                'desktop' => [
+                    'fontSize' => self::normalizeNumber($props['item_title_size_desktop'] ?? 22, 10, 80, 22),
+                    'weight' => self::normalizeSelect((string) ($props['item_title_weight_desktop'] ?? $props['item_title_weight'] ?? '700'), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString($props['item_title_color_desktop'] ?? $props['item_title_color'] ?? ''),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_title_line_height_percent_desktop'] ?? $props['item_title_line_height_percent'] ?? 125, 70, 240, 125),
+                    'letterSpacing' => self::normalizeNumber($props['item_title_letter_spacing_desktop'] ?? $props['item_title_letter_spacing'] ?? 0, -20, 40, 0),
+                ],
+                'mobile' => [
+                    'fontSize' => self::normalizeNumber($props['item_title_size_mobile'] ?? 18, 10, 80, 18),
+                    'weight' => self::normalizeSelect((string) ($props['item_title_weight_mobile'] ?? $props['item_title_weight'] ?? ($props['item_title_weight_desktop'] ?? '700')), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString($props['item_title_color_mobile'] ?? $props['item_title_color'] ?? ($props['item_title_color_desktop'] ?? '')),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_title_line_height_percent_mobile'] ?? $props['item_title_line_height_percent'] ?? ($props['item_title_line_height_percent_desktop'] ?? 125), 70, 240, 125),
+                    'letterSpacing' => self::normalizeNumber($props['item_title_letter_spacing_mobile'] ?? $props['item_title_letter_spacing'] ?? ($props['item_title_letter_spacing_desktop'] ?? 0), -20, 40, 0),
+                ],
             ];
         }
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemText')) {
             $entities['itemText'] = [
-                'desktop' => ['fontSize' => 15, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0],
-                'mobile' => ['fontSize' => 14, 'weight' => '400', 'color' => '', 'lineHeightPercent' => 160, 'letterSpacing' => 0],
+                'desktop' => [
+                    'fontSize' => self::normalizeNumber($props['item_text_size_desktop'] ?? 15, 10, 80, 15),
+                    'weight' => self::normalizeSelect((string) ($props['item_text_weight_desktop'] ?? $props['item_text_weight'] ?? '400'), ['400', '500', '600', '700', '800', '900'], '400'),
+                    'color' => self::normalizeFlatString($props['item_text_color_desktop'] ?? $props['item_text_color'] ?? ''),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_text_line_height_percent_desktop'] ?? $props['item_text_line_height_percent'] ?? 160, 70, 260, 160),
+                    'letterSpacing' => self::normalizeNumber($props['item_text_letter_spacing_desktop'] ?? $props['item_text_letter_spacing'] ?? 0, -20, 40, 0),
+                ],
+                'mobile' => [
+                    'fontSize' => self::normalizeNumber($props['item_text_size_mobile'] ?? 14, 10, 80, 14),
+                    'weight' => self::normalizeSelect((string) ($props['item_text_weight_mobile'] ?? $props['item_text_weight'] ?? ($props['item_text_weight_desktop'] ?? '400')), ['400', '500', '600', '700', '800', '900'], '400'),
+                    'color' => self::normalizeFlatString($props['item_text_color_mobile'] ?? $props['item_text_color'] ?? ($props['item_text_color_desktop'] ?? '')),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_text_line_height_percent_mobile'] ?? $props['item_text_line_height_percent'] ?? ($props['item_text_line_height_percent_desktop'] ?? 160), 70, 260, 160),
+                    'letterSpacing' => self::normalizeNumber($props['item_text_letter_spacing_mobile'] ?? $props['item_text_letter_spacing'] ?? ($props['item_text_letter_spacing_desktop'] ?? 0), -20, 40, 0),
+                ],
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemLink')) {
+            $entities['itemLink'] = [
+                'desktop' => [
+                    'fontSize' => self::normalizeNumber($props['item_link_size_desktop'] ?? 13, 10, 80, 13),
+                    'weight' => self::normalizeSelect((string) ($props['item_link_weight_desktop'] ?? $props['item_link_weight'] ?? '700'), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString($props['item_link_color_desktop'] ?? $props['item_link_color'] ?? ''),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_link_line_height_percent_desktop'] ?? $props['item_link_line_height_percent'] ?? 120, 70, 220, 120),
+                    'letterSpacing' => self::normalizeNumber($props['item_link_letter_spacing_desktop'] ?? $props['item_link_letter_spacing'] ?? 1, -20, 40, 1),
+                ],
+                'mobile' => [
+                    'fontSize' => self::normalizeNumber($props['item_link_size_mobile'] ?? 12, 10, 80, 12),
+                    'weight' => self::normalizeSelect((string) ($props['item_link_weight_mobile'] ?? $props['item_link_weight'] ?? ($props['item_link_weight_desktop'] ?? '700')), ['400', '500', '600', '700', '800', '900'], '700'),
+                    'color' => self::normalizeFlatString($props['item_link_color_mobile'] ?? $props['item_link_color'] ?? ($props['item_link_color_desktop'] ?? '')),
+                    'lineHeightPercent' => self::normalizeNumber($props['item_link_line_height_percent_mobile'] ?? $props['item_link_line_height_percent'] ?? ($props['item_link_line_height_percent_desktop'] ?? 120), 70, 220, 120),
+                    'letterSpacing' => self::normalizeNumber($props['item_link_letter_spacing_mobile'] ?? $props['item_link_letter_spacing'] ?? ($props['item_link_letter_spacing_desktop'] ?? 1), -20, 40, 1),
+                ],
             ];
         }
 
@@ -1936,6 +2002,7 @@ class NordicblocksBlockContractNormalizer {
         ];
 
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')) {
+            $layout['preset'] = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) ($props['layout_preset'] ?? ($defaults['layout_preset'] ?? 'default'))));
             $layout['desktop']['columns'] = self::normalizeNumber($props['columns_desktop'] ?? ($defaults['columns_desktop'] ?? 3), 1, 6, 3);
             $layout['mobile']['columns'] = self::normalizeNumber($props['columns_mobile'] ?? ($defaults['columns_mobile'] ?? 1), 1, 3, 1);
             $layout['desktop']['cardGap'] = self::normalizeNumber($props['card_gap_desktop'] ?? ($defaults['card_gap_desktop'] ?? 24), 0, 160, 24);
@@ -1978,6 +2045,7 @@ class NordicblocksBlockContractNormalizer {
             'itemSurface' => 'surface',
             'itemTitle' => 'text',
             'itemText' => 'text',
+            'itemLink' => 'text',
         ];
 
         return (string) ($map[$entity_key] ?? 'text');

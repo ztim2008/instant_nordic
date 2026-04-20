@@ -586,6 +586,7 @@ Package mirror для editor templates обязателен синхронно �
 
 | Slug | Title | Status | Checkpoint | Live smoke |
 | --- | --- | --- | --- | --- |
+| bento_feed | Компактная бенто-лента | in_progress | snapshot/20260420-070131 | yes |
 | category_cards | Рубрика с карточками | in_progress | snapshot/20260418-112025 | yes |
 | content_feed | Лента новостей | in_progress | snapshot/20260418-102305 | yes |
 | headline_feed | Главная статья и лента | in_progress | snapshot/20260418-171903 | yes |
