@@ -73,6 +73,10 @@ class NordicblocksManagedScaffoldRegistry {
         return in_array(self::getProfile($type), ['card_collection', 'catalog_like'], true);
     }
 
+    public static function usesSliderCollectionMapping($type) {
+        return self::getProfile($type) === 'slider_cards';
+    }
+
     public static function usesFaqMapping($type) {
         return self::getProfile($type) === 'faq_like';
     }

@@ -1587,6 +1587,9 @@ class NordicblocksBlockContractNormalizer {
                     'views' => '',
                     'comments' => '',
                 ],
+                'slides' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slide')
+                    ? self::normalizeSliderSlides($props['slides'] ?? ($defaults['slides'] ?? []))
+                    : [],
                 'items' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'items')
                     ? (NordicblocksManagedScaffoldRegistry::usesFaqMapping($type)
                         ? self::normalizeFaqItems($props['items'] ?? ($defaults['items'] ?? []))
@@ -1615,7 +1618,23 @@ class NordicblocksBlockContractNormalizer {
                     'comments' => self::normalizeBoolean($props['show_comments'] ?? '1', true),
                     'moreLink' => self::normalizeBoolean($props['show_more_link'] ?? '1', true),
                     'itemLink' => self::normalizeBoolean($props['show_item_link'] ?? '1', true),
+                    'navigation' => self::normalizeBoolean($props['show_navigation'] ?? '1', true),
+                    'pagination' => self::normalizeBoolean($props['show_pagination'] ?? '1', true),
+                    'progress' => self::normalizeBoolean($props['show_progress'] ?? '0', false),
+                    'slideMedia' => self::normalizeBoolean($props['show_media'] ?? '1', true),
+                    'slideEyebrow' => self::normalizeBoolean($props['show_eyebrow'] ?? '1', true),
+                    'slideText' => self::normalizeBoolean($props['show_text'] ?? '1', true),
+                    'slideMeta' => self::normalizeBoolean($props['show_meta'] ?? '1', true),
+                    'slidePrimaryAction' => self::normalizeBoolean($props['show_primary_cta'] ?? '1', true),
+                    'slideSecondaryAction' => self::normalizeBoolean($props['show_secondary_cta'] ?? '1', true),
                 ],
+                'slider' => NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slide') ? [
+                    'swipe' => self::normalizeBoolean($props['swipe'] ?? '1', true),
+                    'autoplay' => self::normalizeBoolean($props['autoplay'] ?? '0', false),
+                    'loop' => self::normalizeBoolean($props['loop'] ?? '0', false),
+                    'autoplayDelay' => self::normalizeNumber($props['autoplay_delay'] ?? 4500, 1000, 20000, 4500),
+                    'transitionMs' => self::normalizeNumber($props['transition_ms'] ?? 450, 100, 5000, 450),
+                ] : [],
                 'collectionMode' => self::normalizeSelect((string) ($props['collection_mode'] ?? ($defaults['collection_mode'] ?? 'all')), ['all', 'load_more', 'pagination'], 'all'),
                 'itemsPerPage' => self::normalizeNumber($props['items_per_page'] ?? ($defaults['items_per_page'] ?? 6), 1, 48, 6),
                 'initialItemsCount' => self::normalizeNumber($props['items_initial'] ?? ($defaults['items_initial'] ?? ($defaults['items_per_page'] ?? 6)), 1, 48, 6),
@@ -1818,6 +1837,59 @@ class NordicblocksBlockContractNormalizer {
             $result['item_link_letter_spacing_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['letterSpacing'] ?? ($contract['design']['entities']['itemLink']['letterSpacing'] ?? ($defaults['item_link_letter_spacing_desktop'] ?? $defaults['item_link_letter_spacing'] ?? 1)));
             $result['item_link_letter_spacing_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['letterSpacing'] ?? ($contract['design']['entities']['itemLink']['letterSpacing'] ?? ($defaults['item_link_letter_spacing_mobile'] ?? $defaults['item_link_letter_spacing'] ?? 1)));
             $result['show_item_link'] = !array_key_exists('itemLink', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['itemLink']) ? '1' : '0';
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slide')) {
+            $result['slides'] = is_array($contract['content']['slides'] ?? null) ? $contract['content']['slides'] : [];
+            $result['slides_per_view_desktop'] = (string) ($contract['layout']['desktop']['slidesPerView'] ?? ($defaults['slides_per_view_desktop'] ?? 3));
+            $result['slides_per_view_mobile'] = (string) ($contract['layout']['mobile']['slidesPerView'] ?? ($defaults['slides_per_view_mobile'] ?? 1));
+            $result['slide_gap_desktop'] = (string) ($contract['layout']['desktop']['slideGap'] ?? ($defaults['slide_gap_desktop'] ?? 24));
+            $result['slide_gap_mobile'] = (string) ($contract['layout']['mobile']['slideGap'] ?? ($defaults['slide_gap_mobile'] ?? 16));
+            $result['header_gap_desktop'] = (string) ($contract['layout']['desktop']['headerGap'] ?? ($defaults['header_gap_desktop'] ?? 28));
+            $result['header_gap_mobile'] = (string) ($contract['layout']['mobile']['headerGap'] ?? ($defaults['header_gap_mobile'] ?? 18));
+            $result['min_height_desktop'] = (string) ($contract['layout']['desktop']['minHeight'] ?? ($defaults['min_height_desktop'] ?? 0));
+            $result['min_height_mobile'] = (string) ($contract['layout']['mobile']['minHeight'] ?? ($defaults['min_height_mobile'] ?? 0));
+            $result['navigation_position_desktop'] = (string) ($contract['layout']['desktop']['navigationPosition'] ?? 'overlay');
+            $result['navigation_position_mobile'] = (string) ($contract['layout']['mobile']['navigationPosition'] ?? 'hidden');
+            $result['pagination_position_desktop'] = (string) ($contract['layout']['desktop']['paginationPosition'] ?? 'below');
+            $result['pagination_position_mobile'] = (string) ($contract['layout']['mobile']['paginationPosition'] ?? 'below');
+            $result['progress_position_desktop'] = (string) ($contract['layout']['desktop']['progressPosition'] ?? 'below');
+            $result['progress_position_mobile'] = (string) ($contract['layout']['mobile']['progressPosition'] ?? 'below');
+            $result['show_navigation'] = !array_key_exists('navigation', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['navigation']) ? '1' : '0';
+            $result['show_pagination'] = !array_key_exists('pagination', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['pagination']) ? '1' : '0';
+            $result['show_progress'] = !empty($contract['runtime']['visibility']['progress']) ? '1' : '0';
+            $result['show_media'] = !array_key_exists('slideMedia', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slideMedia']) ? '1' : '0';
+            $result['show_eyebrow'] = !array_key_exists('slideEyebrow', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slideEyebrow']) ? '1' : '0';
+            $result['show_text'] = !array_key_exists('slideText', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slideText']) ? '1' : '0';
+            $result['show_meta'] = !array_key_exists('slideMeta', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slideMeta']) ? '1' : '0';
+            $result['show_primary_cta'] = !array_key_exists('slidePrimaryAction', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slidePrimaryAction']) ? '1' : '0';
+            $result['show_secondary_cta'] = !array_key_exists('slideSecondaryAction', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['slideSecondaryAction']) ? '1' : '0';
+            $result['swipe'] = !array_key_exists('swipe', (array) ($contract['runtime']['slider'] ?? [])) || !empty($contract['runtime']['slider']['swipe']) ? '1' : '0';
+            $result['autoplay'] = !empty($contract['runtime']['slider']['autoplay']) ? '1' : '0';
+            $result['loop'] = !empty($contract['runtime']['slider']['loop']) ? '1' : '0';
+            $result['autoplay_delay'] = (string) ($contract['runtime']['slider']['autoplayDelay'] ?? 4500);
+            $result['transition_ms'] = (string) ($contract['runtime']['slider']['transitionMs'] ?? 450);
+            $result['slide_surface_background_mode'] = (string) ($contract['design']['entities']['slideSurface']['backgroundMode'] ?? 'solid');
+            $result['slide_surface_background_color'] = (string) ($contract['design']['entities']['slideSurface']['backgroundColor'] ?? '#ffffff');
+            $result['slide_surface_padding'] = (string) ($contract['design']['entities']['slideSurface']['padding'] ?? 0);
+            $result['slide_surface_radius'] = (string) ($contract['design']['entities']['slideSurface']['radius'] ?? 28);
+            $result['slide_surface_border_width'] = (string) ($contract['design']['entities']['slideSurface']['borderWidth'] ?? 1);
+            $result['slide_surface_border_color'] = (string) ($contract['design']['entities']['slideSurface']['borderColor'] ?? '#dbe4ef');
+            $result['slide_surface_shadow'] = (string) ($contract['design']['entities']['slideSurface']['shadow'] ?? 'sm');
+            $result['navigation_size'] = (string) ($contract['design']['entities']['navigation']['size'] ?? 46);
+            $result['navigation_radius'] = (string) ($contract['design']['entities']['navigation']['radius'] ?? 999);
+            $result['navigation_background_color'] = (string) ($contract['design']['entities']['navigation']['backgroundColor'] ?? '#0f172a');
+            $result['navigation_text_color'] = (string) ($contract['design']['entities']['navigation']['textColor'] ?? '#ffffff');
+            $result['navigation_border_color'] = (string) ($contract['design']['entities']['navigation']['borderColor'] ?? '#0f172a');
+            $result['navigation_shadow'] = (string) ($contract['design']['entities']['navigation']['shadow'] ?? 'md');
+            $result['pagination_dot_size'] = (string) ($contract['design']['entities']['pagination']['dotSize'] ?? 10);
+            $result['pagination_gap'] = (string) ($contract['design']['entities']['pagination']['gap'] ?? 8);
+            $result['pagination_color'] = (string) ($contract['design']['entities']['pagination']['color'] ?? '#cbd5e1');
+            $result['pagination_active_color'] = (string) ($contract['design']['entities']['pagination']['activeColor'] ?? '#0f172a');
+            $result['progress_height'] = (string) ($contract['design']['entities']['progress']['height'] ?? 4);
+            $result['progress_radius'] = (string) ($contract['design']['entities']['progress']['radius'] ?? 999);
+            $result['progress_track_color'] = (string) ($contract['design']['entities']['progress']['trackColor'] ?? '#e2e8f0');
+            $result['progress_fill_color'] = (string) ($contract['design']['entities']['progress']['fillColor'] ?? '#0f172a');
         }
 
         return $result;
@@ -2040,6 +2112,89 @@ class NordicblocksBlockContractNormalizer {
             ];
         }
 
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slideSurface')) {
+            $entities['slideSurface'] = [
+                'backgroundMode' => self::normalizeSelect((string) ($props['slide_surface_background_mode'] ?? 'solid'), ['transparent', 'solid'], 'solid'),
+                'backgroundColor' => self::normalizeFlatString($props['slide_surface_background_color'] ?? '#ffffff'),
+                'padding' => self::normalizeNumber($props['slide_surface_padding'] ?? 0, 0, 80, 0),
+                'radius' => self::normalizeNumber($props['slide_surface_radius'] ?? 28, 0, 80, 28),
+                'borderWidth' => self::normalizeNumber($props['slide_surface_border_width'] ?? 1, 0, 20, 1),
+                'borderColor' => self::normalizeFlatString($props['slide_surface_border_color'] ?? '#dbe4ef'),
+                'shadow' => self::normalizeSelect((string) ($props['slide_surface_shadow'] ?? 'sm'), ['none', 'sm', 'md', 'lg'], 'sm'),
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slideMedia')) {
+            $entities['slideMedia'] = [
+                'aspectRatio' => (string) ($props['media_aspect_ratio'] ?? '4:3'),
+                'objectFit' => (string) ($props['media_object_fit'] ?? 'cover'),
+                'radius' => self::normalizeNumber($props['media_radius'] ?? 24, 0, 80, 24),
+            ];
+        }
+
+        foreach (['slideEyebrow', 'slideTitle', 'slideText', 'slideMeta', 'slidePrimaryAction', 'slideSecondaryAction'] as $entity_key) {
+            if (!NordicblocksManagedScaffoldRegistry::hasEntity($type, $entity_key)) {
+                continue;
+            }
+
+            $defaults_map = [
+                'slideEyebrow' => [13, 12, '700', '#0f766e', 140, 1],
+                'slideTitle' => [24, 19, '800', '', 120, 0],
+                'slideText' => [16, 14, '400', '', 160, 0],
+                'slideMeta' => [12, 11, '600', '', 135, 1],
+                'slidePrimaryAction' => [14, 13, '700', '', 120, 0],
+                'slideSecondaryAction' => [14, 13, '600', '', 120, 0],
+            ];
+            list($desktop_size, $mobile_size, $weight, $color, $line_height, $letter_spacing) = $defaults_map[$entity_key];
+            $prefix = strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $entity_key));
+
+            $entities[$entity_key] = [
+                'desktop' => [
+                    'fontSize' => self::normalizeNumber($props[$prefix . '_size_desktop'] ?? $desktop_size, 10, 120, $desktop_size),
+                    'weight' => self::normalizeSelect((string) ($props[$prefix . '_weight_desktop'] ?? $props[$prefix . '_weight'] ?? $weight), ['400', '500', '600', '700', '800', '900'], $weight),
+                    'color' => self::normalizeFlatString($props[$prefix . '_color_desktop'] ?? $props[$prefix . '_color'] ?? $color),
+                    'lineHeightPercent' => self::normalizeNumber($props[$prefix . '_line_height_percent_desktop'] ?? $line_height, 70, 260, $line_height),
+                    'letterSpacing' => self::normalizeNumber($props[$prefix . '_letter_spacing_desktop'] ?? $letter_spacing, -20, 40, $letter_spacing),
+                ],
+                'mobile' => [
+                    'fontSize' => self::normalizeNumber($props[$prefix . '_size_mobile'] ?? $mobile_size, 10, 120, $mobile_size),
+                    'weight' => self::normalizeSelect((string) ($props[$prefix . '_weight_mobile'] ?? $props[$prefix . '_weight'] ?? $weight), ['400', '500', '600', '700', '800', '900'], $weight),
+                    'color' => self::normalizeFlatString($props[$prefix . '_color_mobile'] ?? $props[$prefix . '_color'] ?? $color),
+                    'lineHeightPercent' => self::normalizeNumber($props[$prefix . '_line_height_percent_mobile'] ?? $line_height, 70, 260, $line_height),
+                    'letterSpacing' => self::normalizeNumber($props[$prefix . '_letter_spacing_mobile'] ?? $letter_spacing, -20, 40, $letter_spacing),
+                ],
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'navigation')) {
+            $entities['navigation'] = [
+                'size' => self::normalizeNumber($props['navigation_size'] ?? 46, 24, 96, 46),
+                'radius' => self::normalizeNumber($props['navigation_radius'] ?? 999, 0, 999, 999),
+                'backgroundColor' => self::normalizeFlatString($props['navigation_background_color'] ?? '#0f172a'),
+                'textColor' => self::normalizeFlatString($props['navigation_text_color'] ?? '#ffffff'),
+                'borderColor' => self::normalizeFlatString($props['navigation_border_color'] ?? '#0f172a'),
+                'shadow' => self::normalizeSelect((string) ($props['navigation_shadow'] ?? 'md'), ['none', 'sm', 'md', 'lg'], 'md'),
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'pagination')) {
+            $entities['pagination'] = [
+                'dotSize' => self::normalizeNumber($props['pagination_dot_size'] ?? 10, 4, 32, 10),
+                'gap' => self::normalizeNumber($props['pagination_gap'] ?? 8, 0, 40, 8),
+                'color' => self::normalizeFlatString($props['pagination_color'] ?? '#cbd5e1'),
+                'activeColor' => self::normalizeFlatString($props['pagination_active_color'] ?? '#0f172a'),
+            ];
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'progress')) {
+            $entities['progress'] = [
+                'height' => self::normalizeNumber($props['progress_height'] ?? 4, 2, 24, 4),
+                'radius' => self::normalizeNumber($props['progress_radius'] ?? 999, 0, 999, 999),
+                'trackColor' => self::normalizeFlatString($props['progress_track_color'] ?? '#e2e8f0'),
+                'fillColor' => self::normalizeFlatString($props['progress_fill_color'] ?? '#0f172a'),
+            ];
+        }
+
         return $entities;
     }
 
@@ -2066,6 +2221,23 @@ class NordicblocksBlockContractNormalizer {
             $layout['mobile']['cardGap'] = self::normalizeNumber($props['card_gap_mobile'] ?? ($defaults['card_gap_mobile'] ?? 16), 0, 160, 16);
             $layout['desktop']['headerGap'] = self::normalizeNumber($props['header_gap_desktop'] ?? ($defaults['header_gap_desktop'] ?? 24), 0, 160, 24);
             $layout['mobile']['headerGap'] = self::normalizeNumber($props['header_gap_mobile'] ?? ($defaults['header_gap_mobile'] ?? 18), 0, 160, 18);
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'slide')) {
+            $layout['desktop']['slidesPerView'] = self::normalizeNumber($props['slides_per_view_desktop'] ?? ($defaults['slides_per_view_desktop'] ?? 3), 1, 6, 3);
+            $layout['mobile']['slidesPerView'] = self::normalizeNumber($props['slides_per_view_mobile'] ?? ($defaults['slides_per_view_mobile'] ?? 1), 1, 3, 1);
+            $layout['desktop']['slideGap'] = self::normalizeNumber($props['slide_gap_desktop'] ?? ($defaults['slide_gap_desktop'] ?? 24), 0, 160, 24);
+            $layout['mobile']['slideGap'] = self::normalizeNumber($props['slide_gap_mobile'] ?? ($defaults['slide_gap_mobile'] ?? 16), 0, 160, 16);
+            $layout['desktop']['headerGap'] = self::normalizeNumber($props['header_gap_desktop'] ?? ($defaults['header_gap_desktop'] ?? 28), 0, 160, 28);
+            $layout['mobile']['headerGap'] = self::normalizeNumber($props['header_gap_mobile'] ?? ($defaults['header_gap_mobile'] ?? 18), 0, 160, 18);
+            $layout['desktop']['minHeight'] = self::normalizeNumber($props['min_height_desktop'] ?? ($defaults['min_height_desktop'] ?? 0), 0, 1200, 0);
+            $layout['mobile']['minHeight'] = self::normalizeNumber($props['min_height_mobile'] ?? ($defaults['min_height_mobile'] ?? 0), 0, 1200, 0);
+            $layout['desktop']['navigationPosition'] = self::normalizeSelect((string) ($props['navigation_position_desktop'] ?? 'overlay'), ['overlay', 'below', 'hidden'], 'overlay');
+            $layout['mobile']['navigationPosition'] = self::normalizeSelect((string) ($props['navigation_position_mobile'] ?? ($props['navigation_position_desktop'] ?? 'hidden')), ['overlay', 'below', 'hidden'], 'hidden');
+            $layout['desktop']['paginationPosition'] = self::normalizeSelect((string) ($props['pagination_position_desktop'] ?? 'below'), ['overlay', 'below', 'hidden'], 'below');
+            $layout['mobile']['paginationPosition'] = self::normalizeSelect((string) ($props['pagination_position_mobile'] ?? 'below'), ['overlay', 'below', 'hidden'], 'below');
+            $layout['desktop']['progressPosition'] = self::normalizeSelect((string) ($props['progress_position_desktop'] ?? 'below'), ['overlay', 'below', 'hidden'], 'below');
+            $layout['mobile']['progressPosition'] = self::normalizeSelect((string) ($props['progress_position_mobile'] ?? 'below'), ['overlay', 'below', 'hidden'], 'below');
         }
 
         return $layout;
@@ -2099,10 +2271,24 @@ class NordicblocksBlockContractNormalizer {
             'accentSurface' => 'surface',
             'bodySurface' => 'surface',
             'items' => 'repeater',
+            'slide' => 'repeater',
             'itemSurface' => 'surface',
             'itemTitle' => 'text',
             'itemText' => 'text',
             'itemLink' => 'text',
+            'slideSurface' => 'surface',
+            'slideMedia' => 'media',
+            'slideEyebrow' => 'text',
+            'slideTitle' => 'text',
+            'slideText' => 'text',
+            'slideMeta' => 'text',
+            'slidePrimaryAction' => 'button',
+            'slideSecondaryAction' => 'button',
+            'navigation' => 'surface',
+            'prevButton' => 'button',
+            'nextButton' => 'button',
+            'pagination' => 'surface',
+            'progress' => 'surface',
         ];
 
         return (string) ($map[$entity_key] ?? 'text');
@@ -2142,7 +2328,9 @@ class NordicblocksBlockContractNormalizer {
         } else {
             $list_profile_type = self::isCardCollectionType($type)
                 ? 'content_feed'
-                : (NordicblocksManagedScaffoldRegistry::usesFaqMapping($type) ? 'faq' : $type);
+                : (NordicblocksManagedScaffoldRegistry::usesSliderCollectionMapping($type)
+                    ? 'cards_slider'
+                    : (NordicblocksManagedScaffoldRegistry::usesFaqMapping($type) ? 'faq' : $type));
             $normalized['listSource'] = self::normalizeListSource((array) ($data['listSource'] ?? []), $list_profile_type);
         }
 
@@ -2337,6 +2525,30 @@ class NordicblocksBlockContractNormalizer {
     private static function normalizeListSource(array $config, $type = 'faq') {
         $map = is_array($config['map'] ?? null) ? $config['map'] : [];
 
+        if ($type === 'cards_slider') {
+            return [
+                'type' => self::normalizeSelect((string) ($config['type'] ?? 'manual'), ['manual', 'content_list'], 'manual'),
+                'ctype' => preg_replace('/[^a-z0-9_\-\{\}]/i', '', (string) ($config['ctype'] ?? '')),
+                'limit' => self::normalizeNumber($config['limit'] ?? 6, 1, 24, 6),
+                'sort' => self::normalizeSelect((string) ($config['sort'] ?? 'date_pub_desc'), self::$allowed_list_sorts, 'date_pub_desc'),
+                'map' => [
+                    'eyebrow' => self::normalizeFieldReference($map['eyebrow'] ?? 'category.title'),
+                    'title' => self::normalizeFieldReference($map['title'] ?? 'title'),
+                    'text' => self::normalizeFieldReference($map['text'] ?? 'teaser'),
+                    'image' => self::normalizeFieldReference($map['image'] ?? 'record_image_url'),
+                    'imageAlt' => self::normalizeFieldReference($map['imageAlt'] ?? 'title'),
+                    'metaLabel' => self::normalizeFieldReference($map['metaLabel'] ?? 'category.title'),
+                    'date' => self::normalizeFieldReference($map['date'] ?? 'date_pub'),
+                    'primaryCtaLabel' => self::normalizeFieldReference($map['primaryCtaLabel'] ?? ''),
+                    'primaryCtaUrl' => self::normalizeFieldReference($map['primaryCtaUrl'] ?? 'record_url'),
+                    'secondaryCtaLabel' => self::normalizeFieldReference($map['secondaryCtaLabel'] ?? ''),
+                    'secondaryCtaUrl' => self::normalizeFieldReference($map['secondaryCtaUrl'] ?? ''),
+                    'recordUrl' => self::normalizeFieldReference($map['recordUrl'] ?? 'record_url'),
+                ],
+                'emptyBehavior' => self::normalizeSelect((string) ($config['emptyBehavior'] ?? 'fallback'), ['fallback', 'empty'], 'fallback'),
+            ];
+        }
+
         if (self::isCardCollectionType($type)) {
             return [
                 'type'          => self::normalizeSelect((string) ($config['type'] ?? 'manual'), ['manual', 'content_list'], 'manual'),
@@ -2527,6 +2739,101 @@ class NordicblocksBlockContractNormalizer {
         }
 
         return $items;
+    }
+
+    private static function normalizeSliderSlides($value) {
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            if (is_array($decoded)) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        $slides = [];
+        foreach ($value as $slide) {
+            if (!is_array($slide)) {
+                continue;
+            }
+
+            $title = trim((string) ($slide['title'] ?? ''));
+            $text = trim((string) ($slide['text'] ?? ''));
+            $eyebrow = trim((string) ($slide['eyebrow'] ?? ''));
+            $meta_label = trim((string) ($slide['metaLabel'] ?? ($slide['meta_label'] ?? '')));
+            $date = trim((string) ($slide['date'] ?? ''));
+            $record_url = trim((string) ($slide['recordUrl'] ?? ($slide['record_url'] ?? ($slide['url'] ?? ''))));
+            $primary_cta_label = trim((string) ($slide['primaryCtaLabel'] ?? ($slide['primary_cta_label'] ?? (($slide['primaryAction']['label'] ?? '')))));
+            $primary_cta_url = trim((string) ($slide['primaryCtaUrl'] ?? ($slide['primary_cta_url'] ?? (($slide['primaryAction']['url'] ?? '')))));
+            $secondary_cta_label = trim((string) ($slide['secondaryCtaLabel'] ?? ($slide['secondary_cta_label'] ?? (($slide['secondaryAction']['label'] ?? '')))));
+            $secondary_cta_url = trim((string) ($slide['secondaryCtaUrl'] ?? ($slide['secondary_cta_url'] ?? (($slide['secondaryAction']['url'] ?? '')))));
+            $image = self::normalizeImagePayload($slide['image'] ?? '');
+            $image_alt = trim((string) ($slide['imageAlt'] ?? ($slide['image_alt'] ?? ($slide['alt'] ?? ($image['alt'] ?? '')))));
+
+            if ($title === '' && $text === '' && $eyebrow === '' && $record_url === '' && empty($image['original']) && empty($image['display'])) {
+                continue;
+            }
+
+            $slides[] = self::buildSliderSlidePayload([
+                'eyebrow' => $eyebrow,
+                'title' => $title,
+                'text' => $text,
+                'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
+                'imageAlt' => $image_alt,
+                'date' => $date,
+                'metaLabel' => $meta_label,
+                'recordUrl' => $record_url,
+                'primaryCtaLabel' => $primary_cta_label,
+                'primaryCtaUrl' => $primary_cta_url,
+                'secondaryCtaLabel' => $secondary_cta_label,
+                'secondaryCtaUrl' => $secondary_cta_url,
+            ]);
+        }
+
+        return $slides;
+    }
+
+    private static function buildSliderSlidePayload(array $slide) {
+        $image = self::normalizeImagePayload($slide['image'] ?? '');
+        $image_alt = trim((string) ($slide['imageAlt'] ?? ($slide['image_alt'] ?? ($image['alt'] ?? ''))));
+        $record_url = trim((string) ($slide['recordUrl'] ?? ($slide['record_url'] ?? ($slide['url'] ?? ''))));
+        $primary_cta_label = trim((string) ($slide['primaryCtaLabel'] ?? ($slide['primary_cta_label'] ?? '')));
+        $primary_cta_url = trim((string) ($slide['primaryCtaUrl'] ?? ($slide['primary_cta_url'] ?? '')));
+        $secondary_cta_label = trim((string) ($slide['secondaryCtaLabel'] ?? ($slide['secondary_cta_label'] ?? '')));
+        $secondary_cta_url = trim((string) ($slide['secondaryCtaUrl'] ?? ($slide['secondary_cta_url'] ?? '')));
+
+        return [
+            'eyebrow' => trim((string) ($slide['eyebrow'] ?? '')),
+            'title' => trim((string) ($slide['title'] ?? '')),
+            'text' => trim((string) ($slide['text'] ?? '')),
+            'image' => (string) ($image['original'] ?? $image['display'] ?? ''),
+            'imageAlt' => $image_alt,
+            'image_alt' => $image_alt,
+            'date' => trim((string) ($slide['date'] ?? '')),
+            'metaLabel' => trim((string) ($slide['metaLabel'] ?? ($slide['meta_label'] ?? ''))),
+            'meta_label' => trim((string) ($slide['metaLabel'] ?? ($slide['meta_label'] ?? ''))),
+            'recordUrl' => $record_url,
+            'record_url' => $record_url,
+            'url' => $record_url,
+            'primaryAction' => [
+                'label' => $primary_cta_label,
+                'url' => $primary_cta_url,
+            ],
+            'secondaryAction' => [
+                'label' => $secondary_cta_label,
+                'url' => $secondary_cta_url,
+            ],
+            'primaryCtaLabel' => $primary_cta_label,
+            'primary_cta_label' => $primary_cta_label,
+            'primaryCtaUrl' => $primary_cta_url,
+            'primary_cta_url' => $primary_cta_url,
+            'secondaryCtaLabel' => $secondary_cta_label,
+            'secondary_cta_label' => $secondary_cta_label,
+            'secondaryCtaUrl' => $secondary_cta_url,
+            'secondary_cta_url' => $secondary_cta_url,
+        ];
     }
 
     private static function buildFaqItemPayload($title, $text) {

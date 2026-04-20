@@ -50,15 +50,23 @@ class NordicblocksBindingMapper {
         }
 
         $list_source = is_array($resolved_sources['listSource'] ?? null) ? $resolved_sources['listSource'] : [];
+        $is_slider_collection = NordicblocksManagedScaffoldRegistry::usesSliderCollectionMapping($block_type);
         $items = (in_array($block_type, ['content_feed', 'category_cards', 'headline_feed', 'swiss_grid', 'catalog_browser'], true)
             || NordicblocksManagedScaffoldRegistry::usesCardCollectionMapping($block_type))
             ? self::mapContentFeedItems((array) ($resolved_sources['listItems'] ?? []), $list_source)
-            : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source);
+            : ($is_slider_collection
+                ? self::mapSliderSlides((array) ($resolved_sources['listItems'] ?? []), $list_source)
+                : self::mapFaqItems((array) ($resolved_sources['listItems'] ?? []), $list_source));
         $empty_behavior = (string) ($list_source['emptyBehavior'] ?? 'fallback');
 
         if ($items || $empty_behavior === 'empty') {
-            $mapped['content']['items'] = $items;
-            $mapped['replace']['content.items'] = true;
+            if ($is_slider_collection) {
+                $mapped['content']['slides'] = $items;
+                $mapped['replace']['content.slides'] = true;
+            } else {
+                $mapped['content']['items'] = $items;
+                $mapped['replace']['content.items'] = true;
+            }
         }
 
         $mapped['runtime']['adapter'] = [
@@ -196,6 +204,63 @@ class NordicblocksBindingMapper {
         return $mapped;
     }
 
+    private static function mapSliderSlides(array $records, array $list_source) {
+        $map = is_array($list_source['map'] ?? null) ? $list_source['map'] : [];
+
+        $slides = [];
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+
+            $title = self::normalizeText(self::extractValue($record, (string) ($map['title'] ?? 'title')));
+            $text = self::normalizeText(self::extractValue($record, (string) ($map['text'] ?? 'teaser')));
+            $eyebrow = self::normalizeText(self::extractValue($record, (string) ($map['eyebrow'] ?? 'category.title')));
+            $meta_label = self::normalizeText(self::extractValue($record, (string) ($map['metaLabel'] ?? 'category.title')));
+            $date = self::normalizeDate(self::extractValue($record, (string) ($map['date'] ?? 'date_pub')));
+            $image = self::normalizeImageUrl(self::extractValue($record, (string) ($map['image'] ?? 'record_image_url')));
+            $image_alt = self::normalizeText(self::extractValue($record, (string) ($map['imageAlt'] ?? 'title')));
+            $record_url = self::normalizeUrl(self::extractValue($record, (string) ($map['recordUrl'] ?? 'record_url')));
+            $primary_cta_label = self::normalizeText(self::extractValue($record, (string) ($map['primaryCtaLabel'] ?? '')));
+            $primary_cta_url = self::normalizeUrl(self::extractValue($record, (string) ($map['primaryCtaUrl'] ?? 'record_url')));
+            $secondary_cta_label = self::normalizeText(self::extractValue($record, (string) ($map['secondaryCtaLabel'] ?? '')));
+            $secondary_cta_url = self::normalizeUrl(self::extractValue($record, (string) ($map['secondaryCtaUrl'] ?? '')));
+
+            if ($record_url === '') {
+                $record_url = self::normalizeUrl(self::extractValue($record, 'record_url'));
+            }
+
+            if ($primary_cta_url === '') {
+                $primary_cta_url = $record_url;
+            }
+
+            if ($image === '') {
+                $image = self::normalizeImageUrl(self::extractValue($record, 'record_image_url'));
+            }
+
+            if ($title === '' && $text === '' && $eyebrow === '' && $image === '' && $record_url === '') {
+                continue;
+            }
+
+            $slides[] = self::buildSliderSlidePayload([
+                'eyebrow' => $eyebrow,
+                'title' => $title,
+                'text' => $text,
+                'image' => $image,
+                'imageAlt' => $image_alt !== '' ? $image_alt : $title,
+                'date' => $date,
+                'metaLabel' => $meta_label,
+                'recordUrl' => $record_url,
+                'primaryCtaLabel' => $primary_cta_label,
+                'primaryCtaUrl' => $primary_cta_url,
+                'secondaryCtaLabel' => $secondary_cta_label,
+                'secondaryCtaUrl' => $secondary_cta_url,
+            ]);
+        }
+
+        return $slides;
+    }
+
     private static function mapFaqItems(array $records, array $list_source) {
         $map = is_array($list_source['map'] ?? null) ? $list_source['map'] : [];
         $question_field = (string) ($map['title'] ?? ($map['question'] ?? 'title'));
@@ -295,6 +360,48 @@ class NordicblocksBindingMapper {
             'text'     => $text,
             'question' => $title,
             'answer'   => $text,
+        ];
+    }
+
+    private static function buildSliderSlidePayload(array $slide) {
+        $title = self::normalizeText($slide['title'] ?? '');
+        $text = self::normalizeText($slide['text'] ?? '');
+        $image_alt = self::normalizeText($slide['imageAlt'] ?? ($slide['image_alt'] ?? ''));
+        $record_url = self::normalizeUrl($slide['recordUrl'] ?? ($slide['record_url'] ?? ($slide['url'] ?? '')));
+        $primary_cta_label = self::normalizeText($slide['primaryCtaLabel'] ?? ($slide['primary_cta_label'] ?? ''));
+        $primary_cta_url = self::normalizeUrl($slide['primaryCtaUrl'] ?? ($slide['primary_cta_url'] ?? ''));
+        $secondary_cta_label = self::normalizeText($slide['secondaryCtaLabel'] ?? ($slide['secondary_cta_label'] ?? ''));
+        $secondary_cta_url = self::normalizeUrl($slide['secondaryCtaUrl'] ?? ($slide['secondary_cta_url'] ?? ''));
+
+        return [
+            'eyebrow' => self::normalizeText($slide['eyebrow'] ?? ''),
+            'title' => $title,
+            'text' => $text,
+            'image' => self::normalizeImageUrl($slide['image'] ?? ''),
+            'imageAlt' => $image_alt,
+            'image_alt' => $image_alt,
+            'date' => self::normalizeText($slide['date'] ?? ''),
+            'metaLabel' => self::normalizeText($slide['metaLabel'] ?? ($slide['meta_label'] ?? '')),
+            'meta_label' => self::normalizeText($slide['metaLabel'] ?? ($slide['meta_label'] ?? '')),
+            'recordUrl' => $record_url,
+            'record_url' => $record_url,
+            'url' => $record_url,
+            'primaryAction' => [
+                'label' => $primary_cta_label,
+                'url' => $primary_cta_url,
+            ],
+            'secondaryAction' => [
+                'label' => $secondary_cta_label,
+                'url' => $secondary_cta_url,
+            ],
+            'primaryCtaLabel' => $primary_cta_label,
+            'primary_cta_label' => $primary_cta_label,
+            'primaryCtaUrl' => $primary_cta_url,
+            'primary_cta_url' => $primary_cta_url,
+            'secondaryCtaLabel' => $secondary_cta_label,
+            'secondary_cta_label' => $secondary_cta_label,
+            'secondaryCtaUrl' => $secondary_cta_url,
+            'secondary_cta_url' => $secondary_cta_url,
         ];
     }
 

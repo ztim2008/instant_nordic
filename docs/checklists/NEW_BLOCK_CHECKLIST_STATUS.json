@@ -30,9 +30,9 @@
                 "editor_shell": true,
                 "shared_runtime_css": true,
                 "package_mirror": true,
-                "live_smoke": false
+                "live_smoke": true
             },
-            "notes": "Scaffold-generated managed block. Runtime registration, contract support, data layer and package mirror подключаются через stage 3 pipeline; live smoke остаётся обязательным вручную."
+            "notes": "Production-oriented cards_slider SSR rail теперь реализован в live runtime и package mirror поверх уже готового managed slider contract/data layer. Admin smoke подтверждён через create-flow block #161, после чего блок размещён штатным NordicBlocks placement flow на homepage position pos_38 и переименован из временного smoke-title в Cards Slider Editorial Rail. Public live smoke пройден: на главной подтверждены section heading, section link, slide titles/links, navigation arrows, pagination dots и SSR marker data-nb-block=cards_slider. Residual risk: отдельная device-level touch/mobile проверка по-прежнему желательна, но базовый public runtime smoke уже закрыт."
         },
         "catalog_browser": {
             "title": "Каталог",

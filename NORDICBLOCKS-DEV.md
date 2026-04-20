@@ -2228,6 +2228,14 @@ UI не должен знать конкретные ctype заранее. Он 
 
 ## 19. Design Block mode — свободный блок «как в Tilda», но без поломки продукта
 
+Отдельный рабочий документ по этой ветке:
+
+- `docs/nordicblocks/DESIGN-BLOCK-MODE-V1.md`
+- `docs/nordicblocks/DESIGN-BLOCK-TECH-SPEC-V1.md`
+- `docs/nordicblocks/DESIGN-BLOCK-RUNTIME-CONTRACT-V1.md`
+- `docs/nordicblocks/DESIGN-BLOCK-EDITOR-SHELL-V1.md`
+- `docs/nordicblocks/DESIGN-BLOCK-IMPLEMENTATION-PLAN-V1.md`
+
 ### 19.1 Почему это может быть очень сильным ходом
 
 Да, отдельный `design block` действительно может дать тот самый эффект “как в Tilda”:
