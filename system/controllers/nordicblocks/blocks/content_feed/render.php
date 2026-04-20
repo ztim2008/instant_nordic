@@ -198,6 +198,18 @@ if ($feed_contract) {
     $item_text_letter_spacing_desktop = (float) nb_content_feed_entity_value($item_text_entity, 'desktop', 'letterSpacing', 0);
     $item_text_letter_spacing_mobile = (float) nb_content_feed_entity_value($item_text_entity, 'mobile', 'letterSpacing', $item_text_letter_spacing_desktop);
 
+    $item_link_entity = (array) ($feed_contract['design']['entities']['itemLink'] ?? []);
+    $item_link_size_desktop = (int) nb_content_feed_entity_value($item_link_entity, 'desktop', 'fontSize', 13);
+    $item_link_size_mobile = (int) nb_content_feed_entity_value($item_link_entity, 'mobile', 'fontSize', 12);
+    $item_link_weight_desktop = (int) nb_content_feed_entity_value($item_link_entity, 'desktop', 'weight', 700);
+    $item_link_weight_mobile = (int) nb_content_feed_entity_value($item_link_entity, 'mobile', 'weight', $item_link_weight_desktop);
+    $item_link_color_desktop = nb_block_css_color((string) nb_content_feed_entity_value($item_link_entity, 'desktop', 'color', ''));
+    $item_link_color_mobile = nb_block_css_color((string) nb_content_feed_entity_value($item_link_entity, 'mobile', 'color', $item_link_color_desktop));
+    $item_link_line_height_desktop = ((float) nb_content_feed_entity_value($item_link_entity, 'desktop', 'lineHeightPercent', 120)) / 100;
+    $item_link_line_height_mobile = ((float) nb_content_feed_entity_value($item_link_entity, 'mobile', 'lineHeightPercent', $item_link_line_height_desktop * 100)) / 100;
+    $item_link_letter_spacing_desktop = (float) nb_content_feed_entity_value($item_link_entity, 'desktop', 'letterSpacing', 1);
+    $item_link_letter_spacing_mobile = (float) nb_content_feed_entity_value($item_link_entity, 'mobile', 'letterSpacing', $item_link_letter_spacing_desktop);
+
     $media_aspect_ratio = in_array($feed_contract['design']['entities']['media']['aspectRatio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
         ? (string) ($feed_contract['design']['entities']['media']['aspectRatio'] ?? '16:10') : '16:10';
     $media_object_fit = in_array($feed_contract['design']['entities']['media']['objectFit'] ?? 'cover', ['cover', 'contain'], true)
@@ -323,6 +335,17 @@ if ($feed_contract) {
     $item_text_letter_spacing_desktop = (float) nb_content_feed_prop_value((array) $props, ['item_text_letter_spacing_desktop', 'item_text_letter_spacing'], 0);
     $item_text_letter_spacing_mobile = (float) nb_content_feed_prop_value((array) $props, ['item_text_letter_spacing_mobile'], $item_text_letter_spacing_desktop);
 
+    $item_link_size_desktop = 13;
+    $item_link_size_mobile = 12;
+    $item_link_weight_desktop = 700;
+    $item_link_weight_mobile = 700;
+    $item_link_color_desktop = '';
+    $item_link_color_mobile = '';
+    $item_link_line_height_desktop = 1.2;
+    $item_link_line_height_mobile = 1.2;
+    $item_link_letter_spacing_desktop = 1;
+    $item_link_letter_spacing_mobile = 1;
+
     $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '16:10', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true) ? (string) ($props['media_aspect_ratio'] ?? '16:10') : '16:10';
     $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true) ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
     $media_radius = nb_content_feed_prop_int((array) $props, 'media_radius', 20, 0, 80);
@@ -429,6 +452,16 @@ $section_style = nb_block_append_style($section_style, '--nb-feed-item-text-lett
 $section_style = nb_block_append_style($section_style, '--nb-feed-item-text-letter-spacing-mobile:' . $item_text_letter_spacing_mobile . 'px;');
 $section_style = $item_text_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-feed-item-text-color:' . $item_text_color_desktop . ';') : $section_style;
 $section_style = $item_text_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-feed-item-text-color-mobile:' . $item_text_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-size:' . $item_link_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-size-mobile:' . $item_link_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-weight:' . $item_link_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-weight-mobile:' . $item_link_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-line-height:' . max(0.8, min(2.2, $item_link_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-line-height-mobile:' . max(0.8, min(2.2, $item_link_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-letter-spacing:' . $item_link_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-letter-spacing-mobile:' . $item_link_letter_spacing_mobile . 'px;');
+$section_style = $item_link_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-feed-item-link-color:' . $item_link_color_desktop . ';') : $section_style;
+$section_style = $item_link_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-feed-item-link-color-mobile:' . $item_link_color_mobile . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-aspect-ratio:' . $media_aspect_ratio . ';');
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-object-fit:' . $media_object_fit . ';');
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-radius:' . $media_radius . 'px;');

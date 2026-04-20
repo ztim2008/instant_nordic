@@ -157,25 +157,46 @@ function nbhBuildDesignControlRenderers() {
             if (panel.entityScope === 'meta') {
                 return body + nbhResponsiveTypographyPanel('design.entities.meta', profile.meta, bp, { hasMarginBottom: profile.kind !== 'swiss_grid', hasMaxWidth: false, includeBlackWeight: true });
             }
-            if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText') && profile.itemTypography.enabled) {
+            if (panel.entityScope === 'cardPrice') {
+                body += nbhResponsiveTypographyPanel('design.entities.cardPrice', profile.cardPrice || profile.title, bp, { hasMarginBottom: false, hasMaxWidth: false, includeBlackWeight: true });
+                body += '<div class="nbh-note">Этот контрол управляет именно текущей ценой. Зачеркнутая старая цена продолжает использовать мета-типографику.</div>';
+                return body;
+            }
+            if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText' || panel.entityScope === 'itemLink') && profile.itemTypography.enabled) {
                 if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed' || profile.kind === 'swiss_grid' || profile.kind === 'catalog_browser') {
                     var titleDefaults = profile.itemTypography.title || {};
                     var textDefaults = profile.itemTypography.text || {};
+                    var linkDefaults = profile.itemTypography.link || null;
 
                     body += '<div class="nbh-grid-2">'
                         + nbhField('Размер заголовка карточки', nbhInput('design.entities.itemTitle.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopFontSize : titleDefaults.mobileFontSize }))
                         + nbhField('Размер анонса карточки', nbhInput('design.entities.itemText.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopFontSize : textDefaults.mobileFontSize }))
+                        + (linkDefaults
+                            ? nbhField('Размер CTA карточки', nbhInput('design.entities.itemLink.' + bp + '.fontSize', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? linkDefaults.desktopFontSize : linkDefaults.mobileFontSize }))
+                            : '')
                         + nbhField('Жирность заголовка', nbhSelect('design.entities.itemTitle.' + bp + '.weight', nbhTypographyWeightOptions(false), bp === 'desktop' ? titleDefaults.desktopWeight : titleDefaults.mobileWeight))
                         + nbhField('Жирность анонса', nbhSelect('design.entities.itemText.' + bp + '.weight', nbhTypographyWeightOptions(false), bp === 'desktop' ? textDefaults.desktopWeight : textDefaults.mobileWeight))
+                        + (linkDefaults
+                            ? nbhField('Жирность CTA', nbhSelect('design.entities.itemLink.' + bp + '.weight', nbhTypographyWeightOptions(false), bp === 'desktop' ? linkDefaults.desktopWeight : linkDefaults.mobileWeight))
+                            : '')
                         + '</div>';
 
                     body += '<div class="nbh-grid-2">'
                         + nbhField('Цвет заголовка', nbhInput('design.entities.itemTitle.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? titleDefaults.desktopColor : titleDefaults.mobileColor }))
                         + nbhField('Цвет анонса', nbhInput('design.entities.itemText.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? textDefaults.desktopColor : textDefaults.mobileColor }))
+                        + (linkDefaults
+                            ? nbhField('Цвет CTA', nbhInput('design.entities.itemLink.' + bp + '.color', { inputType: 'color', fallback: bp === 'desktop' ? linkDefaults.desktopColor : linkDefaults.mobileColor }))
+                            : '')
                         + nbhField('Высота строки заголовка, %', nbhInput('design.entities.itemTitle.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopLineHeightPercent : titleDefaults.mobileLineHeightPercent }))
                         + nbhField('Высота строки анонса, %', nbhInput('design.entities.itemText.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopLineHeightPercent : textDefaults.mobileLineHeightPercent }))
+                        + (linkDefaults
+                            ? nbhField('Высота строки CTA, %', nbhInput('design.entities.itemLink.' + bp + '.lineHeightPercent', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? linkDefaults.desktopLineHeightPercent : linkDefaults.mobileLineHeightPercent }))
+                            : '')
                         + nbhField('Трекинг заголовка, px', nbhInput('design.entities.itemTitle.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? titleDefaults.desktopLetterSpacing : titleDefaults.mobileLetterSpacing }))
                         + nbhField('Трекинг анонса, px', nbhInput('design.entities.itemText.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? textDefaults.desktopLetterSpacing : textDefaults.mobileLetterSpacing }))
+                        + (linkDefaults
+                            ? nbhField('Трекинг CTA, px', nbhInput('design.entities.itemLink.' + bp + '.letterSpacing', { inputType: 'number', type: 'number', fallback: bp === 'desktop' ? linkDefaults.desktopLetterSpacing : linkDefaults.mobileLetterSpacing }))
+                            : '')
                         + '</div>';
 
                     return body;
@@ -347,6 +368,49 @@ function nbhBuildDesignControlRenderers() {
                 surfaceBody += '<div class="nbh-note">Этот контрол управляет заливкой сущности "' + surfaceLabel + '" в live preview и после сохранения.</div>';
 
                 return surfaceBody;
+            }
+
+            if (panel && panel.entityScope === 'toolbar') {
+                var toolbarDefaults = profile.toolbarSurface || { backgroundMode: 'solid', backgroundColor: '#ffffff', padding: 16, radius: 22, borderWidth: 1, borderColor: '#dbe4ef', shadow: 'sm' };
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Подложка', nbhSelect('design.entities.toolbar.backgroundMode', [
+                        { value: 'transparent', label: 'Прозрачная' },
+                        { value: 'solid', label: 'Цветная' }
+                    ], toolbarDefaults.backgroundMode || 'solid'))
+                    + nbhField('Цвет панели', nbhInput('design.entities.toolbar.backgroundColor', { inputType: 'color', fallback: toolbarDefaults.backgroundColor || '#ffffff' }))
+                    + nbhField('Внутренний отступ', nbhInput('design.entities.toolbar.padding', { inputType: 'number', type: 'number', fallback: toolbarDefaults.padding || 16 }))
+                    + nbhField('Скругление', nbhInput('design.entities.toolbar.radius', { inputType: 'number', type: 'number', fallback: toolbarDefaults.radius || 22 }))
+                    + nbhField('Толщина рамки', nbhInput('design.entities.toolbar.borderWidth', { inputType: 'number', type: 'number', fallback: toolbarDefaults.borderWidth || 1 }))
+                    + nbhField('Цвет рамки', nbhInput('design.entities.toolbar.borderColor', { inputType: 'color', fallback: toolbarDefaults.borderColor || '#dbe4ef' }))
+                    + nbhField('Тень', nbhSelect('design.entities.toolbar.shadow', [
+                        { value: 'none', label: 'Без тени' },
+                        { value: 'sm', label: 'Мягкая' },
+                        { value: 'md', label: 'Средняя' },
+                        { value: 'lg', label: 'Выразительная' }
+                    ], toolbarDefaults.shadow || 'sm'))
+                    + '</div>'
+                    + '<div class="nbh-note">Этот контрол управляет внешней оболочкой панели фильтров целиком.</div>';
+            }
+
+            if (panel && panel.entityScope === 'toolbarControls') {
+                var toolbarControlsDefaults = profile.toolbarControlsSurface || { backgroundMode: 'solid', backgroundColor: '#ffffff', radius: 16, borderWidth: 1, borderColor: '#d5dfeb', shadow: 'none' };
+                return '<div class="nbh-grid-2">'
+                    + nbhField('Подложка', nbhSelect('design.entities.toolbarControls.backgroundMode', [
+                        { value: 'transparent', label: 'Прозрачная' },
+                        { value: 'solid', label: 'Цветная' }
+                    ], toolbarControlsDefaults.backgroundMode || 'solid'))
+                    + nbhField('Цвет поля', nbhInput('design.entities.toolbarControls.backgroundColor', { inputType: 'color', fallback: toolbarControlsDefaults.backgroundColor || '#ffffff' }))
+                    + nbhField('Скругление', nbhInput('design.entities.toolbarControls.radius', { inputType: 'number', type: 'number', fallback: toolbarControlsDefaults.radius || 16 }))
+                    + nbhField('Толщина рамки', nbhInput('design.entities.toolbarControls.borderWidth', { inputType: 'number', type: 'number', fallback: toolbarControlsDefaults.borderWidth || 1 }))
+                    + nbhField('Цвет рамки', nbhInput('design.entities.toolbarControls.borderColor', { inputType: 'color', fallback: toolbarControlsDefaults.borderColor || '#d5dfeb' }))
+                    + nbhField('Тень', nbhSelect('design.entities.toolbarControls.shadow', [
+                        { value: 'none', label: 'Без тени' },
+                        { value: 'sm', label: 'Мягкая' },
+                        { value: 'md', label: 'Средняя' },
+                        { value: 'lg', label: 'Выразительная' }
+                    ], toolbarControlsDefaults.shadow || 'none'))
+                    + '</div>'
+                    + '<div class="nbh-note">Этот контрол меняет chrome полей поиска, select и диапазона цены без смешивания с типографикой меты.</div>';
             }
 
             if (nbhHasEntity('itemSurface') && nbhHasEntity('items')) {

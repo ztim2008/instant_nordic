@@ -561,6 +561,19 @@ class NordicblocksBlockContractNormalizer {
                             'fontSize' => self::normalizeNumber($props['item_text_size_mobile'] ?? 14, 10, 80, 14),
                         ],
                     ],
+                    'itemLink' => [
+                        'color' => '',
+                        'lineHeightPercent' => 120,
+                        'letterSpacing' => 1,
+                        'desktop' => [
+                            'fontSize' => 13,
+                            'weight' => '700',
+                        ],
+                        'mobile' => [
+                            'fontSize' => 12,
+                            'weight' => '700',
+                        ],
+                    ],
                 ],
             ],
             'layout' => [
@@ -829,6 +842,19 @@ class NordicblocksBlockContractNormalizer {
         $contract['meta']['blockType'] = 'swiss_grid';
         $contract['meta']['label'] = (string) ($block['title'] ?? 'Swiss Grid');
         $contract['runtime']['visibility']['moreLink'] = false;
+        $contract['design']['entities']['itemLink'] = [
+            'color' => '',
+            'lineHeightPercent' => 120,
+            'letterSpacing' => 1,
+            'desktop' => [
+                'fontSize' => 12,
+                'weight' => '700',
+            ],
+            'mobile' => [
+                'fontSize' => 12,
+                'weight' => '700',
+            ],
+        ];
 
         return self::mergeStoredContract($contract, $stored_contract);
     }
@@ -912,6 +938,19 @@ class NordicblocksBlockContractNormalizer {
                 && $catalog_item_surface_border_width === 1
                 && $catalog_item_surface_border_color === '#dbe4ef'
                 && $catalog_item_surface_shadow === 'md');
+        $catalog_toolbar_background_mode = self::normalizeSelect((string) ($props['toolbar_background_mode'] ?? 'solid'), ['transparent', 'solid'], 'solid');
+        $catalog_toolbar_background_color = self::normalizeFlatString($props['toolbar_background_color'] ?? '');
+        $catalog_toolbar_padding = self::normalizeNumber($props['toolbar_padding'] ?? 16, 0, 120, 16);
+        $catalog_toolbar_radius = self::normalizeNumber($props['toolbar_radius'] ?? 22, 0, 120, 22);
+        $catalog_toolbar_border_width = self::normalizeNumber($props['toolbar_border_width'] ?? 1, 0, 20, 1);
+        $catalog_toolbar_border_color = self::normalizeFlatString($props['toolbar_border_color'] ?? '');
+        $catalog_toolbar_shadow = self::normalizeSelect((string) ($props['toolbar_shadow'] ?? 'sm'), ['none', 'sm', 'md', 'lg'], 'sm');
+        $catalog_toolbar_controls_background_mode = self::normalizeSelect((string) ($props['toolbar_controls_background_mode'] ?? 'solid'), ['transparent', 'solid'], 'solid');
+        $catalog_toolbar_controls_background_color = self::normalizeFlatString($props['toolbar_controls_background_color'] ?? '');
+        $catalog_toolbar_controls_radius = self::normalizeNumber($props['toolbar_controls_radius'] ?? 16, 0, 80, 16);
+        $catalog_toolbar_controls_border_width = self::normalizeNumber($props['toolbar_controls_border_width'] ?? 1, 0, 20, 1);
+        $catalog_toolbar_controls_border_color = self::normalizeFlatString($props['toolbar_controls_border_color'] ?? '');
+        $catalog_toolbar_controls_shadow = self::normalizeSelect((string) ($props['toolbar_controls_shadow'] ?? 'none'), ['none', 'sm', 'md', 'lg'], 'none');
 
         $contract = self::normalizeContentFeed([
             'type'   => 'content_feed',
@@ -926,6 +965,7 @@ class NordicblocksBlockContractNormalizer {
         $contract['layout']['mobile']['columns'] = self::normalizeNumber($props['columns_mobile'] ?? 1, 1, 2, 1);
         $contract['entities'] = array_merge((array) ($contract['entities'] ?? []), [
             'toolbar' => ['kind' => 'group', 'styleSlot' => 'toolbar'],
+            'toolbarControls' => ['kind' => 'surface', 'styleSlot' => 'toolbarControls'],
             'searchField' => ['kind' => 'text', 'styleSlot' => 'searchField'],
             'categoryFilter' => ['kind' => 'text', 'styleSlot' => 'categoryFilter'],
             'priceFilter' => ['kind' => 'text', 'styleSlot' => 'priceFilter'],
@@ -962,6 +1002,39 @@ class NordicblocksBlockContractNormalizer {
                 'availability' => self::normalizeBoolean($props['search_in_availability'] ?? '1', true),
             ],
         ]);
+        $contract['design']['entities']['toolbar'] = self::mergeContractArrays([
+            'backgroundMode' => $catalog_toolbar_background_mode,
+            'backgroundColor' => $catalog_toolbar_background_color,
+            'padding' => $catalog_toolbar_padding,
+            'radius' => $catalog_toolbar_radius,
+            'borderWidth' => $catalog_toolbar_border_width,
+            'borderColor' => $catalog_toolbar_border_color,
+            'shadow' => $catalog_toolbar_shadow,
+        ], is_array($stored_contract['design']['entities']['toolbar'] ?? null) ? $stored_contract['design']['entities']['toolbar'] : []);
+        $contract['design']['entities']['toolbarControls'] = self::mergeContractArrays([
+            'backgroundMode' => $catalog_toolbar_controls_background_mode,
+            'backgroundColor' => $catalog_toolbar_controls_background_color,
+            'radius' => $catalog_toolbar_controls_radius,
+            'borderWidth' => $catalog_toolbar_controls_border_width,
+            'borderColor' => $catalog_toolbar_controls_border_color,
+            'shadow' => $catalog_toolbar_controls_shadow,
+        ], is_array($stored_contract['design']['entities']['toolbarControls'] ?? null) ? $stored_contract['design']['entities']['toolbarControls'] : []);
+        $contract['design']['entities']['cardPrice'] = self::mergeContractArrays([
+            'desktop' => [
+                'fontSize' => self::normalizeNumber($props['card_price_size_desktop'] ?? 19, 10, 120, 19),
+                'weight' => self::normalizeSelect((string) ($props['card_price_weight_desktop'] ?? $props['card_price_weight'] ?? '800'), ['400', '500', '600', '700', '800', '900'], '800'),
+                'color' => self::normalizeFlatString($props['card_price_color_desktop'] ?? $props['card_price_color'] ?? ''),
+                'lineHeightPercent' => self::normalizeNumber($props['card_price_line_height_percent_desktop'] ?? $props['card_price_line_height_percent'] ?? 120, 80, 220, 120),
+                'letterSpacing' => self::normalizeNumber($props['card_price_letter_spacing_desktop'] ?? $props['card_price_letter_spacing'] ?? 0, -40, 80, 0),
+            ],
+            'mobile' => [
+                'fontSize' => self::normalizeNumber($props['card_price_size_mobile'] ?? 17, 10, 120, 17),
+                'weight' => self::normalizeSelect((string) ($props['card_price_weight_mobile'] ?? $props['card_price_weight'] ?? '800'), ['400', '500', '600', '700', '800', '900'], '800'),
+                'color' => self::normalizeFlatString($props['card_price_color_mobile'] ?? $props['card_price_color'] ?? ''),
+                'lineHeightPercent' => self::normalizeNumber($props['card_price_line_height_percent_mobile'] ?? $props['card_price_line_height_percent'] ?? 120, 80, 220, 120),
+                'letterSpacing' => self::normalizeNumber($props['card_price_letter_spacing_mobile'] ?? $props['card_price_letter_spacing'] ?? 0, -40, 80, 0),
+            ],
+        ], is_array($stored_contract['design']['entities']['cardPrice'] ?? null) ? $stored_contract['design']['entities']['cardPrice'] : []);
         $contract['design']['entities']['media']['inheritGlobalStyle'] = $catalog_media_inherit_global;
         $contract['design']['entities']['itemSurface']['inheritGlobalStyle'] = $catalog_item_surface_inherit_global;
 
@@ -1367,8 +1440,17 @@ class NordicblocksBlockContractNormalizer {
             $catalog_media_entity = isset($contract['design']['entities']['media']) && is_array($contract['design']['entities']['media'])
                 ? $contract['design']['entities']['media']
                 : [];
+            $catalog_toolbar_entity = isset($contract['design']['entities']['toolbar']) && is_array($contract['design']['entities']['toolbar'])
+                ? $contract['design']['entities']['toolbar']
+                : [];
+            $catalog_toolbar_controls_entity = isset($contract['design']['entities']['toolbarControls']) && is_array($contract['design']['entities']['toolbarControls'])
+                ? $contract['design']['entities']['toolbarControls']
+                : [];
             $catalog_item_surface_entity = isset($contract['design']['entities']['itemSurface']) && is_array($contract['design']['entities']['itemSurface'])
                 ? $contract['design']['entities']['itemSurface']
+                : [];
+            $catalog_card_price_entity = isset($contract['design']['entities']['cardPrice']) && is_array($contract['design']['entities']['cardPrice'])
+                ? $contract['design']['entities']['cardPrice']
                 : [];
             $catalog_media_inherit_global = array_key_exists('inheritGlobalStyle', $catalog_media_entity)
                 ? (!empty($catalog_media_entity['inheritGlobalStyle']) ? '1' : '0')
@@ -1388,6 +1470,29 @@ class NordicblocksBlockContractNormalizer {
                 'section_link_url' => (string) ($contract['content']['primaryButton']['url'] ?? '/catalog'),
                 'media_inherit_global' => $catalog_media_inherit_global,
                 'item_surface_inherit_global' => $catalog_item_surface_inherit_global,
+                'toolbar_background_mode' => (string) ($catalog_toolbar_entity['backgroundMode'] ?? 'solid'),
+                'toolbar_background_color' => (string) ($catalog_toolbar_entity['backgroundColor'] ?? ''),
+                'toolbar_padding' => (string) ($catalog_toolbar_entity['padding'] ?? 16),
+                'toolbar_radius' => (string) ($catalog_toolbar_entity['radius'] ?? 22),
+                'toolbar_border_width' => (string) ($catalog_toolbar_entity['borderWidth'] ?? 1),
+                'toolbar_border_color' => (string) ($catalog_toolbar_entity['borderColor'] ?? ''),
+                'toolbar_shadow' => (string) ($catalog_toolbar_entity['shadow'] ?? 'sm'),
+                'toolbar_controls_background_mode' => (string) ($catalog_toolbar_controls_entity['backgroundMode'] ?? 'solid'),
+                'toolbar_controls_background_color' => (string) ($catalog_toolbar_controls_entity['backgroundColor'] ?? ''),
+                'toolbar_controls_radius' => (string) ($catalog_toolbar_controls_entity['radius'] ?? 16),
+                'toolbar_controls_border_width' => (string) ($catalog_toolbar_controls_entity['borderWidth'] ?? 1),
+                'toolbar_controls_border_color' => (string) ($catalog_toolbar_controls_entity['borderColor'] ?? ''),
+                'toolbar_controls_shadow' => (string) ($catalog_toolbar_controls_entity['shadow'] ?? 'none'),
+                'card_price_size_desktop' => (string) ($catalog_card_price_entity['desktop']['fontSize'] ?? 19),
+                'card_price_size_mobile' => (string) ($catalog_card_price_entity['mobile']['fontSize'] ?? 17),
+                'card_price_weight_desktop' => (string) ($catalog_card_price_entity['desktop']['weight'] ?? $catalog_card_price_entity['weight'] ?? '800'),
+                'card_price_weight_mobile' => (string) ($catalog_card_price_entity['mobile']['weight'] ?? $catalog_card_price_entity['weight'] ?? '800'),
+                'card_price_color_desktop' => (string) ($catalog_card_price_entity['desktop']['color'] ?? $catalog_card_price_entity['color'] ?? ''),
+                'card_price_color_mobile' => (string) ($catalog_card_price_entity['mobile']['color'] ?? $catalog_card_price_entity['color'] ?? ''),
+                'card_price_line_height_percent_desktop' => (string) ($catalog_card_price_entity['desktop']['lineHeightPercent'] ?? $catalog_card_price_entity['lineHeightPercent'] ?? 120),
+                'card_price_line_height_percent_mobile' => (string) ($catalog_card_price_entity['mobile']['lineHeightPercent'] ?? $catalog_card_price_entity['lineHeightPercent'] ?? 120),
+                'card_price_letter_spacing_desktop' => (string) ($catalog_card_price_entity['desktop']['letterSpacing'] ?? $catalog_card_price_entity['letterSpacing'] ?? 0),
+                'card_price_letter_spacing_mobile' => (string) ($catalog_card_price_entity['mobile']['letterSpacing'] ?? $catalog_card_price_entity['letterSpacing'] ?? 0),
                 'show_search' => !empty($contract['runtime']['visibility']['search']) ? '1' : '0',
                 'show_category_filter' => !empty($contract['runtime']['visibility']['categoryFilter']) ? '1' : '0',
                 'show_price_filter' => !empty($contract['runtime']['visibility']['priceFilter']) ? '1' : '0',

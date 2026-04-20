@@ -521,6 +521,38 @@ if ($catalog_contract) {
     $item_text_line_height_mobile = ((float) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'lineHeightPercent', 160)) / 100;
     $item_text_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($item_text_entity, 'desktop', 'letterSpacing', 0);
     $item_text_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($item_text_entity, 'mobile', 'letterSpacing', $item_text_letter_spacing_desktop);
+    $toolbar_entity = isset($catalog_contract['design']['entities']['toolbar']) && is_array($catalog_contract['design']['entities']['toolbar'])
+        ? $catalog_contract['design']['entities']['toolbar']
+        : [];
+    $toolbar_controls_entity = isset($catalog_contract['design']['entities']['toolbarControls']) && is_array($catalog_contract['design']['entities']['toolbarControls'])
+        ? $catalog_contract['design']['entities']['toolbarControls']
+        : [];
+    $card_price_entity = isset($catalog_contract['design']['entities']['cardPrice']) && is_array($catalog_contract['design']['entities']['cardPrice'])
+        ? $catalog_contract['design']['entities']['cardPrice']
+        : [];
+    $toolbar_background_mode = (string) ($toolbar_entity['backgroundMode'] ?? 'solid');
+    $toolbar_background_color = nb_block_css_color((string) ($toolbar_entity['backgroundColor'] ?? ''), '');
+    $toolbar_padding = (int) ($toolbar_entity['padding'] ?? 16);
+    $toolbar_radius = (int) ($toolbar_entity['radius'] ?? 22);
+    $toolbar_border_width = (int) ($toolbar_entity['borderWidth'] ?? 1);
+    $toolbar_border_color = nb_block_css_color((string) ($toolbar_entity['borderColor'] ?? ''), '');
+    $toolbar_shadow_css = nb_catalog_browser_shadow_css((string) ($toolbar_entity['shadow'] ?? 'sm'), 'sm');
+    $toolbar_controls_background_mode = (string) ($toolbar_controls_entity['backgroundMode'] ?? 'solid');
+    $toolbar_controls_background_color = nb_block_css_color((string) ($toolbar_controls_entity['backgroundColor'] ?? ''), '');
+    $toolbar_controls_radius = (int) ($toolbar_controls_entity['radius'] ?? 16);
+    $toolbar_controls_border_width = (int) ($toolbar_controls_entity['borderWidth'] ?? 1);
+    $toolbar_controls_border_color = nb_block_css_color((string) ($toolbar_controls_entity['borderColor'] ?? ''), '');
+    $toolbar_controls_shadow_css = nb_catalog_browser_shadow_css((string) ($toolbar_controls_entity['shadow'] ?? 'none'), 'none');
+    $card_price_size_desktop = (int) nb_catalog_browser_entity_value($card_price_entity, 'desktop', 'fontSize', 19);
+    $card_price_size_mobile = (int) nb_catalog_browser_entity_value($card_price_entity, 'mobile', 'fontSize', 17);
+    $card_price_weight_desktop = (int) nb_catalog_browser_entity_value($card_price_entity, 'desktop', 'weight', 800);
+    $card_price_weight_mobile = (int) nb_catalog_browser_entity_value($card_price_entity, 'mobile', 'weight', $card_price_weight_desktop);
+    $card_price_color_desktop = nb_block_css_color((string) nb_catalog_browser_entity_value($card_price_entity, 'desktop', 'color', ''), '');
+    $card_price_color_mobile = nb_block_css_color((string) nb_catalog_browser_entity_value($card_price_entity, 'mobile', 'color', $card_price_color_desktop), '');
+    $card_price_line_height_desktop = ((float) nb_catalog_browser_entity_value($card_price_entity, 'desktop', 'lineHeightPercent', 120)) / 100;
+    $card_price_line_height_mobile = ((float) nb_catalog_browser_entity_value($card_price_entity, 'mobile', 'lineHeightPercent', 120)) / 100;
+    $card_price_letter_spacing_desktop = (float) nb_catalog_browser_entity_value($card_price_entity, 'desktop', 'letterSpacing', 0);
+    $card_price_letter_spacing_mobile = (float) nb_catalog_browser_entity_value($card_price_entity, 'mobile', 'letterSpacing', $card_price_letter_spacing_desktop);
 
     $media_aspect_ratio = in_array($media_entity['aspectRatio'] ?? '4:3', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true)
         ? (string) ($media_entity['aspectRatio'] ?? '4:3')
@@ -709,6 +741,29 @@ if ($catalog_contract) {
     $item_text_line_height_mobile = nb_catalog_browser_prop_int($props, 'item_text_line_height_percent_mobile', 160, 80, 260) / 100;
     $item_text_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['item_text_letter_spacing_desktop', 'item_text_letter_spacing'], 0);
     $item_text_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['item_text_letter_spacing_mobile'], $item_text_letter_spacing_desktop);
+    $toolbar_background_mode = in_array($props['toolbar_background_mode'] ?? 'solid', ['transparent', 'solid'], true) ? (string) ($props['toolbar_background_mode'] ?? 'solid') : 'solid';
+    $toolbar_background_color = nb_block_css_color((string) ($props['toolbar_background_color'] ?? ''), '');
+    $toolbar_padding = nb_catalog_browser_prop_int($props, 'toolbar_padding', 16, 0, 120);
+    $toolbar_radius = nb_catalog_browser_prop_int($props, 'toolbar_radius', 22, 0, 120);
+    $toolbar_border_width = nb_catalog_browser_prop_int($props, 'toolbar_border_width', 1, 0, 20);
+    $toolbar_border_color = nb_block_css_color((string) ($props['toolbar_border_color'] ?? ''), '');
+    $toolbar_shadow_css = nb_catalog_browser_shadow_css((string) ($props['toolbar_shadow'] ?? 'sm'), 'sm');
+    $toolbar_controls_background_mode = in_array($props['toolbar_controls_background_mode'] ?? 'solid', ['transparent', 'solid'], true) ? (string) ($props['toolbar_controls_background_mode'] ?? 'solid') : 'solid';
+    $toolbar_controls_background_color = nb_block_css_color((string) ($props['toolbar_controls_background_color'] ?? ''), '');
+    $toolbar_controls_radius = nb_catalog_browser_prop_int($props, 'toolbar_controls_radius', 16, 0, 80);
+    $toolbar_controls_border_width = nb_catalog_browser_prop_int($props, 'toolbar_controls_border_width', 1, 0, 20);
+    $toolbar_controls_border_color = nb_block_css_color((string) ($props['toolbar_controls_border_color'] ?? ''), '');
+    $toolbar_controls_shadow_css = nb_catalog_browser_shadow_css((string) ($props['toolbar_controls_shadow'] ?? 'none'), 'none');
+    $card_price_size_desktop = nb_catalog_browser_prop_int($props, 'card_price_size_desktop', 19, 10, 120);
+    $card_price_size_mobile = nb_catalog_browser_prop_int($props, 'card_price_size_mobile', 17, 10, 120);
+    $card_price_weight_desktop = nb_catalog_browser_prop_int($props, 'card_price_weight_desktop', 800, 100, 900);
+    $card_price_weight_mobile = nb_catalog_browser_prop_int($props, 'card_price_weight_mobile', $card_price_weight_desktop, 100, 900);
+    $card_price_color_desktop = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['card_price_color_desktop', 'card_price_color'], ''), '');
+    $card_price_color_mobile = nb_block_css_color((string) nb_catalog_browser_prop_value($props, ['card_price_color_mobile'], $card_price_color_desktop), '');
+    $card_price_line_height_desktop = nb_catalog_browser_prop_int($props, 'card_price_line_height_percent_desktop', 120, 80, 220) / 100;
+    $card_price_line_height_mobile = nb_catalog_browser_prop_int($props, 'card_price_line_height_percent_mobile', 120, 80, 220) / 100;
+    $card_price_letter_spacing_desktop = (float) nb_catalog_browser_prop_value($props, ['card_price_letter_spacing_desktop', 'card_price_letter_spacing'], 0);
+    $card_price_letter_spacing_mobile = (float) nb_catalog_browser_prop_value($props, ['card_price_letter_spacing_mobile'], $card_price_letter_spacing_desktop);
 
     $media_aspect_ratio = in_array($props['media_aspect_ratio'] ?? '4:3', ['auto', '16:10', '16:9', '4:3', '1:1', '3:4'], true) ? (string) ($props['media_aspect_ratio'] ?? '4:3') : '4:3';
     $media_object_fit = in_array($props['media_object_fit'] ?? 'cover', ['cover', 'contain'], true) ? (string) ($props['media_object_fit'] ?? 'cover') : 'cover';
@@ -888,6 +943,25 @@ if ($meta_color_desktop !== '') {
 if ($meta_color_mobile !== '') {
     $section_style = nb_block_append_style($section_style, '--nb-catalog-meta-color-mobile:' . $meta_color_mobile . ';');
 }
+$section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-padding:' . $toolbar_padding . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-radius:' . $toolbar_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-border-width:' . $toolbar_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-shadow:' . $toolbar_shadow_css . ';');
+if ($toolbar_background_mode === 'solid' && $toolbar_background_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-background:' . $toolbar_background_color . ';');
+}
+if ($toolbar_border_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-toolbar-border-color:' . $toolbar_border_color . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-control-radius:' . $toolbar_controls_radius . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-control-border-width:' . $toolbar_controls_border_width . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-control-shadow:' . $toolbar_controls_shadow_css . ';');
+if ($toolbar_controls_background_mode === 'solid' && $toolbar_controls_background_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-control-background:' . $toolbar_controls_background_color . ';');
+}
+if ($toolbar_controls_border_color !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-control-border-color:' . $toolbar_controls_border_color . ';');
+}
 $section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-size:' . $buttons_text_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-size-mobile:' . $buttons_text_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-buttons-text-weight:' . $buttons_text_weight_desktop . ';');
@@ -929,6 +1003,20 @@ if ($item_text_color_desktop !== '') {
 }
 if ($item_text_color_mobile !== '') {
     $section_style = nb_block_append_style($section_style, '--nb-catalog-item-text-color-mobile:' . $item_text_color_mobile . ';');
+}
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-size:' . $card_price_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-size-mobile:' . $card_price_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-weight:' . $card_price_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-weight-mobile:' . $card_price_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-line-height:' . max(0.8, min(2.2, $card_price_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-line-height-mobile:' . max(0.8, min(2.2, $card_price_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-letter-spacing:' . $card_price_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-catalog-price-letter-spacing-mobile:' . $card_price_letter_spacing_mobile . 'px;');
+if ($card_price_color_desktop !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-price-color:' . $card_price_color_desktop . ';');
+}
+if ($card_price_color_mobile !== '') {
+    $section_style = nb_block_append_style($section_style, '--nb-catalog-price-color-mobile:' . $card_price_color_mobile . ';');
 }
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-aspect-ratio:' . $media_aspect_ratio_css . ';');
 $section_style = nb_block_append_style($section_style, '--nb-catalog-media-radius:' . $catalog_media_radius_css . ';');
@@ -1088,7 +1176,7 @@ $render_debug_version = nb_catalog_browser_render_debug_version();
                     <?php if ($show_price && ($item['price'] !== '' || ($show_old_price && $item['priceOld'] !== ''))): ?>
                     <div class="nb-catalog-browser__price-line" data-nb-entity="cardPrice">
                         <?php if ($show_old_price && $item['priceOld'] !== ''): ?>
-                        <span class="nb-catalog-browser__price-old" data-nb-entity="cardPrice"><?= $item['priceOld'] ?></span>
+                        <span class="nb-catalog-browser__price-old" data-nb-entity="meta"><?= $item['priceOld'] ?></span>
                         <?php endif; ?>
                         <?php if ($item['price'] !== ''): ?>
                         <span class="nb-catalog-browser__price" data-nb-entity="cardPrice"><?= $item['price'] ?></span>
