@@ -29,6 +29,24 @@ class actionNordicblocksBlockDesignState extends cmsAction {
             'blockId'  => (int) ($block['id'] ?? 0),
             'blockUid' => 'block_' . (int) ($block['id'] ?? 0),
         ]);
+        $template_name = (string) cmsConfig::get('template');
+        $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
+            'template_name'               => $template_name,
+            'open_tab'                    => 'all-widgets',
+            'highlight_widget'            => 'nordicblocks_block',
+            'highlight_widget_controller' => '',
+            'nb_block_id'                 => (int) ($block['id'] ?? 0),
+            'nb_block_title'              => (string) ($block['title'] ?? ''),
+        ]);
+        $elements = (array) ($contract['content']['section']['elements'] ?? []);
+        $first_element_id = '';
+
+        foreach ($elements as $element) {
+            if (is_array($element) && !empty($element['id'])) {
+                $first_element_id = (string) $element['id'];
+                break;
+            }
+        }
 
         echo json_encode([
             'ok' => true,
@@ -43,19 +61,37 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'elementCount' => count((array) ($contract['content']['section']['elements'] ?? [])),
                 'stage' => $payload['stage'],
             ],
+            'editor' => [
+                'saveUrl'   => href_to($this->controller->root_url, 'block_save', [(int) ($block['id'] ?? 0)]),
+                'canvasUrl' => href_to($this->controller->root_url, 'block_design_canvas', (int) ($block['id'] ?? 0)),
+                'placeUrl'  => $place_url,
+                'backUrl'   => href_to($this->controller->root_url, 'blocks'),
+                'csrfToken' => cmsForm::getCSRFToken(),
+            ],
             'palette' => [
                 'version' => 1,
                 'items' => [
-                    ['type' => 'text', 'label' => 'Text'],
-                    ['type' => 'image', 'label' => 'Image'],
-                    ['type' => 'button', 'label' => 'Button'],
-                    ['type' => 'shape', 'label' => 'Shape'],
-                    ['type' => 'icon', 'label' => 'Icon'],
-                    ['type' => 'container', 'label' => 'Container'],
-                    ['type' => 'video', 'label' => 'Video'],
-                    ['type' => 'divider', 'label' => 'Divider'],
-                    ['type' => 'svg', 'label' => 'SVG'],
+                    ['type' => 'text', 'label' => 'Текст', 'description' => 'Заголовки, подписи и абзацы'],
+                    ['type' => 'image', 'label' => 'Изображение', 'description' => 'Фото, обложки и декоративные картинки'],
+                    ['type' => 'button', 'label' => 'Кнопка', 'description' => 'CTA и ссылки'],
+                    ['type' => 'shape', 'label' => 'Фигура', 'description' => 'Плашки, круги и цветовые акценты'],
+                    ['type' => 'icon', 'label' => 'Иконка', 'description' => 'Font Awesome классы'],
+                    ['type' => 'container', 'label' => 'Контейнер', 'description' => 'Группировка и flex-layout'],
+                    ['type' => 'video', 'label' => 'Видео', 'description' => 'Видео-панели и обложки'],
+                    ['type' => 'divider', 'label' => 'Разделитель', 'description' => 'Линии и акценты'],
+                    ['type' => 'svg', 'label' => 'SVG', 'description' => 'SVG или любые media asset paths'],
                 ],
+            ],
+            'pickers' => [
+                'image' => 'instantcms_image_modal',
+                'icon'  => 'instantcms_icon_modal',
+                'file'  => 'instantcms_file_modal',
+            ],
+            'ui' => [
+                'activeBreakpoint' => 'desktop',
+                'selectedElementId' => $first_element_id !== '' ? $first_element_id : null,
+                'selectedElementIds' => [],
+                'sidebarSection' => 'properties',
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;

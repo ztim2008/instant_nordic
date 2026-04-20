@@ -38,17 +38,17 @@
             "title": "Design Block",
             "family": "design-block-v1",
             "status": "in_progress",
-            "checkpoint": "snapshot/20260420-161001",
+            "checkpoint": "snapshot/20260420-164116",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
                 "contract_data_layer": true,
-                "editor_shell": false,
+                "editor_shell": true,
                 "shared_runtime_css": true,
                 "package_mirror": true,
                 "live_smoke": false
             },
-            "notes": "Запущен первый implementation slice по design_block: type виден в backend create/list flow, contract-first normalizer и SSR renderer подключены, добавлены dedicated backend actions block_design_state/block_design_canvas и package mirror parity. Текущий editor layer пока остаётся переходным JSON/preview shell без donor-level freeform canvas interactions; отдельный visual shell, element pickers и live smoke остаются следующими шагами."
+            "notes": "Stage 4 visual shell подключён поверх уже готового contract/runtime слоя: backend editor теперь даёт полноценный canvas+sidebar layout с palette, layers, section/stage inspector и property panel, а iframe preview синхронизирует selection через data-nb-entity markers и postMessage bridge. Package mirror parity сохранён. Residual risk: manual live smoke в админке и после placement ещё обязателен, а drag/resize поверх canvas и richer media/icon pickers остаются следующими итерациями."
         },
         "catalog_browser": {
             "title": "Каталог",
