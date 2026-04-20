@@ -106,17 +106,35 @@
       "desktop": {
         "width": 1200,
         "minHeight": 520,
-        "bleedX": 240
+        "paddingX": 24,
+        "paddingY": 24,
+        "grid": {
+          "columns": 12,
+          "gutter": 20,
+          "bleedX": 160
+        }
       },
       "tablet": {
         "width": 768,
         "minHeight": 520,
-        "bleedX": 120
+        "paddingX": 20,
+        "paddingY": 20,
+        "grid": {
+          "columns": 8,
+          "gutter": 16,
+          "bleedX": 96
+        }
       },
       "mobile": {
         "width": 390,
         "minHeight": 520,
-        "bleedX": 80
+        "paddingX": 16,
+        "paddingY": 16,
+        "grid": {
+          "columns": 4,
+          "gutter": 12,
+          "bleedX": 32
+        }
       }
     }
   },
@@ -157,7 +175,7 @@
 1. `meta` хранит версию контракта, тип блока и версию renderer-а.
 2. `content.section.elements[]` хранит саму сцену и элементы.
 3. `design.section.background` хранит видимые свойства секции, которые влияют на live.
-4. `layout.stage.*` хранит размеры сцен для breakpoints.
+4. `layout.stage.*` хранит размеры сцен для breakpoints и grid contract (`columns`, `gutter`, `bleedX`).
 5. `data` заранее резервируется под будущие bindings.
 6. `entities.byElementId` даёт semantic map для элементов, если позже появятся bindable roles.
 7. `runtime.editor` хранит editor-only настройки, которые не должны ломать live renderer.
@@ -452,17 +470,27 @@ SVG выбирается через file picker, но live renderer обязан
 
 ### 6.2 Карточка `Холст`
 
-В v1 фиксируем donor-набор:
+В v1 фиксируем breakpoint-aware набор:
 
 1. `showColumnsGrid`
 2. `columnsGridColor`
 3. `columnsGridOpacity`
-4. `bleedXDesktop`
-5. `bleedXMobile`
-6. `snapToGrid`
-7. `gridSize`
-8. `snapThreshold`
-9. `showGuides`
+4. `layout.stage.desktop.grid.columns`
+5. `layout.stage.tablet.grid.columns`
+6. `layout.stage.mobile.grid.columns`
+7. `layout.stage.*.grid.gutter`
+8. `layout.stage.*.grid.bleedX`
+9. `snapToGrid`
+10. `gridSize`
+11. `snapThreshold`
+12. `showGuides`
+
+Ключевое правило v1:
+
+1. `width` описывает ширину grid container, а не полный window container;
+2. `grid.bleedX` расширяет window container влево и вправо относительно grid container;
+3. world x=0 совпадает с левой границей grid container;
+4. отрицательный `x` допустим и означает уход элемента в bleed-область.
 
 ### 6.3 Карточка `Секция`
 

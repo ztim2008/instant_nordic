@@ -25,6 +25,8 @@
 
 freeform editor является отдельным режимом редактирования блока, но не отдельным приложением с собственным lifecycle вне NordicBlocks backend.
 
+Каноническая integration boundary дополнительно зафиксирована в `docs/nordicblocks/DESIGN-BLOCK-INSTANTCMS-INTEGRATION-RULES-V1.md`.
+
 ---
 
 ## 2. Точка входа
@@ -41,8 +43,9 @@ freeform editor является отдельным режимом редакт�
 
 1. загрузить block record;
 2. проверить admin access;
-3. если `block.type !== design_block`, отдать текущий editor shell;
-4. если `block.type === design_block`, отдать отдельный template `editor_design_block.tpl.php`.
+3. если `block.type !== design_block`, отдать текущий inspector shell;
+4. если `block.type === design_block`, отдать отдельный template `editor_design_block.tpl.php`;
+5. не пытаться строить для `design_block` shared inspector state.
 
 Это сохраняет единый вход в редактор и не плодит второй пользовательский маршрут для открытия блока.
 
@@ -65,6 +68,7 @@ freeform editor является отдельным режимом редакт�
   - отрисовывает outer shell template.
 2. `block_design_state`
   - возвращает JSON bootstrap/state для JS shell.
+  - явно маркирует dedicated editor engine.
 3. `block_design_canvas`
   - возвращает standalone SSR preview для smoke/parity-проверок и вспомогательных сценариев.
 4. `block_save`
@@ -272,17 +276,27 @@ Freeform shell может использовать нативный JS module st
 
 ### 7.2 Карточка `Холст`
 
-Содержит donor-compatible controls:
+Содержит breakpoint-aware controls:
 
 1. `showColumnsGrid`
 2. `columnsGridColor`
 3. `columnsGridOpacity`
-4. `bleedXDesktop`
-5. `bleedXMobile`
-6. `snapToGrid`
-7. `gridSize`
-8. `snapThreshold`
-9. `showGuides`
+4. `layout.stage.desktop.grid.columns`
+5. `layout.stage.tablet.grid.columns`
+6. `layout.stage.mobile.grid.columns`
+7. `layout.stage.*.grid.gutter`
+8. `layout.stage.*.grid.bleedX`
+9. `snapToGrid`
+10. `gridSize`
+11. `snapThreshold`
+12. `showGuides`
+
+Семантика панели:
+
+1. shell показывает одновременно grid container и window container текущего breakpoint;
+2. `x=0` всегда равен левой границе grid container;
+3. отрицательный `x` не считается ошибкой и визуально уводит элемент в bleed;
+4. переключение breakpoint меняет grid contract, а не масштабирует старую сцену.
 
 ### 7.3 Карточка `Секция`
 

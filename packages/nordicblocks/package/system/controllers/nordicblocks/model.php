@@ -755,6 +755,10 @@ class modelNordicblocks extends cmsModel {
         return $this->normalizeBlockType((string) $type) === 'design_block';
     }
 
+    public function getBlockEditorMode($type) {
+        return $this->isDesignBlockType((string) $type) ? 'design_canvas' : 'inspector_shell';
+    }
+
     public function isEditorSupportedBlockType($type) {
         return $this->isFirstWaveBlockType($type) || $this->isDesignBlockType($type);
     }

@@ -12,10 +12,13 @@
 2. `DESIGN-BLOCK-TECH-SPEC-V1.md`
 3. `DESIGN-BLOCK-RUNTIME-CONTRACT-V1.md`
 4. `DESIGN-BLOCK-EDITOR-SHELL-V1.md`
+5. `DESIGN-BLOCK-INSTANTCMS-INTEGRATION-RULES-V1.md`
 
 Главное правило плана:
 
 design block внедряется как отдельная ветка внутри NordicBlocks, но не ломает current block CRUD, widget placement и SSR runtime.
+
+На всех стадиях `design_block` нужно проверять как отдельный editor engine, а не как расширение shared inspector shell.
 
 ---
 

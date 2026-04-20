@@ -74,10 +74,19 @@ class NordicblocksDesignBlockContractNormalizer {
             'background_color'  => (string) ($contract['design']['section']['background']['color'] ?? ''),
             'desktop_width'     => (int) ($contract['layout']['stage']['desktop']['width'] ?? 1200),
             'desktop_min_height'=> (int) ($contract['layout']['stage']['desktop']['minHeight'] ?? 640),
+            'desktop_columns'   => (int) ($contract['layout']['stage']['desktop']['grid']['columns'] ?? 12),
+            'desktop_gutter'    => (int) ($contract['layout']['stage']['desktop']['grid']['gutter'] ?? 20),
+            'desktop_bleed_x'   => (int) ($contract['layout']['stage']['desktop']['grid']['bleedX'] ?? 160),
             'tablet_width'      => (int) ($contract['layout']['stage']['tablet']['width'] ?? 768),
             'tablet_min_height' => (int) ($contract['layout']['stage']['tablet']['minHeight'] ?? 540),
+            'tablet_columns'    => (int) ($contract['layout']['stage']['tablet']['grid']['columns'] ?? 8),
+            'tablet_gutter'     => (int) ($contract['layout']['stage']['tablet']['grid']['gutter'] ?? 16),
+            'tablet_bleed_x'    => (int) ($contract['layout']['stage']['tablet']['grid']['bleedX'] ?? 96),
             'mobile_width'      => (int) ($contract['layout']['stage']['mobile']['width'] ?? 390),
             'mobile_min_height' => (int) ($contract['layout']['stage']['mobile']['minHeight'] ?? 420),
+            'mobile_columns'    => (int) ($contract['layout']['stage']['mobile']['grid']['columns'] ?? 4),
+            'mobile_gutter'     => (int) ($contract['layout']['stage']['mobile']['grid']['gutter'] ?? 12),
+            'mobile_bleed_x'    => (int) ($contract['layout']['stage']['mobile']['grid']['bleedX'] ?? 32),
             'elements'          => is_array($contract['content']['section']['elements'] ?? null) ? $contract['content']['section']['elements'] : [],
         ];
     }
@@ -114,20 +123,26 @@ class NordicblocksDesignBlockContractNormalizer {
         $raw = is_array($raw) ? $raw : [];
 
         return [
-            'desktop' => self::normalizeStageBranch($raw['desktop'] ?? $raw, 1200, 640, 24),
-            'tablet'  => self::normalizeStageBranch($raw['tablet'] ?? $raw, 768, 540, 20),
-            'mobile'  => self::normalizeStageBranch($raw['mobile'] ?? $raw, 390, 420, 16),
+            'desktop' => self::normalizeStageBranch($raw['desktop'] ?? $raw, 1200, 640, 24, 12, 20, 160),
+            'tablet'  => self::normalizeStageBranch($raw['tablet'] ?? $raw, 768, 540, 20, 8, 16, 96),
+            'mobile'  => self::normalizeStageBranch($raw['mobile'] ?? $raw, 390, 420, 16, 4, 12, 32),
         ];
     }
 
-    private static function normalizeStageBranch($raw, $default_width, $default_min_height, $default_padding) {
+    private static function normalizeStageBranch($raw, $default_width, $default_min_height, $default_padding, $default_columns, $default_gutter, $default_bleed_x) {
         $raw = is_array($raw) ? $raw : [];
+        $grid = is_array($raw['grid'] ?? null) ? $raw['grid'] : $raw;
 
         return [
             'width'      => self::number($raw['width'] ?? ($raw['stage_width'] ?? $default_width), 240, 1920, $default_width),
             'minHeight'  => self::number($raw['minHeight'] ?? ($raw['stage_min_height'] ?? $default_min_height), 160, 1800, $default_min_height),
             'paddingX'   => self::number($raw['paddingX'] ?? ($raw['stage_padding_x'] ?? $default_padding), 0, 160, $default_padding),
             'paddingY'   => self::number($raw['paddingY'] ?? ($raw['stage_padding_y'] ?? $default_padding), 0, 160, $default_padding),
+            'grid'       => [
+                'columns' => self::number($grid['columns'] ?? ($grid['columnsCount'] ?? $default_columns), 1, 24, $default_columns),
+                'gutter'  => self::number($grid['gutter'] ?? ($grid['columnGap'] ?? $default_gutter), 0, 80, $default_gutter),
+                'bleedX'  => self::number($grid['bleedX'] ?? ($grid['bleed'] ?? $default_bleed_x), 0, 480, $default_bleed_x),
+            ],
         ];
     }
 

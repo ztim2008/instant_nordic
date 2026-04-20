@@ -17,6 +17,12 @@
 
 `design_block` — это отдельный block type внутри NordicBlocks для свободной авторской секции, но не отдельный builder всего сайта.
 
+Дополнительное каноническое уточнение:
+
+1. `design_block` выбирается как обычный block type в CMS;
+2. но на editor/runtime уровне он не считается managed inspector block;
+3. для него действует отдельный canvas engine, зафиксированный в `docs/nordicblocks/DESIGN-BLOCK-INSTANTCMS-INTEGRATION-RULES-V1.md`.
+
 Связанные рабочие документы:
 
 1. `docs/nordicblocks/DESIGN-BLOCK-MODE-V1.md` — product-рамка и границы режима.
@@ -24,6 +30,7 @@
 3. `docs/nordicblocks/DESIGN-BLOCK-RUNTIME-CONTRACT-V1.md` — PHP normalizer и render payload.
 4. `docs/nordicblocks/DESIGN-BLOCK-EDITOR-SHELL-V1.md` — admin template и JS shell contract.
 5. `docs/nordicblocks/DESIGN-BLOCK-IMPLEMENTATION-PLAN-V1.md` — порядок внедрения по этапам.
+6. `docs/nordicblocks/DESIGN-BLOCK-INSTANTCMS-INTEGRATION-RULES-V1.md` — жёсткая граница между CMS-level block placement и отдельным design engine.
 
 ---
 
@@ -97,7 +104,7 @@ NordicBlocks остаётся библиотекой секций с placement �
 2. тот же `nordicblocks_block` widget;
 3. единый cache/invalidation контур;
 4. единый подход к preview/live hydration;
-5. общая design foundation и общая vocabulary-система сущностей там, где это возможно.
+5. общая design foundation и общая platform discipline без принудительного shared inspector runtime.
 
 ---
 
@@ -146,7 +153,7 @@ NordicBlocks остаётся библиотекой секций с placement �
 
 ### 6.1 Верхнеуровневое правило
 
-Физически `design_block` может храниться в том же `props_json`, но логически он обязан жить как Block Contract v3.
+Физически `design_block` может храниться в том же `props_json`, но логически он обязан жить как dedicated scene-first contract с нормализуемой server-side формой.
 
 ### 6.2 Минимальная форма контракта
 

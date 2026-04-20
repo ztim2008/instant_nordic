@@ -5,6 +5,8 @@ $this->addBreadcrumb('Дизайн-блок');
 $this->addMenuItems('admin_toolbar', $menu);
 
 $editor_css = @file_get_contents(__DIR__ . '/design-block-editor.css') ?: '';
+$editor_geometry_core_js = @file_get_contents(__DIR__ . '/design-block-geometry-core.js') ?: '';
+$editor_interaction_core_js = @file_get_contents(__DIR__ . '/design-block-interaction-core.js') ?: '';
 $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
 ?>
 
@@ -44,7 +46,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <div class="nbde-canvas-panel__head">
                 <div>
                     <strong>Холст</strong>
-                    <span>Живой DOM-холст без iframe: перетаскивание, набор текста и направляющие работают сразу в редакторе.</span>
+                    <span>Scene renderer: world-координаты, viewport-камера и screen-проекция без DOM как источника layout.</span>
                 </div>
                 <div class="nbde-canvas-chip" id="nbd-canvas-meta">Загрузка холста...</div>
             </div>
@@ -106,7 +108,12 @@ window.NordicblocksDesignBlockBootstrap = <?= json_encode([
     'saveUrl'   => $save_url,
     'backUrl'   => $back_url,
     'placeUrl'  => $place_url,
+    'devFlags'  => [
+        'geometryDebug' => !empty($_GET['nb_debug_geometry'])
+    ],
     'csrfToken' => cmsForm::getCSRFToken(),
 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 </script>
+<script><?= $editor_geometry_core_js ?></script>
+<script><?= $editor_interaction_core_js ?></script>
 <script><?= $editor_js ?></script>

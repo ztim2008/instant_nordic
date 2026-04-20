@@ -26,6 +26,7 @@ class actionNordicblocksBlocks extends cmsAction {
             }
 
             $block['editor_url'] = href_to($this->controller->root_url, 'block_edit', (int) $block['id']);
+            $block['editor_mode'] = $this->model->getBlockEditorMode($block_type);
             $block['place_url']  = $widgets_url . '?' . http_build_query([
                 'template_name'               => $template_name,
                 'open_tab'                    => 'all-widgets',

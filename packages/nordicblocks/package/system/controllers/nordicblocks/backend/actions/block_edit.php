@@ -5,6 +5,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
     public function run($block_id = 0) {
         $block_id = (int) $block_id;
         $block    = $this->model->getBlockById($block_id);
+        $editor_mode = $block ? $this->model->getBlockEditorMode((string) ($block['type'] ?? '')) : 'inspector_shell';
 
         if (!$block) {
             return cmsCore::error404();
@@ -17,7 +18,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
 
         $block['props'] = $this->model->normalizeImagePropsByType((string) ($block['type'] ?? ''), (array) ($block['props'] ?? []));
 
-        if ($this->model->isDesignBlockType((string) ($block['type'] ?? ''))) {
+        if ($editor_mode === 'design_canvas') {
             $template_name  = (string) cmsConfig::get('template');
             $place_url = href_to('admin', 'widgets') . '?' . http_build_query([
                 'template_name'               => $template_name,
@@ -31,6 +32,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
             return $this->cms_template->render('backend/editor_design_block', [
                 'menu'       => $this->controller->getBackendMenu(),
                 'block'      => $block,
+                'editor_mode'=> $editor_mode,
                 'save_url'   => href_to($this->controller->root_url, 'block_save', [$block_id]),
                 'state_url'  => href_to($this->controller->root_url, 'block_design_state', $block_id),
                 'canvas_url' => href_to($this->controller->root_url, 'block_design_canvas', $block_id),
@@ -69,6 +71,7 @@ class actionNordicblocksBlockEdit extends cmsAction {
         return $this->cms_template->render($template_name_view, [
             'menu'           => $this->controller->getBackendMenu(),
             'block'          => $block,
+            'editor_mode'    => $editor_mode,
             'block_registry' => $block_registry,
             'image_presets'  => $this->getImagePresetOptions(),
             'inline_css'     => $inline_css,

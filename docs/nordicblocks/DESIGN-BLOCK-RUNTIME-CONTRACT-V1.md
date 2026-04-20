@@ -15,6 +15,8 @@
 
 `design_block` не должен тянуть отдельный frontend runtime на публичную страницу. Его live output обязан собираться сервером через тот же NordicBlocks render path, что и остальные block types.
 
+Жёсткая граница editor/runtime responsibility дополнительно зафиксирована в `docs/nordicblocks/DESIGN-BLOCK-INSTANTCMS-INTEGRATION-RULES-V1.md`.
+
 ---
 
 ## 2. Место в текущем runtime NordicBlocks
@@ -26,7 +28,7 @@
 1. block record читается из `cms_nordicblocks_blocks`;
 2. `props_json` подаётся в общий contract dispatcher;
 3. dispatcher передаёт `design_block` в dedicated normalizer;
-4. normalizer возвращает Block Contract v3 freeform-ветки;
+4. normalizer возвращает dedicated design_block contract в server-side canonical shape;
 5. при preview/live вызывается dedicated payload builder;
 6. `blocks/design_block/render.php` рендерит уже готовый payload;
 7. widget/runtime получает `html + inline_css`.
@@ -169,7 +171,7 @@ Normalizer всегда возвращает shape:
 
 ### 4.7 Entities layer
 
-`entities.byElementId` хранит semantic role map, например:
+`entities.byElementId` хранит semantic role map как transitional compatibility layer, например:
 
 ```php
 [
@@ -192,6 +194,10 @@ Normalizer всегда возвращает shape:
 4. `cssProfile = absolute_stage`
 5. `breakpoints = ['desktop', 'tablet', 'mobile']`
 6. `editor.*` — grid/snap/guides settings
+
+Важно:
+
+этот runtime layer не делает `design_block` клиентом shared inspector registry. Он описывает только dedicated design engine contract.
 
 ---
 

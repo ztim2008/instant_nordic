@@ -30,6 +30,16 @@ class actionNordicblocksBlockEditorState extends cmsAction {
             exit;
         }
 
+        if ($this->model->isDesignBlockType((string) ($block['type'] ?? ''))) {
+            echo json_encode([
+                'ok' => false,
+                'error' => 'wrong_editor_engine',
+                'editorMode' => 'design_canvas',
+                'message' => 'design_block uses dedicated canvas editor state endpoint',
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            exit;
+        }
+
         $contract = (array) ($block['contract'] ?? NordicblocksBlockContractNormalizer::normalize($block));
         $registry = NordicblocksInspectorRegistryBuilder::build((string) ($block['type'] ?? ''));
 

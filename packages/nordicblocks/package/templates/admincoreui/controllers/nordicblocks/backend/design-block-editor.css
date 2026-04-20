@@ -295,11 +295,32 @@
     overflow: hidden;
 }
 
+.nbde-stage__viewport,
+.nbde-stage__world,
 .nbde-stage__surface,
-.nbde-stage__scene {
+.nbde-stage__scene,
+.nbde-stage__overlay {
     position: relative;
     width: 100%;
     min-height: inherit;
+}
+
+.nbde-stage__viewport {
+    overflow: hidden;
+    cursor: default;
+}
+
+.nbde-stage__viewport.is-panning {
+    cursor: grabbing;
+}
+
+.nbde-stage__world {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: var(--nbde-stage-width, 1200px);
+    min-height: var(--nbde-stage-height, 640px);
+    transform-origin: 0 0;
+    will-change: transform;
 }
 
 .nbde-stage__surface {
@@ -307,7 +328,20 @@
 }
 
 .nbde-stage__scene {
+    position: absolute;
+    left: var(--nbde-grid-left, 0px);
+    top: 0;
+    width: var(--nbde-grid-width, var(--nbde-stage-width, 1200px));
+    min-height: inherit;
+    overflow: visible;
     z-index: 2;
+}
+
+.nbde-stage__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    pointer-events: none;
 }
 
 .nbde-stage__empty {
@@ -333,14 +367,26 @@
 .nbde-stage__columns {
     z-index: 0;
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0;
+    left: var(--nbde-grid-left, 0px);
+    right: auto;
+    width: var(--nbde-grid-width, var(--nbde-stage-width, 1200px));
+    grid-template-columns: repeat(var(--nbde-grid-columns, 12), minmax(0, 1fr));
+    column-gap: var(--nbde-grid-gutter, 0px);
+    row-gap: 0;
 }
 
 .nbde-stage__columns span {
     border-left: 1px solid currentColor;
     border-right: 1px solid transparent;
     background: linear-gradient(180deg, rgba(15, 23, 42, 0.03), rgba(15, 23, 42, 0.06));
+}
+
+.nbde-stage__grid-frame {
+    position: absolute;
+    inset: 0;
+    border-left: 1px solid currentColor;
+    border-right: 1px solid currentColor;
+    background: rgba(15, 23, 42, 0.02);
 }
 
 .nbde-stage__columns span:first-child {
@@ -544,6 +590,7 @@
     background: rgba(255, 255, 255, 0.97);
     border: 1px solid var(--nbde-border-strong);
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    pointer-events: auto;
 }
 
 .nbde-toolbar__separator {
@@ -650,6 +697,12 @@
     gap: 4px;
     color: var(--nbde-muted);
     font-size: 11px;
+}
+
+.nbde-camera-stats {
+    color: var(--nbde-muted);
+    font-size: 11px;
+    line-height: 1.45;
 }
 
 .nbde-checkbox {

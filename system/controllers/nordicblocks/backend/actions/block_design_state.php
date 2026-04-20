@@ -55,6 +55,8 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'title'  => (string) ($block['title'] ?? ''),
                 'type'   => (string) ($block['type'] ?? ''),
                 'status' => (string) ($block['status'] ?? 'active'),
+                'editorMode' => 'design_canvas',
+                'editorEngine' => 'design_block_canvas',
             ],
             'contract' => $contract,
             'summary' => [
@@ -62,6 +64,8 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'stage' => $payload['stage'],
             ],
             'editor' => [
+                'mode'      => 'design_canvas',
+                'engine'    => 'design_block_canvas',
                 'saveUrl'   => href_to($this->controller->root_url, 'block_save', [(int) ($block['id'] ?? 0)]),
                 'canvasUrl' => href_to($this->controller->root_url, 'block_design_canvas', (int) ($block['id'] ?? 0)),
                 'placeUrl'  => $place_url,
@@ -92,6 +96,11 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'selectedElementId' => $first_element_id !== '' ? $first_element_id : null,
                 'selectedElementIds' => [],
                 'sidebarSection' => 'properties',
+            ],
+            'engineBoundary' => [
+                'usesSharedInspectorRegistry' => false,
+                'usesSharedInspectorPanels' => false,
+                'usesSharedInspectorCapabilities' => false,
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;

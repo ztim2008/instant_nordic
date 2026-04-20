@@ -1,8 +1,20 @@
 (function () {
     var bootstrap = window.NordicblocksDesignBlockBootstrap || {};
+    var GeometryCore = window.NordicblocksDesignBlockGeometryCore;
+    var InteractionCore = window.NordicblocksDesignBlockInteractionCore;
     var root = document.getElementById('nbd-editor');
 
     if (!root) {
+        return;
+    }
+
+    if (!GeometryCore) {
+        console.error('NordicblocksDesignBlockGeometryCore is required for design_block editor');
+        return;
+    }
+
+    if (!InteractionCore) {
+        console.error('NordicblocksDesignBlockInteractionCore is required for design_block editor');
         return;
     }
 
@@ -10,6 +22,42 @@
         desktop: { label: 'Компьютер', frameClass: 'nbde-canvas-frame--desktop' },
         tablet: { label: 'Планшет', frameClass: 'nbde-canvas-frame--tablet' },
         mobile: { label: 'Мобильный', frameClass: 'nbde-canvas-frame--mobile' }
+    };
+
+    var STAGE_DEFAULTS = {
+        desktop: {
+            width: 1200,
+            minHeight: 680,
+            paddingX: 24,
+            paddingY: 24,
+            grid: {
+                columns: 12,
+                gutter: 20,
+                bleedX: 160
+            }
+        },
+        tablet: {
+            width: 768,
+            minHeight: 560,
+            paddingX: 20,
+            paddingY: 20,
+            grid: {
+                columns: 8,
+                gutter: 16,
+                bleedX: 96
+            }
+        },
+        mobile: {
+            width: 390,
+            minHeight: 440,
+            paddingX: 16,
+            paddingY: 16,
+            grid: {
+                columns: 4,
+                gutter: 12,
+                bleedX: 32
+            }
+        }
     };
 
     var TYPE_LABELS = {
@@ -24,6 +72,23 @@
         svg: 'SVG',
         group: 'Группа'
     };
+
+    var CONTENT_PROP_KEYS = {
+        text: true,
+        url: true,
+        src: true,
+        alt: true,
+        poster: true,
+        iconClass: true,
+        label: true
+    };
+
+    var KNOWN_PROP_KEYS = [
+        'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
+        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'objectFit',
+        'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'text', 'url', 'src',
+        'alt', 'poster', 'iconClass', 'label'
+    ];
 
     var state = {
         editor: {
@@ -41,6 +106,18 @@
             lastSavedAt: null,
             version: 1
         },
+        scene: {
+            nodes: [],
+            layout: createBreakpointStore(),
+            props: createBreakpointStore(),
+            viewport: {
+                zoom: 1,
+                offsetX: 0,
+                offsetY: 0,
+                width: 0,
+                height: 0
+            }
+        },
         uiState: {
             activeBreakpoint: 'desktop',
             selectionIds: [],
@@ -55,7 +132,11 @@
             guideX: null,
             guideY: null,
             drag: null,
-            resize: null
+            resize: null,
+            pan: null,
+            pointerCapture: null,
+            pointerTelemetry: null,
+            spacePressed: false
         }
     };
 
@@ -74,6 +155,12 @@
         propertiesCard: document.getElementById('nbd-properties-card'),
         saveButton: document.getElementById('nbd-save-button')
     };
+
+    var geometryDebugEnabled = !!(bootstrap.devFlags && bootstrap.devFlags.geometryDebug);
+
+    function createBreakpointStore() {
+        return { desktop: {}, tablet: {}, mobile: {} };
+    }
 
     function clone(value) {
         return JSON.parse(JSON.stringify(value));
@@ -161,6 +248,10 @@
 
     function selectorEscape(value) {
         return String(value == null ? '' : value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    }
+
+    function roundNumber(value) {
+        return Math.round(Number(value || 0));
     }
 
     function currentBreakpoint() {
@@ -287,6 +378,7 @@
             branch.props.paddingLeft = 20;
             branch.props.backgroundColor = 'rgba(255,255,255,0.42)';
             branch.props.borderRadius = 28;
+            branch.props.gap = 16;
         } else if (type === 'group') {
             branch.box.w = 360;
             branch.box.h = 220;
@@ -296,7 +388,7 @@
         return branch;
     }
 
-    function normalizeElement(element, index) {
+    function normalizeLegacyElementShape(element, index) {
         var type = element && element.type ? String(element.type) : 'text';
         var normalized = clone(element || {});
         var base = defaultBranch(type);
@@ -322,9 +414,73 @@
         return normalized;
     }
 
+    function splitProps(type, props) {
+        var baseProps = Object.assign({}, defaultBranch(type).props, props || {});
+        var style = {};
+        var content = {};
+
+        Object.keys(baseProps).forEach(function (key) {
+            if (key === 'rotate') {
+                return;
+            }
+
+            if (CONTENT_PROP_KEYS[key]) {
+                content[key] = baseProps[key];
+            } else {
+                style[key] = baseProps[key];
+            }
+        });
+
+        return {
+            style: style,
+            content: content
+        };
+    }
+
+    function createSceneNodeFromElement(element, index) {
+        var normalized = normalizeLegacyElementShape(element, index);
+        var desktopBox = normalized.desktop.box || {};
+        var desktopProps = normalized.desktop.props || {};
+        var split = splitProps(normalized.type, desktopProps);
+
+        return {
+            id: normalized.id,
+            type: normalized.type,
+            name: normalized.name,
+            role: normalized.role,
+            parentId: normalized.parentId,
+            hidden: normalized.hidden,
+            locked: normalized.locked,
+            constraints: clone(normalized.constraints || { horizontal: 'left', vertical: 'top' }),
+            transform: {
+                x: Number(desktopBox.x || 0),
+                y: Number(desktopBox.y || 0),
+                width: Math.max(1, Number(desktopBox.w || 1)),
+                height: Math.max(1, Number(desktopBox.h || 1)),
+                rotation: Number(desktopProps.rotate || 0)
+            },
+            style: split.style,
+            content: split.content,
+            sharedPropKeys: {}
+        };
+    }
+
+    function createLayoutEntry(node, box, props) {
+        return {
+            x: Number(box && box.x != null ? box.x : node.transform.x),
+            y: Number(box && box.y != null ? box.y : node.transform.y),
+            width: Math.max(1, Number(box && box.w != null ? box.w : node.transform.width)),
+            height: Math.max(1, Number(box && box.h != null ? box.h : node.transform.height)),
+            rotation: Number(props && props.rotate != null ? props.rotate : node.transform.rotation || 0),
+            zIndex: Number(box && box.zIndex != null ? box.zIndex : 1),
+            visible: box && box.visible === false ? false : true
+        };
+    }
+
     function normalizeContract(contract) {
         var normalized = clone(contract || {});
         var blockTitle = state.documentState.block ? state.documentState.block.title : 'Дизайн-блок';
+        var legacyEditorRuntime = getPath(normalized, 'runtime.editor', {});
 
         normalized.meta = normalized.meta || {
             contractVersion: 3,
@@ -339,7 +495,7 @@
         normalized.content.section.tag = normalized.content.section.tag || 'section';
         normalized.content.section.elements = Array.isArray(normalized.content.section.elements) ? normalized.content.section.elements : [];
         normalized.content.section.elements = normalized.content.section.elements.map(function (element, index) {
-            return normalizeElement(element, index);
+            return normalizeLegacyElementShape(element, index);
         });
 
         normalized.design = normalized.design || {};
@@ -360,9 +516,26 @@
 
         normalized.layout = normalized.layout || {};
         normalized.layout.stage = normalized.layout.stage || {};
-        normalized.layout.stage.desktop = Object.assign({ width: 1200, minHeight: 680, paddingX: 24, paddingY: 24 }, normalized.layout.stage.desktop || {});
-        normalized.layout.stage.tablet = Object.assign({}, normalized.layout.stage.desktop, { width: 768, minHeight: 560, paddingX: 20, paddingY: 20 }, normalized.layout.stage.tablet || {});
-        normalized.layout.stage.mobile = Object.assign({}, normalized.layout.stage.tablet, { width: 390, minHeight: 440, paddingX: 16, paddingY: 16 }, normalized.layout.stage.mobile || {});
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            var defaults = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
+            var stageBranch = Object.assign({}, defaults, normalized.layout.stage[breakpoint] || {});
+
+            stageBranch.grid = Object.assign({}, defaults.grid, stageBranch.grid || {});
+
+            if (stageBranch.grid.bleedX == null) {
+                if (breakpoint === 'desktop' && legacyEditorRuntime.bleedXDesktop != null) {
+                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXDesktop || defaults.grid.bleedX);
+                }
+                if (breakpoint === 'tablet' && legacyEditorRuntime.bleedXTablet != null) {
+                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXTablet || defaults.grid.bleedX);
+                }
+                if (breakpoint === 'mobile' && legacyEditorRuntime.bleedXMobile != null) {
+                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXMobile || defaults.grid.bleedX);
+                }
+            }
+
+            normalized.layout.stage[breakpoint] = stageBranch;
+        });
 
         normalized.runtime = normalized.runtime || {};
         normalized.runtime.editor = Object.assign({
@@ -371,7 +544,6 @@
             snapThreshold: 6,
             showGuides: true,
             showColumnsGrid: true,
-            columnsCount: 12,
             columnsGridColor: '#0f172a',
             columnsGridOpacity: 8
         }, normalized.runtime.editor || {});
@@ -379,8 +551,101 @@
         return normalized;
     }
 
+    function buildSceneFromContract(contract) {
+        var scene = {
+            nodes: [],
+            layout: createBreakpointStore(),
+            props: createBreakpointStore(),
+            viewport: {
+                zoom: 1,
+                offsetX: 0,
+                offsetY: 0,
+                width: 0,
+                height: 0
+            }
+        };
+
+        getPath(contract, 'content.section.elements', []).forEach(function (element, index) {
+            var node = createSceneNodeFromElement(element, index);
+
+            scene.nodes.push(node);
+
+            ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+                var branch = element[breakpoint] || element.desktop || defaultBranch(node.type);
+                scene.layout[breakpoint][node.id] = createLayoutEntry(node, branch.box || {}, branch.props || {});
+                scene.props[breakpoint][node.id] = clone(branch.props || {});
+            });
+        });
+
+        return scene;
+    }
+
+    function buildSerializableProps(node, breakpoint) {
+        var props = {};
+        var shared = node.sharedPropKeys || {};
+        var layout = ensureLayoutEntry(node, breakpoint);
+
+        Object.assign(props, state.scene.props.desktop[node.id] || {});
+
+        if (breakpoint === 'tablet' || breakpoint === 'mobile') {
+            Object.assign(props, state.scene.props.tablet[node.id] || {});
+        }
+
+        if (breakpoint === 'mobile') {
+            Object.assign(props, state.scene.props.mobile[node.id] || {});
+        }
+
+        Object.keys(shared).forEach(function (key) {
+            if (!shared[key]) {
+                return;
+            }
+
+            props[key] = readNodeSharedProp(node, key);
+        });
+
+        props.rotate = Number(layout.rotation || 0);
+        return props;
+    }
+
+    function serializeSceneIntoContract(contract) {
+        var next = normalizeContract(contract || {});
+
+        next.content.section.elements = state.scene.nodes.map(function (node) {
+            var element = {
+                id: node.id,
+                type: node.type,
+                name: node.name,
+                role: node.role,
+                parentId: node.parentId,
+                hidden: !!node.hidden,
+                locked: !!node.locked,
+                constraints: clone(node.constraints || { horizontal: 'left', vertical: 'top' })
+            };
+
+            ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+                var layout = ensureLayoutEntry(node, breakpoint);
+
+                element[breakpoint] = {
+                    box: {
+                        x: roundNumber(layout.x),
+                        y: roundNumber(layout.y),
+                        w: Math.max(1, roundNumber(layout.width)),
+                        h: Math.max(1, roundNumber(layout.height)),
+                        zIndex: roundNumber(layout.zIndex || 1),
+                        visible: layout.visible === false ? false : true
+                    },
+                    props: buildSerializableProps(node, breakpoint)
+                };
+            });
+
+            return element;
+        });
+
+        return next;
+    }
+
     function getElements() {
-        return getPath(state.documentState.contract, 'content.section.elements', []);
+        return state.scene.nodes || [];
     }
 
     function getElementById(id) {
@@ -404,41 +669,173 @@
         return getPath(state.documentState.contract, 'runtime.editor', {});
     }
 
-    function resolveBranch(element, breakpoint) {
-        var branch = clone(element.desktop || defaultBranch(element.type));
+    function getStageDefaults(breakpoint) {
+        return clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
+    }
+
+    function buildStageMetrics(stage, breakpoint) {
+        var defaults = getStageDefaults(breakpoint);
+        var stageBranch = Object.assign({}, defaults, stage || {});
+        var grid = Object.assign({}, defaults.grid, stageBranch.grid || {});
+        var columns = Math.max(1, Number(grid.columns || defaults.grid.columns));
+        var gutter = Math.max(0, Number(grid.gutter || defaults.grid.gutter));
+        var gridWidth = Math.max(1, Number(stageBranch.width || defaults.width));
+        var bleedX = Math.max(0, Number(grid.bleedX || defaults.grid.bleedX));
+        var usableWidth = Math.max(columns, gridWidth - (Math.max(0, columns - 1) * gutter));
+
+        return {
+            width: gridWidth,
+            height: Math.max(1, Number(stageBranch.minHeight || defaults.minHeight)),
+            paddingX: Math.max(0, Number(stageBranch.paddingX || defaults.paddingX)),
+            paddingY: Math.max(0, Number(stageBranch.paddingY || defaults.paddingY)),
+            columns: columns,
+            gutter: gutter,
+            bleedX: bleedX,
+            originX: bleedX,
+            windowWidth: gridWidth + (bleedX * 2),
+            columnWidth: usableWidth / columns
+        };
+    }
+
+    function currentStageMetrics() {
+        return buildStageMetrics(currentStageConfig(), currentBreakpoint());
+    }
+
+    function readNodeSharedProp(node, key) {
+        if (CONTENT_PROP_KEYS[key]) {
+            return getPath(node, 'content.' + key, undefined);
+        }
+
+        return getPath(node, 'style.' + key, undefined);
+    }
+
+    function writeNodeSharedProp(node, key, value) {
+        if (CONTENT_PROP_KEYS[key]) {
+            node.content = node.content || {};
+            node.content[key] = value;
+        } else {
+            node.style = node.style || {};
+            node.style[key] = value;
+        }
+
+        node.sharedPropKeys = node.sharedPropKeys || {};
+        node.sharedPropKeys[key] = true;
+    }
+
+    function composeBreakpointProps(node, breakpoint) {
+        var props = {};
+        var shared = node.sharedPropKeys || {};
+
+        Object.assign(props, state.scene.props.desktop[node.id] || {});
 
         if (breakpoint === 'tablet' || breakpoint === 'mobile') {
-            branch.box = Object.assign({}, branch.box, getPath(element, 'tablet.box', {}));
-            branch.props = Object.assign({}, branch.props, getPath(element, 'tablet.props', {}));
+            Object.assign(props, state.scene.props.tablet[node.id] || {});
         }
 
         if (breakpoint === 'mobile') {
-            branch.box = Object.assign({}, branch.box, getPath(element, 'mobile.box', {}));
-            branch.props = Object.assign({}, branch.props, getPath(element, 'mobile.props', {}));
+            Object.assign(props, state.scene.props.mobile[node.id] || {});
         }
 
-        return branch;
+        Object.keys(shared).forEach(function (key) {
+            if (shared[key]) {
+                props[key] = readNodeSharedProp(node, key);
+            }
+        });
+
+        return props;
+    }
+
+    function ensureLayoutEntry(node, breakpoint) {
+        if (!state.scene.layout[breakpoint][node.id]) {
+            state.scene.layout[breakpoint][node.id] = {
+                x: Number(node.transform.x || 0),
+                y: Number(node.transform.y || 0),
+                width: Math.max(1, Number(node.transform.width || 1)),
+                height: Math.max(1, Number(node.transform.height || 1)),
+                rotation: Number(node.transform.rotation || 0),
+                zIndex: 1,
+                visible: true
+            };
+        }
+
+        return state.scene.layout[breakpoint][node.id];
+    }
+
+    function createLayoutBoxBridge(layoutEntry) {
+        var mapping = {
+            x: 'x',
+            y: 'y',
+            w: 'width',
+            h: 'height',
+            zIndex: 'zIndex',
+            visible: 'visible',
+            rotation: 'rotation'
+        };
+        var bridge = {};
+
+        Object.keys(mapping).forEach(function (key) {
+            Object.defineProperty(bridge, key, {
+                enumerable: true,
+                get: function () {
+                    return layoutEntry[mapping[key]];
+                },
+                set: function (value) {
+                    layoutEntry[mapping[key]] = value;
+                }
+            });
+        });
+
+        return bridge;
+    }
+
+    function createPropsBridge(node) {
+        var bridge = {};
+
+        KNOWN_PROP_KEYS.forEach(function (key) {
+            Object.defineProperty(bridge, key, {
+                enumerable: true,
+                get: function () {
+                    return composeBreakpointProps(node, currentBreakpoint())[key];
+                },
+                set: function (value) {
+                    writeNodeSharedProp(node, key, value);
+                }
+            });
+        });
+
+        return bridge;
+    }
+
+    function resolveBranch(element, breakpoint) {
+        var layout = ensureLayoutEntry(element, breakpoint);
+
+        return {
+            box: {
+                x: Number(layout.x || 0),
+                y: Number(layout.y || 0),
+                w: Math.max(1, Number(layout.width || 1)),
+                h: Math.max(1, Number(layout.height || 1)),
+                zIndex: Number(layout.zIndex || 1),
+                visible: layout.visible === false ? false : true,
+                rotation: Number(layout.rotation || 0)
+            },
+            props: composeBreakpointProps(element, breakpoint)
+        };
     }
 
     function currentEditableBranch(element) {
-        var key = currentBreakpoint();
-
-        if (!element[key]) {
-            element[key] = clone(element.desktop || defaultBranch(element.type));
-        }
-
-        element[key].box = element[key].box || {};
-        element[key].props = element[key].props || {};
-
-        return element[key];
+        return {
+            box: createLayoutBoxBridge(ensureLayoutEntry(element, currentBreakpoint())),
+            props: createPropsBridge(element)
+        };
     }
 
     function withEachBreakpoint(element, callback) {
         ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
-            if (!element[breakpoint]) {
-                element[breakpoint] = clone(element.desktop || defaultBranch(element.type));
-            }
-            callback(element[breakpoint], breakpoint);
+            callback({
+                box: createLayoutBoxBridge(ensureLayoutEntry(element, breakpoint)),
+                props: createPropsBridge(element)
+            }, breakpoint);
         });
     }
 
@@ -460,65 +857,29 @@
     }
 
     function getSelectionIds() {
-        var elements = getElements();
-        var known = {};
-
-        elements.forEach(function (element) {
-            known[String(element.id)] = true;
-        });
-
-        return (state.uiState.selectionIds || []).filter(function (id, index, source) {
-            return known[String(id)] && source.indexOf(id) === index;
-        });
+        return InteractionCore.normalizeSelectionIds(getSelectionSceneNodes(), state.uiState.selectionIds || []);
     }
 
     function getRootSelectionIds(ids) {
-        var selectedIds = (ids || getSelectionIds()).map(String);
-        return selectedIds.filter(function (id) {
-            var element = getElementById(id);
-            var parentId = element ? String(element.parentId || '') : '';
-
-            while (parentId) {
-                if (selectedIds.indexOf(parentId) >= 0) {
-                    return false;
-                }
-                element = getElementById(parentId);
-                parentId = element ? String(element.parentId || '') : '';
-            }
-
-            return true;
-        });
+        return InteractionCore.getRootSelectionIds(getSelectionSceneNodes(), ids || getSelectionIds());
     }
 
     function setSelection(ids, primaryId) {
-        var normalized = (ids || []).map(String).filter(function (id, index, source) {
-            return !!getElementById(id) && source.indexOf(id) === index;
-        });
+        var selectionState = InteractionCore.createSelectionState(getSelectionSceneNodes(), ids || [], primaryId);
 
-        state.uiState.selectionIds = normalized;
-        state.uiState.selectedElementId = primaryId && normalized.indexOf(String(primaryId)) >= 0
-            ? String(primaryId)
-            : (normalized.length ? normalized[normalized.length - 1] : null);
+        state.uiState.selectionIds = selectionState.selectionIds;
+        state.uiState.selectedElementId = selectionState.primaryId;
 
-        if (state.uiState.editingTextId && normalized.indexOf(String(state.uiState.editingTextId)) === -1) {
+        if (state.uiState.editingTextId && selectionState.selectionIds.indexOf(String(state.uiState.editingTextId)) === -1) {
             state.uiState.editingTextId = null;
             state.uiState.pendingFocusTextId = null;
         }
     }
 
     function toggleSelection(id) {
-        var current = getSelectionIds();
-        var stringId = String(id || '');
-        var index = current.indexOf(stringId);
+        var selectionState = InteractionCore.toggleSelectionState(getSelectionSceneNodes(), getSelectionIds(), id);
 
-        if (index >= 0) {
-            current.splice(index, 1);
-            setSelection(current, current.length ? current[current.length - 1] : null);
-            return;
-        }
-
-        current.push(stringId);
-        setSelection(current, stringId);
+        setSelection(selectionState.selectionIds, selectionState.primaryId);
     }
 
     function clearSelection() {
@@ -565,6 +926,15 @@
         state.interactionState.guideY = null;
     }
 
+    function getSelectionSceneNodes() {
+        return getElements().map(function (element) {
+            return {
+                id: element.id,
+                parentId: element.parentId || ''
+            };
+        });
+    }
+
     function getParentContentOffset(parent, breakpoint) {
         var branch = resolveBranch(parent, breakpoint);
         var props = branch.props || {};
@@ -579,7 +949,7 @@
         return { x: 0, y: 0 };
     }
 
-    function getAbsoluteBox(element, breakpoint) {
+    function getAbsoluteWorldBox(element, breakpoint) {
         var branch = resolveBranch(element, breakpoint);
         var box = branch.box || {};
         var absolute = {
@@ -587,7 +957,8 @@
             y: Number(box.y || 0),
             w: Math.max(1, Number(box.w || 1)),
             h: Math.max(1, Number(box.h || 1)),
-            zIndex: Number(box.zIndex || 1)
+            zIndex: Number(box.zIndex || 1),
+            rotation: Number(box.rotation || 0)
         };
         var parent = element.parentId ? getElementById(element.parentId) : null;
 
@@ -605,41 +976,71 @@
 
     function buildSelectionBounds(selectionIds, breakpoint) {
         var ids = getRootSelectionIds(selectionIds);
-        var bounds = null;
+        var candidates = [];
 
         ids.forEach(function (id) {
             var element = getElementById(id);
             var box;
+            var branch;
 
             if (!element) {
                 return;
             }
 
-            box = getAbsoluteBox(element, breakpoint);
-
-            if (!bounds) {
-                bounds = {
-                    x: box.x,
-                    y: box.y,
-                    right: box.x + box.w,
-                    bottom: box.y + box.h
-                };
-                return;
-            }
-
-            bounds.x = Math.min(bounds.x, box.x);
-            bounds.y = Math.min(bounds.y, box.y);
-            bounds.right = Math.max(bounds.right, box.x + box.w);
-            bounds.bottom = Math.max(bounds.bottom, box.y + box.h);
+            box = getAbsoluteWorldBox(element, breakpoint);
+            branch = resolveBranch(element, breakpoint);
+            candidates.push({
+                id: element.id,
+                hidden: element.hidden,
+                visible: branch.box.visible !== false,
+                box: box
+            });
         });
 
-        if (!bounds) {
-            return null;
+        return InteractionCore.buildSelectionBounds(candidates);
+    }
+
+    function getAbsoluteZIndex(element, breakpoint) {
+        var box = resolveBranch(element, breakpoint).box;
+        var parent = element.parentId ? getElementById(element.parentId) : null;
+
+        if (!parent) {
+            return Number(box.zIndex || 1);
         }
 
-        bounds.w = Math.max(1, bounds.right - bounds.x);
-        bounds.h = Math.max(1, bounds.bottom - bounds.y);
-        return bounds;
+        return (getAbsoluteZIndex(parent, breakpoint) * 1000) + Number(box.zIndex || 1);
+    }
+
+    function getLocalHostSize(element, breakpoint) {
+        var parent = element.parentId ? getElementById(element.parentId) : null;
+        var stage = currentStageConfig();
+        var stageMetrics = buildStageMetrics(stage, breakpoint);
+        var parentBranch;
+        var parentProps;
+
+        if (!parent) {
+            return {
+                width: Math.max(1, stageMetrics.width + stageMetrics.bleedX),
+                height: Math.max(1, stageMetrics.height),
+                minX: -stageMetrics.bleedX,
+                minY: 0
+            };
+        }
+
+        parentBranch = resolveBranch(parent, breakpoint);
+        parentProps = parentBranch.props || {};
+
+        if (parent.type === 'container') {
+            return {
+                width: Math.max(1, Number(parentBranch.box.w || 1) - Number(parentProps.paddingLeft || 0) - Number(parentProps.paddingRight || 0)),
+                height: Math.max(1, Number(parentBranch.box.h || 1) - Number(parentProps.paddingTop || 0) - Number(parentProps.paddingBottom || 0))
+            };
+        }
+
+        return {
+            width: Math.max(1, Number(parentBranch.box.w || 1)),
+            height: Math.max(1, Number(parentBranch.box.h || 1))
+        };
     }
 
     function getMinBoxSize(element, props) {
@@ -649,19 +1050,15 @@
         if (type === 'text') {
             return { w: 120, h: 32 };
         }
-
         if (type === 'button') {
             return { w: 96, h: 40 };
         }
-
         if (type === 'icon') {
             return { w: 24, h: 24 };
         }
-
         if (type === 'divider') {
             return orientation === 'vertical' ? { w: 1, h: 24 } : { w: 24, h: 1 };
         }
-
         if (type === 'group') {
             return { w: 64, h: 64 };
         }
@@ -670,25 +1067,12 @@
     }
 
     function getResizeHandles(element, props) {
-        var type = element && element.type ? String(element.type) : 'shape';
-        var orientation = String((props && props.orientation) || 'horizontal');
-
-        if (type === 'text') {
-            return ['w', 'e'];
-        }
-
-        if (type === 'divider') {
-            return orientation === 'vertical' ? ['n', 's'] : ['w', 'e'];
-        }
-
-        if (isMediaType(type)) {
-            return ['nw', 'ne', 'se', 'sw'];
-        }
-
-        return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+        return InteractionCore.getResizeHandles(element && element.type, {
+            orientation: props && props.orientation
+        });
     }
 
-    function buildTree(elements) {
+    function buildTree(elements, breakpoint) {
         var indexed = {};
         var tree = [];
 
@@ -711,6 +1095,17 @@
             tree.push(element);
         });
 
+        function sortByZIndex(source) {
+            source.sort(function (left, right) {
+                return Number(resolveBranch(left, breakpoint).box.zIndex || 0) - Number(resolveBranch(right, breakpoint).box.zIndex || 0);
+            });
+
+            source.forEach(function (item) {
+                sortByZIndex(item.children || []);
+            });
+        }
+
+        sortByZIndex(tree);
         return tree;
     }
 
@@ -803,12 +1198,12 @@
         }
 
         if (state.uiState.isSaving) {
-            nodes.statusText.textContent = 'Сохраняю изменения...';
+            nodes.statusText.textContent = 'Сохраняю scene contract...';
             return;
         }
 
         if (state.uiState.isDirty) {
-            nodes.statusText.textContent = 'Изменения пока только в scene state. Сохраните, чтобы зафиксировать контракт.';
+            nodes.statusText.textContent = 'Источник истины сейчас в scene/world model. Сохраните, чтобы записать сериализованный контракт.';
             nodes.statusText.classList.add('is-dirty');
             return;
         }
@@ -819,17 +1214,27 @@
         }
 
         nodes.statusText.textContent = selectionCount > 1
-            ? 'Выбрано ' + selectionCount + ' элементов. Можно группировать, дублировать и двигать их как набор.'
-            : 'Редактор готов. Двойной клик по тексту включает inline edit прямо на холсте.';
+            ? 'Выбрано ' + selectionCount + ' узлов. Shift+click добавляет в selection, группа создаёт parent node.'
+            : 'Canvas работает как сцена: world координаты, viewport камера и DOM-проекция.';
     }
 
     function updateCanvasMeta() {
         var stage = currentStageConfig();
+        var stageMetrics = currentStageMetrics();
         var elements = getElements();
         var selectionCount = getSelectionIds().length;
+        var viewport = state.scene.viewport;
 
         if (nodes.canvasMeta) {
-            nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint()) + ' • ' + (stage.width || 0) + 'px • ' + (stage.minHeight || 0) + 'px • ' + elements.length + ' эл. • ' + selectionCount + ' выбрано';
+            nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint())
+                + ' • grid ' + (stage.width || 0) + 'px'
+                + ' • window ' + stageMetrics.windowWidth + 'px'
+                + ' • ' + stageMetrics.columns + ' cols'
+                + ' • h ' + (stage.minHeight || 0) + 'px'
+                + ' • zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '%'
+                + ' • camera ' + roundNumber(viewport.offsetX) + ',' + roundNumber(viewport.offsetY)
+                + ' • ' + elements.length + ' узл.'
+                + ' • ' + selectionCount + ' выбрано';
         }
     }
 
@@ -873,7 +1278,7 @@
         var selectionIds = getSelectionIds();
         var html = '';
 
-        html += '<div class="nbde-inline-note">Canvas-first режим: drag, resize, duplicate, z-index и inline text editing идут через scene state, а не через form-only inspector.</div>';
+        html += '<div class="nbde-inline-note">Редактор хранит геометрию в scene/layout. DOM служит только screen-проекцией world-узлов.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
         html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
@@ -881,9 +1286,9 @@
         html += '<button class="nbde-mini-button" type="button" data-action="ungroup-selection">Разгруппа</button>';
         html += '</div>';
         html += '<div class="nbde-shortcuts">';
-        html += '<span>Shift+клик: мультивыбор</span>';
-        html += '<span>Ctrl+D: копия</span>';
-        html += '<span>Delete: удалить</span>';
+        html += '<span>Shift+click: мультивыбор</span>';
+        html += '<span>Колесо: zoom в курсор</span>';
+        html += '<span>Space+drag или средняя кнопка: pan</span>';
         html += '</div>';
         html += '<div class="nbde-palette-grid">';
 
@@ -903,23 +1308,50 @@
 
     function renderStageCard() {
         var stage = currentStageConfig();
+        var stageMetrics = currentStageMetrics();
         var editorRuntime = currentEditorRuntime();
+        var pointerTelemetry = state.interactionState.pointerTelemetry;
+        var pointerCapture = state.interactionState.pointerCapture;
+        var viewport = state.scene.viewport;
         var html = '';
 
-        html += '<div class="nbde-inline-note">Текущий режим: ' + escapeHtml(getBreakpointLabel(currentBreakpoint())) + '</div>';
+        html += '<div class="nbde-inline-note">Координата x=0 означает левую границу grid container. Отрицательный x уводит элемент в bleed-область window container.</div>';
+        html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="zoom-reset">1:1</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="camera-reset">Камера</button>';
+        html += '</div>';
+        html += '<div class="nbde-camera-stats">zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
+        html += '<div class="nbde-camera-stats">grid ' + stageMetrics.width + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • bleed ' + stageMetrics.bleedX + 'px</div>';
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
-        html += renderField('Ширина холста', 'stage', 'width', stage.width, 'number');
-        html += renderField('Мин. высота', 'stage', 'minHeight', stage.minHeight, 'number');
-        html += renderField('Внутренний отступ X', 'stage', 'paddingX', stage.paddingX, 'number');
-        html += renderField('Внутренний отступ Y', 'stage', 'paddingY', stage.paddingY, 'number');
+        html += renderField('Ширина grid', 'stage', 'width', stage.width, 'number');
+        html += renderField('Мин. высота world', 'stage', 'minHeight', stage.minHeight, 'number');
+        html += renderField('Стартовый offset X', 'stage', 'paddingX', stage.paddingX, 'number');
+        html += renderField('Стартовый offset Y', 'stage', 'paddingY', stage.paddingY, 'number');
+        html += renderField('Колонки', 'stage', 'grid.columns', getPath(stage, 'grid.columns', stageMetrics.columns), 'number');
+        html += renderField('Gutter', 'stage', 'grid.gutter', getPath(stage, 'grid.gutter', stageMetrics.gutter), 'number');
+        html += renderField('Bleed X', 'stage', 'grid.bleedX', getPath(stage, 'grid.bleedX', stageMetrics.bleedX), 'number');
         html += renderField('Шаг сетки', 'runtime-editor', 'gridSize', editorRuntime.gridSize, 'number');
         html += renderField('Порог привязки', 'runtime-editor', 'snapThreshold', editorRuntime.snapThreshold, 'number');
         html += renderField('Цвет колонок', 'runtime-editor', 'columnsGridColor', editorRuntime.columnsGridColor || '#0f172a', 'string');
         html += renderField('Прозрачность колонок %', 'runtime-editor', 'columnsGridOpacity', editorRuntime.columnsGridOpacity == null ? 8 : editorRuntime.columnsGridOpacity, 'number');
         html += '</div>';
-        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="snapToGrid" data-kind="boolean" ' + (editorRuntime.snapToGrid ? 'checked' : '') + '>Привязывать при перемещении</label>';
+        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="snapToGrid" data-kind="boolean" ' + (editorRuntime.snapToGrid ? 'checked' : '') + '>Привязка в world-координатах</label>';
         html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showGuides" data-kind="boolean" ' + (editorRuntime.showGuides ? 'checked' : '') + '>Показывать направляющие</label>';
-        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showColumnsGrid" data-kind="boolean" ' + (editorRuntime.showColumnsGrid ? 'checked' : '') + '>Показывать 12 колонок</label>';
+        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showColumnsGrid" data-kind="boolean" ' + (editorRuntime.showColumnsGrid ? 'checked' : '') + '>Показывать колонную сетку</label>';
+
+        if (geometryDebugEnabled) {
+            html += '<div class="nbde-inline-note">Debug: pointer capture и world/screen telemetry доступны только под dev flag.</div>';
+            if (pointerTelemetry) {
+                html += '<div class="nbde-camera-stats">screen ' + roundNumber(pointerTelemetry.screenX) + ',' + roundNumber(pointerTelemetry.screenY)
+                    + ' • world ' + roundNumber(pointerTelemetry.worldX) + ',' + roundNumber(pointerTelemetry.worldY)
+                    + ' • pointer ' + escapeHtml(pointerTelemetry.pointerId)
+                    + ' • mode ' + escapeHtml(pointerCapture ? pointerCapture.mode : 'hover') + '</div>';
+            } else {
+                html += '<div class="nbde-camera-stats">screen -, - • world -, - • mode ' + escapeHtml(pointerCapture ? pointerCapture.mode : 'idle') + '</div>';
+            }
+        }
 
         if (nodes.stageCard) {
             nodes.stageCard.innerHTML = html;
@@ -956,9 +1388,7 @@
         var selectionIds = getSelectionIds();
 
         elements.sort(function (left, right) {
-            var leftBox = resolveBranch(left, currentBreakpoint()).box;
-            var rightBox = resolveBranch(right, currentBreakpoint()).box;
-            return Number(rightBox.zIndex || 0) - Number(leftBox.zIndex || 0);
+            return Number(resolveBranch(right, currentBreakpoint()).box.zIndex || 0) - Number(resolveBranch(left, currentBreakpoint()).box.zIndex || 0);
         });
 
         if (nodes.layersSummary) {
@@ -967,7 +1397,7 @@
 
         if (!elements.length) {
             if (nodes.layersCard) {
-                nodes.layersCard.innerHTML = '<div class="nbde-card__empty">Палитра справа добавляет первый элемент на живой холст.</div>';
+                nodes.layersCard.innerHTML = '<div class="nbde-card__empty">Палитра справа добавляет первый scene node на world-холст.</div>';
             }
             return;
         }
@@ -1060,7 +1490,7 @@
             html += renderField('Внутренний gap', 'element-props', 'gap', props.gap || 16, 'number');
             html += '</div>';
         } else if (type === 'group') {
-            html += '<div class="nbde-card__empty">Группа управляется как общий transform-узел. Двигайте, масштабируйте и меняйте z-index на холсте.</div>';
+            html += '<div class="nbde-card__empty">Группа теперь является parent node в scene. Изменение размера масштабирует child layout внутри world.</div>';
         }
 
         html += '</div>';
@@ -1080,7 +1510,7 @@
                 nodes.propertiesSummary.textContent = 'Ничего не выбрано';
             }
             if (nodes.propertiesCard) {
-                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Выберите элемент на холсте или в списке слоёв.</div>';
+                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Выберите node на холсте или в списке слоёв.</div>';
             }
             return;
         }
@@ -1090,13 +1520,13 @@
                 nodes.propertiesSummary.textContent = selection.length + ' элементов';
             }
             if (nodes.propertiesCard) {
-                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Мультивыбор активен. Для точных свойств выберите один узел, для группировки используйте toolbar или кнопку справа.</div>';
+                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Мультивыбор активен. Геометрия считается в world-space, а точные свойства показываются для одного узла.</div>';
             }
             return;
         }
 
         branch = currentEditableBranch(element);
-        props = branch.props || {};
+        props = composeBreakpointProps(element, currentBreakpoint());
         box = branch.box || {};
 
         if (nodes.propertiesSummary) {
@@ -1143,7 +1573,7 @@
         return parts.join(';');
     }
 
-    function buildCommonBodyStyle(props) {
+    function buildCommonBodyStyle(props, box) {
         var styles = [];
 
         if (props.backgroundColor) {
@@ -1167,8 +1597,8 @@
         if (props.backdropBlur) {
             styles.push('backdrop-filter: blur(' + Number(props.backdropBlur) + 'px)');
         }
-        if (props.rotate) {
-            styles.push('transform: rotate(' + Number(props.rotate) + 'deg)');
+        if (box && box.rotation) {
+            styles.push('transform: rotate(' + Number(box.rotation) + 'deg)');
             styles.push('transform-origin: center center');
         }
 
@@ -1194,23 +1624,21 @@
             'top:' + Number(box.y || 0) + 'px',
             'width:' + Math.max(1, Number(box.w || 1)) + 'px',
             'height:' + Math.max(1, Number(box.h || 1)) + 'px',
-            'z-index:' + Number(box.zIndex || 1)
+            'z-index:' + Number(box.zIndex || 1),
+            'display:' + (box.visible === false ? 'none' : 'block')
         ];
         var html = '<div class="' + classes + '" data-element-id="' + escapeHtml(element.id) + '" data-element-type="' + escapeHtml(element.type) + '" style="' + style.join(';') + '">';
 
-        if (primary) {
-            html += '<button class="nbde-el__drag" type="button" data-action="drag-element">Перетащить</button>';
-        }
         if (primary && getSelectionIds().length === 1) {
             html += renderResizeHandles(element, props);
         }
 
         if (element.type === 'text') {
-            html += '<div class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left')) + '">' + textToHtml(props.text || '') + '</div>';
+            html += '<div class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left')) + '">' + textToHtml(props.text || '') + '</div>';
         } else if (element.type === 'button') {
-            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props) + ';color:' + String(props.color || '#ffffff') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
+            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#ffffff') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
         } else if (element.type === 'image' || element.type === 'svg') {
-            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props)) + '">';
+            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
             if (props.src) {
                 html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="object-fit:' + escapeHtml(props.objectFit || 'cover') + ';border-radius:' + Number(props.borderRadius || 0) + 'px">';
             } else {
@@ -1218,15 +1646,15 @@
             }
             html += '</div>';
         } else if (element.type === 'video') {
-            html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
+            html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
         } else if (element.type === 'shape') {
-            html += '<div class="nbde-el__body" style="' + escapeHtml(buildCommonBodyStyle(props) + ';background:' + String(props.backgroundColor || props.fill || '#f97316')) + '"></div>';
+            html += '<div class="nbde-el__body" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || props.fill || '#f97316')) + '"></div>';
         } else if (element.type === 'icon') {
-            html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
+            html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
         } else if (element.type === 'divider') {
-            html += '<div class="nbde-el__body nbde-el__body--divider" style="' + escapeHtml(buildCommonBodyStyle(props) + ';background:' + String(props.backgroundColor || props.color || '#cbd5e1')) + '"></div>';
+            html += '<div class="nbde-el__body nbde-el__body--divider" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || props.color || '#cbd5e1')) + '"></div>';
         } else if (element.type === 'container' || element.type === 'group') {
-            html += '<div class="nbde-el__body nbde-el__body--group" style="' + escapeHtml(buildCommonBodyStyle(props)) + '"></div>';
+            html += '<div class="nbde-el__body nbde-el__body--group" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '"></div>';
             if (element.type === 'group') {
                 html += '<div class="nbde-group-label">Group</div>';
             }
@@ -1241,14 +1669,53 @@
         return html;
     }
 
-    function renderSelectionOverlay() {
-        var bounds = buildSelectionBounds(getSelectionIds(), currentBreakpoint());
+    function projectWorldPoint(viewport, worldX, worldY) {
+        var stageMetrics = currentStageMetrics();
+
+        return GeometryCore.projectWorldPoint(viewport, {
+            x: worldX + stageMetrics.originX,
+            y: worldY
+        });
+    }
+
+    function screenToWorldPoint(screenX, screenY) {
+        var stageMetrics = currentStageMetrics();
+        var point = GeometryCore.screenToWorldPoint(state.scene.viewport, {
+            x: screenX,
+            y: screenY
+        });
+
+        return {
+            x: point.x - stageMetrics.originX,
+            y: point.y
+        };
+    }
+
+    function projectWorldBounds(bounds) {
+        var stageMetrics;
+
+        if (!bounds) {
+            return null;
+        }
+
+        stageMetrics = currentStageMetrics();
+
+        return GeometryCore.projectWorldRect(state.scene.viewport, {
+            x: bounds.x + stageMetrics.originX,
+            y: bounds.y,
+            w: bounds.w,
+            h: bounds.h
+        });
+    }
+
+    function buildSelectionOverlay() {
+        var bounds = projectWorldBounds(buildSelectionBounds(getSelectionIds(), currentBreakpoint()));
 
         if (!bounds || getSelectionIds().length < 2) {
             return '';
         }
 
-        return '<div class="nbde-selection-box" style="left:' + bounds.x + 'px;top:' + bounds.y + 'px;width:' + bounds.w + 'px;height:' + bounds.h + 'px"></div>';
+        return '<div class="nbde-selection-box" style="left:' + roundNumber(bounds.x) + 'px;top:' + roundNumber(bounds.y) + 'px;width:' + roundNumber(bounds.w) + 'px;height:' + roundNumber(bounds.h) + 'px"></div>';
     }
 
     function renderFloatingToolbar() {
@@ -1263,12 +1730,12 @@
             return '';
         }
 
-        bounds = buildSelectionBounds(selectionIds, currentBreakpoint());
+        bounds = projectWorldBounds(buildSelectionBounds(selectionIds, currentBreakpoint()));
         if (!bounds) {
             return '';
         }
 
-        html += '<div class="nbde-toolbar" style="left:' + Math.max(8, bounds.x) + 'px;top:' + Math.max(8, bounds.y - 46) + 'px">';
+        html += '<div class="nbde-toolbar" style="left:' + Math.max(8, roundNumber(bounds.x)) + 'px;top:' + Math.max(8, roundNumber(bounds.y - 46)) + 'px">';
         html += '<button class="nbde-toolbar__button" type="button" data-action="duplicate-element">Дубль</button>';
         html += '<button class="nbde-toolbar__button" type="button" data-action="delete-element">Удалить</button>';
         html += '<button class="nbde-toolbar__button" type="button" data-action="move-layer-backward">-1</button>';
@@ -1284,7 +1751,7 @@
 
         if (primary && selectionIds.length === 1) {
             branch = currentEditableBranch(primary);
-            props = branch.props || {};
+            props = composeBreakpointProps(primary, currentBreakpoint());
 
             if (primary.type === 'text' || primary.type === 'button') {
                 html += '<span class="nbde-toolbar__separator"></span>';
@@ -1305,23 +1772,34 @@
         return html;
     }
 
+    function buildViewportTransform(viewport) {
+        return 'translate(' + roundNumber(-Number(viewport.offsetX || 0) * Number(viewport.zoom || 1)) + 'px,' + roundNumber(-Number(viewport.offsetY || 0) * Number(viewport.zoom || 1)) + 'px) scale(' + Number(viewport.zoom || 1) + ')';
+    }
+
     function renderCanvas() {
         var contract = state.documentState.contract;
-        var tree = buildTree(getElements());
-        var stage = currentStageConfig();
+        var tree = buildTree(getElements(), currentBreakpoint());
+        var stageMetrics = currentStageMetrics();
         var editorRuntime = currentEditorRuntime();
         var background = getPath(contract, 'design.section.background', {});
+        var viewport = state.scene.viewport;
         var html = '';
         var columnsOpacity = clamp(editorRuntime.columnsGridOpacity == null ? 8 : editorRuntime.columnsGridOpacity, 0, 100);
         var columnsColor = String(editorRuntime.columnsGridColor || '#0f172a');
         var index;
 
-        html += '<div class="nbde-stage" id="nbd-stage-scene" style="--nbde-stage-width:' + Number(stage.width || 1200) + 'px;--nbde-stage-height:' + Number(stage.minHeight || 680) + 'px;">';
+        viewport.width = stageMetrics.windowWidth;
+        viewport.height = stageMetrics.height;
+
+        html += '<div class="nbde-stage" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
+        html += '<div class="nbde-stage__viewport' + (state.interactionState.pan ? ' is-panning' : '') + '" id="nbd-stage-viewport">';
+        html += '<div class="nbde-stage__world" id="nbd-stage-world" style="transform:' + escapeHtml(buildViewportTransform(viewport)) + '">';
         html += '<div class="nbde-stage__surface" style="' + escapeHtml(buildBackgroundStyle(background)) + '">';
 
         if (editorRuntime.showColumnsGrid) {
             html += '<div class="nbde-stage__columns" style="color:' + escapeHtml(columnsColor) + ';opacity:' + (columnsOpacity / 100) + '">';
-            for (index = 0; index < Number(editorRuntime.columnsCount || 12); index++) {
+            html += '<div class="nbde-stage__grid-frame"></div>';
+            for (index = 0; index < stageMetrics.columns; index++) {
                 html += '<span></span>';
             }
             html += '</div>';
@@ -1330,7 +1808,7 @@
         if (editorRuntime.showGuides) {
             html += '<div class="nbde-stage__guides">';
             if (state.interactionState.guideX != null) {
-                html += '<div class="nbde-stage__guide nbde-stage__guide--x" style="left:' + Number(state.interactionState.guideX) + 'px"></div>';
+                html += '<div class="nbde-stage__guide nbde-stage__guide--x" style="left:' + Number(state.interactionState.guideX + stageMetrics.originX) + 'px"></div>';
             }
             if (state.interactionState.guideY != null) {
                 html += '<div class="nbde-stage__guide nbde-stage__guide--y" style="top:' + Number(state.interactionState.guideY) + 'px"></div>';
@@ -1341,16 +1819,16 @@
         html += '<div class="nbde-stage__scene">';
 
         if (!tree.length) {
-            html += '<div class="nbde-stage__empty">Добавьте text или shape из палитры, затем двигайте, масштабируйте и редактируйте их прямо на холсте.</div>';
+            html += '<div class="nbde-stage__empty">Добавьте node из палитры. Его координаты живут в world, а viewport только проецирует сцену на экран.</div>';
         } else {
             tree.forEach(function (element) {
                 html += renderElementHtml(element, currentBreakpoint());
             });
         }
 
-        html += renderSelectionOverlay();
-        html += renderFloatingToolbar();
         html += '</div></div></div>';
+        html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + '</div>';
+        html += '</div>';
 
         if (nodes.canvasStage) {
             nodes.canvasStage.innerHTML = html;
@@ -1442,22 +1920,43 @@
 
     function addElement(type) {
         var elements = getElements();
-        var branch = defaultBranch(type);
+        var base = defaultBranch(type);
+        var split = splitProps(type, base.props || {});
         var offset = elements.length * 18;
-        var element = normalizeElement({
+        var element = {
             id: nextElementId(type),
             type: type,
             name: getTypeLabel(type),
-            desktop: branch,
-            tablet: clone(branch),
-            mobile: clone(branch)
-        }, elements.length);
+            role: '',
+            parentId: '',
+            hidden: false,
+            locked: false,
+            constraints: { horizontal: 'left', vertical: 'top' },
+            transform: {
+                x: Number(base.box.x || 0),
+                y: Number(base.box.y || 0),
+                width: Math.max(1, Number(base.box.w || 1)),
+                height: Math.max(1, Number(base.box.h || 1)),
+                rotation: Number(base.props.rotate || 0)
+            },
+            style: split.style,
+            content: split.content,
+            sharedPropKeys: {}
+        };
 
-        withEachBreakpoint(element, function (elementBranch, breakpoint) {
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
             var stageBranch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, currentStageConfig());
-            elementBranch.box.x = Number(stageBranch.paddingX || 24) + offset;
-            elementBranch.box.y = Number(stageBranch.paddingY || 24) + offset;
-            elementBranch.box.zIndex = elements.length + 1;
+
+            state.scene.layout[breakpoint][element.id] = {
+                x: Number(stageBranch.paddingX || 24) + offset,
+                y: Number(stageBranch.paddingY || 24) + offset,
+                width: Math.max(1, Number(base.box.w || 1)),
+                height: Math.max(1, Number(base.box.h || 1)),
+                rotation: Number(base.props.rotate || 0),
+                zIndex: elements.length + 1,
+                visible: true
+            };
+            state.scene.props[breakpoint][element.id] = clone(base.props || {});
         });
 
         elements.push(element);
@@ -1470,14 +1969,12 @@
     function duplicateSelection() {
         var roots = getRootSelectionIds(getSelectionIds());
         var originalElements = getElements();
-        var rootLookup = {};
         var selectedIds = [];
         var originalsById = {};
         var idMap = {};
         var copies = [];
 
         roots.forEach(function (id) {
-            rootLookup[String(id)] = true;
             collectDescendantIds(id).forEach(function (childId) {
                 if (selectedIds.indexOf(String(childId)) === -1) {
                     selectedIds.push(String(childId));
@@ -1490,10 +1987,11 @@
         }
 
         originalElements.forEach(function (element) {
-            originalsById[String(element.id)] = element;
             if (selectedIds.indexOf(String(element.id)) === -1) {
                 return;
             }
+
+            originalsById[String(element.id)] = element;
 
             var copy = clone(element);
             copy.__originId = String(element.id);
@@ -1505,16 +2003,22 @@
 
         copies.forEach(function (copy) {
             var original = originalsById[copy.__originId];
+
             copy.parentId = idMap[String(original.parentId || '')] || String(original.parentId || '');
-
-            if (rootLookup[copy.__originId]) {
-                withEachBreakpoint(copy, function (branchData) {
-                    branchData.box.x = Number(branchData.box.x || 0) + 24;
-                    branchData.box.y = Number(branchData.box.y || 0) + 24;
-                });
-            }
-
             delete copy.__originId;
+
+            ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+                var originalLayout = clone(state.scene.layout[breakpoint][original.id] || createLayoutEntry(copy, {}, {}));
+                var originalProps = clone(state.scene.props[breakpoint][original.id] || {});
+
+                if (roots.indexOf(String(original.id)) >= 0) {
+                    originalLayout.x = Number(originalLayout.x || 0) + 24;
+                    originalLayout.y = Number(originalLayout.y || 0) + 24;
+                }
+
+                state.scene.layout[breakpoint][copy.id] = originalLayout;
+                state.scene.props[breakpoint][copy.id] = originalProps;
+            });
         });
 
         copies.forEach(function (copy) {
@@ -1528,9 +2032,17 @@
         renderAll();
     }
 
+    function removeNodeStores(ids) {
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            ids.forEach(function (id) {
+                delete state.scene.layout[breakpoint][id];
+                delete state.scene.props[breakpoint][id];
+            });
+        });
+    }
+
     function deleteSelection() {
         var ids = [];
-        var elements;
 
         getRootSelectionIds(getSelectionIds()).forEach(function (id) {
             collectDescendantIds(id).forEach(function (descendantId) {
@@ -1544,34 +2056,30 @@
             return;
         }
 
-        elements = getElements().filter(function (element) {
+        state.scene.nodes = getElements().filter(function (element) {
             return ids.indexOf(String(element.id)) === -1;
         });
-
-        state.documentState.contract.content.section.elements = elements;
+        removeNodeStores(ids);
         clearSelection();
         markDirty();
         renderAll();
     }
 
-    function normalizeZIndices() {
+    function normalizeZIndices(breakpoint) {
         var ordered = getElements().slice();
 
         ordered.sort(function (left, right) {
-            var leftBox = resolveBranch(left, currentBreakpoint()).box;
-            var rightBox = resolveBranch(right, currentBreakpoint()).box;
-            return Number(leftBox.zIndex || 0) - Number(rightBox.zIndex || 0);
+            return Number(resolveBranch(left, breakpoint).box.zIndex || 0) - Number(resolveBranch(right, breakpoint).box.zIndex || 0);
         });
 
         ordered.forEach(function (element, index) {
-            withEachBreakpoint(element, function (branchData) {
-                branchData.box.zIndex = index + 1;
-            });
+            ensureLayoutEntry(element, breakpoint).zIndex = index + 1;
         });
     }
 
     function shiftSelectionZIndex(delta) {
         var selectedIds = getRootSelectionIds(getSelectionIds());
+        var breakpoint = currentBreakpoint();
 
         if (!selectedIds.length) {
             return;
@@ -1579,16 +2087,17 @@
 
         selectedIds.forEach(function (id) {
             var element = getElementById(id);
+            var layout;
+
             if (!element) {
                 return;
             }
 
-            withEachBreakpoint(element, function (branchData) {
-                branchData.box.zIndex = Number(branchData.box.zIndex || 1) + delta;
-            });
+            layout = ensureLayoutEntry(element, breakpoint);
+            layout.zIndex = Number(layout.zIndex || 1) + delta;
         });
 
-        normalizeZIndices();
+        normalizeZIndices(breakpoint);
         markDirty();
         renderAll();
     }
@@ -1597,6 +2106,7 @@
         var selectedIds = getRootSelectionIds(getSelectionIds());
         var elements = getElements();
         var max = elements.length + 10;
+        var breakpoint = currentBreakpoint();
 
         if (!selectedIds.length) {
             return;
@@ -1610,12 +2120,10 @@
                 return;
             }
 
-            withEachBreakpoint(element, function (branchData) {
-                branchData.box.zIndex = zIndex;
-            });
+            ensureLayoutEntry(element, breakpoint).zIndex = zIndex;
         });
 
-        normalizeZIndices();
+        normalizeZIndices(breakpoint);
         markDirty();
         renderAll();
     }
@@ -1641,19 +2149,26 @@
             return;
         }
 
-        group = normalizeElement({
+        group = {
             id: nextElementId('group'),
             type: 'group',
             name: 'Группа',
-            parentId: parentId
-        }, elements.length);
+            role: '',
+            parentId: parentId,
+            hidden: false,
+            locked: false,
+            constraints: { horizontal: 'left', vertical: 'top' },
+            transform: { x: 0, y: 0, width: 360, height: 220, rotation: 0 },
+            style: splitProps('group', defaultBranch('group').props).style,
+            content: splitProps('group', defaultBranch('group').props).content,
+            sharedPropKeys: {}
+        };
 
         ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
             var bounds = null;
 
             selected.forEach(function (element) {
-                var branchData = getPath(element, breakpoint, defaultBranch(element.type));
-                var box = branchData.box || {};
+                var box = resolveBranch(element, breakpoint).box;
 
                 if (!bounds) {
                     bounds = {
@@ -1675,21 +2190,23 @@
 
             bounds = bounds || { x: 0, y: 0, right: 1, bottom: 1, zIndex: elements.length + 1 };
             baseBounds[breakpoint] = bounds;
-            group[breakpoint].box.x = bounds.x;
-            group[breakpoint].box.y = bounds.y;
-            group[breakpoint].box.w = Math.max(1, bounds.right - bounds.x);
-            group[breakpoint].box.h = Math.max(1, bounds.bottom - bounds.y);
-            group[breakpoint].box.zIndex = bounds.zIndex;
+            state.scene.layout[breakpoint][group.id] = {
+                x: bounds.x,
+                y: bounds.y,
+                width: Math.max(1, bounds.right - bounds.x),
+                height: Math.max(1, bounds.bottom - bounds.y),
+                rotation: 0,
+                zIndex: bounds.zIndex,
+                visible: true
+            };
+            state.scene.props[breakpoint][group.id] = clone(defaultBranch('group').props);
         });
 
         selected.forEach(function (element) {
             ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
-                var branchData = getPath(element, breakpoint, null);
-                if (!branchData || !branchData.box) {
-                    return;
-                }
-                branchData.box.x = Number(branchData.box.x || 0) - baseBounds[breakpoint].x;
-                branchData.box.y = Number(branchData.box.y || 0) - baseBounds[breakpoint].y;
+                var layout = ensureLayoutEntry(element, breakpoint);
+                layout.x = Number(layout.x || 0) - baseBounds[breakpoint].x;
+                layout.y = Number(layout.y || 0) - baseBounds[breakpoint].y;
             });
             element.parentId = group.id;
         });
@@ -1702,80 +2219,304 @@
 
     function ungroupSelection() {
         var group = getSelectedElement();
-        var elements = getElements();
         var children;
 
         if (!group || group.type !== 'group') {
             return;
         }
 
-        children = elements.filter(function (element) {
+        children = getElements().filter(function (element) {
             return String(element.parentId || '') === String(group.id);
         });
 
         children.forEach(function (child) {
             ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
-                var childBranch = getPath(child, breakpoint, null);
-                var groupBranch = getPath(group, breakpoint, null);
+                var childLayout = ensureLayoutEntry(child, breakpoint);
+                var groupLayout = ensureLayoutEntry(group, breakpoint);
 
-                if (!childBranch || !childBranch.box || !groupBranch || !groupBranch.box) {
-                    return;
-                }
-
-                childBranch.box.x = Number(childBranch.box.x || 0) + Number(groupBranch.box.x || 0);
-                childBranch.box.y = Number(childBranch.box.y || 0) + Number(groupBranch.box.y || 0);
+                childLayout.x = Number(childLayout.x || 0) + Number(groupLayout.x || 0);
+                childLayout.y = Number(childLayout.y || 0) + Number(groupLayout.y || 0);
             });
             child.parentId = String(group.parentId || '');
         });
 
-        state.documentState.contract.content.section.elements = elements.filter(function (element) {
+        state.scene.nodes = getElements().filter(function (element) {
             return String(element.id) !== String(group.id);
         });
+        removeNodeStores([group.id]);
         setSelection(children.map(function (child) { return child.id; }), children.length ? children[children.length - 1].id : null);
         markDirty();
         renderAll();
     }
 
-    function snapValue(value, candidates, threshold) {
-        var best = value;
+    function uniqueSortedNumbers(values) {
+        var seen = {};
+
+        return (values || []).filter(function (value) {
+            var rounded = roundNumber(value);
+            var key = String(rounded);
+
+            if (seen[key]) {
+                return false;
+            }
+
+            seen[key] = true;
+            return true;
+        }).sort(function (left, right) {
+            return Number(left) - Number(right);
+        });
+    }
+
+    function resolveSnapCandidate(value, candidates, threshold) {
+        var bestValue = null;
         var bestDistance = Number(threshold) + 1;
 
         candidates.forEach(function (candidate) {
             var distance = Math.abs(Number(candidate) - Number(value));
+
             if (distance <= threshold && distance < bestDistance) {
-                best = Number(candidate);
+                bestValue = Number(candidate);
                 bestDistance = distance;
             }
         });
 
-        return best;
+        return {
+            matched: bestValue != null,
+            value: bestValue == null ? Number(value) : bestValue,
+            guide: bestValue,
+            distance: bestValue == null ? null : bestDistance
+        };
     }
 
-    function buildCandidates(length, step, count) {
+    function resolveBoxAxisSnap(position, size, candidates, threshold) {
+        var startSnap = resolveSnapCandidate(position, candidates, threshold);
+        var endSnap = resolveSnapCandidate(position + size, candidates, threshold);
+
+        if (startSnap.matched && (!endSnap.matched || startSnap.distance <= endSnap.distance)) {
+            return {
+                value: startSnap.value,
+                guide: startSnap.guide
+            };
+        }
+
+        if (endSnap.matched) {
+            return {
+                value: endSnap.value - size,
+                guide: endSnap.guide
+            };
+        }
+
+        return {
+            value: Number(position),
+            guide: null
+        };
+    }
+
+    function buildLinearCandidates(minValue, maxValue, step) {
         var result = [];
         var size = Math.max(1, Number(step || 8));
-        var columns = Math.max(1, Number(count || 12));
-        var index;
+        var start = Number(minValue || 0);
+        var end = Number(maxValue || 0);
+        var cursor;
+        var swap;
 
-        for (index = 0; index <= length; index += size) {
-            result.push(index);
-        }
-        for (index = 0; index <= columns; index++) {
-            result.push(Math.round((length / columns) * index));
+        if (end < start) {
+            swap = start;
+            start = end;
+            end = swap;
         }
 
-        return result;
+        result.push(start);
+        result.push(end);
+
+        cursor = Math.ceil(start / size) * size;
+        for (; cursor <= end; cursor += size) {
+            result.push(cursor);
+        }
+
+        return uniqueSortedNumbers(result);
     }
 
-    function beginDrag(elementId, event) {
-        var stageScene = document.getElementById('nbd-stage-scene');
-        var wrapper = event.target.closest('.nbde-el');
-        var host = wrapper ? wrapper.parentElement : null;
+    function buildStageXCandidates(stageMetrics, editorRuntime) {
+        var result = buildLinearCandidates(-stageMetrics.bleedX, stageMetrics.width + stageMetrics.bleedX, editorRuntime.gridSize);
+        var cursor = 0;
+        var index;
+
+        result.push(0);
+        result.push(stageMetrics.width);
+
+        for (index = 0; index < stageMetrics.columns; index++) {
+            result.push(cursor);
+            cursor += stageMetrics.columnWidth;
+            result.push(cursor);
+
+            if (index < stageMetrics.columns - 1) {
+                result.push(cursor + stageMetrics.gutter);
+                cursor += stageMetrics.gutter;
+            }
+        }
+
+        return uniqueSortedNumbers(result);
+    }
+
+    function buildHorizontalSnapCandidates(element, hostSize, editorRuntime) {
+        if (element && !element.parentId) {
+            return buildStageXCandidates(currentStageMetrics(), editorRuntime);
+        }
+
+        return buildLinearCandidates(Number(hostSize.minX || 0), Number(hostSize.width || 0), editorRuntime.gridSize);
+    }
+
+    function buildVerticalSnapCandidates(hostSize, editorRuntime) {
+        return buildLinearCandidates(Number(hostSize.minY || 0), Number(hostSize.height || 0), editorRuntime.gridSize);
+    }
+
+    function getViewportNode() {
+        return document.getElementById('nbd-stage-viewport');
+    }
+
+    function getViewportRect() {
+        var viewportNode = getViewportNode();
+        return viewportNode ? viewportNode.getBoundingClientRect() : null;
+    }
+
+    function getScreenPointFromEvent(event) {
+        var rect = getViewportRect();
+
+        if (!rect) {
+            return null;
+        }
+
+        return {
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        };
+    }
+
+    function getWorldPointFromEvent(event) {
+        var screenPoint = getScreenPointFromEvent(event);
+        return screenPoint ? screenToWorldPoint(screenPoint.x, screenPoint.y) : null;
+    }
+
+    function updatePointerTelemetry(event) {
+        var screenPoint = getScreenPointFromEvent(event);
+        var worldPoint;
+
+        if (!screenPoint) {
+            return;
+        }
+
+        worldPoint = screenToWorldPoint(screenPoint.x, screenPoint.y);
+        state.interactionState.pointerTelemetry = {
+            pointerId: event && event.pointerId != null ? String(event.pointerId) : '',
+            screenX: screenPoint.x,
+            screenY: screenPoint.y,
+            worldX: worldPoint.x,
+            worldY: worldPoint.y
+        };
+
+        if (geometryDebugEnabled) {
+            renderStageCard();
+        }
+    }
+
+    function acquirePointerCapture(event, mode, meta) {
+        var capture = InteractionCore.createPointerCaptureSession(event && event.pointerId, mode, meta);
+
+        if (!capture) {
+            return null;
+        }
+
+        state.interactionState.pointerCapture = capture;
+
+        if (root && root.setPointerCapture) {
+            try {
+                root.setPointerCapture(event.pointerId);
+            } catch (error) {
+                // Ignore browsers that reject capture when the pointer is already released.
+            }
+        }
+
+        return capture;
+    }
+
+    function releasePointerCapture(pointerId) {
+        var capture = state.interactionState.pointerCapture;
+
+        if (!capture || !InteractionCore.isPointerCaptureMatch(capture, pointerId)) {
+            return;
+        }
+
+        if (root && root.releasePointerCapture) {
+            try {
+                root.releasePointerCapture(Number(pointerId));
+            } catch (error) {
+                // Ignore release failures after DOM re-render.
+            }
+        }
+
+        state.interactionState.pointerCapture = InteractionCore.releasePointerCaptureSession(capture, pointerId);
+    }
+
+    function isCapturedPointerEvent(event, mode) {
+        return InteractionCore.isPointerCaptureMatch(state.interactionState.pointerCapture, event && event.pointerId, mode);
+    }
+
+    function zoomTo(screenPoint, nextZoom) {
+        state.scene.viewport = GeometryCore.zoomViewportAtScreenPoint(state.scene.viewport, screenPoint, nextZoom, {
+            minZoom: 0.25,
+            maxZoom: 2
+        });
+        clearGuides();
+        renderCanvas();
+        renderStageCard();
+    }
+
+    function resetViewport() {
+        state.scene.viewport.zoom = 1;
+        state.scene.viewport.offsetX = 0;
+        state.scene.viewport.offsetY = 0;
+        clearGuides();
+        renderCanvas();
+        renderStageCard();
+    }
+
+    function beginPan(event) {
+        acquirePointerCapture(event, 'pan', null);
+        state.interactionState.pan = {
+            startClientX: event.clientX,
+            startClientY: event.clientY,
+            startOffsetX: Number(state.scene.viewport.offsetX || 0),
+            startOffsetY: Number(state.scene.viewport.offsetY || 0)
+        };
+        clearGuides();
+        renderCanvas();
+    }
+
+    function hitTestWorldPoint(worldPoint, breakpoint) {
+        var hitId = InteractionCore.hitTestWorldPoint(getElements().map(function (element) {
+            var box = getAbsoluteWorldBox(element, breakpoint);
+            var branch = resolveBranch(element, breakpoint);
+
+            return {
+                id: element.id,
+                parentId: element.parentId || '',
+                hidden: element.hidden,
+                visible: branch.box.visible !== false,
+                zIndex: getAbsoluteZIndex(element, breakpoint),
+                box: box
+            };
+        }), worldPoint);
+
+        return hitId ? getElementById(hitId) : null;
+    }
+
+    function beginDrag(elementId, event, worldPoint) {
         var clickedSelected = isSelected(elementId);
         var nodeIds = clickedSelected ? getRootSelectionIds(getSelectionIds()) : [String(elementId)];
         var startBoxes = {};
 
-        if (!stageScene || !wrapper || !host) {
+        if (!worldPoint) {
             return;
         }
 
@@ -1786,9 +2527,11 @@
         nodeIds.forEach(function (id) {
             var element = getElementById(id);
             var branchData = element ? currentEditableBranch(element) : null;
+
             if (!branchData) {
                 return;
             }
+
             startBoxes[id] = {
                 x: Number(branchData.box.x || 0),
                 y: Number(branchData.box.y || 0),
@@ -1799,15 +2542,14 @@
 
         event.preventDefault();
         event.stopPropagation();
+        acquirePointerCapture(event, 'drag', { elementId: String(elementId) });
 
         state.interactionState.drag = {
             nodeIds: nodeIds,
             primaryId: String(elementId),
-            startClientX: event.clientX,
-            startClientY: event.clientY,
-            startBoxes: startBoxes,
-            hostRect: host.getBoundingClientRect(),
-            stageRect: stageScene.getBoundingClientRect()
+            startWorldX: worldPoint.x,
+            startWorldY: worldPoint.y,
+            startBoxes: startBoxes
         };
 
         renderLayersCard();
@@ -1815,20 +2557,18 @@
         renderCanvas();
     }
 
-    function beginResize(elementId, handle, event) {
-        var stageScene = document.getElementById('nbd-stage-scene');
-        var wrapper = event.target.closest('.nbde-el');
-        var host = wrapper ? wrapper.parentElement : null;
+    function beginResize(elementId, handle, event, worldPoint) {
         var element = getElementById(elementId);
         var branchData = element ? currentEditableBranch(element) : null;
         var childBoxes = {};
 
-        if (!stageScene || !wrapper || !host || !element || !branchData || getSelectionIds().length !== 1) {
+        if (!element || !branchData || getSelectionIds().length !== 1 || !worldPoint) {
             return;
         }
 
         event.preventDefault();
         event.stopPropagation();
+        acquirePointerCapture(event, 'resize', { elementId: String(elementId), handle: String(handle || '') });
 
         if (element.type === 'group') {
             getElements().forEach(function (candidate) {
@@ -1842,60 +2582,72 @@
         state.interactionState.resize = {
             elementId: String(elementId),
             handle: String(handle || ''),
-            startClientX: event.clientX,
-            startClientY: event.clientY,
+            startWorldX: worldPoint.x,
+            startWorldY: worldPoint.y,
             startBox: {
                 x: Number(branchData.box.x || 0),
                 y: Number(branchData.box.y || 0),
                 w: Number(branchData.box.w || 1),
                 h: Number(branchData.box.h || 1)
             },
-            childBoxes: childBoxes,
-            hostRect: host.getBoundingClientRect(),
-            stageRect: stageScene.getBoundingClientRect()
+            childBoxes: childBoxes
         };
 
         renderPropertiesCard();
         renderCanvas();
     }
 
-    function handleDragMove(event) {
-        var drag = state.interactionState.drag;
+    function applyDragAtWorldPoint(drag, worldPoint) {
         var editorRuntime = currentEditorRuntime();
         var primaryStart;
         var primaryElement;
-        var primaryBranch;
-        var hostWidth;
-        var hostHeight;
+        var hostSize;
+        var nextPrimaryBox;
         var nextX;
         var nextY;
         var deltaX;
         var deltaY;
         var xCandidates;
         var yCandidates;
+        var xSnap;
+        var ySnap;
 
-        if (!drag) {
-            return;
+        if (!drag || !worldPoint) {
+            return false;
         }
 
         primaryStart = drag.startBoxes[drag.primaryId];
         primaryElement = getElementById(drag.primaryId);
-        primaryBranch = primaryElement ? currentEditableBranch(primaryElement) : null;
 
-        if (!primaryStart || !primaryBranch) {
-            return;
+        if (!primaryStart || !primaryElement) {
+            return false;
         }
 
-        hostWidth = Math.max(1, Math.round(drag.hostRect.width));
-        hostHeight = Math.max(1, Math.round(drag.hostRect.height));
-        nextX = primaryStart.x + (event.clientX - drag.startClientX);
-        nextY = primaryStart.y + (event.clientY - drag.startClientY);
+        hostSize = getLocalHostSize(primaryElement, currentBreakpoint());
+        nextPrimaryBox = GeometryCore.applyDragSession({
+            startBox: primaryStart,
+            startPointerWorld: {
+                x: drag.startWorldX,
+                y: drag.startWorldY
+            }
+        }, worldPoint, {
+            bounds: hostSize
+        });
+        nextX = nextPrimaryBox.x;
+        nextY = nextPrimaryBox.y;
 
         if (editorRuntime.snapToGrid) {
-            xCandidates = buildCandidates(hostWidth, editorRuntime.gridSize, editorRuntime.columnsCount);
-            yCandidates = buildCandidates(hostHeight, editorRuntime.gridSize, 12);
-            nextX = snapValue(nextX, xCandidates, Number(editorRuntime.snapThreshold || 6));
-            nextY = snapValue(nextY, yCandidates, Number(editorRuntime.snapThreshold || 6));
+            xCandidates = buildHorizontalSnapCandidates(primaryElement, hostSize, editorRuntime);
+            yCandidates = buildVerticalSnapCandidates(hostSize, editorRuntime);
+            xSnap = resolveBoxAxisSnap(nextX, nextPrimaryBox.w, xCandidates, Number(editorRuntime.snapThreshold || 6));
+            ySnap = resolveBoxAxisSnap(nextY, nextPrimaryBox.h, yCandidates, Number(editorRuntime.snapThreshold || 6));
+            nextX = xSnap.value;
+            nextY = ySnap.value;
+            state.interactionState.guideX = primaryElement.parentId ? null : xSnap.guide;
+            state.interactionState.guideY = primaryElement.parentId ? null : ySnap.guide;
+        } else {
+            state.interactionState.guideX = null;
+            state.interactionState.guideY = null;
         }
 
         deltaX = nextX - primaryStart.x;
@@ -1905,138 +2657,144 @@
             var element = getElementById(id);
             var branchData = element ? currentEditableBranch(element) : null;
             var startBox = drag.startBoxes[id];
+            var localHostSize;
+            var nextBox;
 
-            if (!branchData || !startBox) {
+            if (!branchData || !startBox || !element) {
                 return;
             }
 
-            branchData.box.x = clamp(startBox.x + deltaX, 0, Math.max(0, hostWidth - Number(startBox.w || 1)));
-            branchData.box.y = clamp(startBox.y + deltaY, 0, Math.max(0, hostHeight - Number(startBox.h || 1)));
+            localHostSize = getLocalHostSize(element, currentBreakpoint());
+            nextBox = GeometryCore.applyDragSession({
+                startBox: startBox,
+                startPointerWorld: {
+                    x: 0,
+                    y: 0
+                }
+            }, {
+                x: deltaX,
+                y: deltaY
+            }, {
+                bounds: localHostSize
+            });
+            branchData.box.x = nextBox.x;
+            branchData.box.y = nextBox.y;
         });
-
-        state.interactionState.guideX = Math.max(0, Math.round((drag.hostRect.left - drag.stageRect.left) + nextX));
-        state.interactionState.guideY = Math.max(0, Math.round((drag.hostRect.top - drag.stageRect.top) + nextY));
         markDirty();
         renderPropertiesCard();
         renderCanvas();
+        return true;
     }
 
-    function handleResizeMove(event) {
-        var resize = state.interactionState.resize;
+    function handleDragMove(event) {
+        var drag = state.interactionState.drag;
+        var worldPoint;
+
+        if (!drag || !isCapturedPointerEvent(event, 'drag')) {
+            return;
+        }
+
+        worldPoint = getWorldPointFromEvent(event);
+        applyDragAtWorldPoint(drag, worldPoint);
+    }
+
+    function applyResizeAtWorldPoint(resize, worldPoint) {
         var editorRuntime = currentEditorRuntime();
         var element;
         var branchData;
         var props;
         var minSize;
         var handle;
-        var dx;
-        var dy;
-        var hostWidth;
-        var hostHeight;
-        var startLeft;
-        var startTop;
-        var startRight;
-        var startBottom;
-        var nextLeft;
-        var nextTop;
-        var nextRight;
-        var nextBottom;
+        var hostSize;
         var xCandidates;
         var yCandidates;
-        var ratio;
-        var widthByDx;
-        var widthByDy;
-        var nextWidth;
-        var nextHeight;
+        var nextBox;
+        var nextRight;
+        var nextBottom;
         var scaleX;
         var scaleY;
+        var threshold;
+        var xSnap;
+        var ySnap;
+        var minX;
+        var minY;
 
-        if (!resize) {
-            return;
+        if (!resize || !worldPoint) {
+            return false;
         }
 
         element = getElementById(resize.elementId);
         branchData = element ? currentEditableBranch(element) : null;
 
         if (!element || !branchData) {
-            return;
+            return false;
         }
 
-        props = branchData.props || {};
+        props = composeBreakpointProps(element, currentBreakpoint());
         minSize = getMinBoxSize(element, props);
         handle = resize.handle;
-        dx = event.clientX - resize.startClientX;
-        dy = event.clientY - resize.startClientY;
-        hostWidth = Math.max(1, Math.round(resize.hostRect.width));
-        hostHeight = Math.max(1, Math.round(resize.hostRect.height));
-        startLeft = resize.startBox.x;
-        startTop = resize.startBox.y;
-        startRight = resize.startBox.x + resize.startBox.w;
-        startBottom = resize.startBox.y + resize.startBox.h;
-        nextLeft = startLeft;
-        nextTop = startTop;
-        nextRight = startRight;
-        nextBottom = startBottom;
+        hostSize = getLocalHostSize(element, currentBreakpoint());
+        threshold = Number(editorRuntime.snapThreshold || 6);
 
-        if (isMediaType(element.type) && handle.length === 2) {
-            ratio = Math.max(0.01, resize.startBox.w / Math.max(1, resize.startBox.h));
-            widthByDx = resize.startBox.w + ((handle.indexOf('w') >= 0 ? -1 : 1) * dx);
-            widthByDy = (resize.startBox.h + ((handle.indexOf('n') >= 0 ? -1 : 1) * dy)) * ratio;
-            nextWidth = Math.max(minSize.w, Math.abs(widthByDx) >= Math.abs(widthByDy) ? widthByDx : widthByDy);
-            nextHeight = Math.max(minSize.h, nextWidth / ratio);
-
-            if (handle.indexOf('w') >= 0) {
-                nextLeft = startRight - nextWidth;
-            } else {
-                nextRight = startLeft + nextWidth;
+        nextBox = GeometryCore.applyResizeSession({
+            startBox: resize.startBox,
+            handle: handle,
+            startPointerWorld: {
+                x: resize.startWorldX,
+                y: resize.startWorldY
             }
-            if (handle.indexOf('n') >= 0) {
-                nextTop = startBottom - nextHeight;
-            } else {
-                nextBottom = startTop + nextHeight;
-            }
-        } else {
-            if (handle.indexOf('w') >= 0) {
-                nextLeft = startLeft + dx;
-            }
-            if (handle.indexOf('e') >= 0) {
-                nextRight = startRight + dx;
-            }
-            if (handle.indexOf('n') >= 0) {
-                nextTop = startTop + dy;
-            }
-            if (handle.indexOf('s') >= 0) {
-                nextBottom = startBottom + dy;
-            }
-        }
+        }, worldPoint, {
+            bounds: hostSize,
+            minWidth: minSize.w,
+            minHeight: minSize.h,
+            keepAspectRatio: isMediaType(element.type) && handle.length === 2
+        });
 
         if (editorRuntime.snapToGrid) {
-            xCandidates = buildCandidates(hostWidth, editorRuntime.gridSize, editorRuntime.columnsCount);
-            yCandidates = buildCandidates(hostHeight, editorRuntime.gridSize, 12);
+            xCandidates = buildHorizontalSnapCandidates(element, hostSize, editorRuntime);
+            yCandidates = buildVerticalSnapCandidates(hostSize, editorRuntime);
+            nextRight = nextBox.x + nextBox.w;
+            nextBottom = nextBox.y + nextBox.h;
 
             if (handle.indexOf('w') >= 0) {
-                nextLeft = snapValue(nextLeft, xCandidates, Number(editorRuntime.snapThreshold || 6));
+                xSnap = resolveSnapCandidate(nextBox.x, xCandidates, threshold);
+                nextBox.x = xSnap.value;
             }
             if (handle.indexOf('e') >= 0) {
-                nextRight = snapValue(nextRight, xCandidates, Number(editorRuntime.snapThreshold || 6));
+                xSnap = resolveSnapCandidate(nextRight, xCandidates, threshold);
+                nextRight = xSnap.value;
             }
             if (handle.indexOf('n') >= 0) {
-                nextTop = snapValue(nextTop, yCandidates, Number(editorRuntime.snapThreshold || 6));
+                ySnap = resolveSnapCandidate(nextBox.y, yCandidates, threshold);
+                nextBox.y = ySnap.value;
             }
             if (handle.indexOf('s') >= 0) {
-                nextBottom = snapValue(nextBottom, yCandidates, Number(editorRuntime.snapThreshold || 6));
+                ySnap = resolveSnapCandidate(nextBottom, yCandidates, threshold);
+                nextBottom = ySnap.value;
             }
+
+            nextBox.w = Math.max(minSize.w, nextRight - nextBox.x);
+            nextBox.h = Math.max(minSize.h, nextBottom - nextBox.y);
+            state.interactionState.guideX = element.parentId ? null : (xSnap ? xSnap.guide : null);
+            state.interactionState.guideY = element.parentId ? null : (ySnap ? ySnap.guide : null);
+        } else {
+            state.interactionState.guideX = null;
+            state.interactionState.guideY = null;
         }
 
-        nextLeft = clamp(nextLeft, 0, hostWidth - minSize.w);
-        nextTop = clamp(nextTop, 0, hostHeight - minSize.h);
-        nextRight = clamp(nextRight, nextLeft + minSize.w, hostWidth);
-        nextBottom = clamp(nextBottom, nextTop + minSize.h, hostHeight);
+        minX = Number(hostSize.minX || 0);
+        minY = Number(hostSize.minY || 0);
+        nextBox.x = clamp(nextBox.x, minX, hostSize.width - minSize.w);
+        nextBox.y = clamp(nextBox.y, minY, hostSize.height - minSize.h);
+        nextRight = clamp(nextBox.x + nextBox.w, nextBox.x + minSize.w, hostSize.width);
+        nextBottom = clamp(nextBox.y + nextBox.h, nextBox.y + minSize.h, hostSize.height);
+        nextBox.w = Math.max(minSize.w, Math.round(nextRight - nextBox.x));
+        nextBox.h = Math.max(minSize.h, Math.round(nextBottom - nextBox.y));
 
-        branchData.box.x = Math.round(nextLeft);
-        branchData.box.y = Math.round(nextTop);
-        branchData.box.w = Math.round(nextRight - nextLeft);
-        branchData.box.h = Math.round(nextBottom - nextTop);
+        branchData.box.x = nextBox.x;
+        branchData.box.y = nextBox.y;
+        branchData.box.w = nextBox.w;
+        branchData.box.h = nextBox.h;
 
         if (element.type === 'group' && resize.childBoxes) {
             scaleX = branchData.box.w / Math.max(1, resize.startBox.w);
@@ -2058,8 +2816,8 @@
             });
         }
 
-        state.interactionState.guideX = handle.indexOf('w') >= 0 ? branchData.box.x : (handle.indexOf('e') >= 0 ? (branchData.box.x + branchData.box.w) : null);
-        state.interactionState.guideY = handle.indexOf('n') >= 0 ? branchData.box.y : (handle.indexOf('s') >= 0 ? (branchData.box.y + branchData.box.h) : null);
+        state.interactionState.guideX = handle.indexOf('w') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).x : (handle.indexOf('e') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).x + branchData.box.w) : null);
+        state.interactionState.guideY = handle.indexOf('n') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).y : (handle.indexOf('s') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).y + branchData.box.h) : null);
         markDirty();
         renderPropertiesCard();
         renderCanvas();
@@ -2068,43 +2826,81 @@
             syncInlineTextHeight(element.id, nodes.canvasStage.querySelector('.nbde-el[data-element-id="' + selectorEscape(element.id) + '"] .nbde-el__body--text'), true);
             renderPropertiesCard();
         }
+
+        return true;
     }
 
-    function finishInteraction() {
-        if (!state.interactionState.drag && !state.interactionState.resize) {
+    function handleResizeMove(event) {
+        var resize = state.interactionState.resize;
+        var worldPoint;
+
+        if (!resize || !isCapturedPointerEvent(event, 'resize')) {
             return;
         }
 
+        worldPoint = getWorldPointFromEvent(event);
+        applyResizeAtWorldPoint(resize, worldPoint);
+    }
+
+    function handlePanMove(event) {
+        var pan = state.interactionState.pan;
+        var zoom;
+
+        if (!pan || !isCapturedPointerEvent(event, 'pan')) {
+            return;
+        }
+
+        zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
+        state.scene.viewport.offsetX = Number(pan.startOffsetX || 0) - ((event.clientX - pan.startClientX) / zoom);
+        state.scene.viewport.offsetY = Number(pan.startOffsetY || 0) - ((event.clientY - pan.startClientY) / zoom);
+        renderCanvas();
+        renderStageCard();
+    }
+
+    function finishInteraction(event) {
+        var pointerId = event && event.pointerId != null
+            ? String(event.pointerId)
+            : (state.interactionState.pointerCapture ? String(state.interactionState.pointerCapture.pointerId) : '');
+
+        if (event && state.interactionState.pointerCapture && !InteractionCore.isPointerCaptureMatch(state.interactionState.pointerCapture, pointerId)) {
+            return;
+        }
+
+        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan) {
+            return;
+        }
+
+        releasePointerCapture(pointerId);
         state.interactionState.drag = null;
         state.interactionState.resize = null;
+        state.interactionState.pan = null;
         clearGuides();
         renderPropertiesCard();
         renderCanvas();
+        renderStageCard();
     }
 
     function applyToolbarAction(action) {
         var element = getSelectedElement();
-        var branchData = element ? currentEditableBranch(element) : null;
-        var props = branchData ? branchData.props : null;
 
-        if (!element || !branchData || !props) {
+        if (!element) {
             return false;
         }
 
         if (action === 'toolbar-text-increase') {
-            props.fontSize = Number(props.fontSize || (element.type === 'button' ? 16 : 36)) + 2;
+            writeNodeSharedProp(element, 'fontSize', Number(composeBreakpointProps(element, currentBreakpoint()).fontSize || (element.type === 'button' ? 16 : 36)) + 2);
             return true;
         }
         if (action === 'toolbar-text-decrease') {
-            props.fontSize = Math.max(10, Number(props.fontSize || (element.type === 'button' ? 16 : 36)) - 2);
+            writeNodeSharedProp(element, 'fontSize', Math.max(10, Number(composeBreakpointProps(element, currentBreakpoint()).fontSize || (element.type === 'button' ? 16 : 36)) - 2));
             return true;
         }
         if (action === 'toolbar-radius-increase') {
-            props.borderRadius = Number(props.borderRadius || 0) + 4;
+            writeNodeSharedProp(element, 'borderRadius', Number(composeBreakpointProps(element, currentBreakpoint()).borderRadius || 0) + 4);
             return true;
         }
         if (action === 'toolbar-radius-decrease') {
-            props.borderRadius = Math.max(0, Number(props.borderRadius || 0) - 4);
+            writeNodeSharedProp(element, 'borderRadius', Math.max(0, Number(composeBreakpointProps(element, currentBreakpoint()).borderRadius || 0) - 4));
             return true;
         }
 
@@ -2113,31 +2909,123 @@
 
     function applyToolbarColor(target) {
         var element = getSelectedElement();
-        var branchData = element ? currentEditableBranch(element) : null;
-        var props = branchData ? branchData.props : null;
         var role = target.dataset.toolbarColor;
 
-        if (!element || !props || !role) {
+        if (!element || !role) {
             return false;
         }
 
         if (role === 'text') {
-            props.color = target.value;
+            writeNodeSharedProp(element, 'color', target.value);
             return true;
         }
 
         if (role === 'fill') {
-            props.backgroundColor = target.value;
-            props.fill = target.value;
+            writeNodeSharedProp(element, 'backgroundColor', target.value);
+            writeNodeSharedProp(element, 'fill', target.value);
             return true;
         }
 
         return false;
     }
 
+    function buildDebugSnapshot() {
+        return {
+            breakpoint: currentBreakpoint(),
+            viewport: clone(state.scene.viewport),
+            selectionIds: getSelectionIds().slice(),
+            selectedElementId: state.uiState.selectedElementId,
+            pointerCapture: clone(state.interactionState.pointerCapture),
+            pointerTelemetry: clone(state.interactionState.pointerTelemetry),
+            nodes: getElements().map(function (element) {
+                return {
+                    id: element.id,
+                    type: element.type,
+                    box: resolveBranch(element, currentBreakpoint()).box,
+                    absoluteBox: getAbsoluteWorldBox(element, currentBreakpoint())
+                };
+            })
+        };
+    }
+
+    function createSyntheticEvent() {
+        return {
+            preventDefault: function () {},
+            stopPropagation: function () {}
+        };
+    }
+
+    function attachDebugApi() {
+        if (!geometryDebugEnabled) {
+            try {
+                delete window.NordicblocksDesignBlockDebug;
+            } catch (error) {
+                window.NordicblocksDesignBlockDebug = undefined;
+            }
+            return;
+        }
+
+        window.NordicblocksDesignBlockDebug = {
+            snapshot: function () {
+                return buildDebugSnapshot();
+            },
+            projectWorldPoint: function (worldX, worldY) {
+                return projectWorldPoint(state.scene.viewport, worldX, worldY);
+            },
+            screenToWorldPoint: function (screenX, screenY) {
+                return screenToWorldPoint(screenX, screenY);
+            },
+            zoomToValue: function (value) {
+                zoomTo(null, Number(value || 1));
+                return buildDebugSnapshot();
+            },
+            dragSelectionByScreen: function (screenDx, screenDy) {
+                var element = getSelectedElement();
+                var absoluteBox;
+                var startScreen;
+                var startWorld;
+
+                if (!element) {
+                    return null;
+                }
+
+                absoluteBox = getAbsoluteWorldBox(element, currentBreakpoint());
+                startScreen = projectWorldPoint(state.scene.viewport, absoluteBox.x + (absoluteBox.w / 2), absoluteBox.y + (absoluteBox.h / 2));
+                startWorld = screenToWorldPoint(startScreen.x, startScreen.y);
+                beginDrag(element.id, createSyntheticEvent(), startWorld);
+                applyDragAtWorldPoint(state.interactionState.drag, screenToWorldPoint(startScreen.x + Number(screenDx || 0), startScreen.y + Number(screenDy || 0)));
+                finishInteraction();
+                return buildDebugSnapshot();
+            },
+            resizeSelectionEastByScreen: function (screenDx) {
+                var element = getSelectedElement();
+                var absoluteBox;
+                var startScreen;
+                var startWorld;
+
+                if (!element) {
+                    return null;
+                }
+
+                absoluteBox = getAbsoluteWorldBox(element, currentBreakpoint());
+                startScreen = projectWorldPoint(state.scene.viewport, absoluteBox.x + absoluteBox.w, absoluteBox.y + (absoluteBox.h / 2));
+                startWorld = screenToWorldPoint(startScreen.x, startScreen.y);
+                beginResize(element.id, 'e', createSyntheticEvent(), startWorld);
+                applyResizeAtWorldPoint(state.interactionState.resize, screenToWorldPoint(startScreen.x + Number(screenDx || 0), startScreen.y));
+                finishInteraction();
+                return buildDebugSnapshot();
+            },
+            hitTestScreen: function (screenX, screenY) {
+                var element = hitTestWorldPoint(screenToWorldPoint(screenX, screenY), currentBreakpoint());
+                return element ? element.id : null;
+            }
+        };
+    }
+
     async function saveContract() {
         var response;
         var payload;
+        var serializedContract;
 
         if (!state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
             return;
@@ -2146,6 +3034,8 @@
         state.uiState.isSaving = true;
         state.uiState.lastError = '';
         renderStatus();
+
+        serializedContract = serializeSceneIntoContract(state.documentState.contract);
 
         try {
             response = await fetch(state.editor.saveUrl, {
@@ -2157,7 +3047,7 @@
                 credentials: 'same-origin',
                 body: JSON.stringify({
                     title: state.documentState.block.title || '',
-                    contract: state.documentState.contract,
+                    contract: serializedContract,
                     csrf_token: state.editor.csrfToken
                 })
             });
@@ -2167,7 +3057,8 @@
                 throw new Error(payload.error || 'save_failed');
             }
 
-            state.documentState.contract = normalizeContract(payload.contract || state.documentState.contract);
+            state.documentState.contract = normalizeContract(payload.contract || serializedContract);
+            state.scene = buildSceneFromContract(state.documentState.contract);
             state.documentState.lastSavedAt = new Date().toLocaleTimeString('ru-RU', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -2211,6 +3102,7 @@
 
             state.documentState.block = payload.block || null;
             state.documentState.contract = normalizeContract(payload.contract || {});
+            state.scene = buildSceneFromContract(state.documentState.contract);
             state.palette = getPath(payload, 'palette.items', []).filter(function (item) {
                 return item && item.type !== 'group';
             });
@@ -2235,98 +3127,93 @@
 
     root.addEventListener('click', function (event) {
         var actionNode = event.target.closest('[data-action]');
-        var elementNode = event.target.closest('.nbde-el');
         var action;
-        var insideCanvas = !!event.target.closest('#nbd-canvas-stage');
 
-        if (actionNode) {
-            action = actionNode.dataset.action;
-
-            if (action === 'add-element') {
-                addElement(actionNode.dataset.type || 'text');
-                return;
-            }
-            if (action === 'reload-state') {
-                loadState();
-                return;
-            }
-            if (action === 'select-element') {
-                if (event.shiftKey) {
-                    toggleSelection(actionNode.dataset.elementId || '');
-                } else {
-                    setSelection([actionNode.dataset.elementId || ''], actionNode.dataset.elementId || '');
-                }
-                renderAll();
-                return;
-            }
-            if (action === 'duplicate-element') {
-                duplicateSelection();
-                return;
-            }
-            if (action === 'delete-element') {
-                deleteSelection();
-                return;
-            }
-            if (action === 'group-selection') {
-                groupSelection();
-                return;
-            }
-            if (action === 'ungroup-selection') {
-                ungroupSelection();
-                return;
-            }
-            if (action === 'move-layer-forward') {
-                shiftSelectionZIndex(1);
-                return;
-            }
-            if (action === 'move-layer-backward') {
-                shiftSelectionZIndex(-1);
-                return;
-            }
-            if (action === 'bring-to-front') {
-                sendSelectionToEdge('front');
-                return;
-            }
-            if (action === 'send-to-back') {
-                sendSelectionToEdge('back');
-                return;
-            }
-            if (applyToolbarAction(action)) {
-                markDirty();
-                renderAll();
-                return;
-            }
+        if (!actionNode) {
+            return;
         }
 
-        if (elementNode) {
-            if (event.target.closest('[data-inline-edit="text"]')) {
-                return;
-            }
+        action = actionNode.dataset.action;
 
+        if (action === 'add-element') {
+            addElement(actionNode.dataset.type || 'text');
+            return;
+        }
+        if (action === 'reload-state') {
+            loadState();
+            return;
+        }
+        if (action === 'select-element') {
             if (event.shiftKey) {
-                toggleSelection(elementNode.dataset.elementId || '');
+                toggleSelection(actionNode.dataset.elementId || '');
             } else {
-                setSelection([elementNode.dataset.elementId || ''], elementNode.dataset.elementId || '');
+                setSelection([actionNode.dataset.elementId || ''], actionNode.dataset.elementId || '');
             }
             renderAll();
             return;
         }
-
-        if (insideCanvas) {
-            clearSelection();
+        if (action === 'duplicate-element') {
+            duplicateSelection();
+            return;
+        }
+        if (action === 'delete-element') {
+            deleteSelection();
+            return;
+        }
+        if (action === 'group-selection') {
+            groupSelection();
+            return;
+        }
+        if (action === 'ungroup-selection') {
+            ungroupSelection();
+            return;
+        }
+        if (action === 'move-layer-forward') {
+            shiftSelectionZIndex(1);
+            return;
+        }
+        if (action === 'move-layer-backward') {
+            shiftSelectionZIndex(-1);
+            return;
+        }
+        if (action === 'bring-to-front') {
+            sendSelectionToEdge('front');
+            return;
+        }
+        if (action === 'send-to-back') {
+            sendSelectionToEdge('back');
+            return;
+        }
+        if (action === 'zoom-in') {
+            zoomTo(null, Number(state.scene.viewport.zoom || 1) * 1.15);
+            return;
+        }
+        if (action === 'zoom-out') {
+            zoomTo(null, Number(state.scene.viewport.zoom || 1) / 1.15);
+            return;
+        }
+        if (action === 'zoom-reset' || action === 'camera-reset') {
+            resetViewport();
+            return;
+        }
+        if (applyToolbarAction(action)) {
+            markDirty();
             renderAll();
         }
     });
 
     root.addEventListener('dblclick', function (event) {
-        var wrapper = event.target.closest('.nbde-el');
+        var stageViewport = event.target.closest('#nbd-stage-viewport');
+        var worldPoint;
         var element;
 
-        if (!wrapper) {
+        if (!stageViewport || event.target.closest('[data-inline-edit="text"]')) {
             return;
         }
 
-        element = getElementById(wrapper.dataset.elementId || '');
+        worldPoint = getWorldPointFromEvent(event);
+        element = worldPoint ? hitTestWorldPoint(worldPoint, currentBreakpoint()) : null;
+
         if (!element || !isEditableType(element.type)) {
             return;
         }
@@ -2359,7 +3246,7 @@
                 return;
             }
 
-            currentEditableBranch(inlineElement).props.text = normalizeInlineText(target);
+            writeNodeSharedProp(inlineElement, 'text', normalizeInlineText(target));
             syncInlineTextHeight(inlineElement.id, target, inlineElement.type === 'text');
             setSelection([inlineElement.id], inlineElement.id);
             markDirty();
@@ -2373,6 +3260,7 @@
                 renderLayersCard();
             }
             renderCanvas();
+            renderPropertiesCard();
         }
     });
 
@@ -2391,6 +3279,7 @@
                 renderLayersCard();
             }
             renderCanvas();
+            renderPropertiesCard();
         }
     });
 
@@ -2423,22 +3312,75 @@
 
     root.addEventListener('pointerdown', function (event) {
         var resizeNode = event.target.closest('[data-action="resize-element"]');
-        var dragNode = event.target.closest('[data-action="drag-element"]');
         var wrapper = event.target.closest('.nbde-el');
+        var stageViewport = event.target.closest('#nbd-stage-viewport');
+        var worldPoint;
+        var hitElement;
 
-        if (resizeNode && wrapper) {
-            beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event);
+        if (!stageViewport) {
             return;
         }
-        if (dragNode && wrapper) {
-            beginDrag(wrapper.dataset.elementId || '', event);
+
+        updatePointerTelemetry(event);
+
+        if (event.button === 1 || (state.interactionState.spacePressed && event.button === 0)) {
+            event.preventDefault();
+            beginPan(event);
+            return;
         }
+
+        worldPoint = getWorldPointFromEvent(event);
+
+        if (resizeNode && wrapper) {
+            beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event, worldPoint);
+            return;
+        }
+
+        if (event.target.closest('[data-inline-edit="text"]') && state.uiState.editingTextId) {
+            return;
+        }
+
+        hitElement = worldPoint ? hitTestWorldPoint(worldPoint, currentBreakpoint()) : null;
+
+        if (!hitElement) {
+            clearSelection();
+            renderAll();
+            return;
+        }
+
+        if (event.shiftKey) {
+            toggleSelection(hitElement.id);
+            renderAll();
+            return;
+        }
+
+        setSelection([hitElement.id], hitElement.id);
+        beginDrag(hitElement.id, event, worldPoint);
     });
 
-    document.addEventListener('pointermove', handleResizeMove);
-    document.addEventListener('pointermove', handleDragMove);
+    document.addEventListener('pointermove', function (event) {
+        updatePointerTelemetry(event);
+        handlePanMove(event);
+        handleResizeMove(event);
+        handleDragMove(event);
+    });
     document.addEventListener('pointerup', finishInteraction);
     document.addEventListener('pointercancel', finishInteraction);
+
+    root.addEventListener('wheel', function (event) {
+        var stageViewport = event.target.closest('#nbd-stage-viewport');
+        var screenPoint;
+        var direction;
+
+        if (!stageViewport) {
+            return;
+        }
+
+        event.preventDefault();
+        screenPoint = getScreenPointFromEvent(event);
+        direction = event.deltaY < 0 ? 1.1 : (1 / 1.1);
+        zoomTo(screenPoint, Number(state.scene.viewport.zoom || 1) * direction);
+    }, { passive: false });
 
     if (nodes.saveButton) {
         nodes.saveButton.addEventListener('click', function () {
@@ -2450,6 +3392,10 @@
         var active = document.activeElement;
         var tagName = active && active.tagName ? active.tagName.toLowerCase() : '';
         var editable = !!(active && active.isContentEditable);
+
+        if (String(event.key || '') === ' ') {
+            state.interactionState.spacePressed = true;
+        }
 
         if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 's') {
             event.preventDefault();
@@ -2474,6 +3420,12 @@
         }
     });
 
+    window.addEventListener('keyup', function (event) {
+        if (String(event.key || '') === ' ') {
+            state.interactionState.spacePressed = false;
+        }
+    });
+
     Array.prototype.forEach.call(root.querySelectorAll('[data-breakpoint]'), function (button) {
         button.addEventListener('click', function () {
             state.uiState.activeBreakpoint = button.dataset.breakpoint || 'desktop';
@@ -2482,5 +3434,6 @@
         });
     });
 
+    attachDebugApi();
     loadState();
 })();
