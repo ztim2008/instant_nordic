@@ -264,6 +264,120 @@ function nbhBuildDesignControlRenderers() {
 
             return body;
         },
+        'slider-item-typography-panel': function(panel, bp) {
+            var profile = nbhBlockUiProfile();
+            var typo = profile.slideTypography || {};
+            var body = nbhBreakpointToggle();
+
+            function section(label, path, defaults) {
+                return '<div class="nbh-note" style="margin-top:.75rem;background:#fff;border:1px solid #dbe4ef;">'
+                    + '<strong style="display:block;margin-bottom:.65rem;color:#0f172a;">' + label + '</strong>'
+                    + nbhResponsiveTypographyPanel(path, defaults, bp, { hasMarginBottom: false, hasMaxWidth: false, includeBlackWeight: true })
+                    + '</div>';
+            }
+
+            if (nbhHasEntity('slideEyebrow')) {
+                body += section('Eyebrow', 'design.entities.slideEyebrow', typo.eyebrow || profile.subtitle);
+            }
+            if (nbhHasEntity('slideTitle')) {
+                body += section('Заголовок слайда', 'design.entities.slideTitle', typo.title || profile.title);
+            }
+            if (nbhHasEntity('slideText')) {
+                body += section('Текст слайда', 'design.entities.slideText', typo.text || profile.subtitle);
+            }
+            if (nbhHasEntity('slideMeta')) {
+                body += section('Meta', 'design.entities.slideMeta', typo.meta || profile.subtitle);
+            }
+            if (nbhHasEntity('slidePrimaryAction')) {
+                body += section('Primary CTA', 'design.entities.slidePrimaryAction', typo.primaryAction || profile.buttonsText);
+            }
+            if (nbhHasEntity('slideSecondaryAction')) {
+                body += section('Secondary CTA', 'design.entities.slideSecondaryAction', typo.secondaryAction || profile.buttonsText);
+            }
+
+            return body + '<div class="nbh-note">Typography slider items хранится отдельно от секционного title/subtitle, чтобы rail можно было настраивать независимо.</div>';
+        },
+        'slider-media-design-panel': function() {
+            var profile = nbhBlockUiProfile();
+            var defaults = profile.slideMedia || { aspectRatio: '4:3', objectFit: 'cover', radius: 24 };
+            return '<div class="nbh-grid-2">'
+                + nbhField('Формат кадра', nbhSelect('design.entities.slideMedia.aspectRatio', [
+                    { value: 'auto', label: 'По размеру изображения' },
+                    { value: '16:9', label: '16:9' },
+                    { value: '4:3', label: '4:3' },
+                    { value: '1:1', label: '1:1' },
+                    { value: '3:4', label: '3:4' }
+                ], defaults.aspectRatio || '4:3'))
+                + nbhField('Вписывание', nbhSelect('design.entities.slideMedia.objectFit', [
+                    { value: 'cover', label: 'Заполнить кадр' },
+                    { value: 'contain', label: 'Показать целиком' }
+                ], defaults.objectFit || 'cover'))
+                + nbhField('Скругление', nbhInput('design.entities.slideMedia.radius', { inputType: 'number', type: 'number', fallback: defaults.radius || 24 }))
+                + '</div>'
+                + '<div class="nbh-note">Этот контрол отвечает именно за медиа внутри slide, а не за фон секции.</div>';
+        },
+        'slider-surface-design-panel': function() {
+            var profile = nbhBlockUiProfile();
+            var defaults = profile.slideSurface || { backgroundMode: 'solid', backgroundColor: '#ffffff', padding: 0, radius: 28, borderWidth: 1, borderColor: '#dbe4ef', shadow: 'sm' };
+            return '<div class="nbh-grid-2">'
+                + nbhField('Подложка', nbhSelect('design.entities.slideSurface.backgroundMode', [
+                    { value: 'solid', label: 'Цветная' },
+                    { value: 'transparent', label: 'Прозрачная' }
+                ], defaults.backgroundMode || 'solid'))
+                + nbhField('Цвет поверхности', nbhInput('design.entities.slideSurface.backgroundColor', { inputType: 'color', fallback: defaults.backgroundColor || '#ffffff' }))
+                + nbhField('Внутренний отступ', nbhInput('design.entities.slideSurface.padding', { inputType: 'number', type: 'number', fallback: defaults.padding || 0 }))
+                + nbhField('Скругление', nbhInput('design.entities.slideSurface.radius', { inputType: 'number', type: 'number', fallback: defaults.radius || 28 }))
+                + nbhField('Толщина рамки', nbhInput('design.entities.slideSurface.borderWidth', { inputType: 'number', type: 'number', fallback: defaults.borderWidth || 1 }))
+                + nbhField('Цвет рамки', nbhInput('design.entities.slideSurface.borderColor', { inputType: 'color', fallback: defaults.borderColor || '#dbe4ef' }))
+                + nbhField('Тень', nbhSelect('design.entities.slideSurface.shadow', [
+                    { value: 'none', label: 'Без тени' },
+                    { value: 'sm', label: 'Мягкая' },
+                    { value: 'md', label: 'Средняя' },
+                    { value: 'lg', label: 'Выразительная' }
+                ], defaults.shadow || 'sm'))
+                + '</div>'
+                + '<div class="nbh-note">Slide surface управляет карточкой целиком: фон, рамка, radius и shadow rail-элемента.</div>';
+        },
+        'slider-navigation-design-panel': function() {
+            var profile = nbhBlockUiProfile();
+            var defaults = profile.navigation || { size: 46, radius: 999, backgroundColor: '#0f172a', textColor: '#ffffff', borderColor: '#0f172a', shadow: 'md' };
+            return '<div class="nbh-grid-2">'
+                + nbhField('Размер кнопок', nbhInput('design.entities.navigation.size', { inputType: 'number', type: 'number', fallback: defaults.size || 46 }))
+                + nbhField('Скругление', nbhInput('design.entities.navigation.radius', { inputType: 'number', type: 'number', fallback: defaults.radius || 999 }))
+                + nbhField('Фон кнопок', nbhInput('design.entities.navigation.backgroundColor', { inputType: 'color', fallback: defaults.backgroundColor || '#0f172a' }))
+                + nbhField('Цвет иконок', nbhInput('design.entities.navigation.textColor', { inputType: 'color', fallback: defaults.textColor || '#ffffff' }))
+                + nbhField('Цвет рамки', nbhInput('design.entities.navigation.borderColor', { inputType: 'color', fallback: defaults.borderColor || '#0f172a' }))
+                + nbhField('Тень', nbhSelect('design.entities.navigation.shadow', [
+                    { value: 'none', label: 'Без тени' },
+                    { value: 'sm', label: 'Мягкая' },
+                    { value: 'md', label: 'Средняя' },
+                    { value: 'lg', label: 'Выразительная' }
+                ], defaults.shadow || 'md'))
+                + '</div>'
+                + '<div class="nbh-note">Оформление navigation применяется сразу к prev/next controls slider rail.</div>';
+        },
+        'slider-pagination-design-panel': function() {
+            var profile = nbhBlockUiProfile();
+            var defaults = profile.pagination || { dotSize: 10, gap: 8, color: '#cbd5e1', activeColor: '#0f172a' };
+            return '<div class="nbh-grid-2">'
+                + nbhField('Размер точки', nbhInput('design.entities.pagination.dotSize', { inputType: 'number', type: 'number', fallback: defaults.dotSize || 10 }))
+                + nbhField('Gap между точками', nbhInput('design.entities.pagination.gap', { inputType: 'number', type: 'number', fallback: defaults.gap || 8 }))
+                + nbhField('Неактивный цвет', nbhInput('design.entities.pagination.color', { inputType: 'color', fallback: defaults.color || '#cbd5e1' }))
+                + nbhField('Активный цвет', nbhInput('design.entities.pagination.activeColor', { inputType: 'color', fallback: defaults.activeColor || '#0f172a' }))
+                + '</div>'
+                + '<div class="nbh-note">Pagination dots отделены от navigation, чтобы у slider был самостоятельный visual vocabulary.</div>';
+        },
+        'slider-progress-design-panel': function() {
+            var profile = nbhBlockUiProfile();
+            var defaults = profile.progress || { trackColor: '#e2e8f0', fillColor: '#0f172a', height: 4, radius: 999 };
+            return '<div class="nbh-grid-2">'
+                + nbhField('Высота трека', nbhInput('design.entities.progress.height', { inputType: 'number', type: 'number', fallback: defaults.height || 4 }))
+                + nbhField('Скругление', nbhInput('design.entities.progress.radius', { inputType: 'number', type: 'number', fallback: defaults.radius || 999 }))
+                + nbhField('Цвет трека', nbhInput('design.entities.progress.trackColor', { inputType: 'color', fallback: defaults.trackColor || '#e2e8f0' }))
+                + nbhField('Цвет заполнения', nbhInput('design.entities.progress.fillColor', { inputType: 'color', fallback: defaults.fillColor || '#0f172a' }))
+                + '</div>'
+                + '<div class="nbh-note">Progress bar можно использовать отдельно от dots, если нужен более редакционный rail indicator.</div>';
+        },
         'media-style-panel': function(panel) {
             var profile = nbhBlockUiProfile();
             if (!panel || panel.entityScope !== 'media') {

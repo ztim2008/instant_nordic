@@ -68,7 +68,8 @@ function nbhShouldRerenderPanels(path) {
         || path.indexOf('data.bindings.') === 0
     || path.indexOf('design.section.background.') === 0
     || path === 'design.entities.media.inheritGlobalStyle'
-    || path === 'design.entities.itemSurface.inheritGlobalStyle';
+    || path === 'design.entities.itemSurface.inheritGlobalStyle'
+    || path === 'design.entities.slideSurface.inheritGlobalStyle';
 }
 
 function nbhYesNoOptions() {
@@ -83,7 +84,7 @@ function nbhBreakpointToggle() {
 }
 
 function nbhRepeaterImageField(index, image) {
-    var path = 'content.items.' + index + '.image';
+    var path = nbhCollectionRepeaterPath() + '.' + index + '.image';
     var hasImage = typeof image === 'string' && image !== '';
     var preview = hasImage
         ? '<div style="margin-top:.6rem;border:1px solid #dbe4ef;border-radius:14px;overflow:hidden;background:#f8fafc;">'
@@ -144,6 +145,49 @@ function nbhRepeaterEditor() {
     var listSource = nbhListSource();
     var kind = nbhCollectionBlockKind();
     var cards = items.map(function(item, index) {
+        if (nbhIsSliderCollectionBlock()) {
+            var eyebrow = nbhCollectionItemValue(item, 'eyebrow');
+            var title = nbhCollectionItemValue(item, 'title');
+            var text = nbhCollectionItemValue(item, 'text');
+            var primaryCtaLabel = nbhCollectionItemValue(item, 'primary_cta_label');
+            var primaryCtaUrl = nbhCollectionItemValue(item, 'primary_cta_url');
+            var secondaryCtaLabel = nbhCollectionItemValue(item, 'secondary_cta_label');
+            var secondaryCtaUrl = nbhCollectionItemValue(item, 'secondary_cta_url');
+            var image = nbhCollectionItemValue(item, 'image');
+            var imageAlt = nbhCollectionItemValue(item, 'imageAlt');
+            var date = nbhCollectionItemValue(item, 'date');
+            var metaLabel = nbhCollectionItemValue(item, 'meta_label');
+            var recordUrl = nbhCollectionItemValue(item, 'record_url');
+
+            return '<div class="nbh-note" style="background:#fff;border:1px solid #dbe4ef;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;margin-bottom:.75rem;">'
+                + '<strong>Слайд ' + (index + 1) + '</strong>'
+                + '<div style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.4rem;">'
+                + nbhRepeaterActionButton('move-up', index, 'Выше', index === 0)
+                + nbhRepeaterActionButton('move-down', index, 'Ниже', index === items.length - 1)
+                + nbhRepeaterActionButton('duplicate', index, 'Дублировать', false)
+                + nbhRepeaterActionButton('remove', index, 'Удалить', false)
+                + '</div>'
+                + '</div>'
+                + '<div class="nbh-grid-2">'
+                + nbhField('Eyebrow', '<input type="text" data-item-field="eyebrow" data-item-index="' + index + '" value="' + nbhEscapeAttr(eyebrow) + '">')
+                + nbhField('Meta label', '<input type="text" data-item-field="meta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(metaLabel) + '">')
+                + nbhField('Дата', '<input type="text" data-item-field="date" data-item-index="' + index + '" value="' + nbhEscapeAttr(date) + '">')
+                + nbhField('Record URL', '<input type="text" data-item-field="record_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(recordUrl) + '">')
+                + '</div>'
+                + nbhField('Заголовок', '<input type="text" data-item-field="title" data-item-index="' + index + '" value="' + nbhEscapeAttr(title) + '">')
+                + nbhField('Текст', '<textarea data-item-field="text" data-item-index="' + index + '">' + nbhEscapeHtml(text) + '</textarea>')
+                + nbhField('Изображение', nbhRepeaterImageField(index, image))
+                + '<div class="nbh-grid-2">'
+                + nbhField('Alt изображения', '<input type="text" data-item-field="imageAlt" data-item-index="' + index + '" value="' + nbhEscapeAttr(imageAlt) + '">')
+                + nbhField('Primary CTA текст', '<input type="text" data-item-field="primary_cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(primaryCtaLabel) + '">')
+                + nbhField('Primary CTA URL', '<input type="text" data-item-field="primary_cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(primaryCtaUrl) + '">')
+                + nbhField('Secondary CTA текст', '<input type="text" data-item-field="secondary_cta_label" data-item-index="' + index + '" value="' + nbhEscapeAttr(secondaryCtaLabel) + '">')
+                + nbhField('Secondary CTA URL', '<input type="text" data-item-field="secondary_cta_url" data-item-index="' + index + '" value="' + nbhEscapeAttr(secondaryCtaUrl) + '">')
+                + '</div>'
+                + '</div>';
+        }
+
         if (nbhIsCardCollectionBlock()) {
             var category = nbhCollectionItemValue(item, 'category');
             var categoryUrl = nbhCollectionItemValue(item, 'category_url');
@@ -243,15 +287,36 @@ function nbhRepeaterEditor() {
     }).join('');
 
     if (!cards) {
-        cards = nbhIsCardCollectionBlock()
+        cards = nbhIsSliderCollectionBlock()
+            ? '<div class="nbh-note">Слайдер пока пуст. Добавьте первый слайд.</div>'
+            : nbhIsCardCollectionBlock()
             ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Секция пока пуста. Добавьте главную статью и продолжение ленты.' : (kind === 'swiss_grid' ? 'Swiss grid пока пуст. Добавьте первую карточку.' : 'Лента пока пустая. Добавьте первую карточку.')) + '</div>'
             : '<div class="nbh-note">Список FAQ пока пуст. Добавьте первый вопрос.</div>';
     }
 
     if (listSource.type === 'content_list') {
-        cards = (nbhIsCardCollectionBlock()
+        cards = (nbhIsSliderCollectionBlock()
+            ? '<div class="nbh-note">Ручные слайды ниже остаются резервным сценарием, если источник данных не вернёт записей. Один и тот же SSR pipeline будет использоваться и в preview, и на публичной странице.</div>'
+            : nbhIsCardCollectionBlock()
             ? '<div class="nbh-note">' + (kind === 'headline_feed' ? 'Первый материал из content_list станет главной статьёй, а ручные карточки ниже останутся резервным сценарием, если данных не хватит.' : 'Ручные карточки ниже остаются резервной лентой, если источник данных не вернёт записей.') + '</div>'
             : '<div class="nbh-note">Ручные вопросы ниже остаются резервным списком, если источник данных не вернёт записей.</div>') + cards;
+    }
+
+    if (nbhIsSliderCollectionBlock()) {
+        return '<div class="nbh-note">Cards Slider работает как full-width rail: header остаётся секционным, а ниже вы управляете ручным fallback-набором слайдов для режима manual и для content_list fallback.</div>'
+            + '<div class="nbh-grid-2">'
+            + nbhField('Показывать navigation', nbhSelect('runtime.visibility.navigation', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать pagination', nbhSelect('runtime.visibility.pagination', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать progress', nbhSelect('runtime.visibility.progress', nbhYesNoOptions(), '0'))
+            + nbhField('Показывать media', nbhSelect('runtime.visibility.slideMedia', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать eyebrow', nbhSelect('runtime.visibility.slideEyebrow', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать текст', nbhSelect('runtime.visibility.slideText', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать meta', nbhSelect('runtime.visibility.slideMeta', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать primary CTA', nbhSelect('runtime.visibility.slidePrimaryAction', nbhYesNoOptions(), '1'))
+            + nbhField('Показывать secondary CTA', nbhSelect('runtime.visibility.slideSecondaryAction', nbhYesNoOptions(), '1'))
+            + '</div>'
+            + cards
+            + '<button type="button" class="nbh-btn nbh-btn--ghost" data-repeater-action="add" style="align-self:flex-start;"><i class="fa fa-plus"></i> Добавить слайд</button>';
     }
 
     if (nbhIsCardCollectionBlock()) {

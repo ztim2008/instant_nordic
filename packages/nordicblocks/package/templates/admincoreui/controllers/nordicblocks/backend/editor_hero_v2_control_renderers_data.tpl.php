@@ -131,6 +131,108 @@ function nbhBuildDataControlRenderers() {
 
             return body;
         },
+        'slider-data-source-panel': function() {
+            var listOptions = nbhDataOptions();
+            var listSource = nbhListSource();
+            var ctypeOptions = [{ value: '', label: 'Выберите тип контента' }].concat(listOptions.contentTypes.map(function(ctype) {
+                return { value: ctype.name, label: ctype.title };
+            }));
+            var body = nbhField('Источник данных', nbhSelect('data.listSource.type', listOptions.listModes.length ? listOptions.listModes : [
+                { value: 'manual', label: 'Ручной список' },
+                { value: 'content_list', label: 'Список записей InstantCMS' }
+            ], 'manual'));
+
+            if (listSource.type !== 'content_list') {
+                return body + '<div class="nbh-note">Сейчас slider использует ручные fallback-слайды из вкладки Контент. Переключите источник на список записей InstantCMS, если rail должен наполняться автоматически.</div>';
+            }
+
+            if (!listOptions.contentTypes.length) {
+                return body + '<div class="nbh-note">В системе не найдено включённых типов контента, поэтому режим списка записей пока недоступен.</div>';
+            }
+
+            body += nbhField('Тип контента', nbhSelect('data.listSource.ctype', ctypeOptions, ''));
+            body += '<div class="nbh-grid-2">'
+                + nbhField('Лимит записей', nbhInput('data.listSource.limit', { inputType: 'number', type: 'number', fallback: 6 }))
+                + nbhField('Сортировка', nbhSelect('data.listSource.sort', listOptions.sortOptions.length ? listOptions.sortOptions : [{ value: 'date_pub_desc', label: 'Сначала новые' }], 'date_pub_desc'))
+                + '</div>';
+
+            if (!listSource.ctype) {
+                return body + '<div class="nbh-note">Сначала выберите тип контента. После этого на соседней панели появятся mapping controls для полей слайда.</div>';
+            }
+
+            return body + '<div class="nbh-note">Ручные слайды из вкладки Контент остаются fallback-слоем. Preview и публичный runtime продолжают идти через один SSR pipeline.</div>';
+        },
+        'slider-data-query-panel': function() {
+            var options = nbhDataOptions();
+            var listSource = nbhListSource();
+            var fields = listSource.ctype && options.fieldsByType[listSource.ctype] ? options.fieldsByType[listSource.ctype] : [];
+
+            if (listSource.type !== 'content_list') {
+                return '<div class="nbh-note">Поля слайда маппятся только в режиме content_list. В ручном режиме slider читает значения прямо из fallback-слайдов на вкладке Контент.</div>';
+            }
+
+            if (!listSource.ctype) {
+                return '<div class="nbh-note">Сначала выберите тип контента на панели источника данных.</div>';
+            }
+
+            if (!fields.length) {
+                return '<div class="nbh-note">У выбранного типа контента не найдено совместимых полей для slider mapping.</div>';
+            }
+
+            var textOptions = nbhFieldOptionsByKinds(fields, ['text'], 'Не выбрано');
+            var imageOptions = nbhFieldOptionsByKinds(fields, ['image'], 'Не выбрано');
+            var dateOptions = nbhFieldOptionsByKinds(fields, ['date', 'text'], 'Не выбрано');
+            var urlOptions = nbhFieldOptionsByKinds(fields, ['url', 'text'], 'Не выбрано');
+            var body = '<div class="nbh-grid-2">';
+
+            if (nbhHasEntity('slideEyebrow')) {
+                body += nbhField('Eyebrow', nbhSelect('data.listSource.map.eyebrow', textOptions, 'category.title'));
+            }
+            if (nbhHasEntity('slideTitle')) {
+                body += nbhField('Заголовок слайда', nbhSelect('data.listSource.map.title', textOptions, 'title'));
+            }
+            if (nbhHasEntity('slideText')) {
+                body += nbhField('Текст слайда', nbhSelect('data.listSource.map.text', textOptions, 'teaser'));
+            }
+            if (nbhHasEntity('slideMedia')) {
+                body += nbhField('Изображение', nbhSelect('data.listSource.map.image', imageOptions, 'record_image_url'));
+                body += nbhField('Alt изображения', nbhSelect('data.listSource.map.imageAlt', textOptions, 'title'));
+            }
+            if (nbhHasEntity('slideMeta')) {
+                body += nbhField('Meta label', nbhSelect('data.listSource.map.metaLabel', textOptions, 'category.title'));
+                body += nbhField('Дата', nbhSelect('data.listSource.map.date', dateOptions, 'date_pub'));
+            }
+            if (nbhHasEntity('slidePrimaryAction')) {
+                body += nbhField('Primary CTA текст', nbhSelect('data.listSource.map.primaryCtaLabel', textOptions, 'title'));
+                body += nbhField('Primary CTA URL', nbhSelect('data.listSource.map.primaryCtaUrl', urlOptions, 'record_url'));
+            }
+            if (nbhHasEntity('slideSecondaryAction')) {
+                body += nbhField('Secondary CTA текст', nbhSelect('data.listSource.map.secondaryCtaLabel', textOptions, ''));
+                body += nbhField('Secondary CTA URL', nbhSelect('data.listSource.map.secondaryCtaUrl', urlOptions, ''));
+            }
+            body += nbhField('Record URL', nbhSelect('data.listSource.map.recordUrl', urlOptions, 'record_url'));
+            body += '</div>';
+            body += nbhField('Если записей нет', nbhSelect('data.listSource.emptyBehavior', [
+                { value: 'fallback', label: 'Показать ручной fallback rail' },
+                { value: 'empty', label: 'Показать пустой rail' }
+            ], 'fallback'));
+            body += '<div class="nbh-note">Mappings задают, как запись InstantCMS превращается в полноценный slide contract: eyebrow, title, text, media, meta и CTA.</div>';
+            return body;
+        },
+        'slider-data-visibility-panel': function() {
+            return '<div class="nbh-grid-2">'
+                + nbhField('Показывать navigation', nbhSelect('runtime.visibility.navigation', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать pagination', nbhSelect('runtime.visibility.pagination', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать progress', nbhSelect('runtime.visibility.progress', nbhYesNoOptions(), '0'))
+                + nbhField('Показывать media', nbhSelect('runtime.visibility.slideMedia', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать eyebrow', nbhSelect('runtime.visibility.slideEyebrow', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать текст', nbhSelect('runtime.visibility.slideText', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать meta', nbhSelect('runtime.visibility.slideMeta', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать primary CTA', nbhSelect('runtime.visibility.slidePrimaryAction', nbhYesNoOptions(), '1'))
+                + nbhField('Показывать secondary CTA', nbhSelect('runtime.visibility.slideSecondaryAction', nbhYesNoOptions(), '1'))
+                + '</div>'
+                + '<div class="nbh-note">Visibility controls работают поверх manual и content_list одинаково, чтобы slider не расходился между preview и публичным runtime.</div>';
+        },
         'data-collection-panel': function() {
             var options = nbhDataOptions();
             var listSource = nbhListSource();

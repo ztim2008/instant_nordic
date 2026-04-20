@@ -163,6 +163,14 @@ function nbhEntityPriorityForActiveTab(entityKey) {
             score += 500;
         }
 
+        if (entityKey === 'slide' && nbhHasCapability('hasSlides')) {
+            score += 500;
+        }
+
+        if (entityKey === 'slides' && nbhHasCapability('hasSlides')) {
+            score += 460;
+        }
+
         if (panels.some(function(panel) { return nbhPanelControlKey(panel) === 'repeaterItems' || panel.section === 'repeaters'; })) {
             score += 450;
         }
@@ -176,8 +184,17 @@ function nbhEntityPriorityForActiveTab(entityKey) {
         }
     }
 
-    if (nbhState.activeTab === 'data' && entityKey === 'items' && panels.some(function(panel) { return nbhPanelControlKey(panel) === 'dataCollection'; })) {
-        score += 260;
+    if (nbhState.activeTab === 'data') {
+        if (entityKey === 'items' && panels.some(function(panel) { return nbhPanelControlKey(panel) === 'dataCollection'; })) {
+            score += 260;
+        }
+
+        if ((entityKey === 'slide' || entityKey === 'slides') && panels.some(function(panel) {
+            var key = nbhPanelControlKey(panel);
+            return key === 'sliderDataSource' || key === 'sliderDataQuery' || key === 'sliderDataVisibility';
+        })) {
+            score += 280;
+        }
     }
 
     if (firstPanel) {
@@ -214,12 +231,20 @@ function nbhPreferredEntityForActiveTab() {
 }
 
 function nbhSelectionHintForEntity(entityKey) {
+    if (nbhState.activeTab === 'content' && (entityKey === 'slide' || entityKey === 'slides')) {
+        return 'Здесь редактируется rail слайдов: ручной fallback, порядок карточек и их наполнение для slider contract.';
+    }
+
     if (nbhState.activeTab === 'content' && entityKey === 'items') {
         return 'Здесь начинается работа с повторяющимся списком элементов: добавление, импорт, сортировка и редактирование карточек.';
     }
 
     if (nbhState.activeTab === 'content') {
         return 'Здесь редактируется одиночное наполнение выбранной сущности: текст, ссылка, медиа или другая отдельная часть блока.';
+    }
+
+    if (nbhState.activeTab === 'data' && (entityKey === 'slide' || entityKey === 'slides')) {
+        return 'Здесь настраиваются list source, field mapping и visibility для slider rail без ручного fallback notice.';
     }
 
     if (nbhState.activeTab === 'data' && entityKey === 'items') {

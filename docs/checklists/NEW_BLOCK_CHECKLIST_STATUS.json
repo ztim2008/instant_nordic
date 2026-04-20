@@ -18,6 +18,22 @@
             },
             "notes": "Controlled bento news block доведён поверх managed card_collection profile: runtime держит desktop/mobile columns, content_list adapter, load_more/pagination controls и package mirror parity. CLI public smoke через scripts/nordicblocks-bento-feed-content-list-smoke.php подтвердил create/save-reload, hydration от InstantCMS, homepage widget placement и clean cleanup bind/block хвостов. Residual risk: отдельная ручная visual/device smoke-проверка mobile layout и UX кнопки Показать ещё по-прежнему желательна."
         },
+        "cards_slider": {
+            "title": "Карточки-слайдер",
+            "family": "slider-family-v1",
+            "status": "in_progress",
+            "checkpoint": "snapshot/20260420-095924",
+            "items": {
+                "spec_locked": true,
+                "block_registered": true,
+                "contract_data_layer": true,
+                "editor_shell": true,
+                "shared_runtime_css": true,
+                "package_mirror": true,
+                "live_smoke": false
+            },
+            "notes": "Scaffold-generated managed block. Runtime registration, contract support, data layer and package mirror подключаются через stage 3 pipeline; live smoke остаётся обязательным вручную."
+        },
         "catalog_browser": {
             "title": "Каталог",
             "family": "catalog-family-v1",

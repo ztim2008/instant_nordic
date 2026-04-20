@@ -346,3 +346,12 @@ Slider family считается успешно открытой, когда:
 3. navigation/pagination/slide entities честно видны в shared inspector;
 4. typography и layout не расходятся между saved contract и preview/public runtime;
 5. следующий slider block можно проектировать поверх того же slider vocabulary, а не заново с нуля.
+
+## Scaffold Registry
+<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_START -->
+Этот раздел обновляется автоматически scaffold apply pipeline и показывает текущие scaffold-managed block types этой family.
+
+| Slug | Title | Status | Checkpoint | Live smoke |
+| --- | --- | --- | --- | --- |
+| cards_slider | Карточки-слайдер | in_progress | snapshot/20260420-095924 | no |
+<!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->

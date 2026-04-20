@@ -1,0 +1,45 @@
+{
+    "title": "Карточки-слайдер",
+    "type": "cards_slider",
+    "profile": "slider_cards",
+    "generator": {
+        "name": "nordicblocks-scaffold",
+        "managed": true,
+        "stage": 3,
+        "profile": "slider_cards",
+        "designSystemMode": "global-first",
+        "sourceModeProfile": "content_list"
+    },
+    "fields": [
+        {
+            "key": "heading",
+            "type": "text",
+            "default": "Карточки-слайдер"
+        },
+        {
+            "key": "subheading",
+            "type": "textarea",
+            "default": "Подзаголовок блока"
+        },
+        {
+            "key": "theme",
+            "type": "select",
+            "default": "light"
+        },
+        {
+            "key": "section_link_label",
+            "type": "text",
+            "default": "Открыть все"
+        },
+        {
+            "key": "section_link_url",
+            "type": "text",
+            "default": "#"
+        },
+        {
+            "key": "slides",
+            "type": "repeater",
+            "default": []
+        }
+    ]
+}

@@ -3,6 +3,29 @@ function nbhBuildLayoutControlRenderers() {
         'spacing-layout-panel': function(panel, bp) {
             var profile = nbhBlockUiProfile();
             var body = nbhBreakpointToggle();
+            if (profile.kind === 'cards_slider') {
+                if (bp === 'desktop') {
+                    return body + '<div class="nbh-grid-2">'
+                        + nbhField('Ширина контейнера', nbhInput('layout.desktop.contentWidth', { inputType: 'number', type: 'number', fallback: profile.contentWidth }))
+                        + nbhField('Отступ сверху', nbhInput('layout.desktop.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingTop }))
+                        + nbhField('Отступ снизу', nbhInput('layout.desktop.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.desktopPaddingBottom }))
+                        + nbhField('Слайдов в ряд', nbhInput('layout.desktop.slidesPerView', { inputType: 'number', type: 'number', fallback: profile.layout.desktopSlidesPerView }))
+                        + nbhField('Gap между слайдами', nbhInput('layout.desktop.slideGap', { inputType: 'number', type: 'number', fallback: profile.layout.desktopGap }))
+                        + nbhField('Отступ header/slider', nbhInput('layout.desktop.headerGap', { inputType: 'number', type: 'number', fallback: profile.layout.desktopHeaderGap }))
+                        + '</div>'
+                        + '<div class="nbh-note">Cards Slider всегда рендерится как full-width rail. Здесь задаются только ритм секции и плотность rail на desktop.</div>';
+                }
+
+                return body + '<div class="nbh-grid-2">'
+                    + nbhField('Отступ сверху', nbhInput('layout.mobile.paddingTop', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingTop }))
+                    + nbhField('Отступ снизу', nbhInput('layout.mobile.paddingBottom', { inputType: 'number', type: 'number', fallback: profile.layout.mobilePaddingBottom }))
+                    + nbhField('Слайдов в ряд', nbhInput('layout.mobile.slidesPerView', { inputType: 'number', type: 'number', fallback: profile.layout.mobileSlidesPerView }))
+                    + nbhField('Gap между слайдами', nbhInput('layout.mobile.slideGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileGap }))
+                    + nbhField('Отступ header/slider', nbhInput('layout.mobile.headerGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileHeaderGap }))
+                    + '</div>'
+                    + '<div class="nbh-note">Mobile rail остаётся свайповым. Поле "Слайдов в ряд" задаёт, сколько карточек видно в viewport одновременно.</div>';
+            }
+
             if (profile.kind === 'headline_feed') {
                 if (bp === 'desktop') {
                     return body + '<div class="nbh-grid-2">'
@@ -102,6 +125,39 @@ function nbhBuildLayoutControlRenderers() {
                 + nbhField('Зазор контент/медиа', nbhInput('layout.mobile.contentGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileContentGap }))
                 + nbhField('Зазор между кнопками', nbhInput('layout.mobile.actionsGap', { inputType: 'number', type: 'number', fallback: profile.layout.mobileActionsGap }))
                 + '</div>';
+        },
+        'slider-motion-panel': function() {
+            var profile = nbhBlockUiProfile();
+            return '<div class="nbh-grid-2">'
+                + nbhField('Swipe на mobile', nbhSelect('runtime.slider.swipe', nbhYesNoOptions(), profile.layout.swipe || '1'))
+                + nbhField('Autoplay', nbhSelect('runtime.slider.autoplay', nbhYesNoOptions(), profile.layout.autoplay || '0'))
+                + nbhField('Loop', nbhSelect('runtime.slider.loop', nbhYesNoOptions(), profile.layout.loop || '0'))
+                + nbhField('Autoplay delay, мс', nbhInput('runtime.slider.autoplayDelay', { inputType: 'number', type: 'number', fallback: profile.layout.autoplayDelay || 4500 }))
+                + nbhField('Transition, мс', nbhInput('runtime.slider.transitionMs', { inputType: 'number', type: 'number', fallback: profile.layout.transitionMs || 450 }))
+                + '</div>'
+                + '<div class="nbh-note">Эти параметры описывают поведение rail во frontend runtime. Swipe должен оставаться включённым для мобильного сценария.</div>';
+        },
+        'slider-navigation-layout-panel': function(panel, bp) {
+            var profile = nbhBlockUiProfile();
+            var prefix = 'layout.' + bp;
+            return nbhBreakpointToggle() + '<div class="nbh-grid-2">'
+                + nbhField('Позиция navigation', nbhSelect(prefix + '.navigationPosition', [
+                    { value: 'overlay', label: 'Поверх rail' },
+                    { value: 'below', label: 'Под rail' },
+                    { value: 'hidden', label: 'Скрыть' }
+                ], profile.layout.navigationPosition || 'overlay'))
+                + nbhField('Позиция pagination', nbhSelect(prefix + '.paginationPosition', [
+                    { value: 'below', label: 'Под rail' },
+                    { value: 'overlay', label: 'Поверх rail' },
+                    { value: 'hidden', label: 'Скрыть' }
+                ], profile.layout.paginationPosition || 'below'))
+                + nbhField('Позиция progress', nbhSelect(prefix + '.progressPosition', [
+                    { value: 'below', label: 'Под rail' },
+                    { value: 'overlay', label: 'Поверх rail' },
+                    { value: 'hidden', label: 'Скрыть' }
+                ], profile.layout.progressPosition || 'below'))
+                + '</div>'
+                + '<div class="nbh-note">Layout управляет размещением контролов вокруг viewport. Фактические цвета и размеры задаются на вкладке Дизайн.</div>';
         },
         'alignment-layout-panel': function() {
             var profile = nbhBlockUiProfile();

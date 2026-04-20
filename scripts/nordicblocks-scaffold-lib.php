@@ -74,6 +74,12 @@ final class NordicblocksScaffoldStage1 {
                 'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'buttonsContent', 'repeaterContent', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'responsiveTypography', 'responsiveSpacing', 'dataBindings', 'repeaterBindings'],
                 'panels' => ['textTitleContent', 'textSubtitleContent', 'buttonsContent', 'repeaterItems', 'sectionBackground', 'sectionContainer', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'mediaStyle', 'mediaSurface', 'itemSurface', 'itemTypography', 'spacingLayout', 'alignmentLayout', 'dataBindings', 'repeaterBindings'],
             ],
+            'slider_cards' => [
+                'sourceModeProfile' => 'content_list',
+                'entities' => ['title', 'subtitle', 'primaryButton', 'viewport', 'track', 'slide', 'slideSurface', 'slideMedia', 'slideEyebrow', 'slideTitle', 'slideText', 'slideMeta', 'slidePrimaryAction', 'slideSecondaryAction', 'navigation', 'prevButton', 'nextButton', 'pagination', 'progress'],
+                'capabilities' => ['sectionBackground', 'sectionContainer', 'titleContent', 'subtitleContent', 'buttonsContent', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'spacingLayout', 'responsiveTypography', 'responsiveSpacing', 'hasSlides', 'hasSliderNavigation', 'hasSliderPagination', 'hasSliderProgress', 'hasMobileSwipe', 'hasAutoplay', 'hasLoop', 'hasContentListSource'],
+                'panels' => ['textTitleContent', 'textSubtitleContent', 'buttonsContent', 'sliderSlidesContent', 'sectionBackground', 'sectionContainer', 'titleTypography', 'subtitleTypography', 'buttonsStyle', 'sliderItemTypography', 'sliderMediaDesign', 'sliderSurfaceDesign', 'sliderNavigationDesign', 'sliderPaginationDesign', 'sliderProgressDesign', 'sliderLayout', 'sliderMotion', 'sliderNavigationLayout', 'sliderDataSource', 'sliderDataQuery', 'sliderDataVisibility'],
+            ],
             'text_section' => [
                 'sourceModeProfile' => 'manual',
                 'entities' => ['eyebrow', 'title', 'subtitle', 'body', 'primaryButton'],
@@ -177,6 +183,19 @@ final class NordicblocksScaffoldStage1 {
             }
         }
 
+        if (in_array('slideSurface', $blueprint['entities'], true)
+            || in_array('slideMedia', $blueprint['entities'], true)
+            || in_array('slideEyebrow', $blueprint['entities'], true)
+            || in_array('slideTitle', $blueprint['entities'], true)
+            || in_array('slideText', $blueprint['entities'], true)
+            || in_array('slideMeta', $blueprint['entities'], true)
+            || in_array('slidePrimaryAction', $blueprint['entities'], true)
+            || in_array('slideSecondaryAction', $blueprint['entities'], true)) {
+            if (!in_array('slide', $blueprint['entities'], true)) {
+                $issues[] = self::issue('error', 'contract', 'missing_slide_entity', 'Slide-level сущности допустимы только вместе с сущностью slide.');
+            }
+        }
+
         foreach ($blueprint['panels'] as $panelKey) {
             if (!isset($registry['panelMap'][$panelKey])) {
                 continue;
@@ -210,14 +229,14 @@ final class NordicblocksScaffoldStage1 {
         }
 
         if ($blueprint['sourceModeProfile'] === 'content_list') {
-            if (!in_array('items', $blueprint['entities'], true)) {
-                $issues[] = self::issue('error', 'runtime', 'content_list_requires_items', 'Профиль content_list требует repeater сущность items.');
-            }
-            if (!in_array('dataBindings', $blueprint['capabilities'], true)) {
-                $issues[] = self::issue('error', 'runtime', 'content_list_requires_data_bindings', 'Профиль content_list требует capability dataBindings.');
-            }
-            if (!in_array('repeaterBindings', $blueprint['capabilities'], true)) {
-                $issues[] = self::issue('error', 'runtime', 'content_list_requires_repeater_bindings', 'Профиль content_list требует capability repeaterBindings.');
+            $hasLegacyCollection = in_array('items', $blueprint['entities'], true)
+                && in_array('dataBindings', $blueprint['capabilities'], true)
+                && in_array('repeaterBindings', $blueprint['capabilities'], true);
+            $hasSliderCollection = in_array('slide', $blueprint['entities'], true)
+                && in_array('hasContentListSource', $blueprint['capabilities'], true);
+
+            if (!$hasLegacyCollection && !$hasSliderCollection) {
+                $issues[] = self::issue('error', 'runtime', 'content_list_requires_collection_contract', 'Профиль content_list требует либо legacy contract items + dataBindings + repeaterBindings, либо slider contract slide + hasContentListSource.');
             }
         }
 
@@ -738,6 +757,12 @@ PHP;
             $common[] = ['key' => 'section_link_label', 'type' => 'text', 'default' => 'Открыть все'];
             $common[] = ['key' => 'section_link_url', 'type' => 'text', 'default' => '#'];
             $common[] = ['key' => 'items', 'type' => 'repeater', 'default' => []];
+        }
+
+        if ($blueprint['profile'] === 'slider_cards') {
+            $common[] = ['key' => 'section_link_label', 'type' => 'text', 'default' => 'Открыть все'];
+            $common[] = ['key' => 'section_link_url', 'type' => 'text', 'default' => '#'];
+            $common[] = ['key' => 'slides', 'type' => 'repeater', 'default' => []];
         }
 
         if ($blueprint['profile'] === 'text_section') {

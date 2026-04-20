@@ -1185,8 +1185,60 @@ function nbhBlockType() {
     return nbhGet(nbhState.server, 'block.type', '');
 }
 
+function nbhHasLegacyRepeaterCollection() {
+    return nbhHasEntity('items') && nbhHasCapability('repeaterContent');
+}
+
+function nbhHasSliderRepeaterCollection() {
+    return nbhHasEntity('slide') && nbhHasCapability('hasSlides');
+}
+
+function nbhCollectionRepeaterEntityKey() {
+    if (nbhHasSliderRepeaterCollection()) {
+        return 'slide';
+    }
+
+    if (nbhHasLegacyRepeaterCollection()) {
+        return 'items';
+    }
+
+    return '';
+}
+
+function nbhCollectionRepeaterGroupKey() {
+    var entityKey = nbhCollectionRepeaterEntityKey();
+
+    if (entityKey === 'slide') {
+        return 'slides';
+    }
+
+    return entityKey;
+}
+
+function nbhCollectionRepeaterPath() {
+    var entityKey = nbhCollectionRepeaterEntityKey();
+
+    if (entityKey === 'slide') {
+        return 'content.slides';
+    }
+
+    if (entityKey === 'items') {
+        return 'content.items';
+    }
+
+    return 'content.items';
+}
+
 function nbhCollectionBlockKind() {
-    if (!(nbhHasEntity('items') && nbhHasCapability('repeaterContent'))) {
+    if (nbhHasSliderRepeaterCollection()) {
+        if (nbhBlockType() === 'cards_slider') {
+            return 'cards_slider';
+        }
+
+        return 'slider';
+    }
+
+    if (!nbhHasLegacyRepeaterCollection()) {
         return '';
     }
 
@@ -1222,8 +1274,202 @@ function nbhIsCardCollectionBlock() {
     return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed' || kind === 'swiss_grid' || kind === 'catalog_browser' || kind === 'bento_feed';
 }
 
+function nbhIsSliderCollectionBlock() {
+    return nbhCollectionBlockKind() === 'cards_slider';
+}
+
 function nbhBlockUiProfile() {
-    if (nbhHasEntity('items') && nbhHasCapability('repeaterContent')) {
+    if (nbhIsSliderCollectionBlock()) {
+        return {
+            kind: 'cards_slider',
+            themeOptions: [
+                { value: 'light', label: 'Светлая' },
+                { value: 'alt', label: 'Мягкий фон' },
+                { value: 'dark', label: 'Темная' }
+            ],
+            contentWidth: 1360,
+            title: {
+                desktopFontSize: 42,
+                mobileFontSize: 28,
+                desktopMarginBottom: 12,
+                mobileMarginBottom: 10,
+                desktopWeight: '800',
+                mobileWeight: '800',
+                desktopColor: '#0f172a',
+                mobileColor: '#0f172a',
+                desktopLineHeightPercent: 108,
+                mobileLineHeightPercent: 112,
+                desktopLetterSpacing: -0.4,
+                mobileLetterSpacing: -0.2,
+                desktopMaxWidth: 760,
+                mobileMaxWidth: 540,
+                tag: 'h2'
+            },
+            subtitle: {
+                desktopFontSize: 18,
+                mobileFontSize: 15,
+                desktopMarginBottom: 0,
+                mobileMarginBottom: 0,
+                desktopWeight: '400',
+                mobileWeight: '400',
+                desktopColor: '#475569',
+                mobileColor: '#475569',
+                desktopLineHeightPercent: 160,
+                mobileLineHeightPercent: 160,
+                desktopLetterSpacing: 0,
+                mobileLetterSpacing: 0,
+                desktopMaxWidth: 640,
+                mobileMaxWidth: 480
+            },
+            buttonsText: {
+                desktopFontSize: 14,
+                mobileFontSize: 14,
+                desktopWeight: '700',
+                mobileWeight: '700',
+                desktopColor: '#ffffff',
+                mobileColor: '#ffffff',
+                desktopLineHeightPercent: 120,
+                mobileLineHeightPercent: 120,
+                desktopLetterSpacing: 0,
+                mobileLetterSpacing: 0
+            },
+            slideMedia: {
+                aspectRatio: '4:3',
+                objectFit: 'cover',
+                radius: 24
+            },
+            slideSurface: {
+                backgroundMode: 'solid',
+                backgroundColor: '#ffffff',
+                padding: 0,
+                radius: 28,
+                borderWidth: 1,
+                borderColor: '#dbe4ef',
+                shadow: 'sm'
+            },
+            slideTypography: {
+                eyebrow: {
+                    desktopFontSize: 12,
+                    mobileFontSize: 11,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#2563eb',
+                    mobileColor: '#2563eb',
+                    desktopLineHeightPercent: 120,
+                    mobileLineHeightPercent: 120,
+                    desktopLetterSpacing: 0.6,
+                    mobileLetterSpacing: 0.5
+                },
+                title: {
+                    desktopFontSize: 24,
+                    mobileFontSize: 19,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 118,
+                    mobileLineHeightPercent: 122,
+                    desktopLetterSpacing: -0.2,
+                    mobileLetterSpacing: -0.1
+                },
+                text: {
+                    desktopFontSize: 15,
+                    mobileFontSize: 14,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 155,
+                    mobileLineHeightPercent: 155,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0
+                },
+                meta: {
+                    desktopFontSize: 12,
+                    mobileFontSize: 12,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#64748b',
+                    mobileColor: '#64748b',
+                    desktopLineHeightPercent: 130,
+                    mobileLineHeightPercent: 130,
+                    desktopLetterSpacing: 0.2,
+                    mobileLetterSpacing: 0.2
+                },
+                primaryAction: {
+                    desktopFontSize: 14,
+                    mobileFontSize: 14,
+                    desktopWeight: '700',
+                    mobileWeight: '700',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 120,
+                    mobileLineHeightPercent: 120,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0
+                },
+                secondaryAction: {
+                    desktopFontSize: 14,
+                    mobileFontSize: 14,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#475569',
+                    mobileColor: '#475569',
+                    desktopLineHeightPercent: 120,
+                    mobileLineHeightPercent: 120,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0
+                }
+            },
+            navigation: {
+                size: 46,
+                radius: 999,
+                backgroundColor: '#0f172a',
+                textColor: '#ffffff',
+                borderColor: '#0f172a',
+                shadow: 'md'
+            },
+            pagination: {
+                dotSize: 10,
+                gap: 8,
+                color: '#cbd5e1',
+                activeColor: '#0f172a'
+            },
+            progress: {
+                trackColor: '#e2e8f0',
+                fillColor: '#0f172a',
+                height: 4,
+                radius: 999
+            },
+            layout: {
+                desktopPaddingTop: 72,
+                desktopPaddingBottom: 72,
+                mobilePaddingTop: 40,
+                mobilePaddingBottom: 40,
+                desktopSlidesPerView: 3,
+                mobileSlidesPerView: 1,
+                desktopGap: 24,
+                mobileGap: 16,
+                desktopHeaderGap: 28,
+                mobileHeaderGap: 18,
+                desktopContentGap: 28,
+                mobileContentGap: 18,
+                desktopActionsGap: 12,
+                mobileActionsGap: 10,
+                navigationPosition: 'overlay',
+                paginationPosition: 'below',
+                progressPosition: 'below',
+                autoplay: '0',
+                loop: '0',
+                swipe: '1',
+                autoplayDelay: 4500,
+                transitionMs: 450,
+                primaryControl: 'slider'
+            }
+        };
+    }
+
+    if (nbhHasLegacyRepeaterCollection()) {
         if (nbhCollectionBlockKind() === 'headline_feed') {
             return {
                 kind: 'headline_feed',
@@ -2248,7 +2494,7 @@ function nbhBlockUiProfile() {
 }
 
 function nbhRepeaterItems() {
-    var items = nbhGet(nbhState.draft, 'content.items', []);
+    var items = nbhGet(nbhState.draft, nbhCollectionRepeaterPath(), []);
     return Array.isArray(items) ? items : [];
 }
 
@@ -3759,7 +4005,20 @@ function nbhListSource() {
     if (!source.map || typeof source.map !== 'object' || Array.isArray(source.map)) {
         source.map = {};
     }
-    if (nbhIsCardCollectionBlock()) {
+    if (nbhIsSliderCollectionBlock()) {
+        if (typeof source.map.eyebrow !== 'string') source.map.eyebrow = 'category.title';
+        if (typeof source.map.title !== 'string') source.map.title = 'title';
+        if (typeof source.map.text !== 'string') source.map.text = 'teaser';
+        if (typeof source.map.image !== 'string') source.map.image = 'record_image_url';
+        if (typeof source.map.imageAlt !== 'string') source.map.imageAlt = 'title';
+        if (typeof source.map.date !== 'string') source.map.date = 'date_pub';
+        if (typeof source.map.metaLabel !== 'string') source.map.metaLabel = 'category.title';
+        if (typeof source.map.primaryCtaLabel !== 'string') source.map.primaryCtaLabel = 'title';
+        if (typeof source.map.primaryCtaUrl !== 'string') source.map.primaryCtaUrl = 'record_url';
+        if (typeof source.map.secondaryCtaLabel !== 'string') source.map.secondaryCtaLabel = '';
+        if (typeof source.map.secondaryCtaUrl !== 'string') source.map.secondaryCtaUrl = '';
+        if (typeof source.map.recordUrl !== 'string') source.map.recordUrl = 'record_url';
+    } else if (nbhIsCardCollectionBlock()) {
         if (typeof source.map.title !== 'string') source.map.title = 'title';
         if (typeof source.map.excerpt !== 'string') source.map.excerpt = 'teaser';
         if (typeof source.map.image !== 'string') source.map.image = 'record_image_url';
@@ -3797,6 +4056,25 @@ function nbhListSource() {
 }
 
 function nbhCollectionDefaultItem() {
+    if (nbhIsSliderCollectionBlock()) {
+        return {
+            eyebrow: 'Featured',
+            title: 'Новый слайд',
+            text: 'Короткое описание слайда, которое задаёт контекст и помогает перейти дальше.',
+            primary_cta_label: 'Подробнее',
+            primary_cta_url: '/news',
+            secondary_cta_label: 'Все материалы',
+            secondary_cta_url: '/news',
+            image: '',
+            image_alt: '',
+            imageAlt: '',
+            alt: '',
+            date: '',
+            meta_label: 'Новость',
+            record_url: '/news'
+        };
+    }
+
     if (nbhIsCardCollectionBlock()) {
         if (nbhCollectionBlockKind() === 'catalog_browser') {
             return nbhNormalizeCatalogItem(nbhCatalogBaseItem(), { usedIds: nbhCatalogUsedIdMap(), forceNewId: true });
@@ -3832,6 +4110,34 @@ function nbhCollectionDefaultItem() {
 function nbhCollectionItemValue(item, key) {
     if (!item || typeof item !== 'object') {
         return '';
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'imageAlt') {
+        return typeof item.image_alt === 'string' ? item.image_alt : (typeof item.imageAlt === 'string' ? item.imageAlt : (typeof item.alt === 'string' ? item.alt : ''));
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'primary_cta_label') {
+        return typeof item.primary_cta_label === 'string' ? item.primary_cta_label : (typeof item.primaryCtaLabel === 'string' ? item.primaryCtaLabel : '');
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'primary_cta_url') {
+        return typeof item.primary_cta_url === 'string' ? item.primary_cta_url : (typeof item.primaryCtaUrl === 'string' ? item.primaryCtaUrl : '');
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'secondary_cta_label') {
+        return typeof item.secondary_cta_label === 'string' ? item.secondary_cta_label : (typeof item.secondaryCtaLabel === 'string' ? item.secondaryCtaLabel : '');
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'secondary_cta_url') {
+        return typeof item.secondary_cta_url === 'string' ? item.secondary_cta_url : (typeof item.secondaryCtaUrl === 'string' ? item.secondaryCtaUrl : '');
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'meta_label') {
+        return typeof item.meta_label === 'string' ? item.meta_label : (typeof item.metaLabel === 'string' ? item.metaLabel : '');
+    }
+
+    if (nbhIsSliderCollectionBlock() && key === 'record_url') {
+        return typeof item.record_url === 'string' ? item.record_url : (typeof item.recordUrl === 'string' ? item.recordUrl : (typeof item.url === 'string' ? item.url : ''));
     }
 
     if (nbhIsCardCollectionBlock() && key === 'id') {
@@ -3962,7 +4268,8 @@ function nbhSingleBindings() {
 }
 
 function nbhUsesCollectionData() {
-    return nbhHasCapability('repeaterBindings') && nbhHasEntity('items');
+    return (nbhHasCapability('repeaterBindings') && nbhHasEntity('items'))
+        || (nbhHasCapability('hasContentListSource') && nbhHasEntity('slide'));
 }
 
 function nbhFieldMatchesKinds(field, kinds) {
@@ -4417,7 +4724,7 @@ function nbhOpenIconPicker(path) {
 function nbhAddRepeaterItem() {
     var items = nbhRepeaterItems().slice();
     items.push(nbhCollectionDefaultItem());
-    nbhSet(nbhState.draft, 'content.items', items);
+    nbhSet(nbhState.draft, nbhCollectionRepeaterPath(), items);
     nbhMarkDirty();
     nbhRenderPanels();
     nbhScheduleSave();
@@ -4429,7 +4736,7 @@ function nbhRemoveRepeaterItem(index) {
         return;
     }
     items.splice(index, 1);
-    nbhSet(nbhState.draft, 'content.items', items);
+    nbhSet(nbhState.draft, nbhCollectionRepeaterPath(), items);
     nbhMarkDirty();
     nbhRenderPanels();
     nbhScheduleSave();
@@ -4448,7 +4755,7 @@ function nbhDuplicateRepeaterItem(index) {
     }
 
     items.splice(index + 1, 0, clone);
-    nbhSet(nbhState.draft, 'content.items', items);
+    nbhSet(nbhState.draft, nbhCollectionRepeaterPath(), items);
     nbhMarkDirty();
     nbhRenderPanels();
     nbhScheduleSave();
@@ -4466,7 +4773,7 @@ function nbhMoveRepeaterItem(index, direction) {
     current = items[index];
     items[index] = items[nextIndex];
     items[nextIndex] = current;
-    nbhSet(nbhState.draft, 'content.items', items);
+    nbhSet(nbhState.draft, nbhCollectionRepeaterPath(), items);
     nbhMarkDirty();
     nbhRenderPanels();
     nbhScheduleSave();
@@ -4479,7 +4786,52 @@ function nbhUpdateRepeaterItem(index, field, value) {
     }
 
     var item = items[index];
-    if (!nbhIsCardCollectionBlock()) {
+    if (nbhIsSliderCollectionBlock()) {
+        if (field === 'alt' || field === 'imageAlt') field = 'image_alt';
+
+        item[field] = value;
+
+        if (field === 'image_alt') {
+            item.imageAlt = value;
+            item.alt = value;
+        }
+        if (field === 'primary_cta_label') {
+            item.primaryCtaLabel = value;
+        }
+        if (field === 'primary_cta_url') {
+            item.primaryCtaUrl = value;
+        }
+        if (field === 'secondary_cta_label') {
+            item.secondaryCtaLabel = value;
+        }
+        if (field === 'secondary_cta_url') {
+            item.secondaryCtaUrl = value;
+        }
+        if (field === 'meta_label') {
+            item.metaLabel = value;
+        }
+        if (field === 'record_url') {
+            item.recordUrl = value;
+            item.url = value;
+        }
+
+        if (typeof item.image_alt !== 'string') item.image_alt = typeof item.imageAlt === 'string' ? item.imageAlt : (typeof item.alt === 'string' ? item.alt : '');
+        if (typeof item.imageAlt !== 'string') item.imageAlt = item.image_alt;
+        if (typeof item.alt !== 'string') item.alt = item.image_alt;
+        if (typeof item.primary_cta_label !== 'string') item.primary_cta_label = typeof item.primaryCtaLabel === 'string' ? item.primaryCtaLabel : '';
+        if (typeof item.primaryCtaLabel !== 'string') item.primaryCtaLabel = item.primary_cta_label;
+        if (typeof item.primary_cta_url !== 'string') item.primary_cta_url = typeof item.primaryCtaUrl === 'string' ? item.primaryCtaUrl : '';
+        if (typeof item.primaryCtaUrl !== 'string') item.primaryCtaUrl = item.primary_cta_url;
+        if (typeof item.secondary_cta_label !== 'string') item.secondary_cta_label = typeof item.secondaryCtaLabel === 'string' ? item.secondaryCtaLabel : '';
+        if (typeof item.secondaryCtaLabel !== 'string') item.secondaryCtaLabel = item.secondary_cta_label;
+        if (typeof item.secondary_cta_url !== 'string') item.secondary_cta_url = typeof item.secondaryCtaUrl === 'string' ? item.secondaryCtaUrl : '';
+        if (typeof item.secondaryCtaUrl !== 'string') item.secondaryCtaUrl = item.secondary_cta_url;
+        if (typeof item.meta_label !== 'string') item.meta_label = typeof item.metaLabel === 'string' ? item.metaLabel : '';
+        if (typeof item.metaLabel !== 'string') item.metaLabel = item.meta_label;
+        if (typeof item.record_url !== 'string') item.record_url = typeof item.recordUrl === 'string' ? item.recordUrl : (typeof item.url === 'string' ? item.url : '');
+        if (typeof item.recordUrl !== 'string') item.recordUrl = item.record_url;
+        if (typeof item.url !== 'string') item.url = item.record_url;
+    } else if (!nbhIsCardCollectionBlock()) {
         if (field === 'question') field = 'title';
         if (field === 'answer') field = 'text';
     } else {
@@ -4564,7 +4916,7 @@ function nbhUpdateRepeaterItem(index, field, value) {
         }
     }
 
-    nbhSet(nbhState.draft, 'content.items', items);
+    nbhSet(nbhState.draft, nbhCollectionRepeaterPath(), items);
     nbhMarkDirty();
     nbhScheduleSave();
 }
