@@ -31,7 +31,7 @@ design block внедряется как отдельная ветка внут�
 4. `render.php` для `design_block`;
 5. отдельный backend editor shell;
 6. palette v1;
-7. save + preview loop;
+7. save + live canvas loop;
 8. штатные image/icon/file picker integrations.
 
 В scope не входят:
@@ -161,20 +161,21 @@ SQL на первом этапе не нужен, потому что `design_bl
 Что делаем:
 
 1. topbar с title/save/place/breakpoints;
-2. canvas iframe;
+2. canvas в том же DOM без iframe;
 3. sidebar cards `Дизайн-блок`, `Холст`, `Секция`, `Слои`, `Свойства элемента`;
-4. JS store с document/ui/transient state.
+4. JS store с document/ui/transient state;
+5. прямое inline-редактирование текста, drag/drop и 12-колоночную grid overlay.
 
 Критерий готовности:
 
 1. editor можно открыть, выделить элемент, изменить свойства и сохранить contract.
 
-### Stage 5. Shell/iframe bridge and preview loop
+### Stage 5. Live canvas interaction loop
 
 Задача:
 
-1. стабилизировать связь shell и preview;
-2. сохранить preview/live parity.
+1. стабилизировать живой canvas в одной странице редактора;
+2. сохранить save/live parity при отсутствии iframe как главного UX-контура.
 
 Основные файлы:
 
@@ -184,14 +185,14 @@ SQL на первом этапе не нужен, потому что `design_bl
 
 Что делаем:
 
-1. message bridge `nordicblocks-editor <-> nordicblocks-canvas`;
-2. selection sync;
-3. canvas metrics sync;
-4. save/reload loop.
+1. local DOM render для stage и элементов;
+2. selection sync между холстом, слоями и property panel;
+3. drag/drop + grid snap + guide lines;
+4. save loop без отдельного preview-этапа.
 
 Критерий готовности:
 
-1. изменение в sidebar предсказуемо отражается в preview и потом в live.
+1. изменение на холсте и в sidebar предсказуемо отражается сразу в editor canvas и потом в live после save.
 
 ### Stage 6. Picker integration and asset rules
 

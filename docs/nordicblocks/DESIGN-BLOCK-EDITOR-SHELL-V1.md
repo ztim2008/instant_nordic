@@ -11,8 +11,15 @@
 1. admin template layout;
 2. state bootstrap из PHP в JS;
 3. JS store contract;
-4. postMessage bridge между shell и preview iframe;
+4. live DOM-canvas в той же странице редактора;
 5. sidebar structure donor-уровня.
+
+Обновление на 2026-04-20:
+
+1. основной UX редактора для `design_block` больше не опирается на iframe preview как на главный режим работы;
+2. канонический shell рендерит холст прямо в DOM admin-страницы;
+3. drag/drop, inline-редактирование текста, направляющие и 12-колоночная сетка работают без отдельного frame-layer;
+4. `block_design_canvas` остаётся допустимым вспомогательным SSR endpoint для smoke/parity, но не считается главным UX-контуром editor shell.
 
 Главное правило:
 
@@ -59,7 +66,7 @@ freeform editor является отдельным режимом редакт�
 2. `block_design_state`
   - возвращает JSON bootstrap/state для JS shell.
 3. `block_design_canvas`
-  - возвращает standalone iframe preview через SSR renderer.
+  - возвращает standalone SSR preview для smoke/parity-проверок и вспомогательных сценариев.
 4. `block_save`
   - сохраняет title и full contract.
 
@@ -97,7 +104,7 @@ Template состоит из 3 зон:
 ```text
 ┌ Topbar: back / title / breakpoints / save / place ┐
 ├──────────────────────────┬─────────────────────────┤
-│ Canvas + iframe preview  │ Sidebar                │
+│ Canvas в том же DOM      │ Sidebar                │
 │                          │ 1. Дизайн-блок         │
 │                          │ 2. Холст               │
 │                          │ 3. Секция              │
@@ -122,10 +129,11 @@ Topbar обязан содержать:
 
 Canvas area содержит:
 
-1. iframe preview;
-2. overlay selection helpers в shell, а не внутри live markup;
+1. локально отрисованный DOM stage без iframe;
+2. overlay selection helpers, drag handles, guide lines и 12-колоночную сетку;
 3. background work area;
-4. adaptive width switch according to active breakpoint.
+4. adaptive width switch according to active breakpoint;
+5. inline contenteditable text editing для текстовых и button-like элементов.
 
 ### 4.5 Sidebar contract
 
@@ -192,7 +200,6 @@ Template может отдать только минимальный bootstrap:
 
 1. `block_id`
 2. `state_url`
-3. `canvas_url`
 
 Полный contract лучше грузить через `block_design_state`, чтобы shell можно было обновлять reload-safe способом без засорения PHP template.
 

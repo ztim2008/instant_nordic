@@ -38,7 +38,7 @@
             "title": "Design Block",
             "family": "design-block-v1",
             "status": "in_progress",
-            "checkpoint": "snapshot/20260420-164116",
+            "checkpoint": "snapshot/20260420-172307",
             "items": {
                 "spec_locked": true,
                 "block_registered": true,
@@ -48,7 +48,7 @@
                 "package_mirror": true,
                 "live_smoke": false
             },
-            "notes": "Stage 4 visual shell подключён поверх уже готового contract/runtime слоя: backend editor теперь даёт полноценный canvas+sidebar layout с palette, layers, section/stage inspector и property panel, а iframe preview синхронизирует selection через data-nb-entity markers и postMessage bridge. Package mirror parity сохранён. Residual risk: manual live smoke в админке и после placement ещё обязателен, а drag/resize поверх canvas и richer media/icon pickers остаются следующими итерациями."
+            "notes": "Design Block shell переведён на live DOM-canvas без iframe как основного UX-контура: backend editor теперь редактирует одну и ту же сцену прямо в странице через palette, layers, section/stage inspector, property panel, inline-редактирование текста, drag/drop и 12-колоночную сетку с направляющими. Сохранение осталось отдельной фиксацией контракта без двухэтапного preview-loop. Package mirror parity должен идти синхронно. Residual risk: manual live smoke на реальном design_block instance всё ещё обязателен, а resize handles и richer media/icon pickers остаются следующими итерациями."
         },
         "catalog_browser": {
             "title": "Каталог",

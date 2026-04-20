@@ -14,7 +14,6 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
     id="nbd-editor"
     class="nbde-shell"
     data-state-url="<?= htmlspecialchars($state_url, ENT_QUOTES, 'UTF-8') ?>"
-    data-canvas-url="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>"
     data-save-url="<?= htmlspecialchars($save_url, ENT_QUOTES, 'UTF-8') ?>"
     data-back-url="<?= htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8') ?>"
     data-place-url="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>"
@@ -34,7 +33,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
                 <button class="nbde-breakpoint" type="button" data-breakpoint="tablet">Планшет</button>
                 <button class="nbde-breakpoint" type="button" data-breakpoint="mobile">Мобильный</button>
             </div>
-            <button class="nbde-ghost-button" type="button" data-action="reload-preview">Обновить холст</button>
+            <button class="nbde-ghost-button" type="button" data-action="reload-state">Перечитать с сервера</button>
             <a class="nbde-ghost-button" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>">Разместить</a>
             <button class="nbde-primary-button" type="button" id="nbd-save-button">Сохранить</button>
         </div>
@@ -45,13 +44,13 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <div class="nbde-canvas-panel__head">
                 <div>
                     <strong>Холст</strong>
-                    <span>Холст закреплён, а выбор элемента синхронизируется со слоями и панелью свойств.</span>
+                    <span>Живой DOM-холст без iframe: перетаскивание, набор текста и направляющие работают сразу в редакторе.</span>
                 </div>
                 <div class="nbde-canvas-chip" id="nbd-canvas-meta">Загрузка холста...</div>
             </div>
             <div class="nbde-canvas-workarea">
                 <div class="nbde-canvas-frame nbde-canvas-frame--desktop" id="nbd-canvas-frame-wrap">
-                    <iframe id="nbd-preview-frame" src="<?= htmlspecialchars($canvas_url, ENT_QUOTES, 'UTF-8') ?>"></iframe>
+                    <div class="nbde-canvas-stage" id="nbd-canvas-stage"></div>
                 </div>
             </div>
         </section>
@@ -105,7 +104,6 @@ window.NordicblocksDesignBlockBootstrap = <?= json_encode([
     'blockId'   => (int) ($block['id'] ?? 0),
     'stateUrl'  => $state_url,
     'saveUrl'   => $save_url,
-    'canvasUrl' => $canvas_url,
     'backUrl'   => $back_url,
     'placeUrl'  => $place_url,
     'csrfToken' => cmsForm::getCSRFToken(),
