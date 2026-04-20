@@ -1322,6 +1322,18 @@ function nbhBlockUiProfile() {
                         desktopLetterSpacing: 0,
                         mobileLetterSpacing: 0,
                     },
+                    link: {
+                        desktopFontSize: 12,
+                        mobileFontSize: 12,
+                        desktopWeight: '700',
+                        mobileWeight: '700',
+                        desktopColor: '',
+                        mobileColor: '',
+                        desktopLineHeightPercent: 120,
+                        mobileLineHeightPercent: 120,
+                        desktopLetterSpacing: 1,
+                        mobileLetterSpacing: 1,
+                    },
                 },
                 layout: {
                     desktopPaddingTop: 64,

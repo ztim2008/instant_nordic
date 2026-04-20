@@ -589,5 +589,5 @@ Package mirror для editor templates обязателен синхронно �
 | category_cards | Рубрика с карточками | in_progress | snapshot/20260418-112025 | yes |
 | content_feed | Лента новостей | in_progress | snapshot/20260418-102305 | yes |
 | headline_feed | Главная статья и лента | in_progress | snapshot/20260418-171903 | yes |
-| swiss_grid | Swiss Grid | in_progress | snapshot/20260419-064131 | no |
+| swiss_grid | Swiss Grid | in_progress | snapshot/20260419-064131 | yes |
 <!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->

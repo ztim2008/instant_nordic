@@ -182,3 +182,17 @@ Shared CSS уже знает `--nb-feed-item-link-color`, `--nb-feed-item-link-s
 3. ни один из найденных gaps не требует нового private inspector path.
 
 Это означает, что следующий шаг должен быть не новым исследованием, а controlled implementation с checkpoint перед стартом.
+
+## Status After Implementation
+
+На этом же рабочем дне решение по `itemLink` было принято в пользу реального CTA node, после чего rollout был доведён через shared path.
+
+Что подтверждено после implementation:
+
+1. `headline_feed` schema теперь содержит `link_label` для карточек;
+2. shared profile для `headline_feed` теперь даёт `itemTypography.link` defaults;
+3. SSR markup теперь рисует честные `data-nb-entity="itemLink"` anchors;
+4. render эмитит `--nb-feed-item-link-*` variables;
+5. editor smoke на временном block `#126` подтвердил, что после клика по CTA chip `CTA карточки` становится active в inspector.
+
+То есть discovery gaps по `itemLink` для `headline_feed` на 2026-04-20 считаются закрытыми.

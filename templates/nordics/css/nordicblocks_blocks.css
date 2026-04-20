@@ -647,11 +647,11 @@
     align-items: center;
     gap: .32rem;
     width: fit-content;
-    color: var(--nb-color-text);
-    font-size: .82rem;
-    font-weight: 700;
-    line-height: 1.2;
-    letter-spacing: .04em;
+    color: var(--nb-feed-item-link-color, var(--nb-color-text));
+    font-size: var(--nb-feed-item-link-size, .82rem);
+    font-weight: var(--nb-feed-item-link-weight, 700);
+    line-height: var(--nb-feed-item-link-line-height, 1.2);
+    letter-spacing: var(--nb-feed-item-link-letter-spacing, .04em);
     text-decoration: none;
     text-transform: uppercase;
     border-bottom: 1px solid currentColor;
@@ -773,6 +773,14 @@
         line-height: var(--nb-feed-meta-line-height-mobile, var(--nb-feed-meta-line-height, 1.4));
         letter-spacing: var(--nb-feed-meta-letter-spacing-mobile, var(--nb-feed-meta-letter-spacing, 0px));
         color: var(--nb-feed-meta-color-mobile, var(--nb-feed-meta-color, var(--nb-color-text-muted)));
+    }
+
+    .nb-content-feed__item-link {
+        font-size: var(--nb-feed-item-link-size-mobile, var(--nb-feed-item-link-size, .82rem));
+        font-weight: var(--nb-feed-item-link-weight-mobile, var(--nb-feed-item-link-weight, 700));
+        line-height: var(--nb-feed-item-link-line-height-mobile, var(--nb-feed-item-link-line-height, 1.2));
+        letter-spacing: var(--nb-feed-item-link-letter-spacing-mobile, var(--nb-feed-item-link-letter-spacing, .04em));
+        color: var(--nb-feed-item-link-color-mobile, var(--nb-feed-item-link-color, var(--nb-color-text)));
     }
 }
 

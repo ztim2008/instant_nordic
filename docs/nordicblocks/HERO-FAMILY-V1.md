@@ -51,6 +51,6 @@ Stage 3 scaffold pipeline для hero family должен позволять:
 
 | Slug | Title | Status | Checkpoint | Live smoke |
 | --- | --- | --- | --- | --- |
-| hero_panels_editorial | Hero: editorial 12 колонок | in_progress | snapshot/20260419-163016 | no |
-| hero_panels_wide | Hero: широкие панели | in_progress | snapshot/20260419-160928 | no |
+| hero_panels_editorial | Hero: editorial 12 колонок | in_progress | snapshot/20260419-163016 | yes |
+| hero_panels_wide | Hero: широкие панели | in_progress | snapshot/20260419-160928 | yes |
 <!-- NORDICBLOCKS_SCAFFOLD_REGISTRY_END -->

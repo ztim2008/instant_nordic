@@ -44,6 +44,7 @@ if (!function_exists('nb_headline_feed_normalize_item')) {
         $title = trim((string) ($item['title'] ?? ''));
         $excerpt = trim((string) ($item['excerpt'] ?? ($item['text'] ?? '')));
         $category = trim((string) ($item['category'] ?? ''));
+        $link_label = trim((string) ($item['linkLabel'] ?? ($item['link_label'] ?? '')));
         $url = trim((string) ($item['url'] ?? ''));
         $date = trim((string) ($item['date'] ?? ''));
         $views = trim((string) ($item['views'] ?? ''));
@@ -58,6 +59,7 @@ if (!function_exists('nb_headline_feed_normalize_item')) {
             'category' => htmlspecialchars($category, ENT_QUOTES, 'UTF-8'),
             'title' => htmlspecialchars($title, ENT_QUOTES, 'UTF-8'),
             'excerpt' => nl2br(htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8')),
+            'linkLabel' => htmlspecialchars($link_label, ENT_QUOTES, 'UTF-8'),
             'url' => htmlspecialchars($url, ENT_QUOTES, 'UTF-8'),
             'date' => htmlspecialchars($date, ENT_QUOTES, 'UTF-8'),
             'views' => htmlspecialchars($views, ENT_QUOTES, 'UTF-8'),
@@ -65,6 +67,18 @@ if (!function_exists('nb_headline_feed_normalize_item')) {
             'image' => htmlspecialchars((string) ($media['display'] ?: $media['original']), ENT_QUOTES, 'UTF-8'),
             'imageAlt' => htmlspecialchars((string) ($media['alt'] ?: $title), ENT_QUOTES, 'UTF-8'),
         ];
+    }
+}
+
+if (!function_exists('nb_headline_feed_card_link_label')) {
+    function nb_headline_feed_card_link_label(array $item) {
+        if (($item['url'] ?? '') === '') {
+            return '';
+        }
+
+        $label = trim((string) ($item['linkLabel'] ?? ''));
+
+        return $label !== '' ? $label : 'Подробнее';
     }
 }
 
@@ -94,6 +108,7 @@ if ($headline_contract) {
     $meta_entity = (array) ($headline_contract['design']['entities']['meta'] ?? []);
     $item_title_entity = (array) ($headline_contract['design']['entities']['itemTitle'] ?? []);
     $item_text_entity = (array) ($headline_contract['design']['entities']['itemText'] ?? []);
+    $item_link_entity = (array) ($headline_contract['design']['entities']['itemLink'] ?? []);
     $media_entity = (array) ($headline_contract['design']['entities']['media'] ?? []);
     $surface_entity = (array) ($headline_contract['design']['entities']['itemSurface'] ?? []);
 
@@ -129,6 +144,16 @@ if ($headline_contract) {
     $item_title_size_mobile = (int) (($item_title_entity['mobile']['fontSize'] ?? 16));
     $item_text_size_desktop = (int) (($item_text_entity['desktop']['fontSize'] ?? 14));
     $item_text_size_mobile = (int) (($item_text_entity['mobile']['fontSize'] ?? 14));
+    $item_link_size_desktop = (int) (($item_link_entity['desktop']['fontSize'] ?? 12));
+    $item_link_size_mobile = (int) (($item_link_entity['mobile']['fontSize'] ?? $item_link_size_desktop));
+    $item_link_weight_desktop = (int) (($item_link_entity['desktop']['weight'] ?? ($item_link_entity['weight'] ?? 700)));
+    $item_link_weight_mobile = (int) (($item_link_entity['mobile']['weight'] ?? ($item_link_entity['weight'] ?? $item_link_weight_desktop)));
+    $item_link_color_desktop = nb_block_css_color((string) ($item_link_entity['desktop']['color'] ?? ($item_link_entity['color'] ?? '')));
+    $item_link_color_mobile = nb_block_css_color((string) ($item_link_entity['mobile']['color'] ?? ($item_link_entity['color'] ?? $item_link_color_desktop)));
+    $item_link_line_height_desktop = ((float) ($item_link_entity['desktop']['lineHeightPercent'] ?? ($item_link_entity['lineHeightPercent'] ?? 120))) / 100;
+    $item_link_line_height_mobile = ((float) ($item_link_entity['mobile']['lineHeightPercent'] ?? ($item_link_entity['lineHeightPercent'] ?? ($item_link_line_height_desktop * 100)))) / 100;
+    $item_link_letter_spacing_desktop = (float) ($item_link_entity['desktop']['letterSpacing'] ?? ($item_link_entity['letterSpacing'] ?? 1));
+    $item_link_letter_spacing_mobile = (float) ($item_link_entity['mobile']['letterSpacing'] ?? ($item_link_entity['letterSpacing'] ?? $item_link_letter_spacing_desktop));
     $media_radius = (int) ($media_entity['radius'] ?? 22);
     $media_aspect_ratio = (string) ($media_entity['aspectRatio'] ?? '4:3');
     $media_object_fit = (string) ($media_entity['objectFit'] ?? 'cover');
@@ -196,6 +221,16 @@ if ($headline_contract) {
     $item_title_size_mobile = nb_headline_feed_prop_int($props, 'item_title_size_mobile', 16, 10, 80);
     $item_text_size_desktop = nb_headline_feed_prop_int($props, 'item_text_size_desktop', 14, 10, 80);
     $item_text_size_mobile = nb_headline_feed_prop_int($props, 'item_text_size_mobile', 14, 10, 80);
+    $item_link_size_desktop = 12;
+    $item_link_size_mobile = 12;
+    $item_link_weight_desktop = 700;
+    $item_link_weight_mobile = 700;
+    $item_link_color_desktop = '';
+    $item_link_color_mobile = '';
+    $item_link_line_height_desktop = 1.2;
+    $item_link_line_height_mobile = 1.2;
+    $item_link_letter_spacing_desktop = 1;
+    $item_link_letter_spacing_mobile = 1;
     $media_radius = nb_headline_feed_prop_int($props, 'media_radius', 22, 0, 80);
     $media_aspect_ratio = (string) ($props['media_aspect_ratio'] ?? '4:3');
     $media_object_fit = (string) ($props['media_object_fit'] ?? 'cover');
@@ -266,6 +301,16 @@ $section_style = nb_block_append_style($section_style, '--nb-feed-item-title-siz
 $section_style = nb_block_append_style($section_style, '--nb-feed-item-title-size-mobile:' . $item_title_size_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-feed-item-text-size:' . $item_text_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-feed-item-text-size-mobile:' . $item_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-size:' . $item_link_size_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-size-mobile:' . $item_link_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-weight:' . $item_link_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-weight-mobile:' . $item_link_weight_mobile . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-line-height:' . max(0.8, min(2.2, $item_link_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-line-height-mobile:' . max(0.8, min(2.2, $item_link_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-letter-spacing:' . $item_link_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-feed-item-link-letter-spacing-mobile:' . $item_link_letter_spacing_mobile . 'px;');
+$section_style = $item_link_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-feed-item-link-color:' . $item_link_color_desktop . ';') : $section_style;
+$section_style = $item_link_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-feed-item-link-color-mobile:' . $item_link_color_mobile . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-aspect-ratio:' . $media_aspect_ratio . ';');
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-object-fit:' . $media_object_fit . ';');
 $section_style = nb_block_append_style($section_style, '--nb-feed-media-radius:' . $media_radius . 'px;');
@@ -325,6 +370,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                     <?php if ($show_excerpt && $lead_item['excerpt'] !== ''): ?>
                     <div class="nb-content-feed__excerpt nb-headline-feed__lead-excerpt" data-nb-entity="itemText"><?= $lead_item['excerpt'] ?></div>
                     <?php endif; ?>
+                    <?php $card_link_label = nb_headline_feed_card_link_label($lead_item); ?>
+                    <?php if ($card_link_label !== ''): ?>
+                    <a class="nb-content-feed__item-link" href="<?= $lead_item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
+                    <?php endif; ?>
                     <?php if (($show_date && $lead_item['date'] !== '') || ($show_views && $lead_item['views'] !== '') || ($show_comments && $lead_item['comments'] !== '')): ?>
                     <div class="nb-content-feed__meta" data-nb-entity="meta">
                         <?php if ($show_date && $lead_item['date'] !== ''): ?><span><?= $lead_item['date'] ?></span><?php endif; ?>
@@ -359,6 +408,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                         <?php endif; ?>
                         <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
                         <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
+                        <?php endif; ?>
+                        <?php $card_link_label = nb_headline_feed_card_link_label($item); ?>
+                        <?php if ($card_link_label !== ''): ?>
+                        <a class="nb-content-feed__item-link" href="<?= $item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
                         <?php endif; ?>
                         <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
                         <div class="nb-content-feed__meta" data-nb-entity="meta">
@@ -398,6 +451,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                         <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
                         <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
                         <?php endif; ?>
+                        <?php $card_link_label = nb_headline_feed_card_link_label($item); ?>
+                        <?php if ($card_link_label !== ''): ?>
+                        <a class="nb-content-feed__item-link" href="<?= $item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
+                        <?php endif; ?>
                         <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
                         <div class="nb-content-feed__meta" data-nb-entity="meta">
                             <?php if ($show_date && $item['date'] !== ''): ?><span><?= $item['date'] ?></span><?php endif; ?>
@@ -431,6 +488,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                         <?php endif; ?>
                     </h3>
                     <?php endif; ?>
+                    <?php $card_link_label = nb_headline_feed_card_link_label($split_feature_item); ?>
+                    <?php if ($card_link_label !== ''): ?>
+                    <a class="nb-content-feed__item-link" href="<?= $split_feature_item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
+                    <?php endif; ?>
                     <?php if (($show_date && $split_feature_item['date'] !== '') || ($show_views && $split_feature_item['views'] !== '') || ($show_comments && $split_feature_item['comments'] !== '')): ?>
                     <div class="nb-content-feed__meta" data-nb-entity="meta">
                         <?php if ($show_date && $split_feature_item['date'] !== ''): ?><span><?= $split_feature_item['date'] ?></span><?php endif; ?>
@@ -463,6 +524,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                     <?php endif; ?>
                     <?php if ($show_excerpt && $lead_item['excerpt'] !== ''): ?>
                     <div class="nb-content-feed__excerpt nb-headline-feed__lead-excerpt" data-nb-entity="itemText"><?= $lead_item['excerpt'] ?></div>
+                    <?php endif; ?>
+                    <?php $card_link_label = nb_headline_feed_card_link_label($lead_item); ?>
+                    <?php if ($card_link_label !== ''): ?>
+                    <a class="nb-content-feed__item-link" href="<?= $lead_item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
                     <?php endif; ?>
                     <?php if (($show_date && $lead_item['date'] !== '') || ($show_views && $lead_item['views'] !== '') || ($show_comments && $lead_item['comments'] !== '')): ?>
                     <div class="nb-content-feed__meta" data-nb-entity="meta">
@@ -498,6 +563,10 @@ $section_style = nb_block_append_style($section_style, $reveal['style']);
                         <?php endif; ?>
                         <?php if ($show_excerpt && $item['excerpt'] !== ''): ?>
                         <div class="nb-content-feed__excerpt" data-nb-entity="itemText"><?= $item['excerpt'] ?></div>
+                        <?php endif; ?>
+                        <?php $card_link_label = nb_headline_feed_card_link_label($item); ?>
+                        <?php if ($card_link_label !== ''): ?>
+                        <a class="nb-content-feed__item-link" href="<?= $item['url'] ?>" data-nb-entity="itemLink"><?= $card_link_label ?></a>
                         <?php endif; ?>
                         <?php if (($show_date && $item['date'] !== '') || ($show_views && $item['views'] !== '') || ($show_comments && $item['comments'] !== '')): ?>
                         <div class="nb-content-feed__meta" data-nb-entity="meta">
