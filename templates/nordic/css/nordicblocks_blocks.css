@@ -767,6 +767,14 @@
         color: var(--nb-feed-item-text-color-mobile, var(--nb-feed-item-text-color, var(--nb-color-text-muted)));
     }
 
+    .nb-category-cards .nb-content-feed__card-title {
+        font-size: var(--nb-feed-item-title-size-mobile, var(--nb-feed-item-title-size, clamp(1rem, 1.35vw, 1.12rem)));
+    }
+
+    .nb-category-cards .nb-content-feed__excerpt {
+        font-size: var(--nb-feed-item-text-size-mobile, var(--nb-feed-item-text-size, .92rem));
+    }
+
     .nb-content-feed__meta {
         font-size: var(--nb-feed-meta-size-mobile, var(--nb-feed-meta-size, var(--nb-text-sm, .875rem)));
         font-weight: var(--nb-feed-meta-weight-mobile, var(--nb-feed-meta-weight, 600));
@@ -1322,13 +1330,13 @@
 }
 
 .nb-category-cards .nb-content-feed__card-title {
-    font-size: clamp(1rem, 1.35vw, 1.12rem);
+    font-size: var(--nb-feed-item-title-size, clamp(1rem, 1.35vw, 1.12rem));
     text-wrap: pretty;
     -webkit-line-clamp: 2;
 }
 
 .nb-category-cards .nb-content-feed__excerpt {
-    font-size: .92rem;
+    font-size: var(--nb-feed-item-text-size, .92rem);
     -webkit-line-clamp: 2;
 }
 

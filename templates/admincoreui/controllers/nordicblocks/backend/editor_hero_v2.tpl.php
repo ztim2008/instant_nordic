@@ -1210,12 +1210,16 @@ function nbhCollectionBlockKind() {
         return 'catalog_browser';
     }
 
+    if (nbhBlockType() === 'bento_feed') {
+        return 'bento_feed';
+    }
+
     return 'faq';
 }
 
 function nbhIsCardCollectionBlock() {
     var kind = nbhCollectionBlockKind();
-    return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed' || kind === 'swiss_grid' || kind === 'catalog_browser';
+    return kind === 'content_feed' || kind === 'category_cards' || kind === 'headline_feed' || kind === 'swiss_grid' || kind === 'catalog_browser' || kind === 'bento_feed';
 }
 
 function nbhBlockUiProfile() {
@@ -1909,6 +1913,137 @@ function nbhBlockUiProfile() {
             };
         }
 
+
+        if (nbhCollectionBlockKind() === 'bento_feed') {
+            return {
+                kind: 'bento_feed',
+                presets: [
+                    { value: 'editorial_mix', label: 'Editorial Mix' },
+                    { value: 'feature_stack', label: 'Feature Stack' }
+                ],
+                themeOptions: [
+                    { value: 'light', label: 'Светлая' },
+                    { value: 'alt', label: 'Мягкий фон' },
+                    { value: 'dark', label: 'Темная' }
+                ],
+                contentWidth: 1360,
+                title: {
+                    desktopFontSize: 44,
+                    mobileFontSize: 30,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '800',
+                    mobileWeight: '800',
+                    desktopColor: '#0f172a',
+                    mobileColor: '#0f172a',
+                    desktopLineHeightPercent: 104,
+                    mobileLineHeightPercent: 108,
+                    desktopLetterSpacing: -1,
+                    mobileLetterSpacing: -1,
+                    desktopMaxWidth: 920,
+                    mobileMaxWidth: 920,
+                    tag: 'h2',
+                    desktopExtras: true,
+                },
+                subtitle: {
+                    desktopFontSize: 16,
+                    mobileFontSize: 14,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '400',
+                    mobileWeight: '400',
+                    desktopColor: '#5b6472',
+                    mobileColor: '#5b6472',
+                    desktopLineHeightPercent: 155,
+                    mobileLineHeightPercent: 155,
+                    desktopLetterSpacing: 0,
+                    mobileLetterSpacing: 0,
+                    desktopMaxWidth: 760,
+                    mobileMaxWidth: 760,
+                    desktopExtras: true,
+                },
+                meta: {
+                    desktopFontSize: 11,
+                    mobileFontSize: 11,
+                    desktopMarginBottom: 0,
+                    mobileMarginBottom: 0,
+                    desktopWeight: '600',
+                    mobileWeight: '600',
+                    desktopColor: '#5b6472',
+                    mobileColor: '#5b6472',
+                    desktopLineHeightPercent: 130,
+                    mobileLineHeightPercent: 130,
+                    desktopLetterSpacing: 1,
+                    mobileLetterSpacing: 1,
+                },
+                media: {
+                    aspectRatio: '4:3',
+                    objectFit: 'cover',
+                    radius: 0,
+                },
+                itemSurface: {
+                    radius: 0,
+                    borderWidth: 1,
+                    borderColor: '#d9dde4',
+                    shadow: 'none',
+                },
+                itemTypography: {
+                    enabled: true,
+                    titleLabel: 'Заголовок карточки',
+                    textLabel: 'Анонс карточки',
+                    title: {
+                        desktopFontSize: 22,
+                        mobileFontSize: 18,
+                        desktopWeight: '700',
+                        mobileWeight: '700',
+                        desktopColor: '#111827',
+                        mobileColor: '#111827',
+                        desktopLineHeightPercent: 118,
+                        mobileLineHeightPercent: 122,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    text: {
+                        desktopFontSize: 15,
+                        mobileFontSize: 14,
+                        desktopWeight: '400',
+                        mobileWeight: '400',
+                        desktopColor: '#5b6472',
+                        mobileColor: '#5b6472',
+                        desktopLineHeightPercent: 150,
+                        mobileLineHeightPercent: 150,
+                        desktopLetterSpacing: 0,
+                        mobileLetterSpacing: 0,
+                    },
+                    link: {
+                        desktopFontSize: 12,
+                        mobileFontSize: 12,
+                        desktopWeight: '700',
+                        mobileWeight: '700',
+                        desktopColor: '',
+                        mobileColor: '',
+                        desktopLineHeightPercent: 120,
+                        mobileLineHeightPercent: 120,
+                        desktopLetterSpacing: 1,
+                        mobileLetterSpacing: 1,
+                    },
+                },
+                layout: {
+                    desktopPaddingTop: 0,
+                    desktopPaddingBottom: 0,
+                    mobilePaddingTop: 0,
+                    mobilePaddingBottom: 0,
+                    supportsMinHeight: false,
+                    primaryControl: 'feed-grid',
+                    desktopColumns: 3,
+                    mobileColumns: 1,
+                    desktopCardGap: 0,
+                    mobileCardGap: 0,
+                    desktopHeaderGap: 18,
+                    mobileHeaderGap: 14,
+                },
+            };
+        }
         return {
             kind: 'collection',
             themeOptions: [

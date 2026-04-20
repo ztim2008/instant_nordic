@@ -163,7 +163,7 @@ function nbhBuildDesignControlRenderers() {
                 return body;
             }
             if ((panel.entityScope === 'items' || panel.entityScope === 'itemTitle' || panel.entityScope === 'itemText' || panel.entityScope === 'itemLink') && profile.itemTypography.enabled) {
-                if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed' || profile.kind === 'swiss_grid' || profile.kind === 'catalog_browser') {
+                if (profile.kind === 'content_feed' || profile.kind === 'category_cards' || profile.kind === 'headline_feed' || profile.kind === 'swiss_grid' || profile.kind === 'catalog_browser' || profile.kind === 'bento_feed') {
                     var titleDefaults = profile.itemTypography.title || {};
                     var textDefaults = profile.itemTypography.text || {};
                     var linkDefaults = profile.itemTypography.link || null;

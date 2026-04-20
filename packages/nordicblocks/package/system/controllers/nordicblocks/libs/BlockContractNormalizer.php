@@ -1759,7 +1759,64 @@ class NordicblocksBlockContractNormalizer {
             $result['show_bottom_navigation'] = !array_key_exists('showBottomNavigation', (array) ($contract['runtime'] ?? [])) || !empty($contract['runtime']['showBottomNavigation']) ? '1' : '0';
         }
 
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'meta')) {
+            $result['meta_size_desktop'] = (string) ($contract['design']['entities']['meta']['desktop']['fontSize'] ?? ($defaults['meta_size_desktop'] ?? 11));
+            $result['meta_size_mobile'] = (string) ($contract['design']['entities']['meta']['mobile']['fontSize'] ?? ($defaults['meta_size_mobile'] ?? 11));
+            $result['meta_weight_desktop'] = (string) ($contract['design']['entities']['meta']['desktop']['weight'] ?? ($contract['design']['entities']['meta']['weight'] ?? ($defaults['meta_weight_desktop'] ?? '600')));
+            $result['meta_weight_mobile'] = (string) ($contract['design']['entities']['meta']['mobile']['weight'] ?? ($contract['design']['entities']['meta']['weight'] ?? ($defaults['meta_weight_mobile'] ?? '600')));
+            $result['meta_color_desktop'] = (string) ($contract['design']['entities']['meta']['desktop']['color'] ?? ($contract['design']['entities']['meta']['color'] ?? ($defaults['meta_color_desktop'] ?? '')));
+            $result['meta_color_mobile'] = (string) ($contract['design']['entities']['meta']['mobile']['color'] ?? ($contract['design']['entities']['meta']['color'] ?? ($defaults['meta_color_mobile'] ?? '')));
+            $result['meta_line_height_percent_desktop'] = (string) ($contract['design']['entities']['meta']['desktop']['lineHeightPercent'] ?? ($contract['design']['entities']['meta']['lineHeightPercent'] ?? ($defaults['meta_line_height_percent_desktop'] ?? $defaults['meta_line_height_percent'] ?? 130)));
+            $result['meta_line_height_percent_mobile'] = (string) ($contract['design']['entities']['meta']['mobile']['lineHeightPercent'] ?? ($contract['design']['entities']['meta']['lineHeightPercent'] ?? ($defaults['meta_line_height_percent_mobile'] ?? $defaults['meta_line_height_percent'] ?? 130)));
+            $result['meta_letter_spacing_desktop'] = (string) ($contract['design']['entities']['meta']['desktop']['letterSpacing'] ?? ($contract['design']['entities']['meta']['letterSpacing'] ?? ($defaults['meta_letter_spacing_desktop'] ?? $defaults['meta_letter_spacing'] ?? 1)));
+            $result['meta_letter_spacing_mobile'] = (string) ($contract['design']['entities']['meta']['mobile']['letterSpacing'] ?? ($contract['design']['entities']['meta']['letterSpacing'] ?? ($defaults['meta_letter_spacing_mobile'] ?? $defaults['meta_letter_spacing'] ?? 1)));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemSurface')) {
+            $result['item_surface_variant'] = (string) ($contract['design']['entities']['itemSurface']['variant'] ?? ($defaults['item_surface_variant'] ?? 'card'));
+            $result['item_surface_radius'] = (string) ($contract['design']['entities']['itemSurface']['radius'] ?? ($defaults['item_surface_radius'] ?? 24));
+            $result['item_surface_border_width'] = (string) ($contract['design']['entities']['itemSurface']['borderWidth'] ?? ($defaults['item_surface_border_width'] ?? 1));
+            $result['item_surface_border_color'] = (string) ($contract['design']['entities']['itemSurface']['borderColor'] ?? ($defaults['item_surface_border_color'] ?? '#e2e8f0'));
+            $result['item_surface_shadow'] = (string) ($contract['design']['entities']['itemSurface']['shadow'] ?? ($defaults['item_surface_shadow'] ?? 'md'));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemTitle')) {
+            $result['item_title_size_desktop'] = (string) ($contract['design']['entities']['itemTitle']['desktop']['fontSize'] ?? ($defaults['item_title_size_desktop'] ?? 22));
+            $result['item_title_size_mobile'] = (string) ($contract['design']['entities']['itemTitle']['mobile']['fontSize'] ?? ($defaults['item_title_size_mobile'] ?? 18));
+            $result['item_title_weight_desktop'] = (string) ($contract['design']['entities']['itemTitle']['desktop']['weight'] ?? ($contract['design']['entities']['itemTitle']['weight'] ?? ($defaults['item_title_weight_desktop'] ?? $defaults['item_title_weight'] ?? '700')));
+            $result['item_title_weight_mobile'] = (string) ($contract['design']['entities']['itemTitle']['mobile']['weight'] ?? ($contract['design']['entities']['itemTitle']['weight'] ?? ($defaults['item_title_weight_mobile'] ?? $defaults['item_title_weight'] ?? '700')));
+            $result['item_title_color_desktop'] = (string) ($contract['design']['entities']['itemTitle']['desktop']['color'] ?? ($contract['design']['entities']['itemTitle']['color'] ?? ($defaults['item_title_color_desktop'] ?? $defaults['item_title_color'] ?? '')));
+            $result['item_title_color_mobile'] = (string) ($contract['design']['entities']['itemTitle']['mobile']['color'] ?? ($contract['design']['entities']['itemTitle']['color'] ?? ($defaults['item_title_color_mobile'] ?? $defaults['item_title_color'] ?? '')));
+            $result['item_title_line_height_percent_desktop'] = (string) ($contract['design']['entities']['itemTitle']['desktop']['lineHeightPercent'] ?? ($contract['design']['entities']['itemTitle']['lineHeightPercent'] ?? ($defaults['item_title_line_height_percent_desktop'] ?? $defaults['item_title_line_height_percent'] ?? 125)));
+            $result['item_title_line_height_percent_mobile'] = (string) ($contract['design']['entities']['itemTitle']['mobile']['lineHeightPercent'] ?? ($contract['design']['entities']['itemTitle']['lineHeightPercent'] ?? ($defaults['item_title_line_height_percent_mobile'] ?? $defaults['item_title_line_height_percent'] ?? 125)));
+            $result['item_title_letter_spacing_desktop'] = (string) ($contract['design']['entities']['itemTitle']['desktop']['letterSpacing'] ?? ($contract['design']['entities']['itemTitle']['letterSpacing'] ?? ($defaults['item_title_letter_spacing_desktop'] ?? $defaults['item_title_letter_spacing'] ?? 0)));
+            $result['item_title_letter_spacing_mobile'] = (string) ($contract['design']['entities']['itemTitle']['mobile']['letterSpacing'] ?? ($contract['design']['entities']['itemTitle']['letterSpacing'] ?? ($defaults['item_title_letter_spacing_mobile'] ?? $defaults['item_title_letter_spacing'] ?? 0)));
+        }
+
+        if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemText')) {
+            $result['item_text_size_desktop'] = (string) ($contract['design']['entities']['itemText']['desktop']['fontSize'] ?? ($defaults['item_text_size_desktop'] ?? 15));
+            $result['item_text_size_mobile'] = (string) ($contract['design']['entities']['itemText']['mobile']['fontSize'] ?? ($defaults['item_text_size_mobile'] ?? 14));
+            $result['item_text_weight_desktop'] = (string) ($contract['design']['entities']['itemText']['desktop']['weight'] ?? ($contract['design']['entities']['itemText']['weight'] ?? ($defaults['item_text_weight_desktop'] ?? $defaults['item_text_weight'] ?? '400')));
+            $result['item_text_weight_mobile'] = (string) ($contract['design']['entities']['itemText']['mobile']['weight'] ?? ($contract['design']['entities']['itemText']['weight'] ?? ($defaults['item_text_weight_mobile'] ?? $defaults['item_text_weight'] ?? '400')));
+            $result['item_text_color_desktop'] = (string) ($contract['design']['entities']['itemText']['desktop']['color'] ?? ($contract['design']['entities']['itemText']['color'] ?? ($defaults['item_text_color_desktop'] ?? $defaults['item_text_color'] ?? '')));
+            $result['item_text_color_mobile'] = (string) ($contract['design']['entities']['itemText']['mobile']['color'] ?? ($contract['design']['entities']['itemText']['color'] ?? ($defaults['item_text_color_mobile'] ?? $defaults['item_text_color'] ?? '')));
+            $result['item_text_line_height_percent_desktop'] = (string) ($contract['design']['entities']['itemText']['desktop']['lineHeightPercent'] ?? ($contract['design']['entities']['itemText']['lineHeightPercent'] ?? ($defaults['item_text_line_height_percent_desktop'] ?? $defaults['item_text_line_height_percent'] ?? 160)));
+            $result['item_text_line_height_percent_mobile'] = (string) ($contract['design']['entities']['itemText']['mobile']['lineHeightPercent'] ?? ($contract['design']['entities']['itemText']['lineHeightPercent'] ?? ($defaults['item_text_line_height_percent_mobile'] ?? $defaults['item_text_line_height_percent'] ?? 160)));
+            $result['item_text_letter_spacing_desktop'] = (string) ($contract['design']['entities']['itemText']['desktop']['letterSpacing'] ?? ($contract['design']['entities']['itemText']['letterSpacing'] ?? ($defaults['item_text_letter_spacing_desktop'] ?? $defaults['item_text_letter_spacing'] ?? 0)));
+            $result['item_text_letter_spacing_mobile'] = (string) ($contract['design']['entities']['itemText']['mobile']['letterSpacing'] ?? ($contract['design']['entities']['itemText']['letterSpacing'] ?? ($defaults['item_text_letter_spacing_mobile'] ?? $defaults['item_text_letter_spacing'] ?? 0)));
+        }
+
         if (NordicblocksManagedScaffoldRegistry::hasEntity($type, 'itemLink')) {
+            $result['item_link_size_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['fontSize'] ?? ($defaults['item_link_size_desktop'] ?? 13));
+            $result['item_link_size_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['fontSize'] ?? ($defaults['item_link_size_mobile'] ?? 12));
+            $result['item_link_weight_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['weight'] ?? ($contract['design']['entities']['itemLink']['weight'] ?? ($defaults['item_link_weight_desktop'] ?? $defaults['item_link_weight'] ?? '700')));
+            $result['item_link_weight_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['weight'] ?? ($contract['design']['entities']['itemLink']['weight'] ?? ($defaults['item_link_weight_mobile'] ?? $defaults['item_link_weight'] ?? '700')));
+            $result['item_link_color_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['color'] ?? ($contract['design']['entities']['itemLink']['color'] ?? ($defaults['item_link_color_desktop'] ?? $defaults['item_link_color'] ?? '')));
+            $result['item_link_color_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['color'] ?? ($contract['design']['entities']['itemLink']['color'] ?? ($defaults['item_link_color_mobile'] ?? $defaults['item_link_color'] ?? '')));
+            $result['item_link_line_height_percent_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['lineHeightPercent'] ?? ($contract['design']['entities']['itemLink']['lineHeightPercent'] ?? ($defaults['item_link_line_height_percent_desktop'] ?? $defaults['item_link_line_height_percent'] ?? 120)));
+            $result['item_link_line_height_percent_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['lineHeightPercent'] ?? ($contract['design']['entities']['itemLink']['lineHeightPercent'] ?? ($defaults['item_link_line_height_percent_mobile'] ?? $defaults['item_link_line_height_percent'] ?? 120)));
+            $result['item_link_letter_spacing_desktop'] = (string) ($contract['design']['entities']['itemLink']['desktop']['letterSpacing'] ?? ($contract['design']['entities']['itemLink']['letterSpacing'] ?? ($defaults['item_link_letter_spacing_desktop'] ?? $defaults['item_link_letter_spacing'] ?? 1)));
+            $result['item_link_letter_spacing_mobile'] = (string) ($contract['design']['entities']['itemLink']['mobile']['letterSpacing'] ?? ($contract['design']['entities']['itemLink']['letterSpacing'] ?? ($defaults['item_link_letter_spacing_mobile'] ?? $defaults['item_link_letter_spacing'] ?? 1)));
             $result['show_item_link'] = !array_key_exists('itemLink', (array) ($contract['runtime']['visibility'] ?? [])) || !empty($contract['runtime']['visibility']['itemLink']) ? '1' : '0';
         }
 

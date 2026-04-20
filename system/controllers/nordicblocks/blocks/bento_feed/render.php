@@ -39,6 +39,18 @@ if (!function_exists('nb_bento_feed_prop_int')) {
     }
 }
 
+if (!function_exists('nb_bento_feed_prop_value')) {
+    function nb_bento_feed_prop_value(array $props, array $keys, $default = null) {
+        foreach ($keys as $key) {
+            if ($key !== '' && array_key_exists($key, $props) && $props[$key] !== '' && $props[$key] !== null) {
+                return $props[$key];
+            }
+        }
+
+        return $default;
+    }
+}
+
 if (!function_exists('nb_bento_feed_entity_value')) {
     function nb_bento_feed_entity_value(array $entity, $branch, $key, $default = null) {
         if (isset($entity[$branch]) && is_array($entity[$branch]) && array_key_exists($key, $entity[$branch]) && $entity[$branch][$key] !== '' && $entity[$branch][$key] !== null) {
@@ -142,24 +154,84 @@ if ($bento_contract) {
     $load_more_label = trim((string) ($bento_contract['runtime']['loadMoreLabel'] ?? 'Показать ещё'));
     $show_bottom_navigation = !array_key_exists('showBottomNavigation', (array) ($bento_contract['runtime'] ?? [])) || !empty($bento_contract['runtime']['showBottomNavigation']);
     $heading_tag = htmlspecialchars((string) ($title_entity['tag'] ?? 'h2'), ENT_QUOTES, 'UTF-8');
+    $title_weight_desktop = (int) nb_bento_feed_entity_value($title_entity, 'desktop', 'weight', 800);
+    $title_weight_mobile = (int) nb_bento_feed_entity_value($title_entity, 'mobile', 'weight', $title_weight_desktop);
     $title_size_desktop = (int) nb_bento_feed_entity_value($title_entity, 'desktop', 'fontSize', 44);
     $title_size_mobile = (int) nb_bento_feed_entity_value($title_entity, 'mobile', 'fontSize', 30);
+    $title_margin_bottom_desktop = (int) nb_bento_feed_entity_value($title_entity, 'desktop', 'marginBottom', 0);
+    $title_margin_bottom_mobile = (int) nb_bento_feed_entity_value($title_entity, 'mobile', 'marginBottom', 0);
+    $title_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($title_entity, 'desktop', 'color', ''));
+    $title_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($title_entity, 'mobile', 'color', $title_color_desktop));
+    $title_line_height_desktop = ((float) nb_bento_feed_entity_value($title_entity, 'desktop', 'lineHeightPercent', 104)) / 100;
+    $title_line_height_mobile = ((float) nb_bento_feed_entity_value($title_entity, 'mobile', 'lineHeightPercent', $title_line_height_desktop * 100)) / 100;
+    $title_letter_spacing_desktop = (float) nb_bento_feed_entity_value($title_entity, 'desktop', 'letterSpacing', -1);
+    $title_letter_spacing_mobile = (float) nb_bento_feed_entity_value($title_entity, 'mobile', 'letterSpacing', $title_letter_spacing_desktop);
+    $title_max_width_desktop = (int) nb_bento_feed_entity_value($title_entity, 'desktop', 'maxWidth', 920);
+    $title_max_width_mobile = (int) nb_bento_feed_entity_value($title_entity, 'mobile', 'maxWidth', $title_max_width_desktop);
+    $subtitle_weight_desktop = (int) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'weight', 400);
+    $subtitle_weight_mobile = (int) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'weight', $subtitle_weight_desktop);
     $subtitle_size_desktop = (int) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'fontSize', 16);
     $subtitle_size_mobile = (int) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'fontSize', 14);
+    $subtitle_margin_bottom_desktop = (int) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'marginBottom', 0);
+    $subtitle_margin_bottom_mobile = (int) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'marginBottom', 0);
+    $subtitle_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'color', ''));
+    $subtitle_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'color', $subtitle_color_desktop));
+    $subtitle_line_height_desktop = ((float) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'lineHeightPercent', 155)) / 100;
+    $subtitle_line_height_mobile = ((float) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'lineHeightPercent', $subtitle_line_height_desktop * 100)) / 100;
+    $subtitle_letter_spacing_desktop = (float) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'letterSpacing', 0);
+    $subtitle_letter_spacing_mobile = (float) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'letterSpacing', $subtitle_letter_spacing_desktop);
+    $subtitle_max_width_desktop = (int) nb_bento_feed_entity_value($subtitle_entity, 'desktop', 'maxWidth', 760);
+    $subtitle_max_width_mobile = (int) nb_bento_feed_entity_value($subtitle_entity, 'mobile', 'maxWidth', $subtitle_max_width_desktop);
+    $meta_weight_desktop = (int) nb_bento_feed_entity_value($meta_entity, 'desktop', 'weight', 600);
+    $meta_weight_mobile = (int) nb_bento_feed_entity_value($meta_entity, 'mobile', 'weight', $meta_weight_desktop);
     $meta_size_desktop = (int) nb_bento_feed_entity_value($meta_entity, 'desktop', 'fontSize', 11);
     $meta_size_mobile = (int) nb_bento_feed_entity_value($meta_entity, 'mobile', 'fontSize', 11);
+    $meta_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($meta_entity, 'desktop', 'color', ''));
+    $meta_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($meta_entity, 'mobile', 'color', $meta_color_desktop));
+    $meta_line_height_desktop = ((float) nb_bento_feed_entity_value($meta_entity, 'desktop', 'lineHeightPercent', 130)) / 100;
+    $meta_line_height_mobile = ((float) nb_bento_feed_entity_value($meta_entity, 'mobile', 'lineHeightPercent', $meta_line_height_desktop * 100)) / 100;
+    $meta_letter_spacing_desktop = (float) nb_bento_feed_entity_value($meta_entity, 'desktop', 'letterSpacing', 1);
+    $meta_letter_spacing_mobile = (float) nb_bento_feed_entity_value($meta_entity, 'mobile', 'letterSpacing', $meta_letter_spacing_desktop);
+    $item_title_weight_desktop = (int) nb_bento_feed_entity_value($item_title_entity, 'desktop', 'weight', 700);
+    $item_title_weight_mobile = (int) nb_bento_feed_entity_value($item_title_entity, 'mobile', 'weight', $item_title_weight_desktop);
     $item_title_size_desktop = (int) nb_bento_feed_entity_value($item_title_entity, 'desktop', 'fontSize', 22);
     $item_title_size_mobile = (int) nb_bento_feed_entity_value($item_title_entity, 'mobile', 'fontSize', 18);
+    $item_title_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($item_title_entity, 'desktop', 'color', ''));
+    $item_title_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($item_title_entity, 'mobile', 'color', $item_title_color_desktop));
+    $item_title_line_height_desktop = ((float) nb_bento_feed_entity_value($item_title_entity, 'desktop', 'lineHeightPercent', 118)) / 100;
+    $item_title_line_height_mobile = ((float) nb_bento_feed_entity_value($item_title_entity, 'mobile', 'lineHeightPercent', $item_title_line_height_desktop * 100)) / 100;
+    $item_title_letter_spacing_desktop = (float) nb_bento_feed_entity_value($item_title_entity, 'desktop', 'letterSpacing', 0);
+    $item_title_letter_spacing_mobile = (float) nb_bento_feed_entity_value($item_title_entity, 'mobile', 'letterSpacing', $item_title_letter_spacing_desktop);
+    $item_text_weight_desktop = (int) nb_bento_feed_entity_value($item_text_entity, 'desktop', 'weight', 400);
+    $item_text_weight_mobile = (int) nb_bento_feed_entity_value($item_text_entity, 'mobile', 'weight', $item_text_weight_desktop);
     $item_text_size_desktop = (int) nb_bento_feed_entity_value($item_text_entity, 'desktop', 'fontSize', 15);
     $item_text_size_mobile = (int) nb_bento_feed_entity_value($item_text_entity, 'mobile', 'fontSize', 14);
+    $item_text_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($item_text_entity, 'desktop', 'color', ''));
+    $item_text_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($item_text_entity, 'mobile', 'color', $item_text_color_desktop));
+    $item_text_line_height_desktop = ((float) nb_bento_feed_entity_value($item_text_entity, 'desktop', 'lineHeightPercent', 150)) / 100;
+    $item_text_line_height_mobile = ((float) nb_bento_feed_entity_value($item_text_entity, 'mobile', 'lineHeightPercent', $item_text_line_height_desktop * 100)) / 100;
+    $item_text_letter_spacing_desktop = (float) nb_bento_feed_entity_value($item_text_entity, 'desktop', 'letterSpacing', 0);
+    $item_text_letter_spacing_mobile = (float) nb_bento_feed_entity_value($item_text_entity, 'mobile', 'letterSpacing', $item_text_letter_spacing_desktop);
+    $item_link_weight_desktop = (int) nb_bento_feed_entity_value($item_link_entity, 'desktop', 'weight', 700);
+    $item_link_weight_mobile = (int) nb_bento_feed_entity_value($item_link_entity, 'mobile', 'weight', $item_link_weight_desktop);
     $item_link_size_desktop = (int) nb_bento_feed_entity_value($item_link_entity, 'desktop', 'fontSize', 12);
     $item_link_size_mobile = (int) nb_bento_feed_entity_value($item_link_entity, 'mobile', 'fontSize', 12);
+    $item_link_color_desktop = nb_block_css_color((string) nb_bento_feed_entity_value($item_link_entity, 'desktop', 'color', ''));
+    $item_link_color_mobile = nb_block_css_color((string) nb_bento_feed_entity_value($item_link_entity, 'mobile', 'color', $item_link_color_desktop));
+    $item_link_line_height_desktop = ((float) nb_bento_feed_entity_value($item_link_entity, 'desktop', 'lineHeightPercent', 120)) / 100;
+    $item_link_line_height_mobile = ((float) nb_bento_feed_entity_value($item_link_entity, 'mobile', 'lineHeightPercent', $item_link_line_height_desktop * 100)) / 100;
+    $item_link_letter_spacing_desktop = (float) nb_bento_feed_entity_value($item_link_entity, 'desktop', 'letterSpacing', 1);
+    $item_link_letter_spacing_mobile = (float) nb_bento_feed_entity_value($item_link_entity, 'mobile', 'letterSpacing', $item_link_letter_spacing_desktop);
     $media_aspect_ratio = (string) ($media_entity['aspectRatio'] ?? '4:3');
     $media_object_fit = (string) ($media_entity['objectFit'] ?? 'cover');
     $media_radius = (int) ($media_entity['radius'] ?? 0);
+    $item_surface_variant = in_array($item_surface['variant'] ?? 'card', ['card', 'plain'], true)
+        ? (string) ($item_surface['variant'] ?? 'card') : 'card';
     $item_surface_radius = (int) ($item_surface['radius'] ?? 0);
     $item_surface_border_width = (int) ($item_surface['borderWidth'] ?? 1);
     $item_surface_border_color = nb_block_css_color((string) ($item_surface['borderColor'] ?? '#d9dde4'), '#d9dde4');
+    $item_surface_shadow = in_array($item_surface['shadow'] ?? 'none', ['none', 'sm', 'md', 'lg'], true)
+        ? (string) ($item_surface['shadow'] ?? 'none') : 'none';
 } else {
     $theme = in_array($props['theme'] ?? 'light', ['light', 'alt', 'dark'], true) ? (string) ($props['theme'] ?? 'light') : 'light';
     $align = in_array($props['align'] ?? 'left', ['left', 'center'], true) ? (string) ($props['align'] ?? 'left') : 'left';
@@ -210,24 +282,82 @@ if ($bento_contract) {
     $load_more_label = trim((string) ($props['load_more_label'] ?? 'Показать ещё'));
     $show_bottom_navigation = nb_bento_feed_visible($props['show_bottom_navigation'] ?? '1', true);
     $heading_tag = htmlspecialchars((string) ($props['heading_tag'] ?? 'h2'), ENT_QUOTES, 'UTF-8');
+    $title_weight_desktop = nb_bento_feed_prop_int($props, 'title_weight_desktop', (int) nb_bento_feed_prop_value($props, ['title_weight'], 800), 100, 900);
+    $title_weight_mobile = nb_bento_feed_prop_int($props, 'title_weight_mobile', $title_weight_desktop, 100, 900);
     $title_size_desktop = nb_bento_feed_prop_int($props, 'title_size_desktop', 44, 12, 120);
     $title_size_mobile = nb_bento_feed_prop_int($props, 'title_size_mobile', 30, 12, 120);
+    $title_margin_bottom_desktop = nb_bento_feed_prop_int($props, 'title_margin_bottom_desktop', 0, 0, 240);
+    $title_margin_bottom_mobile = nb_bento_feed_prop_int($props, 'title_margin_bottom_mobile', 0, 0, 240);
+    $title_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['title_color_desktop', 'title_color'], ''));
+    $title_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['title_color_mobile'], $title_color_desktop));
+    $title_line_height_desktop = nb_bento_feed_prop_int($props, 'title_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['title_line_height_percent'], 104), 80, 220) / 100;
+    $title_line_height_mobile = nb_bento_feed_prop_int($props, 'title_line_height_percent_mobile', (int) round($title_line_height_desktop * 100), 80, 220) / 100;
+    $title_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['title_letter_spacing_desktop', 'title_letter_spacing'], -1);
+    $title_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['title_letter_spacing_mobile'], $title_letter_spacing_desktop);
+    $title_max_width_desktop = nb_bento_feed_prop_int($props, 'title_max_width_desktop', (int) nb_bento_feed_prop_value($props, ['title_max_width'], 920), 240, 1440);
+    $title_max_width_mobile = nb_bento_feed_prop_int($props, 'title_max_width_mobile', $title_max_width_desktop, 240, 1440);
+    $subtitle_weight_desktop = nb_bento_feed_prop_int($props, 'subtitle_weight_desktop', 400, 100, 900);
+    $subtitle_weight_mobile = nb_bento_feed_prop_int($props, 'subtitle_weight_mobile', $subtitle_weight_desktop, 100, 900);
     $subtitle_size_desktop = nb_bento_feed_prop_int($props, 'subtitle_size_desktop', 16, 10, 80);
     $subtitle_size_mobile = nb_bento_feed_prop_int($props, 'subtitle_size_mobile', 14, 10, 80);
+    $subtitle_margin_bottom_desktop = nb_bento_feed_prop_int($props, 'subtitle_margin_bottom_desktop', 0, 0, 240);
+    $subtitle_margin_bottom_mobile = nb_bento_feed_prop_int($props, 'subtitle_margin_bottom_mobile', 0, 0, 240);
+    $subtitle_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['subtitle_color_desktop', 'subtitle_color'], ''));
+    $subtitle_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['subtitle_color_mobile'], $subtitle_color_desktop));
+    $subtitle_line_height_desktop = nb_bento_feed_prop_int($props, 'subtitle_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['subtitle_line_height_percent'], 155), 80, 240) / 100;
+    $subtitle_line_height_mobile = nb_bento_feed_prop_int($props, 'subtitle_line_height_percent_mobile', (int) round($subtitle_line_height_desktop * 100), 80, 240) / 100;
+    $subtitle_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['subtitle_letter_spacing_desktop', 'subtitle_letter_spacing'], 0);
+    $subtitle_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['subtitle_letter_spacing_mobile'], $subtitle_letter_spacing_desktop);
+    $subtitle_max_width_desktop = nb_bento_feed_prop_int($props, 'subtitle_max_width_desktop', (int) nb_bento_feed_prop_value($props, ['subtitle_max_width'], 760), 240, 1440);
+    $subtitle_max_width_mobile = nb_bento_feed_prop_int($props, 'subtitle_max_width_mobile', $subtitle_max_width_desktop, 240, 1440);
+    $meta_weight_desktop = nb_bento_feed_prop_int($props, 'meta_weight_desktop', 600, 100, 900);
+    $meta_weight_mobile = nb_bento_feed_prop_int($props, 'meta_weight_mobile', $meta_weight_desktop, 100, 900);
     $meta_size_desktop = nb_bento_feed_prop_int($props, 'meta_size_desktop', 11, 10, 40);
     $meta_size_mobile = nb_bento_feed_prop_int($props, 'meta_size_mobile', 11, 10, 40);
+    $meta_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['meta_color_desktop', 'meta_color'], ''));
+    $meta_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['meta_color_mobile'], $meta_color_desktop));
+    $meta_line_height_desktop = nb_bento_feed_prop_int($props, 'meta_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['meta_line_height_percent'], 130), 80, 240) / 100;
+    $meta_line_height_mobile = nb_bento_feed_prop_int($props, 'meta_line_height_percent_mobile', (int) round($meta_line_height_desktop * 100), 80, 240) / 100;
+    $meta_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['meta_letter_spacing_desktop', 'meta_letter_spacing'], 1);
+    $meta_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['meta_letter_spacing_mobile'], $meta_letter_spacing_desktop);
+    $item_title_weight_desktop = nb_bento_feed_prop_int($props, 'item_title_weight_desktop', (int) nb_bento_feed_prop_value($props, ['item_title_weight'], 700), 100, 900);
+    $item_title_weight_mobile = nb_bento_feed_prop_int($props, 'item_title_weight_mobile', $item_title_weight_desktop, 100, 900);
     $item_title_size_desktop = nb_bento_feed_prop_int($props, 'item_title_size_desktop', 22, 10, 80);
     $item_title_size_mobile = nb_bento_feed_prop_int($props, 'item_title_size_mobile', 18, 10, 80);
+    $item_title_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_title_color_desktop', 'item_title_color'], ''));
+    $item_title_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_title_color_mobile'], $item_title_color_desktop));
+    $item_title_line_height_desktop = nb_bento_feed_prop_int($props, 'item_title_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['item_title_line_height_percent'], 118), 80, 220) / 100;
+    $item_title_line_height_mobile = nb_bento_feed_prop_int($props, 'item_title_line_height_percent_mobile', (int) round($item_title_line_height_desktop * 100), 80, 220) / 100;
+    $item_title_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['item_title_letter_spacing_desktop', 'item_title_letter_spacing'], 0);
+    $item_title_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['item_title_letter_spacing_mobile'], $item_title_letter_spacing_desktop);
+    $item_text_weight_desktop = nb_bento_feed_prop_int($props, 'item_text_weight_desktop', (int) nb_bento_feed_prop_value($props, ['item_text_weight'], 400), 100, 900);
+    $item_text_weight_mobile = nb_bento_feed_prop_int($props, 'item_text_weight_mobile', $item_text_weight_desktop, 100, 900);
     $item_text_size_desktop = nb_bento_feed_prop_int($props, 'item_text_size_desktop', 15, 10, 80);
     $item_text_size_mobile = nb_bento_feed_prop_int($props, 'item_text_size_mobile', 14, 10, 80);
+    $item_text_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_text_color_desktop', 'item_text_color'], ''));
+    $item_text_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_text_color_mobile'], $item_text_color_desktop));
+    $item_text_line_height_desktop = nb_bento_feed_prop_int($props, 'item_text_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['item_text_line_height_percent'], 150), 80, 260) / 100;
+    $item_text_line_height_mobile = nb_bento_feed_prop_int($props, 'item_text_line_height_percent_mobile', (int) round($item_text_line_height_desktop * 100), 80, 260) / 100;
+    $item_text_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['item_text_letter_spacing_desktop', 'item_text_letter_spacing'], 0);
+    $item_text_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['item_text_letter_spacing_mobile'], $item_text_letter_spacing_desktop);
+    $item_link_weight_desktop = nb_bento_feed_prop_int($props, 'item_link_weight_desktop', (int) nb_bento_feed_prop_value($props, ['item_link_weight'], 700), 100, 900);
+    $item_link_weight_mobile = nb_bento_feed_prop_int($props, 'item_link_weight_mobile', $item_link_weight_desktop, 100, 900);
     $item_link_size_desktop = nb_bento_feed_prop_int($props, 'item_link_size_desktop', 12, 10, 80);
     $item_link_size_mobile = nb_bento_feed_prop_int($props, 'item_link_size_mobile', 12, 10, 80);
+    $item_link_color_desktop = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_link_color_desktop', 'item_link_color'], ''));
+    $item_link_color_mobile = nb_block_css_color((string) nb_bento_feed_prop_value($props, ['item_link_color_mobile'], $item_link_color_desktop));
+    $item_link_line_height_desktop = nb_bento_feed_prop_int($props, 'item_link_line_height_percent_desktop', (int) nb_bento_feed_prop_value($props, ['item_link_line_height_percent'], 120), 80, 220) / 100;
+    $item_link_line_height_mobile = nb_bento_feed_prop_int($props, 'item_link_line_height_percent_mobile', (int) round($item_link_line_height_desktop * 100), 80, 220) / 100;
+    $item_link_letter_spacing_desktop = (float) nb_bento_feed_prop_value($props, ['item_link_letter_spacing_desktop', 'item_link_letter_spacing'], 1);
+    $item_link_letter_spacing_mobile = (float) nb_bento_feed_prop_value($props, ['item_link_letter_spacing_mobile'], $item_link_letter_spacing_desktop);
     $media_aspect_ratio = (string) ($props['media_aspect_ratio'] ?? '4:3');
     $media_object_fit = (string) ($props['media_object_fit'] ?? 'cover');
     $media_radius = nb_bento_feed_prop_int($props, 'media_radius', 0, 0, 80);
+    $item_surface_variant = in_array($props['item_surface_variant'] ?? 'card', ['card', 'plain'], true) ? (string) ($props['item_surface_variant'] ?? 'card') : 'card';
     $item_surface_radius = nb_bento_feed_prop_int($props, 'item_surface_radius', 0, 0, 80);
     $item_surface_border_width = nb_bento_feed_prop_int($props, 'item_surface_border_width', 1, 0, 20);
     $item_surface_border_color = nb_block_css_color((string) ($props['item_surface_border_color'] ?? '#d9dde4'), '#d9dde4');
+    $item_surface_shadow = in_array($props['item_surface_shadow'] ?? 'none', ['none', 'sm', 'md', 'lg'], true) ? (string) ($props['item_surface_shadow'] ?? 'none') : 'none';
 }
 
 $items = [];
@@ -252,7 +382,7 @@ if ($media_aspect_ratio === '16:9') {
     $media_aspect_ratio_css = 'auto';
 }
 
-$section_class = 'nb-section nb-bento-feed nb-bento-feed--align-' . $align . ' nb-bento-feed--preset-' . $layout_preset . ($reveal['class'] ?? '');
+$section_class = 'nb-section nb-bento-feed nb-bento-feed--align-' . $align . ' nb-bento-feed--surface-' . $item_surface_variant . ' nb-bento-feed--preset-' . $layout_preset . ($reveal['class'] ?? '');
 $theme_attr = $theme !== 'light' ? ' data-nb-theme="' . htmlspecialchars($theme, ENT_QUOTES, 'UTF-8') . '"' : '';
 $section_style = '--nb-bento-content-width:' . $content_width . 'px;';
 $section_style = nb_block_append_style($section_style, '--nb-bento-padding-top:' . $padding_top_desktop . 'px;');
@@ -265,24 +395,81 @@ $section_style = nb_block_append_style($section_style, '--nb-bento-card-gap:' . 
 $section_style = nb_block_append_style($section_style, '--nb-bento-card-gap-mobile:' . $card_gap_mobile . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-header-gap:' . $header_gap_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-header-gap-mobile:' . $header_gap_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-weight:' . $title_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-weight-mobile:' . $title_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-title-size:' . $title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-title-size-mobile:' . $title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-margin-bottom:' . $title_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-margin-bottom-mobile:' . $title_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-line-height:' . max(0.8, min(2.2, $title_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-line-height-mobile:' . max(0.8, min(2.2, $title_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-letter-spacing:' . $title_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-letter-spacing-mobile:' . $title_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-max-width:' . $title_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-title-max-width-mobile:' . $title_max_width_mobile . 'px;');
+$section_style = $title_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-title-color:' . $title_color_desktop . ';') : $section_style;
+$section_style = $title_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-title-color-mobile:' . $title_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-weight:' . $subtitle_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-weight-mobile:' . $subtitle_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-size:' . $subtitle_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-size-mobile:' . $subtitle_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-margin-bottom:' . $subtitle_margin_bottom_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-margin-bottom-mobile:' . $subtitle_margin_bottom_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-line-height:' . max(0.8, min(2.4, $subtitle_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-line-height-mobile:' . max(0.8, min(2.4, $subtitle_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-letter-spacing:' . $subtitle_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-letter-spacing-mobile:' . $subtitle_letter_spacing_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-max-width:' . $subtitle_max_width_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-subtitle-max-width-mobile:' . $subtitle_max_width_mobile . 'px;');
+$section_style = $subtitle_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-subtitle-color:' . $subtitle_color_desktop . ';') : $section_style;
+$section_style = $subtitle_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-subtitle-color-mobile:' . $subtitle_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-weight:' . $meta_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-weight-mobile:' . $meta_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-meta-size:' . $meta_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-meta-size-mobile:' . $meta_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-line-height:' . max(0.8, min(2.4, $meta_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-line-height-mobile:' . max(0.8, min(2.4, $meta_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-letter-spacing:' . $meta_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-meta-letter-spacing-mobile:' . $meta_letter_spacing_mobile . 'px;');
+$section_style = $meta_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-meta-color:' . $meta_color_desktop . ';') : $section_style;
+$section_style = $meta_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-meta-color-mobile:' . $meta_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-weight:' . $item_title_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-weight-mobile:' . $item_title_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-title-size:' . $item_title_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-title-size-mobile:' . $item_title_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-line-height:' . max(0.8, min(2.2, $item_title_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-line-height-mobile:' . max(0.8, min(2.2, $item_title_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-letter-spacing:' . $item_title_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-title-letter-spacing-mobile:' . $item_title_letter_spacing_mobile . 'px;');
+$section_style = $item_title_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-item-title-color:' . $item_title_color_desktop . ';') : $section_style;
+$section_style = $item_title_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-item-title-color-mobile:' . $item_title_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-weight:' . $item_text_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-weight-mobile:' . $item_text_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-text-size:' . $item_text_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-text-size-mobile:' . $item_text_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-line-height:' . max(0.8, min(2.6, $item_text_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-line-height-mobile:' . max(0.8, min(2.6, $item_text_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-letter-spacing:' . $item_text_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-text-letter-spacing-mobile:' . $item_text_letter_spacing_mobile . 'px;');
+$section_style = $item_text_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-item-text-color:' . $item_text_color_desktop . ';') : $section_style;
+$section_style = $item_text_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-item-text-color-mobile:' . $item_text_color_mobile . ';') : $section_style;
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-weight:' . $item_link_weight_desktop . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-weight-mobile:' . $item_link_weight_mobile . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-link-size:' . $item_link_size_desktop . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-item-link-size-mobile:' . $item_link_size_mobile . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-line-height:' . max(0.8, min(2.2, $item_link_line_height_desktop)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-line-height-mobile:' . max(0.8, min(2.2, $item_link_line_height_mobile)) . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-letter-spacing:' . $item_link_letter_spacing_desktop . 'px;');
+$section_style = nb_block_append_style($section_style, '--nb-bento-item-link-letter-spacing-mobile:' . $item_link_letter_spacing_mobile . 'px;');
+$section_style = $item_link_color_desktop !== '' ? nb_block_append_style($section_style, '--nb-bento-item-link-color:' . $item_link_color_desktop . ';') : $section_style;
+$section_style = $item_link_color_mobile !== '' ? nb_block_append_style($section_style, '--nb-bento-item-link-color-mobile:' . $item_link_color_mobile . ';') : $section_style;
 $section_style = nb_block_append_style($section_style, '--nb-bento-media-aspect-ratio:' . $media_aspect_ratio_css . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-media-object-fit:' . $media_object_fit . ';');
 $section_style = nb_block_append_style($section_style, '--nb-bento-media-radius:' . $media_radius . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-card-radius:' . $item_surface_radius . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-card-border-width:' . $item_surface_border_width . 'px;');
 $section_style = nb_block_append_style($section_style, '--nb-bento-card-border-color:' . $item_surface_border_color . ';');
+$section_style = nb_block_append_style($section_style, '--nb-bento-card-shadow:' . 'var(--nb-shadow-' . $item_surface_shadow . ', none);');
 $section_style = nb_block_append_style($section_style, $background_style);
 $section_style = nb_block_append_style($section_style, $reveal['style'] ?? '');
 $block_dom_id = 'block-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $block_uid);
@@ -318,7 +505,9 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             justify-content: space-between;
             gap: var(--nb-bento-header-gap, 18px);
             padding: clamp(1rem, 2vw, 1.4rem);
-            border: 1px solid var(--nb-bento-card-border-color, #d9dde4);
+            border: var(--nb-bento-card-border-width, 1px) solid var(--nb-bento-card-border-color, #d9dde4);
+            border-radius: var(--nb-bento-card-radius, 0);
+            box-shadow: var(--nb-bento-card-shadow, none);
             background: var(--nb-color-surface, #fff);
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>.nb-bento-feed--align-center .nb-bento-feed__header {
@@ -332,18 +521,26 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__title {
             margin: 0;
+            margin-bottom: var(--nb-bento-title-margin-bottom, 0);
+            max-width: min(100%, var(--nb-bento-title-max-width, 920px));
             font-family: var(--nb-font-head, inherit);
             font-size: var(--nb-bento-title-size, 44px);
-            font-weight: 700;
-            line-height: 1.04;
-            letter-spacing: -.03em;
+            font-weight: var(--nb-bento-title-weight, 800);
+            line-height: var(--nb-bento-title-line-height, 1.04);
+            letter-spacing: var(--nb-bento-title-letter-spacing, -1px);
+            color: var(--nb-bento-title-color, var(--nb-color-text, #111827));
             text-wrap: balance;
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__subtitle {
+            margin: 0;
+            margin-bottom: var(--nb-bento-subtitle-margin-bottom, 0);
             max-width: 68ch;
-            color: var(--nb-color-text-muted, #5b6472);
+            max-width: min(100%, var(--nb-bento-subtitle-max-width, 760px));
+            color: var(--nb-bento-subtitle-color, var(--nb-color-text-muted, #5b6472));
             font-size: var(--nb-bento-subtitle-size, 16px);
-            line-height: 1.55;
+            font-weight: var(--nb-bento-subtitle-weight, 400);
+            line-height: var(--nb-bento-subtitle-line-height, 1.55);
+            letter-spacing: var(--nb-bento-subtitle-letter-spacing, 0);
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__more {
             display: inline-flex;
@@ -373,9 +570,16 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             grid-template-rows: auto 1fr;
             min-height: 100%;
             background: var(--nb-color-surface, #fff);
-            border-right: 1px solid var(--nb-bento-card-border-color, #d9dde4);
-            border-bottom: 1px solid var(--nb-bento-card-border-color, #d9dde4);
+            border-right: var(--nb-bento-card-border-width, 1px) solid var(--nb-bento-card-border-color, #d9dde4);
+            border-bottom: var(--nb-bento-card-border-width, 1px) solid var(--nb-bento-card-border-color, #d9dde4);
+            border-radius: var(--nb-bento-card-radius, 0);
+            box-shadow: var(--nb-bento-card-shadow, none);
             overflow: hidden;
+        }
+        #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>.nb-bento-feed--surface-plain .nb-bento-feed__card,
+        #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>.nb-bento-feed--surface-plain .nb-bento-feed__header,
+        #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>.nb-bento-feed--surface-plain .nb-bento-feed__footer {
+            box-shadow: none;
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?>.nb-bento-feed--preset-editorial_mix .nb-bento-feed__card:first-child {
             grid-column: span 2;
@@ -392,6 +596,7 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             display: block;
             aspect-ratio: var(--nb-bento-media-aspect-ratio, 4/3);
             overflow: hidden;
+            border-radius: var(--nb-bento-media-radius, 0);
             background: color-mix(in srgb, var(--nb-color-text, #111827) 6%, var(--nb-color-surface, #fff));
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__media img {
@@ -409,11 +614,11 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__category {
             display: inline-flex;
             width: fit-content;
-            color: var(--nb-color-accent, #d92e1c);
+            color: var(--nb-bento-meta-color, var(--nb-color-accent, #d92e1c));
             font-size: var(--nb-bento-meta-size, 11px);
-            font-weight: 700;
-            line-height: 1.15;
-            letter-spacing: .12em;
+            font-weight: var(--nb-bento-meta-weight, 600);
+            line-height: var(--nb-bento-meta-line-height, 1.15);
+            letter-spacing: var(--nb-bento-meta-letter-spacing, 1px);
             text-transform: uppercase;
             text-decoration: none;
         }
@@ -421,9 +626,10 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             margin: 0;
             font-family: var(--nb-font-head, inherit);
             font-size: var(--nb-bento-item-title-size, 22px);
-            font-weight: 700;
-            line-height: 1.18;
-            letter-spacing: -.02em;
+            font-weight: var(--nb-bento-item-title-weight, 700);
+            line-height: var(--nb-bento-item-title-line-height, 1.18);
+            letter-spacing: var(--nb-bento-item-title-letter-spacing, 0);
+            color: var(--nb-bento-item-title-color, var(--nb-color-text, #111827));
             text-wrap: balance;
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-title a {
@@ -431,20 +637,22 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             text-decoration: none;
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-text {
-            color: var(--nb-color-text-muted, #5b6472);
+            color: var(--nb-bento-item-text-color, var(--nb-color-text-muted, #5b6472));
             font-size: var(--nb-bento-item-text-size, 15px);
-            line-height: 1.5;
+            font-weight: var(--nb-bento-item-text-weight, 400);
+            line-height: var(--nb-bento-item-text-line-height, 1.5);
+            letter-spacing: var(--nb-bento-item-text-letter-spacing, 0);
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-link {
             display: inline-flex;
             align-items: center;
             gap: .4rem;
             width: fit-content;
-            color: var(--nb-color-text, #111827);
+            color: var(--nb-bento-item-link-color, var(--nb-color-text, #111827));
             font-size: var(--nb-bento-item-link-size, 12px);
-            font-weight: 700;
-            line-height: 1.2;
-            letter-spacing: .1em;
+            font-weight: var(--nb-bento-item-link-weight, 700);
+            line-height: var(--nb-bento-item-link-line-height, 1.2);
+            letter-spacing: var(--nb-bento-item-link-letter-spacing, 1px);
             text-transform: uppercase;
             text-decoration: none;
             border-bottom: 1px solid currentColor;
@@ -457,19 +665,21 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             flex-wrap: wrap;
             gap: .35rem .8rem;
             margin-top: auto;
-            color: var(--nb-color-text-muted, #5b6472);
+            color: var(--nb-bento-meta-color, var(--nb-color-text-muted, #5b6472));
             font-size: var(--nb-bento-meta-size, 11px);
-            font-weight: 600;
-            line-height: 1.3;
-            letter-spacing: .04em;
+            font-weight: var(--nb-bento-meta-weight, 600);
+            line-height: var(--nb-bento-meta-line-height, 1.3);
+            letter-spacing: var(--nb-bento-meta-letter-spacing, 1px);
             text-transform: uppercase;
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__footer {
             display: flex;
             justify-content: center;
             padding: 1rem;
-            border: 1px solid var(--nb-bento-card-border-color, #d9dde4);
+            border: var(--nb-bento-card-border-width, 1px) solid var(--nb-bento-card-border-color, #d9dde4);
             border-top: 0;
+            border-radius: var(--nb-bento-card-radius, 0);
+            box-shadow: var(--nb-bento-card-shadow, none);
             background: var(--nb-color-surface, #fff);
         }
         #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__button,
@@ -540,9 +750,21 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__title {
                 font-size: var(--nb-bento-title-size-mobile, 30px);
+                margin-bottom: var(--nb-bento-title-margin-bottom-mobile, var(--nb-bento-title-margin-bottom, 0));
+                max-width: min(100%, var(--nb-bento-title-max-width-mobile, var(--nb-bento-title-max-width, 920px)));
+                font-weight: var(--nb-bento-title-weight-mobile, var(--nb-bento-title-weight, 800));
+                line-height: var(--nb-bento-title-line-height-mobile, var(--nb-bento-title-line-height, 1.04));
+                letter-spacing: var(--nb-bento-title-letter-spacing-mobile, var(--nb-bento-title-letter-spacing, -1px));
+                color: var(--nb-bento-title-color-mobile, var(--nb-bento-title-color, var(--nb-color-text, #111827)));
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__subtitle {
                 font-size: var(--nb-bento-subtitle-size-mobile, 14px);
+                margin-bottom: var(--nb-bento-subtitle-margin-bottom-mobile, var(--nb-bento-subtitle-margin-bottom, 0));
+                max-width: min(100%, var(--nb-bento-subtitle-max-width-mobile, var(--nb-bento-subtitle-max-width, 760px)));
+                font-weight: var(--nb-bento-subtitle-weight-mobile, var(--nb-bento-subtitle-weight, 400));
+                line-height: var(--nb-bento-subtitle-line-height-mobile, var(--nb-bento-subtitle-line-height, 1.55));
+                letter-spacing: var(--nb-bento-subtitle-letter-spacing-mobile, var(--nb-bento-subtitle-letter-spacing, 0));
+                color: var(--nb-bento-subtitle-color-mobile, var(--nb-bento-subtitle-color, var(--nb-color-text-muted, #5b6472)));
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__grid {
                 grid-template-columns: repeat(var(--nb-bento-columns-mobile, 1), minmax(0, 1fr));
@@ -555,15 +777,31 @@ $intro_html = $intro !== '' ? nl2br(htmlspecialchars($intro, ENT_QUOTES, 'UTF-8'
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-title {
                 font-size: var(--nb-bento-item-title-size-mobile, 18px);
+                font-weight: var(--nb-bento-item-title-weight-mobile, var(--nb-bento-item-title-weight, 700));
+                line-height: var(--nb-bento-item-title-line-height-mobile, var(--nb-bento-item-title-line-height, 1.18));
+                letter-spacing: var(--nb-bento-item-title-letter-spacing-mobile, var(--nb-bento-item-title-letter-spacing, 0));
+                color: var(--nb-bento-item-title-color-mobile, var(--nb-bento-item-title-color, var(--nb-color-text, #111827)));
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-text {
                 font-size: var(--nb-bento-item-text-size-mobile, 14px);
+                font-weight: var(--nb-bento-item-text-weight-mobile, var(--nb-bento-item-text-weight, 400));
+                line-height: var(--nb-bento-item-text-line-height-mobile, var(--nb-bento-item-text-line-height, 1.5));
+                letter-spacing: var(--nb-bento-item-text-letter-spacing-mobile, var(--nb-bento-item-text-letter-spacing, 0));
+                color: var(--nb-bento-item-text-color-mobile, var(--nb-bento-item-text-color, var(--nb-color-text-muted, #5b6472)));
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__item-link {
                 font-size: var(--nb-bento-item-link-size-mobile, 12px);
+                font-weight: var(--nb-bento-item-link-weight-mobile, var(--nb-bento-item-link-weight, 700));
+                line-height: var(--nb-bento-item-link-line-height-mobile, var(--nb-bento-item-link-line-height, 1.2));
+                letter-spacing: var(--nb-bento-item-link-letter-spacing-mobile, var(--nb-bento-item-link-letter-spacing, 1px));
+                color: var(--nb-bento-item-link-color-mobile, var(--nb-bento-item-link-color, var(--nb-color-text, #111827)));
             }
             #<?= htmlspecialchars($block_dom_id, ENT_QUOTES, 'UTF-8') ?> .nb-bento-feed__meta {
                 font-size: var(--nb-bento-meta-size-mobile, 11px);
+                font-weight: var(--nb-bento-meta-weight-mobile, var(--nb-bento-meta-weight, 600));
+                line-height: var(--nb-bento-meta-line-height-mobile, var(--nb-bento-meta-line-height, 1.3));
+                letter-spacing: var(--nb-bento-meta-letter-spacing-mobile, var(--nb-bento-meta-letter-spacing, 1px));
+                color: var(--nb-bento-meta-color-mobile, var(--nb-bento-meta-color, var(--nb-color-text-muted, #5b6472)));
             }
         }
     </style>
