@@ -76,6 +76,42 @@ test('hit test returns topmost visible world node', function () {
     assert.equal(interaction.hitTestWorldPoint(nodes, { x: 10, y: 10 }), 'back');
 });
 
+test('sibling alignment candidates include edges and centers from same parent only', function () {
+    const nodes = [
+        node('target', '', { x: 20, y: 30, w: 100, h: 40 }),
+        node('left', '', { x: 140, y: 30, w: 80, h: 60 }),
+        node('nested', 'left', { x: 12, y: 10, w: 50, h: 20 }),
+        node('hidden', '', { x: 260, y: 30, w: 40, h: 40 }, { hidden: true })
+    ];
+
+    assert.deepEqual(
+        interaction.buildSiblingAlignmentCandidates(nodes, 'target', 'x', { excludeIds: ['target'] }),
+        [140, 180, 220]
+    );
+    assert.deepEqual(
+        interaction.buildSiblingAlignmentCandidates(nodes, 'target', 'y', { excludeIds: ['target'] }),
+        [30, 60, 90]
+    );
+});
+
+test('axis alignment resolves nearest start center or end snap', function () {
+    const centerSnap = interaction.resolveAxisAlignment(146, 80, [100, 186, 260], 10, { includeCenter: true });
+    const endSnap = interaction.resolveAxisAlignment(173, 80, [100, 186, 260], 10, { includeCenter: true });
+
+    assert.deepEqual(centerSnap, {
+        value: 146,
+        guide: 186,
+        anchor: 'center',
+        distance: 0
+    });
+    assert.deepEqual(endSnap, {
+        value: 180,
+        guide: 260,
+        anchor: 'end',
+        distance: 7
+    });
+});
+
 test('resize handles follow node type rules', function () {
     assert.deepEqual(interaction.getResizeHandles('text'), ['w', 'e']);
     assert.deepEqual(interaction.getResizeHandles('image'), ['nw', 'ne', 'se', 'sw']);

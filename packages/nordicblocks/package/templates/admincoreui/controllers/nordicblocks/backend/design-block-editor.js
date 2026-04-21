@@ -2288,30 +2288,6 @@
         };
     }
 
-    function resolveBoxAxisSnap(position, size, candidates, threshold) {
-        var startSnap = resolveSnapCandidate(position, candidates, threshold);
-        var endSnap = resolveSnapCandidate(position + size, candidates, threshold);
-
-        if (startSnap.matched && (!endSnap.matched || startSnap.distance <= endSnap.distance)) {
-            return {
-                value: startSnap.value,
-                guide: startSnap.guide
-            };
-        }
-
-        if (endSnap.matched) {
-            return {
-                value: endSnap.value - size,
-                guide: endSnap.guide
-            };
-        }
-
-        return {
-            value: Number(position),
-            guide: null
-        };
-    }
-
     function buildLinearCandidates(minValue, maxValue, step) {
         var result = [];
         var size = Math.max(1, Number(step || 8));
@@ -2359,16 +2335,76 @@
         return uniqueSortedNumbers(result);
     }
 
-    function buildHorizontalSnapCandidates(element, hostSize, editorRuntime) {
-        if (element && !element.parentId) {
-            return buildStageXCandidates(currentStageMetrics(), editorRuntime);
-        }
+    function buildLocalAlignmentNodeSnapshot(breakpoint) {
+        return getElements().map(function (candidate) {
+            var branch = resolveBranch(candidate, breakpoint);
 
-        return buildLinearCandidates(Number(hostSize.minX || 0), Number(hostSize.width || 0), editorRuntime.gridSize);
+            return {
+                id: candidate.id,
+                parentId: candidate.parentId || '',
+                hidden: candidate.hidden,
+                visible: branch.box.visible !== false,
+                box: {
+                    x: Number(branch.box.x || 0),
+                    y: Number(branch.box.y || 0),
+                    w: Math.max(1, Number(branch.box.w || 1)),
+                    h: Math.max(1, Number(branch.box.h || 1))
+                }
+            };
+        });
     }
 
-    function buildVerticalSnapCandidates(hostSize, editorRuntime) {
-        return buildLinearCandidates(Number(hostSize.minY || 0), Number(hostSize.height || 0), editorRuntime.gridSize);
+    function buildElementAlignmentCandidates(element, axis, excludedIds) {
+        return InteractionCore.buildSiblingAlignmentCandidates(
+            buildLocalAlignmentNodeSnapshot(currentBreakpoint()),
+            element ? element.id : '',
+            axis,
+            {
+                excludeIds: excludedIds || [],
+                includeCenters: true
+            }
+        );
+    }
+
+    function localGuideToWorld(element, axis, localPosition, breakpoint) {
+        var parent;
+        var parentBox;
+        var parentOffset;
+
+        if (localPosition == null) {
+            return null;
+        }
+
+        parent = element && element.parentId ? getElementById(element.parentId) : null;
+        if (!parent) {
+            return Number(localPosition);
+        }
+
+        parentBox = getAbsoluteWorldBox(parent, breakpoint);
+        parentOffset = getParentContentOffset(parent, breakpoint);
+
+        return axis === 'y'
+            ? Number(parentBox.y || 0) + Number(parentOffset.y || 0) + Number(localPosition)
+            : Number(parentBox.x || 0) + Number(parentOffset.x || 0) + Number(localPosition);
+    }
+
+    function buildHorizontalSnapCandidates(element, hostSize, editorRuntime, excludedIds) {
+        var result;
+
+        if (element && !element.parentId) {
+            result = buildStageXCandidates(currentStageMetrics(), editorRuntime);
+        } else {
+            result = buildLinearCandidates(Number(hostSize.minX || 0), Number(hostSize.width || 0), editorRuntime.gridSize);
+        }
+
+        return uniqueSortedNumbers(result.concat(buildElementAlignmentCandidates(element, 'x', excludedIds)));
+    }
+
+    function buildVerticalSnapCandidates(element, hostSize, editorRuntime, excludedIds) {
+        return uniqueSortedNumbers(
+            buildLinearCandidates(Number(hostSize.minY || 0), Number(hostSize.height || 0), editorRuntime.gridSize)
+                .concat(buildElementAlignmentCandidates(element, 'y', excludedIds))
+        );
     }
 
     function getViewportNode() {
@@ -2637,14 +2673,14 @@
         nextY = nextPrimaryBox.y;
 
         if (editorRuntime.snapToGrid) {
-            xCandidates = buildHorizontalSnapCandidates(primaryElement, hostSize, editorRuntime);
-            yCandidates = buildVerticalSnapCandidates(hostSize, editorRuntime);
-            xSnap = resolveBoxAxisSnap(nextX, nextPrimaryBox.w, xCandidates, Number(editorRuntime.snapThreshold || 6));
-            ySnap = resolveBoxAxisSnap(nextY, nextPrimaryBox.h, yCandidates, Number(editorRuntime.snapThreshold || 6));
+            xCandidates = buildHorizontalSnapCandidates(primaryElement, hostSize, editorRuntime, drag.nodeIds);
+            yCandidates = buildVerticalSnapCandidates(primaryElement, hostSize, editorRuntime, drag.nodeIds);
+            xSnap = InteractionCore.resolveAxisAlignment(nextX, nextPrimaryBox.w, xCandidates, Number(editorRuntime.snapThreshold || 6), { includeCenter: true });
+            ySnap = InteractionCore.resolveAxisAlignment(nextY, nextPrimaryBox.h, yCandidates, Number(editorRuntime.snapThreshold || 6), { includeCenter: true });
             nextX = xSnap.value;
             nextY = ySnap.value;
-            state.interactionState.guideX = primaryElement.parentId ? null : xSnap.guide;
-            state.interactionState.guideY = primaryElement.parentId ? null : ySnap.guide;
+            state.interactionState.guideX = localGuideToWorld(primaryElement, 'x', xSnap.guide, currentBreakpoint());
+            state.interactionState.guideY = localGuideToWorld(primaryElement, 'y', ySnap.guide, currentBreakpoint());
         } else {
             state.interactionState.guideX = null;
             state.interactionState.guideY = null;
@@ -2751,8 +2787,8 @@
         });
 
         if (editorRuntime.snapToGrid) {
-            xCandidates = buildHorizontalSnapCandidates(element, hostSize, editorRuntime);
-            yCandidates = buildVerticalSnapCandidates(hostSize, editorRuntime);
+            xCandidates = buildHorizontalSnapCandidates(element, hostSize, editorRuntime, [element.id]);
+            yCandidates = buildVerticalSnapCandidates(element, hostSize, editorRuntime, [element.id]);
             nextRight = nextBox.x + nextBox.w;
             nextBottom = nextBox.y + nextBox.h;
 
@@ -2775,8 +2811,12 @@
 
             nextBox.w = Math.max(minSize.w, nextRight - nextBox.x);
             nextBox.h = Math.max(minSize.h, nextBottom - nextBox.y);
-            state.interactionState.guideX = element.parentId ? null : (xSnap ? xSnap.guide : null);
-            state.interactionState.guideY = element.parentId ? null : (ySnap ? ySnap.guide : null);
+            state.interactionState.guideX = xSnap && xSnap.guide != null
+                ? localGuideToWorld(element, 'x', xSnap.guide, currentBreakpoint())
+                : null;
+            state.interactionState.guideY = ySnap && ySnap.guide != null
+                ? localGuideToWorld(element, 'y', ySnap.guide, currentBreakpoint())
+                : null;
         } else {
             state.interactionState.guideX = null;
             state.interactionState.guideY = null;
@@ -2816,8 +2856,12 @@
             });
         }
 
-        state.interactionState.guideX = handle.indexOf('w') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).x : (handle.indexOf('e') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).x + branchData.box.w) : null);
-        state.interactionState.guideY = handle.indexOf('n') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).y : (handle.indexOf('s') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).y + branchData.box.h) : null);
+        state.interactionState.guideX = state.interactionState.guideX != null
+            ? state.interactionState.guideX
+            : (handle.indexOf('w') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).x : (handle.indexOf('e') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).x + branchData.box.w) : null));
+        state.interactionState.guideY = state.interactionState.guideY != null
+            ? state.interactionState.guideY
+            : (handle.indexOf('n') >= 0 ? getAbsoluteWorldBox(element, currentBreakpoint()).y : (handle.indexOf('s') >= 0 ? (getAbsoluteWorldBox(element, currentBreakpoint()).y + branchData.box.h) : null));
         markDirty();
         renderPropertiesCard();
         renderCanvas();

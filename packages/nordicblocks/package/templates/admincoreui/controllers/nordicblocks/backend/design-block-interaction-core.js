@@ -52,6 +52,24 @@
         });
     }
 
+    function uniqueSortedNumbers(values) {
+        var seen = {};
+
+        return (values || []).filter(function (value) {
+            var rounded = Math.round(toNumber(value, 0) * 1000) / 1000;
+            var key = String(rounded);
+
+            if (seen[key]) {
+                return false;
+            }
+
+            seen[key] = true;
+            return true;
+        }).sort(function (left, right) {
+            return toNumber(left, 0) - toNumber(right, 0);
+        });
+    }
+
     function indexNodes(nodes) {
         var indexed = {};
 
@@ -187,6 +205,105 @@
         return hitId;
     }
 
+    function buildSiblingAlignmentCandidates(nodes, targetId, axis, options) {
+        var indexed = indexNodes(nodes);
+        var target = indexed[String(targetId || '')] || null;
+        var settings = options || {};
+        var excluded = {};
+        var result = [];
+        var normalizedAxis = String(axis || 'x') === 'y' ? 'y' : 'x';
+        var parentId;
+
+        if (!target) {
+            return [];
+        }
+
+        (settings.excludeIds || []).forEach(function (id) {
+            excluded[String(id)] = true;
+        });
+
+        excluded[target.id] = true;
+        parentId = settings.parentId != null ? String(settings.parentId) : target.parentId;
+
+        normalizeNodes(nodes).forEach(function (node) {
+            var start;
+            var size;
+
+            if (excluded[node.id] || node.hidden || node.visible === false || node.parentId !== parentId) {
+                return;
+            }
+
+            if (normalizedAxis === 'x') {
+                start = node.box.x;
+                size = node.box.w;
+            } else {
+                start = node.box.y;
+                size = node.box.h;
+            }
+
+            result.push(start);
+            result.push(start + size);
+
+            if (settings.includeCenters !== false) {
+                result.push(start + (size / 2));
+            }
+        });
+
+        return uniqueSortedNumbers(result);
+    }
+
+    function resolveAxisAlignment(position, size, candidates, threshold, options) {
+        var settings = options || {};
+        var probes = [
+            { anchor: 'start', value: toNumber(position, 0), offset: 0 },
+            { anchor: 'end', value: toNumber(position, 0) + Math.max(1, toNumber(size, 1)), offset: Math.max(1, toNumber(size, 1)) }
+        ];
+        var best = null;
+
+        if (settings.includeCenter !== false) {
+            probes.push({
+                anchor: 'center',
+                value: toNumber(position, 0) + (Math.max(1, toNumber(size, 1)) / 2),
+                offset: Math.max(1, toNumber(size, 1)) / 2
+            });
+        }
+
+        uniqueSortedNumbers(candidates).forEach(function (candidate) {
+            probes.forEach(function (probe) {
+                var distance = Math.abs(toNumber(candidate, 0) - probe.value);
+
+                if (distance > toNumber(threshold, 0)) {
+                    return;
+                }
+
+                if (!best || distance < best.distance) {
+                    best = {
+                        anchor: probe.anchor,
+                        distance: distance,
+                        candidate: toNumber(candidate, 0),
+                        offset: probe.offset
+                    };
+                }
+            });
+        });
+
+        if (!best) {
+            return {
+                value: toNumber(position, 0),
+                guide: null,
+                anchor: null,
+                distance: null
+            };
+        }
+
+        return {
+            value: best.candidate - best.offset,
+            guide: best.candidate,
+            anchor: best.anchor,
+            distance: best.distance
+        };
+    }
+
     function getResizeHandles(type, options) {
         var normalizedType = String(type || 'shape');
         var orientation = String((options && options.orientation) || 'horizontal');
@@ -238,6 +355,8 @@
         getRootSelectionIds: getRootSelectionIds,
         buildSelectionBounds: buildSelectionBounds,
         hitTestWorldPoint: hitTestWorldPoint,
+        buildSiblingAlignmentCandidates: buildSiblingAlignmentCandidates,
+        resolveAxisAlignment: resolveAxisAlignment,
         getResizeHandles: getResizeHandles,
         createPointerCaptureSession: createPointerCaptureSession,
         isPointerCaptureMatch: isPointerCaptureMatch,
