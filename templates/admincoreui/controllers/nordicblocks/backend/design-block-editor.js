@@ -643,6 +643,7 @@
             snapThreshold: 6,
             showGuides: true,
             showColumnsGrid: true,
+            outsideVisibilityMode: 'show',
             columnsGridColor: '#0f172a',
             columnsGridOpacity: 8
         }, normalized.runtime.editor || {});
@@ -800,6 +801,16 @@
 
     function currentEditorRuntime() {
         return getPath(state.documentState.contract, 'runtime.editor', {});
+    }
+
+    function sanitizeOutsideVisibilityMode(mode) {
+        mode = String(mode || 'show').toLowerCase();
+
+        if (mode !== 'show' && mode !== 'hide') {
+            return 'auto';
+        }
+
+        return mode;
     }
 
     function getStageDefaults(breakpoint) {
@@ -1289,6 +1300,77 @@
         return getLocalHostSize(element, breakpoint);
     }
 
+    function getArtboardBoundsInScene(stageMetrics) {
+        return {
+            left: -Number(stageMetrics.originX || 0),
+            top: 0,
+            right: Number(stageMetrics.windowWidth || 1) - Number(stageMetrics.originX || 0),
+            bottom: Number(stageMetrics.height || 1)
+        };
+    }
+
+    function isWorldBoxOutsideArtboard(box, stageMetrics) {
+        var bounds;
+
+        if (!box || !stageMetrics) {
+            return false;
+        }
+
+        bounds = getArtboardBoundsInScene(stageMetrics);
+
+        return Number(box.x || 0) < bounds.left
+            || Number(box.y || 0) < bounds.top
+            || (Number(box.x || 0) + Number(box.w || 0)) > bounds.right
+            || (Number(box.y || 0) + Number(box.h || 0)) > bounds.bottom;
+    }
+
+    function getOutsideVisibilityProbeIds() {
+        var sourceIds = [];
+        var uniqueIds = [];
+        var seen = {};
+
+        if (state.interactionState.drag && Array.isArray(state.interactionState.drag.nodeIds)) {
+            sourceIds = state.interactionState.drag.nodeIds.slice();
+        } else if (state.interactionState.resize && state.interactionState.resize.elementId) {
+            sourceIds = [state.interactionState.resize.elementId];
+        } else {
+            sourceIds = getSelectionIds();
+        }
+
+        getRootSelectionIds(sourceIds).forEach(function (id) {
+            id = String(id || '');
+
+            if (!id || seen[id]) {
+                return;
+            }
+
+            seen[id] = true;
+            uniqueIds.push(id);
+        });
+
+        return uniqueIds;
+    }
+
+    function shouldShowOutsideObjects() {
+        var mode = sanitizeOutsideVisibilityMode(currentEditorRuntime().outsideVisibilityMode);
+        var stageMetrics = currentStageMetrics();
+        var breakpoint = currentBreakpoint();
+
+        if (mode === 'show') {
+            return true;
+        }
+
+        if (mode === 'hide') {
+            return false;
+        }
+
+        return getOutsideVisibilityProbeIds().some(function (id) {
+            var element = getElementById(id);
+
+            return !!element && isWorldBoxOutsideArtboard(getAbsoluteWorldBox(element, breakpoint), stageMetrics);
+        });
+    }
+
     function getMinBoxSize(element, props) {
         var type = element && element.type ? String(element.type) : 'shape';
         var orientation = String((props && props.orientation) || 'horizontal');
@@ -1467,12 +1549,33 @@
         nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '.';
     }
 
+    function updateCanvasWorkareaClass() {
+        var stageMetrics;
+        var outsideVisibilityMode;
+        var outsideVisible;
+
+        if (!nodes.canvasWorkarea) {
+            return;
+        }
+
+        stageMetrics = currentStageMetrics();
+        outsideVisibilityMode = sanitizeOutsideVisibilityMode(currentEditorRuntime().outsideVisibilityMode);
+        outsideVisible = shouldShowOutsideObjects();
+
+        nodes.canvasWorkarea.className = 'nbde-canvas-workarea'
+            + ' nbde-canvas-workarea--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto')
+            + ' nbde-canvas-workarea--outside-' + escapeHtml(outsideVisibilityMode)
+            + (outsideVisible ? ' nbde-canvas-workarea--outside-visible' : ' nbde-canvas-workarea--outside-hidden');
+    }
+
     function updateCanvasMeta() {
         var stage = currentStageConfig();
         var stageMetrics = currentStageMetrics();
         var elements = getElements();
         var selectionCount = getSelectionIds().length;
         var viewport = state.scene.viewport;
+
+        updateCanvasWorkareaClass();
 
         if (nodes.canvasMeta) {
             nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint())
@@ -1499,9 +1602,7 @@
             nodes.frameWrap.className = 'nbde-canvas-frame ' + (BREAKPOINTS[currentBreakpoint()] || BREAKPOINTS.desktop).frameClass;
         }
 
-        if (nodes.canvasWorkarea) {
-            nodes.canvasWorkarea.className = 'nbde-canvas-workarea nbde-canvas-workarea--overflow-' + escapeHtml(currentStageMetrics().overflowMode || 'auto');
-        }
+        updateCanvasWorkareaClass();
 
         renderStatus();
         updateCanvasMeta();
@@ -1611,6 +1712,11 @@
             { value: 'auto', label: 'Auto' },
             { value: 'hidden', label: 'Hidden' },
             { value: 'visible', label: 'Visible' }
+        ]);
+        html += renderSelectField('Объекты вне блока', 'runtime-editor', 'outsideVisibilityMode', sanitizeOutsideVisibilityMode(editorRuntime.outsideVisibilityMode), [
+            { value: 'auto', label: 'Auto' },
+            { value: 'show', label: 'Показывать' },
+            { value: 'hide', label: 'Не показывать' }
         ]);
         html += renderField('Поле workspace', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
         html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
@@ -2543,6 +2649,8 @@
         var editorRuntime = currentEditorRuntime();
         var background = getPath(contract, 'design.section.background', {});
         var viewport = state.scene.viewport;
+        var outsideVisibilityMode = sanitizeOutsideVisibilityMode(editorRuntime.outsideVisibilityMode);
+        var outsideVisible = shouldShowOutsideObjects();
         var html = '';
         var columnsOpacity = stageMetrics.gridOpacity;
         var columnsColor = stageMetrics.gridColor;
@@ -2551,7 +2659,11 @@
         viewport.width = stageMetrics.windowWidth;
         viewport.height = stageMetrics.height;
 
-        html += '<div class="nbde-stage nbde-stage--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto') + (state.interactionState.stageResize ? ' is-resizing' : '') + '" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
+        html += '<div class="nbde-stage nbde-stage--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto')
+            + ' nbde-stage--outside-' + escapeHtml(outsideVisibilityMode)
+            + (outsideVisible ? ' nbde-stage--outside-visible' : ' nbde-stage--outside-hidden')
+            + (state.interactionState.stageResize ? ' is-resizing' : '')
+            + '" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
         html += '<div class="nbde-stage__viewport' + (state.interactionState.pan ? ' is-panning' : '') + '" id="nbd-stage-viewport">';
         html += '<div class="nbde-stage__world" id="nbd-stage-world" style="transform:' + escapeHtml(buildViewportTransform(viewport)) + '">';
         html += '<div class="nbde-stage__surface" style="' + escapeHtml(buildBackgroundStyle(background)) + '">';

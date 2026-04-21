@@ -280,6 +280,11 @@
     overflow: visible;
 }
 
+.nbde-canvas-workarea--outside-visible {
+    padding-left: 96px;
+    padding-right: 96px;
+}
+
 .nbde-canvas-frame {
     width: min(100%, 1520px);
     transition: width 0.18s ease;
@@ -312,6 +317,10 @@
     box-shadow: 0 20px 56px rgba(37, 99, 235, 0.16);
 }
 
+.nbde-stage--outside-visible {
+    overflow: visible;
+}
+
 .nbde-stage__viewport,
 .nbde-stage__world,
 .nbde-stage__surface,
@@ -333,6 +342,13 @@
 
 .nbde-stage--overflow-auto .nbde-stage__viewport {
     overflow: hidden;
+}
+
+.nbde-stage--outside-visible .nbde-stage__viewport,
+.nbde-stage--outside-visible .nbde-stage__world,
+.nbde-stage--outside-visible .nbde-stage__surface,
+.nbde-stage--outside-visible .nbde-stage__overlay {
+    overflow: visible;
 }
 
 .nbde-stage__viewport.is-panning {
@@ -1221,6 +1237,11 @@
     .nbde-card {
         padding-left: 10px;
         padding-right: 10px;
+    }
+
+    .nbde-canvas-workarea--outside-visible {
+        padding-left: 24px;
+        padding-right: 24px;
     }
 
     .nbde-breakpoints {
