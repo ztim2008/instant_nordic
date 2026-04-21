@@ -112,7 +112,7 @@
 
     var KNOWN_PROP_KEYS = [
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
-        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'shape', 'objectFit',
+        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'shape', 'objectFit', 'objectPosition',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'text', 'url', 'src',
         'alt', 'poster', 'iconClass', 'label'
     ];
@@ -172,6 +172,7 @@
             pan: null,
             pointerCapture: null,
             pointerTelemetry: null,
+            stageResize: null,
             spacePressed: false
         }
     };
@@ -401,6 +402,7 @@
             branch.props.src = '';
             branch.props.alt = '';
             branch.props.objectFit = 'cover';
+            branch.props.objectPosition = 'center center';
             branch.props.backgroundColor = '#e2e8f0';
             branch.props.borderRadius = 24;
         } else if (type === 'video') {
@@ -1511,6 +1513,16 @@
         return html;
     }
 
+    function buildPhotoPositionOptions() {
+        return [
+            { value: 'center center', label: 'Центр' },
+            { value: 'left top', label: 'Левый верх' },
+            { value: 'right top', label: 'Правый верх' },
+            { value: 'left bottom', label: 'Левый низ' },
+            { value: 'right bottom', label: 'Правый низ' }
+        ];
+    }
+
     function renderBlockCard() {
         var selectionIds = getSelectionIds();
         var selected = getSelectedElement();
@@ -1530,7 +1542,7 @@
         html += '</div>';
         html += '<div class="nbde-shortcuts">';
         html += '<span>Shift+click: мультивыбор</span>';
-        html += '<span>Колесо: zoom в курсор</span>';
+        html += '<span>Колесо: pan сцены, Ctrl/Cmd + колесо: zoom</span>';
         html += '<span>Space+drag или средняя кнопка: pan</span>';
         html += '</div>';
         html += '<div class="nbde-palette-grid">';
@@ -1559,6 +1571,7 @@
         var html = '';
 
         html += '<div class="nbde-inline-note">Координата x=0 означает левую границу content container. Отрицательный x уводит объект в bleed-зону за пределы контента, но внутри window container.</div>';
+        html += '<div class="nbde-inline-note">Wheel без модификатора двигает canvas по сцене. Ctrl/Cmd + wheel меняет zoom только для текущего breakpoint.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
@@ -1735,6 +1748,7 @@
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
+            html += renderSelectField('Позиция фото', 'element-props', 'objectPosition', props.objectPosition || 'center center', buildPhotoPositionOptions());
         } else if (type === 'video') {
             html += renderField('Видео файл', 'element-props', 'src', props.src || '', 'string');
             html += renderField('Постер', 'element-props', 'poster', props.poster || '', 'string');
@@ -1890,6 +1904,9 @@
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
+            if (element.type === 'photo' || element.type === 'svg') {
+                html += renderSelectField('Позиция фото', 'element-props', 'objectPosition', props.objectPosition || 'center center', buildPhotoPositionOptions());
+            }
         } else if (element.type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
             html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
@@ -2049,7 +2066,7 @@
         } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
             if (props.src) {
-                html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="object-fit:' + escapeHtml(props.objectFit || 'cover') + ';border-radius:' + Number(props.borderRadius || 0) + 'px">';
+                html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="object-fit:' + escapeHtml(props.objectFit || 'cover') + ';object-position:' + escapeHtml(props.objectPosition || 'center center') + ';border-radius:' + Number(props.borderRadius || 0) + 'px">';
             } else {
                 html += '<div class="nbde-el__placeholder">Задайте файл в свойствах элемента</div>';
             }
@@ -2185,6 +2202,70 @@
         return 'translate(' + roundNumber(-Number(viewport.offsetX || 0) * Number(viewport.zoom || 1)) + 'px,' + roundNumber(-Number(viewport.offsetY || 0) * Number(viewport.zoom || 1)) + 'px) scale(' + Number(viewport.zoom || 1) + ')';
     }
 
+    function collectStageHeights() {
+        var heights = {};
+
+        Object.keys(BREAKPOINTS).forEach(function (breakpoint) {
+            heights[breakpoint] = buildStageMetrics(getPath(state.documentState.contract, 'layout.stage.' + breakpoint, {}), breakpoint).height;
+        });
+
+        return heights;
+    }
+
+    function applyViewportScroll(screenDeltaX, screenDeltaY) {
+        var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
+
+        state.scene.viewport.offsetX = Number(state.scene.viewport.offsetX || 0) + (Number(screenDeltaX || 0) / zoom);
+        state.scene.viewport.offsetY = Number(state.scene.viewport.offsetY || 0) + (Number(screenDeltaY || 0) / zoom);
+        clearGuides();
+        renderCanvas();
+        renderStageCard();
+    }
+
+    function renderStageHeightResizeHandle(stageMetrics) {
+        return '<button class="nbde-stage__height-handle' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Изменить высоту canvas"><span></span><small>' + Math.round(Number(stageMetrics.height || 0)) + 'px</small></button>';
+    }
+
+    function beginStageResize(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        acquirePointerCapture(event, 'stage-resize', { breakpoint: currentBreakpoint() });
+        state.interactionState.stageResize = {
+            activeBreakpoint: currentBreakpoint(),
+            startClientY: Number(event.clientY || 0),
+            startHeights: collectStageHeights()
+        };
+        clearGuides();
+        renderStageCard();
+        renderCanvas();
+    }
+
+    function applyStageResizeAtClientY(stageResize, clientY) {
+        var activeBreakpoint = stageResize.activeBreakpoint || currentBreakpoint();
+        var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
+        var startHeights = stageResize.startHeights || {};
+        var activeStartHeight = Math.max(240, Number(startHeights[activeBreakpoint] || currentStageMetrics().height));
+        var nextActiveHeight = Math.max(240, Math.round(activeStartHeight + ((Number(clientY || 0) - Number(stageResize.startClientY || 0)) / zoom)));
+        var ratio = nextActiveHeight / Math.max(1, activeStartHeight);
+
+        Object.keys(BREAKPOINTS).forEach(function (breakpoint) {
+            var branch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, null);
+            var baseHeight = Math.max(240, Number(startHeights[breakpoint] || buildStageMetrics(branch || {}, breakpoint).height));
+
+            if (!branch || typeof branch !== 'object') {
+                state.documentState.contract.layout.stage[breakpoint] = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
+                branch = state.documentState.contract.layout.stage[breakpoint];
+            }
+
+            branch.minHeight = Math.max(240, Math.round(baseHeight * ratio));
+        });
+
+        markDirty();
+        renderCanvas();
+        renderStageCard();
+        return true;
+    }
+
     function syncStageDimensions(stageBranch, changedPath) {
         var columns = Math.max(1, Number(stageBranch.columns || 1));
         var gutter = Math.max(0, Number(stageBranch.gutter || 0));
@@ -2259,6 +2340,7 @@
 
         html += '</div></div></div>';
         html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + '</div>';
+        html += '<div class="nbde-stage__footer-controls">' + renderStageHeightResizeHandle(stageMetrics) + '</div>';
         html += '</div>';
 
         if (nodes.canvasStage) {
@@ -3451,7 +3533,7 @@
             bounds: hostSize,
             minWidth: minSize.w,
             minHeight: minSize.h,
-            keepAspectRatio: isMediaType(element.type) && handle.length === 2
+            keepAspectRatio: (element.type === 'svg' || element.type === 'video') && handle.length === 2
         });
 
         if (editorRuntime.snapToGrid) {
@@ -3554,6 +3636,16 @@
         applyResizeAtWorldPoint(resize, worldPoint);
     }
 
+    function handleStageResizeMove(event) {
+        var stageResize = state.interactionState.stageResize;
+
+        if (!stageResize) {
+            return;
+        }
+
+        applyStageResizeAtClientY(stageResize, event.clientY);
+    }
+
     function handlePanMove(event) {
         var pan = state.interactionState.pan;
         var zoom;
@@ -3578,7 +3670,7 @@
             return;
         }
 
-        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan) {
+        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan && !state.interactionState.stageResize) {
             return;
         }
 
@@ -3586,6 +3678,7 @@
         state.interactionState.drag = null;
         state.interactionState.resize = null;
         state.interactionState.pan = null;
+        state.interactionState.stageResize = null;
         clearGuides();
         renderPropertiesCard();
         renderCanvas();
@@ -4069,8 +4162,19 @@
         });
     }, true);
 
+    document.addEventListener('pointerdown', function (event) {
+        var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
+
+        if (!stageResizeNode || !root.contains(stageResizeNode)) {
+            return;
+        }
+
+        beginStageResize(event);
+    }, true);
+
     root.addEventListener('pointerdown', function (event) {
         var resizeNode = event.target.closest('[data-action="resize-element"]');
+        var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
         var wrapper = event.target.closest('.nbde-el');
         var stageViewport = event.target.closest('#nbd-stage-viewport');
         var worldPoint;
@@ -4089,6 +4193,11 @@
         }
 
         worldPoint = getWorldPointFromEvent(event);
+
+        if (stageResizeNode) {
+            beginStageResize(event);
+            return;
+        }
 
         if (resizeNode && wrapper) {
             beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event, worldPoint);
@@ -4120,6 +4229,7 @@
     document.addEventListener('pointermove', function (event) {
         updatePointerTelemetry(event);
         handlePanMove(event);
+        handleStageResizeMove(event);
         handleResizeMove(event);
         handleDragMove(event);
     });
@@ -4136,9 +4246,15 @@
         }
 
         event.preventDefault();
-        screenPoint = getScreenPointFromEvent(event);
-        direction = event.deltaY < 0 ? 1.1 : (1 / 1.1);
-        zoomTo(screenPoint, Number(state.scene.viewport.zoom || 1) * direction);
+
+        if (event.ctrlKey || event.metaKey) {
+            screenPoint = getScreenPointFromEvent(event);
+            direction = event.deltaY < 0 ? 1.1 : (1 / 1.1);
+            zoomTo(screenPoint, Number(state.scene.viewport.zoom || 1) * direction);
+            return;
+        }
+
+        applyViewportScroll(event.deltaX, event.deltaY);
     }, { passive: false });
 
     if (nodes.saveButton) {
@@ -4188,6 +4304,9 @@
     Array.prototype.forEach.call(root.querySelectorAll('[data-breakpoint]'), function (button) {
         button.addEventListener('click', function () {
             state.uiState.activeBreakpoint = button.dataset.breakpoint || 'desktop';
+            state.scene.viewport.zoom = 1;
+            state.scene.viewport.offsetX = 0;
+            state.scene.viewport.offsetY = 0;
             clearGuides();
             renderAll();
         });

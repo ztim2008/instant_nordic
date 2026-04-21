@@ -55,7 +55,10 @@ class NordicblocksDesignBlockElementRenderer {
         if ($type === 'photo' || $type === 'svg') {
             $src = trim((string) ($props['src'] ?? ''));
             $alt = (string) ($props['alt'] ?? '');
-            return '<div' . $attrs . '>' . ($src !== '' ? '<img src="' . self::attr($src) . '" alt="' . self::attr($alt) . '" loading="lazy">' : '') . '</div>';
+            $fit = (string) ($props['objectFit'] ?? 'cover');
+            $position = (string) ($props['objectPosition'] ?? 'center center');
+            $style = ' style="width:100%;height:100%;display:block;object-fit:' . self::attr($fit) . ';object-position:' . self::attr($position) . '"';
+            return '<div' . $attrs . '>' . ($src !== '' ? '<img src="' . self::attr($src) . '" alt="' . self::attr($alt) . '" loading="lazy"' . $style . '>' : '') . '</div>';
         }
 
         if ($type === 'video') {

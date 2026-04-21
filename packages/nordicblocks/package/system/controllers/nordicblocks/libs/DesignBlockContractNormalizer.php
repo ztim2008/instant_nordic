@@ -253,9 +253,10 @@ class NordicblocksDesignBlockContractNormalizer {
 
         if ($type === 'photo' || $type === 'image' || $type === 'svg') {
             return $common + [
-                'src'       => self::string($raw['src'] ?? '', '', 1024),
-                'alt'       => self::string($raw['alt'] ?? '', '', 255),
-                'objectFit' => self::select($raw['objectFit'] ?? 'cover', ['cover', 'contain', 'fill'], 'cover'),
+                'src'            => self::string($raw['src'] ?? '', '', 1024),
+                'alt'            => self::string($raw['alt'] ?? '', '', 255),
+                'objectFit'      => self::select($raw['objectFit'] ?? 'cover', ['cover', 'contain', 'fill'], 'cover'),
+                'objectPosition' => self::select($raw['objectPosition'] ?? 'center center', ['center center', 'left top', 'right top', 'left bottom', 'right bottom'], 'center center'),
             ];
         }
 
