@@ -268,6 +268,14 @@
     justify-content: center;
 }
 
+.nbde-canvas-workarea--overflow-hidden {
+    overflow: hidden;
+}
+
+.nbde-canvas-workarea--overflow-visible {
+    overflow: visible;
+}
+
 .nbde-canvas-frame {
     width: min(100%, 1520px);
     transition: width 0.18s ease;
@@ -308,6 +316,14 @@
 .nbde-stage__viewport {
     overflow: hidden;
     cursor: default;
+}
+
+.nbde-stage--overflow-visible .nbde-stage__viewport {
+    overflow: visible;
+}
+
+.nbde-stage--overflow-auto .nbde-stage__viewport {
+    overflow: auto;
 }
 
 .nbde-stage__viewport.is-panning {
@@ -480,6 +496,10 @@
 
 .nbde-el.is-hidden {
     opacity: 0.35;
+}
+
+.nbde-el.is-locked {
+    cursor: not-allowed;
 }
 
 .nbde-el.is-selected {
@@ -1016,8 +1036,47 @@
     gap: 6px;
 }
 
+.nbde-layer-row__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    align-items: stretch;
+}
+
 .nbde-layer-list--tree {
     gap: 6px;
+}
+
+.nbde-layer-actions {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.nbde-layer-toggle {
+    min-height: 32px;
+    padding: 6px 8px;
+    border: 1px solid var(--nbde-border);
+    background: #ffffff;
+    color: var(--nbde-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.nbde-layer-toggle.is-active {
+    color: #1d4ed8;
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.nbde-layer-button.is-dimmed {
+    opacity: 0.72;
+}
+
+.nbde-layer-button.is-locked {
+    border-style: dashed;
 }
 
 .nbde-crumbs {

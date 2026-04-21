@@ -27,14 +27,15 @@
     var STAGE_DEFAULTS = {
         desktop: {
             windowWidth: 1440,
-            contentWidth: 1110,
+            contentWidth: 1320,
             minHeight: 680,
-            outerMargin: 165,
-            bleedLeft: 165,
-            bleedRight: 165,
+            outerMargin: 60,
+            bleedLeft: 60,
+            bleedRight: 60,
             columns: 12,
-            gutter: 30,
-            columnWidth: 65,
+            gutter: 24,
+            columnWidth: 88,
+            overflowMode: 'auto',
             initialInsertX: 0,
             initialInsertY: 24,
             gridOverlay: {
@@ -44,14 +45,15 @@
         },
         tablet: {
             windowWidth: 768,
-            contentWidth: 672,
+            contentWidth: 720,
             minHeight: 560,
-            outerMargin: 48,
-            bleedLeft: 48,
-            bleedRight: 48,
+            outerMargin: 24,
+            bleedLeft: 24,
+            bleedRight: 24,
             columns: 8,
-            gutter: 16,
-            columnWidth: 70,
+            gutter: 24,
+            columnWidth: 69,
+            overflowMode: 'auto',
             initialInsertX: 0,
             initialInsertY: 20,
             gridOverlay: {
@@ -61,14 +63,15 @@
         },
         mobile: {
             windowWidth: 390,
-            contentWidth: 342,
+            contentWidth: 366,
             minHeight: 440,
-            outerMargin: 24,
-            bleedLeft: 24,
-            bleedRight: 24,
+            outerMargin: 12,
+            bleedLeft: 12,
+            bleedRight: 12,
             columns: 4,
-            gutter: 12,
-            columnWidth: 76.5,
+            gutter: 24,
+            columnWidth: 73.5,
+            overflowMode: 'auto',
             initialInsertX: 0,
             initialInsertY: 16,
             gridOverlay: {
@@ -183,6 +186,7 @@
         canvasMeta: document.getElementById('nbd-canvas-meta'),
         layersSummary: document.getElementById('nbd-layers-summary'),
         propertiesSummary: document.getElementById('nbd-properties-summary'),
+        canvasWorkarea: root.querySelector('.nbde-canvas-workarea'),
         frameWrap: document.getElementById('nbd-canvas-frame-wrap'),
         canvasStage: document.getElementById('nbd-canvas-stage'),
         blockCard: document.getElementById('nbd-block-card'),
@@ -586,6 +590,7 @@
             stageBranch.columns = Number(stageBranch.columns || getPath(stageBranch, 'grid.columns', defaults.columns));
             stageBranch.gutter = Number(stageBranch.gutter || getPath(stageBranch, 'grid.gutter', defaults.gutter));
             stageBranch.columnWidth = Number(stageBranch.columnWidth || defaults.columnWidth);
+            stageBranch.overflowMode = String(stageBranch.overflowMode || defaults.overflowMode || 'auto');
             stageBranch.contentWidth = Number(stageBranch.contentWidth || stageBranch.width || ((stageBranch.columns * stageBranch.columnWidth) + (Math.max(0, stageBranch.columns - 1) * stageBranch.gutter)));
 
             if (stageBranch.outerMargin == null) {
@@ -823,6 +828,7 @@
             width: contentWidth,
             contentWidth: contentWidth,
             height: Math.max(1, Number(stageBranch.minHeight || defaults.minHeight)),
+            overflowMode: String(stageBranch.overflowMode || defaults.overflowMode || 'auto'),
             initialInsertX: Number(stageBranch.initialInsertX == null ? defaults.initialInsertX : stageBranch.initialInsertX),
             initialInsertY: Number(stageBranch.initialInsertY == null ? defaults.initialInsertY : stageBranch.initialInsertY),
             columns: columns,
@@ -1461,6 +1467,7 @@
                 + ' • content ' + stageMetrics.contentWidth + 'px'
                 + ' • window ' + stageMetrics.windowWidth + 'px'
                 + ' • ' + stageMetrics.columns + ' cols'
+                + ' • overflow ' + stageMetrics.overflowMode
                 + ' • h ' + (stage.minHeight || 0) + 'px'
                 + ' • zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '%'
                 + ' • camera ' + roundNumber(viewport.offsetX) + ',' + roundNumber(viewport.offsetY)
@@ -1480,6 +1487,10 @@
 
         if (nodes.frameWrap) {
             nodes.frameWrap.className = 'nbde-canvas-frame ' + (BREAKPOINTS[currentBreakpoint()] || BREAKPOINTS.desktop).frameClass;
+        }
+
+        if (nodes.canvasWorkarea) {
+            nodes.canvasWorkarea.className = 'nbde-canvas-workarea nbde-canvas-workarea--overflow-' + escapeHtml(currentStageMetrics().overflowMode || 'auto');
         }
 
         renderStatus();
@@ -1578,13 +1589,21 @@
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-reset">1:1</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="camera-reset">Камера</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="reveal-selection">Показать выделение</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="left-bleed">Bleed L</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="content">Контент</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="right-bleed">Bleed R</button>';
         html += '</div>';
         html += '<div class="nbde-camera-stats">zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
-        html += '<div class="nbde-camera-stats">content ' + stageMetrics.contentWidth + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • margin ' + roundNumber(stageMetrics.outerMargin) + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px</div>';
+        html += '<div class="nbde-camera-stats">content ' + stageMetrics.contentWidth + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • margin ' + roundNumber(stageMetrics.outerMargin) + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px • overflow ' + stageMetrics.overflowMode + '</div>';
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
         html += renderField('Ширина окна', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
         html += renderField('Ширина контента', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
         html += renderField('Мин. высота world', 'stage', 'minHeight', stage.minHeight, 'number');
+        html += renderSelectField('Overflow mode', 'stage', 'overflowMode', getPath(stage, 'overflowMode', stageMetrics.overflowMode), [
+            { value: 'auto', label: 'Auto' },
+            { value: 'hidden', label: 'Hidden' },
+            { value: 'visible', label: 'Visible' }
+        ]);
         html += renderField('Внешний отступ', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
         html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
         html += renderField('Bleed справа', 'stage', 'bleedRight', getPath(stage, 'bleedRight', stageMetrics.bleedRight), 'number');
@@ -1652,19 +1671,34 @@
             var isContext = insertionContextId && String(insertionContextId) === String(element.id);
             var children = element.children || [];
             var depth = getElementDepth(element);
+            var branch = resolveBranch(element, currentBreakpoint());
+            var visible = branch.box.visible !== false;
+            var locked = !!element.locked;
 
             html += '<div class="nbde-layer-row">';
-            html += '<button class="nbde-layer-button' + (active ? ' is-active' : '') + (ancestor ? ' is-ancestor' : '') + (isContext ? ' is-context' : '') + '" style="--nbde-layer-depth:' + depth + '" type="button" data-action="select-element" data-element-id="' + escapeHtml(element.id) + '">';
+            html += '<div class="nbde-layer-row__main">';
+            html += '<button class="nbde-layer-button' + (active ? ' is-active' : '') + (ancestor ? ' is-ancestor' : '') + (isContext ? ' is-context' : '') + (!visible ? ' is-dimmed' : '') + (locked ? ' is-locked' : '') + '" style="--nbde-layer-depth:' + depth + '" type="button" data-action="select-element" data-element-id="' + escapeHtml(element.id) + '">';
             html += '<span class="nbde-layer-meta">';
             html += '<span class="nbde-layer-title"><strong>' + escapeHtml(element.name || getTypeLabel(element.type)) + '</strong><span>' + escapeHtml(getTypeLabel(element.type)) + '</span></span>';
             html += '<span class="nbde-layer-flags">';
             if (isContext) {
                 html += '<span class="nbde-layer-pill is-context">insert</span>';
             }
+            if (!visible) {
+                html += '<span class="nbde-layer-pill">hidden</span>';
+            }
+            if (locked) {
+                html += '<span class="nbde-layer-pill">lock</span>';
+            }
             if (children.length) {
                 html += '<span class="nbde-layer-pill">' + children.length + ' child</span>';
             }
             html += '</span></span></button>';
+            html += '<div class="nbde-layer-actions">';
+            html += '<button class="nbde-layer-toggle' + (!visible ? ' is-active' : '') + '" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + (!visible ? 'Показать' : 'Скрыть') + '</button>';
+            html += '<button class="nbde-layer-toggle' + (locked ? ' is-active' : '') + '" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (locked ? 'Unlock' : 'Lock') + '</button>';
+            html += '</div>';
+            html += '</div>';
 
             if (children.length) {
                 html += renderLayerTreeItems(children, selectionIds, selectedPathIds, insertionContextId);
@@ -1971,6 +2005,8 @@
         html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-backward">Ниже</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + ((branch.box || {}).visible === false ? 'Показать' : 'Скрыть') + '</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Unlock' : 'Lock') + '</button>';
         html += '</div>';
         html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
         html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
@@ -2045,7 +2081,7 @@
         var selected = isSelected(element.id);
         var primary = String(state.uiState.selectedElementId || '') === String(element.id);
         var editing = String(state.uiState.editingTextId || '') === String(element.id) && isEditableType(element.type);
-        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type) + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '');
+        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type) + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '') + (element.locked ? ' is-locked' : '');
         var style = [
             'left:' + Number(box.x || 0) + 'px',
             'top:' + Number(box.y || 0) + 'px',
@@ -2056,7 +2092,7 @@
         ];
         var html = '<div class="' + classes + '" data-element-id="' + escapeHtml(element.id) + '" data-element-type="' + escapeHtml(element.type) + '" style="' + style.join(';') + '">';
 
-        if (primary && getSelectionIds().length === 1) {
+        if (primary && getSelectionIds().length === 1 && !element.locked) {
             html += renderResizeHandles(element, props);
         }
 
@@ -2312,6 +2348,40 @@
         renderStageCard();
     }
 
+    function buildCanvasFocusZone(zone) {
+        var stageMetrics = currentStageMetrics();
+        var leftBleedWidth = Math.max(1, Number(stageMetrics.originX || 0));
+        var contentWidth = Math.max(1, Number(stageMetrics.contentWidth || 1));
+        var rightBleedStart = Number(stageMetrics.originX || 0) + contentWidth;
+        var rightBleedWidth = Math.max(1, Number(stageMetrics.windowWidth || 1) - rightBleedStart);
+
+        if (zone === 'left-bleed') {
+            return { x: 0, y: 0, w: leftBleedWidth, h: Math.max(1, Number(stageMetrics.height || 1)) };
+        }
+
+        if (zone === 'right-bleed') {
+            return { x: rightBleedStart, y: 0, w: rightBleedWidth, h: Math.max(1, Number(stageMetrics.height || 1)) };
+        }
+
+        return {
+            x: Number(stageMetrics.originX || 0),
+            y: 0,
+            w: contentWidth,
+            h: Math.max(1, Number(stageMetrics.height || 1))
+        };
+    }
+
+    function focusStageZone(zone) {
+        if (!revealCanvasBounds(buildCanvasFocusZone(zone), { forceCenter: true, padding: 24 })) {
+            return false;
+        }
+
+        clearGuides();
+        renderCanvas();
+        renderStageCard();
+        return true;
+    }
+
     function renderStageHeightResizeHandle(stageMetrics) {
         return '<button class="nbde-stage__height-handle' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Изменить высоту canvas"><span></span><small>' + Math.round(Number(stageMetrics.height || 0)) + 'px</small></button>';
     }
@@ -2384,6 +2454,36 @@
         }
     }
 
+    function toggleElementVisibility(elementId) {
+        var element = getElementById(elementId || '');
+        var branch = element ? currentEditableBranch(element) : null;
+
+        if (!element || !branch || !branch.box) {
+            return;
+        }
+
+        branch.box.visible = branch.box.visible === false ? true : false;
+
+        if (branch.box.visible === false && isSelected(element.id)) {
+            clearSelection();
+        }
+
+        markDirty();
+        renderAll();
+    }
+
+    function toggleElementLock(elementId) {
+        var element = getElementById(elementId || '');
+
+        if (!element) {
+            return;
+        }
+
+        element.locked = !element.locked;
+        markDirty();
+        renderAll();
+    }
+
     function renderCanvas() {
         var contract = state.documentState.contract;
         var tree = buildTree(getElements(), currentBreakpoint());
@@ -2399,7 +2499,7 @@
         viewport.width = stageMetrics.windowWidth;
         viewport.height = stageMetrics.height;
 
-        html += '<div class="nbde-stage" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
+        html += '<div class="nbde-stage nbde-stage--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto') + '" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
         html += '<div class="nbde-stage__viewport' + (state.interactionState.pan ? ' is-panning' : '') + '" id="nbd-stage-viewport">';
         html += '<div class="nbde-stage__world" id="nbd-stage-world" style="transform:' + escapeHtml(buildViewportTransform(viewport)) + '">';
         html += '<div class="nbde-stage__surface" style="' + escapeHtml(buildBackgroundStyle(background)) + '">';
@@ -4130,12 +4230,24 @@
             resetViewport();
             return;
         }
+        if (action === 'focus-stage-zone') {
+            focusStageZone(actionNode.dataset.zone || 'content');
+            return;
+        }
         if (action === 'reveal-selection') {
             if (revealSelectionInViewport(true)) {
                 clearGuides();
                 renderCanvas();
                 renderStageCard();
             }
+            return;
+        }
+        if (action === 'toggle-element-visibility') {
+            toggleElementVisibility(actionNode.dataset.elementId || '');
+            return;
+        }
+        if (action === 'toggle-element-lock') {
+            toggleElementLock(actionNode.dataset.elementId || '');
             return;
         }
         if (applyToolbarAction(action)) {
@@ -4156,7 +4268,7 @@
         worldPoint = getWorldPointFromEvent(event);
         element = worldPoint ? hitTestWorldPoint(worldPoint, currentBreakpoint()) : null;
 
-        if (!element || !isEditableType(element.type)) {
+        if (!element || element.locked || !isEditableType(element.type)) {
             return;
         }
 
@@ -4329,6 +4441,13 @@
 
         if (!hitElement) {
             clearSelection();
+            renderAll();
+            return;
+        }
+
+        if (hitElement.locked) {
+            setSelection([hitElement.id], hitElement.id);
+            revealSelectionInViewport(false);
             renderAll();
             return;
         }

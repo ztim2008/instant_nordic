@@ -52,20 +52,21 @@
 Параметры desktop baseline:
 
 1. `windowWidth = 1440`
-2. `contentWidth = 1110`
+2. `contentWidth = 1320`
 3. `columns = 12`
-4. `gutter = 30`
-5. `columnWidth = 65`
-6. `outerMargin = 165` с каждой стороны
+4. `gutter = 24`
+5. `columnWidth = 88`
+6. `outerMargin = 60` с каждой стороны
+7. `overflowMode = auto`
 
 Проверка математики:
 
 $$
-12 \times 65 + 11 \times 30 = 780 + 330 = 1110
+12 \times 88 + 11 \times 24 = 1056 + 264 = 1320
 $$
 
 $$
-\frac{1440 - 1110}{2} = 165
+\frac{1440 - 1320}{2} = 60
 $$
 
 ### 4.2 Три пространства холста
@@ -122,11 +123,12 @@ $$
 8. `layout.stage.<breakpoint>.minHeight`
 9. `layout.stage.<breakpoint>.gridOverlay.color`
 10. `layout.stage.<breakpoint>.gridOverlay.opacity`
+11. `layout.stage.<breakpoint>.overflowMode`
 
 Для desktop baseline по умолчанию:
 
-1. `bleedLeft = outerMargin = 165`
-2. `bleedRight = outerMargin = 165`
+1. `bleedLeft = outerMargin = 60`
+2. `bleedRight = outerMargin = 60`
 
 Логика видимости объекта:
 
