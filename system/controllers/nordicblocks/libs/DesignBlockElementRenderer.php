@@ -49,7 +49,13 @@ class NordicblocksDesignBlockElementRenderer {
         if ($type === 'button') {
             $url = trim((string) ($props['url'] ?? '#'));
             $target = !empty($props['targetBlank']) ? ' target="_blank" rel="noopener noreferrer"' : '';
-            return '<div' . $attrs . '><a class="nb-design-button__link" href="' . self::attr($url !== '' ? $url : '#') . '"' . $target . '>' . self::escape((string) ($props['text'] ?? 'Подробнее')) . '</a></div>';
+            $icon_class = self::sanitizeIconClass((string) ($props['iconClass'] ?? ''));
+            $icon_position = (($props['iconPosition'] ?? 'start') === 'end') ? 'end' : 'start';
+            $label = '<span class="nb-design-button__label">' . nl2br(self::escape((string) ($props['text'] ?? 'Подробнее'))) . '</span>';
+            $icon = $icon_class !== '' ? '<span class="nb-design-button__icon" aria-hidden="true"><i class="' . self::attr($icon_class) . '"></i></span>' : '';
+            $content = $icon !== '' && $icon_position === 'end' ? $label . $icon : $icon . $label;
+
+            return '<div' . $attrs . '><a class="nb-design-button__link" href="' . self::attr($url !== '' ? $url : '#') . '"' . $target . '>' . $content . '</a></div>';
         }
 
         if ($type === 'photo' || $type === 'svg') {
@@ -85,6 +91,10 @@ class NordicblocksDesignBlockElementRenderer {
 
     private static function selectTag($tag) {
         return in_array($tag, ['div', 'p', 'span', 'h1', 'h2', 'h3', 'h4'], true) ? $tag : 'div';
+    }
+
+    private static function sanitizeIconClass($value) {
+        return trim(preg_replace('/[^a-z0-9_\-: ]/i', '', (string) $value));
     }
 
     private static function escape($value) {

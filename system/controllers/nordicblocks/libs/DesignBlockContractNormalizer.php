@@ -251,7 +251,20 @@ class NordicblocksDesignBlockContractNormalizer {
                 'fontFamily'     => self::select($raw['fontFamily'] ?? 'montserrat', NordicblocksDesignBlockTypography::getFontFamilyValues(), 'montserrat'),
                 'fontSize'       => self::number($raw['fontSize'] ?? 16, 10, 96, 16),
                 'fontWeight'     => self::number($raw['fontWeight'] ?? 700, 100, 900, 700),
+                'lineHeight'     => self::number($raw['lineHeight'] ?? 120, 60, 240, 120),
+                'letterSpacing'  => self::number($raw['letterSpacing'] ?? 0, -20, 40, 0),
+                'textTransform'  => self::select($raw['textTransform'] ?? 'none', ['none', 'uppercase', 'lowercase'], 'none'),
                 'justifyContent' => self::select($raw['justifyContent'] ?? 'center', ['flex-start', 'center', 'flex-end'], 'center'),
+                'paddingTop'     => self::number($raw['paddingTop'] ?? 16, 0, 240, 16),
+                'paddingRight'   => self::number($raw['paddingRight'] ?? 28, 0, 240, 28),
+                'paddingBottom'  => self::number($raw['paddingBottom'] ?? 16, 0, 240, 16),
+                'paddingLeft'    => self::number($raw['paddingLeft'] ?? 28, 0, 240, 28),
+                'gap'            => self::number($raw['gap'] ?? 10, 0, 120, 10),
+                'iconClass'      => self::string($raw['iconClass'] ?? '', '', 255),
+                'iconPosition'   => self::select($raw['iconPosition'] ?? 'start', ['start', 'end'], 'start'),
+                'hoverColor'     => self::string($raw['hoverColor'] ?? '', '', 255),
+                'hoverBackgroundColor' => self::string($raw['hoverBackgroundColor'] ?? '', '', 255),
+                'hoverBorderColor' => self::string($raw['hoverBorderColor'] ?? '', '', 255),
             ];
         }
 

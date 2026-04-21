@@ -123,7 +123,7 @@ class NordicblocksDesignBlockCssBuilder {
     }
 
     private static function baseCss($section_id) {
-        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;width:100%;height:100%;color:inherit;text-decoration:none}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
+        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;gap:inherit;width:100%;height:100%;padding:inherit;color:inherit;text-decoration:none;box-sizing:border-box;line-height:inherit;letter-spacing:inherit;text-transform:inherit;transition:background-color .18s ease,color .18s ease,border-color .18s ease}#' . $section_id . ' .nb-design-button__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
     }
 
     private static function collectElementCss(array $elements, $section_id, $parent_type, $flow_child, &$desktop, &$tablet, &$mobile) {
@@ -137,6 +137,9 @@ class NordicblocksDesignBlockCssBuilder {
             $desktop .= $selector . '{' . self::buildElementCss($type, (array) ($element['desktop'] ?? []), $flow_child) . '}';
             $tablet  .= $selector . '{' . self::buildElementCss($type, (array) ($element['tablet'] ?? []), $flow_child) . '}';
             $mobile  .= $selector . '{' . self::buildElementCss($type, (array) ($element['mobile'] ?? []), $flow_child) . '}';
+            $desktop .= self::buildElementHoverCss($selector, $type, (array) (($element['desktop']['props'] ?? [])));
+            $tablet  .= self::buildElementHoverCss($selector, $type, (array) (($element['tablet']['props'] ?? [])));
+            $mobile  .= self::buildElementHoverCss($selector, $type, (array) (($element['mobile']['props'] ?? [])));
 
             $props = (array) (($element['desktop']['props'] ?? []));
             $is_flex_parent = $type === 'container' && (($props['layoutMode'] ?? 'absolute') === 'flex');
@@ -191,7 +194,7 @@ class NordicblocksDesignBlockCssBuilder {
         if ($type === 'text') {
             $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
         } elseif ($type === 'button') {
-            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';';
+            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';gap:' . (int) ($props['gap'] ?? 10) . 'px;padding:' . (int) ($props['paddingTop'] ?? 16) . 'px ' . (int) ($props['paddingRight'] ?? 28) . 'px ' . (int) ($props['paddingBottom'] ?? 16) . 'px ' . (int) ($props['paddingLeft'] ?? 28) . 'px;color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';line-height:' . ((float) ($props['lineHeight'] ?? 120) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';';
         } elseif ($type === 'photo' || $type === 'svg') {
             $css .= 'overflow:hidden;';
         } elseif ($type === 'video') {
@@ -214,6 +217,30 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         return $css;
+    }
+
+    private static function buildElementHoverCss($selector, $type, array $props) {
+        if ($type !== 'button') {
+            return '';
+        }
+
+        $css = '';
+
+        if (!empty($props['hoverBackgroundColor'])) {
+            $css .= 'background:' . self::css((string) $props['hoverBackgroundColor']) . ';';
+        }
+        if (!empty($props['hoverColor'])) {
+            $css .= 'color:' . self::css((string) $props['hoverColor']) . ';';
+        }
+        if (!empty($props['hoverBorderColor'])) {
+            $css .= 'border-color:' . self::css((string) $props['hoverBorderColor']) . ';';
+        }
+
+        if ($css === '') {
+            return '';
+        }
+
+        return $selector . ':hover,' . $selector . ':focus-within{' . $css . '}';
     }
 
     private static function css($value) {

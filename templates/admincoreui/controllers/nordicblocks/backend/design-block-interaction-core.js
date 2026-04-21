@@ -309,7 +309,7 @@
         var orientation = String((options && options.orientation) || 'horizontal');
 
         if (normalizedType === 'text') {
-            return ['n', 'e', 's', 'w'];
+            return ['sw', 'se'];
         }
 
         if (normalizedType === 'divider') {

@@ -106,18 +106,20 @@
     var CONTENT_PROP_KEYS = {
         text: true,
         url: true,
+        targetBlank: true,
         src: true,
         alt: true,
         poster: true,
         iconClass: true,
+        iconPosition: true,
         label: true
     };
 
     var KNOWN_PROP_KEYS = [
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
         'backdropBlur', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'shape', 'objectFit', 'objectPosition',
-        'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'text', 'url', 'src',
-        'alt', 'poster', 'iconClass', 'label'
+        'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
+        'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label'
     ];
 
     var DEFAULT_FONT_FAMILIES = [
@@ -194,6 +196,8 @@
             guideY: null,
             drag: null,
             resize: null,
+            rotate: null,
+            textIntent: null,
             pan: null,
             pointerCapture: null,
             pointerTelemetry: null,
@@ -475,12 +479,27 @@
             branch.box.h = 56;
             branch.props.text = 'Нажмите сюда';
             branch.props.url = '#';
+            branch.props.targetBlank = false;
             branch.props.color = '#ffffff';
             branch.props.fontFamily = 'montserrat';
             branch.props.fontSize = 16;
             branch.props.fontWeight = 700;
+            branch.props.lineHeight = 120;
+            branch.props.letterSpacing = 0;
+            branch.props.textTransform = 'none';
+            branch.props.justifyContent = 'center';
+            branch.props.paddingTop = 16;
+            branch.props.paddingRight = 28;
+            branch.props.paddingBottom = 16;
+            branch.props.paddingLeft = 28;
+            branch.props.gap = 10;
+            branch.props.iconClass = '';
+            branch.props.iconPosition = 'start';
             branch.props.backgroundColor = '#0f172a';
             branch.props.borderRadius = 999;
+            branch.props.hoverBackgroundColor = '';
+            branch.props.hoverColor = '';
+            branch.props.hoverBorderColor = '';
         } else if (type === 'photo' || type === 'svg') {
             branch.box.w = 420;
             branch.box.h = 260;
@@ -719,7 +738,7 @@
 
         normalized.runtime = normalized.runtime || {};
         normalized.runtime.editor = Object.assign({
-            snapToGrid: true,
+            snapToGrid: false,
             gridSize: 8,
             snapThreshold: 6,
             showGuides: true,
@@ -1844,6 +1863,10 @@
         return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><input type="text" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind) + '" value="' + escapeHtml(value == null ? '' : value) + '"></div>';
     }
 
+    function renderCheckboxField(label, scope, path, checked) {
+        return '<div class="nbde-field"><label class="nbde-checkbox"><input type="checkbox" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="boolean" ' + (checked ? 'checked' : '') + '>' + escapeHtml(label) + '</label></div>';
+    }
+
     function renderPickerField(label, scope, path, value, kind, options) {
         var inputType = options && options.inputType ? options.inputType : 'text';
         var pickerLabel = options && options.pickerLabel ? options.pickerLabel : 'Выбрать';
@@ -2208,7 +2231,12 @@
             html += renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда');
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
             html += renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string');
-            html += renderField('Техническая роль', 'element-root', 'role', element.role || '', 'string');
+            html += renderField('Иконка', 'element-props', 'iconClass', props.iconClass || '', 'string');
+            html += renderSelectField('Позиция иконки', 'element-props', 'iconPosition', props.iconPosition || 'start', [
+                { value: 'start', label: 'Слева' },
+                { value: 'end', label: 'Справа' }
+            ]);
+            html += renderCheckboxField('Открывать в новой вкладке', 'element-props', 'targetBlank', !!props.targetBlank);
             html += '</div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
@@ -2241,7 +2269,7 @@
         html += renderField('Ширина', 'element-box', 'w', box.w || 0, 'number');
         html += renderField('Высота', 'element-box', 'h', box.h || 0, 'number');
         html += renderField('Слой', 'element-box', 'zIndex', box.zIndex || 1, 'number');
-        html += renderField('Поворот', 'element-props', 'rotate', props.rotate || 0, 'number');
+        html += renderField('Поворот', 'element-box', 'rotation', box.rotation || 0, 'number');
 
         if (element.type === 'container') {
             html += renderField('Отступ сверху', 'element-props', 'paddingTop', props.paddingTop || 20, 'number');
@@ -2292,9 +2320,29 @@
         } else if (element.type === 'button') {
             html += renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string');
             html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
+            html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+            html += renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
+            html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
             html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
             html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
+            html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
+            html += renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number');
+            html += renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
+                { value: 'none', label: 'Обычный' },
+                { value: 'uppercase', label: 'UPPERCASE' },
+                { value: 'lowercase', label: 'lowercase' }
+            ]);
+            html += renderSelectField('Выравнивание контента', 'element-props', 'justifyContent', props.justifyContent || 'center', [
+                { value: 'flex-start', label: 'Слева' },
+                { value: 'center', label: 'По центру' },
+                { value: 'flex-end', label: 'Справа' }
+            ]);
+            html += renderField('Gap иконка/текст', 'element-props', 'gap', props.gap || 10, 'number');
+            html += renderField('Padding top', 'element-props', 'paddingTop', props.paddingTop || 16, 'number');
+            html += renderField('Padding right', 'element-props', 'paddingRight', props.paddingRight || 28, 'number');
+            html += renderField('Padding bottom', 'element-props', 'paddingBottom', props.paddingBottom || 16, 'number');
+            html += renderField('Padding left', 'element-props', 'paddingLeft', props.paddingLeft || 28, 'number');
         } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
             html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
                 { value: 'cover', label: 'Cover' },
@@ -2430,6 +2478,55 @@
         return styles.join(';');
     }
 
+    function normalizeButtonIconPosition(value) {
+        return String(value || 'start') === 'end' ? 'end' : 'start';
+    }
+
+    function buildButtonPreviewStyle(props, box) {
+        var styles = [];
+        var paddingTop = Number(props.paddingTop != null ? props.paddingTop : 16);
+        var paddingRight = Number(props.paddingRight != null ? props.paddingRight : 28);
+        var paddingBottom = Number(props.paddingBottom != null ? props.paddingBottom : 16);
+        var paddingLeft = Number(props.paddingLeft != null ? props.paddingLeft : 28);
+
+        styles.push(buildCommonBodyStyle(props, box));
+        styles.push('display:flex');
+        styles.push('align-items:center');
+        styles.push('justify-content:' + String(props.justifyContent || 'center'));
+        styles.push('gap:' + Number(props.gap != null ? props.gap : 10) + 'px');
+        styles.push('padding:' + paddingTop + 'px ' + paddingRight + 'px ' + paddingBottom + 'px ' + paddingLeft + 'px');
+        styles.push('color:' + String(props.color || '#ffffff'));
+        styles.push('font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat'));
+        styles.push('font-size:' + Number(props.fontSize || 16) + 'px');
+        styles.push('font-weight:' + Number(props.fontWeight || 700));
+        styles.push('line-height:' + (Number(props.lineHeight || 120) / 100));
+        styles.push('letter-spacing:' + Number(props.letterSpacing || 0) + 'px');
+        styles.push('text-transform:' + String(props.textTransform || 'none'));
+        styles.push('background:' + String(props.backgroundColor || '#0f172a'));
+        styles.push('--nbde-button-hover-bg:' + String(props.hoverBackgroundColor || props.backgroundColor || '#0f172a'));
+        styles.push('--nbde-button-hover-color:' + String(props.hoverColor || props.color || '#ffffff'));
+        styles.push('--nbde-button-hover-border:' + String(props.hoverBorderColor || props.borderColor || 'transparent'));
+
+        return styles.filter(Boolean).join(';');
+    }
+
+    function renderButtonPreviewContent(props, editing) {
+        var label = '<span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span>';
+        var iconClass = String(props.iconClass || '').trim();
+        var icon = '';
+
+        if (!iconClass) {
+            return label;
+        }
+
+        icon = '<span class="nbde-el__button-icon" aria-hidden="true"><i class="' + escapeHtml(iconClass) + '"></i></span>';
+        return normalizeButtonIconPosition(props.iconPosition) === 'end' ? label + icon : icon + label;
+    }
+
+    function renderRotateHandle() {
+        return '<button class="nbde-el__rotate-handle" type="button" data-action="rotate-element" aria-label="Повернуть элемент"></button>';
+    }
+
     function renderResizeHandles(element, props) {
         return getResizeHandles(element, props).map(function (handle) {
             return '<button class="nbde-el__handle nbde-el__handle--' + handle + '" type="button" data-action="resize-element" data-handle="' + handle + '" aria-label="Изменить размер"></button>';
@@ -2457,13 +2554,16 @@
 
         if (primary && getSelectionIds().length === 1 && !element.locked) {
             html += renderResizeHandles(element, props);
+            if (element.type === 'text') {
+                html += renderRotateHandle();
+            }
         }
 
         if (element.type === 'text') {
             textTag = ['div', 'h1', 'h2', 'h3', 'h4', 'p', 'span'].indexOf(String(props.tag || 'div')) >= 0 ? String(props.tag || 'div') : 'div';
             html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:' + String(props.color || '#0f172a') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none')) + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
         } else if (element.type === 'button') {
-            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#ffffff') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
+            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildButtonPreviewStyle(props, box)) + '">' + renderButtonPreviewContent(props, editing) + '</div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
             if (props.src) {
@@ -3543,7 +3643,7 @@
 
         elements.push(element);
         setSelection([element.id], element.id);
-        requestInlineFocus(type === 'text' ? element.id : null);
+        requestInlineFocus(isEditableType(type) ? element.id : null);
         markDirty();
         renderAll();
     }
@@ -4215,6 +4315,138 @@
         renderCanvas();
     }
 
+    function beginRotate(elementId, event, worldPoint) {
+        var element = getElementById(elementId);
+        var branchData = element ? currentEditableBranch(element) : null;
+        var absoluteBox;
+        var center;
+
+        if (!element || !branchData || getSelectionIds().length !== 1 || !worldPoint) {
+            return;
+        }
+
+        absoluteBox = getAbsoluteWorldBox(element, currentBreakpoint());
+        center = {
+            x: Number(absoluteBox.x || 0) + (Number(absoluteBox.w || 0) / 2),
+            y: Number(absoluteBox.y || 0) + (Number(absoluteBox.h || 0) / 2)
+        };
+
+        event.preventDefault();
+        event.stopPropagation();
+        acquirePointerCapture(event, 'rotate', { elementId: String(elementId) });
+
+        state.interactionState.rotate = {
+            elementId: String(elementId),
+            centerX: center.x,
+            centerY: center.y,
+            startAngle: Math.atan2(worldPoint.y - center.y, worldPoint.x - center.x) * (180 / Math.PI),
+            startRotation: Number(branchData.box.rotation || 0)
+        };
+
+        renderPropertiesCard();
+        renderCanvas();
+    }
+
+    function beginTextIntent(elementId, event, worldPoint) {
+        if (!elementId || !worldPoint) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        acquirePointerCapture(event, 'text-intent', { elementId: String(elementId) });
+
+        state.interactionState.textIntent = {
+            elementId: String(elementId),
+            startClientX: Number(event.clientX || 0),
+            startClientY: Number(event.clientY || 0),
+            startWorldX: Number(worldPoint.x || 0),
+            startWorldY: Number(worldPoint.y || 0),
+            moved: false
+        };
+    }
+
+    function resolveTextIntentMove(event) {
+        var intent = state.interactionState.textIntent;
+        var worldPoint;
+        var distanceX;
+        var distanceY;
+
+        if (!intent || !isCapturedPointerEvent(event, 'text-intent')) {
+            return false;
+        }
+
+        distanceX = Math.abs(Number(event.clientX || 0) - Number(intent.startClientX || 0));
+        distanceY = Math.abs(Number(event.clientY || 0) - Number(intent.startClientY || 0));
+
+        if (Math.max(distanceX, distanceY) < 4) {
+            return true;
+        }
+
+        worldPoint = getWorldPointFromEvent(event);
+        intent.moved = true;
+        state.interactionState.textIntent = null;
+        beginDrag(intent.elementId, event, {
+            x: Number(intent.startWorldX || 0),
+            y: Number(intent.startWorldY || 0)
+        });
+        applyDragAtWorldPoint(state.interactionState.drag, worldPoint);
+        return true;
+    }
+
+    function nudgeSelection(deltaX, deltaY) {
+        var selectedIds = getRootSelectionIds(getSelectionIds());
+        var breakpoint = currentBreakpoint();
+        var moved = false;
+
+        if (!selectedIds.length) {
+            return false;
+        }
+
+        selectedIds.forEach(function (id) {
+            var element = getElementById(id);
+            var branchData = element ? currentEditableBranch(element) : null;
+            var hostSize;
+            var interactionBounds;
+            var minSize;
+            var minX;
+            var minY;
+            var maxX;
+            var maxY;
+
+            if (!element || !branchData) {
+                return;
+            }
+
+            hostSize = getLocalHostSize(element, breakpoint);
+            interactionBounds = getInteractionBounds(element, breakpoint);
+            minSize = getMinBoxSize(element, composeBreakpointProps(element, breakpoint));
+
+            branchData.box.x = Number(branchData.box.x || 0) + Number(deltaX || 0);
+            branchData.box.y = Number(branchData.box.y || 0) + Number(deltaY || 0);
+
+            if (interactionBounds) {
+                minX = Number(hostSize.minX || 0);
+                minY = Number(hostSize.minY || 0);
+                maxX = Number(hostSize.width || 1) - Number(minSize.w || 1);
+                maxY = Number(hostSize.height || 1) - Number(minSize.h || 1);
+                branchData.box.x = clamp(branchData.box.x, minX, maxX);
+                branchData.box.y = clamp(branchData.box.y, minY, maxY);
+            }
+
+            moved = true;
+        });
+
+        if (!moved) {
+            return false;
+        }
+
+        markDirty();
+        renderPropertiesCard();
+        renderCanvas();
+        return true;
+    }
+
     function applyDragAtWorldPoint(drag, worldPoint) {
         var editorRuntime = currentEditorRuntime();
         var primaryStart;
@@ -4318,6 +4550,10 @@
 
         worldPoint = getWorldPointFromEvent(event);
         applyDragAtWorldPoint(drag, worldPoint);
+    }
+
+    function handleTextIntentMove(event) {
+        resolveTextIntentMove(event);
     }
 
     function applyResizeAtWorldPoint(resize, worldPoint) {
@@ -4476,6 +4712,39 @@
         applyResizeAtWorldPoint(resize, worldPoint);
     }
 
+    function handleRotateMove(event) {
+        var rotate = state.interactionState.rotate;
+        var element;
+        var branchData;
+        var worldPoint;
+        var angle;
+        var nextRotation;
+
+        if (!rotate || !isCapturedPointerEvent(event, 'rotate')) {
+            return;
+        }
+
+        worldPoint = getWorldPointFromEvent(event);
+        element = getElementById(rotate.elementId);
+        branchData = element ? currentEditableBranch(element) : null;
+
+        if (!worldPoint || !element || !branchData) {
+            return;
+        }
+
+        angle = Math.atan2(worldPoint.y - rotate.centerY, worldPoint.x - rotate.centerX) * (180 / Math.PI);
+        nextRotation = Number(rotate.startRotation || 0) + (angle - Number(rotate.startAngle || 0));
+
+        if (!event.shiftKey) {
+            nextRotation = Math.round(nextRotation / 5) * 5;
+        }
+
+        branchData.box.rotation = nextRotation;
+        markDirty();
+        renderPropertiesCard();
+        renderCanvas();
+    }
+
     function handleStageResizeMove(event) {
         var stageResize = state.interactionState.stageResize;
 
@@ -4510,13 +4779,24 @@
             return;
         }
 
-        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan && !state.interactionState.stageResize && !state.interactionState.numberScrub) {
+        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.rotate && !state.interactionState.textIntent && !state.interactionState.pan && !state.interactionState.stageResize && !state.interactionState.numberScrub) {
+            return;
+        }
+
+        if (state.interactionState.textIntent && (!event || !event.type || event.type === 'pointerup' || event.type === 'mouseup')) {
+            requestInlineFocus(state.interactionState.textIntent.elementId);
+            state.interactionState.textIntent = null;
+            releasePointerCapture(pointerId);
+            renderPropertiesCard();
+            renderCanvas();
             return;
         }
 
         releasePointerCapture(pointerId);
         state.interactionState.drag = null;
         state.interactionState.resize = null;
+        state.interactionState.rotate = null;
+        state.interactionState.textIntent = null;
         state.interactionState.pan = null;
         state.interactionState.numberScrub = null;
         state.interactionState.stageResize = null;
@@ -5151,6 +5431,7 @@
 
     root.addEventListener('pointerdown', function (event) {
         var resizeNode = event.target.closest('[data-action="resize-element"]');
+        var rotateNode = event.target.closest('[data-action="rotate-element"]');
         var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
         var wrapper = event.target.closest('.nbde-el');
         var inlineTextNode = event.target.closest('[data-inline-edit="text"]');
@@ -5177,6 +5458,11 @@
             return;
         }
 
+        if (rotateNode && wrapper) {
+            beginRotate(wrapper.dataset.elementId || '', event, worldPoint);
+            return;
+        }
+
         if (resizeNode && wrapper) {
             beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event, worldPoint);
             return;
@@ -5186,11 +5472,7 @@
             hitElement = getElementById(wrapper.dataset.elementId || '');
 
             if (hitElement && !hitElement.locked && isEditableType(hitElement.type) && isSelected(hitElement.id) && state.uiState.editingTextId !== hitElement.id) {
-                event.preventDefault();
-                event.stopPropagation();
-                requestInlineFocus(hitElement.id);
-                renderCanvas();
-                renderPropertiesCard();
+                beginTextIntent(hitElement.id, event, worldPoint);
                 return;
             }
         }
@@ -5229,6 +5511,8 @@
         handleNumberScrubMove(event);
         handlePanMove(event);
         handleStageResizeMove(event);
+        handleTextIntentMove(event);
+        handleRotateMove(event);
         handleResizeMove(event);
         handleDragMove(event);
     });
@@ -5296,6 +5580,32 @@
                 return;
             }
             deleteSelection();
+            return;
+        }
+
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(String(event.key || '')) !== -1) {
+            var step = event.shiftKey ? 10 : 1;
+            var deltaX = 0;
+            var deltaY = 0;
+
+            if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                return;
+            }
+
+            if (event.key === 'ArrowLeft') {
+                deltaX = -step;
+            } else if (event.key === 'ArrowRight') {
+                deltaX = step;
+            } else if (event.key === 'ArrowUp') {
+                deltaY = -step;
+            } else if (event.key === 'ArrowDown') {
+                deltaY = step;
+            }
+
+            if (deltaX || deltaY) {
+                event.preventDefault();
+                nudgeSelection(deltaX, deltaY);
+            }
         }
     });
 
