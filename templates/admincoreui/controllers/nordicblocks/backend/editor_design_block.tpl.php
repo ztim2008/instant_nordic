@@ -46,7 +46,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <div class="nbde-canvas-panel__head">
                 <div>
                     <strong>Холст</strong>
-                    <span>Scene renderer: world-координаты, viewport-камера и screen-проекция без DOM как источника layout.</span>
+                    <span></span>
                 </div>
                 <div class="nbde-canvas-chip" id="nbd-canvas-meta">Загрузка холста...</div>
             </div>
@@ -61,7 +61,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <section class="nbde-card">
                 <div class="nbde-card__head">
                     <h3>Дизайн-блок</h3>
-                    <span>Палитра элементов</span>
+                    <span>Элементы</span>
                 </div>
                 <div class="nbde-card__body" id="nbd-block-card"></div>
             </section>
@@ -69,7 +69,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <section class="nbde-card">
                 <div class="nbde-card__head">
                     <h3>Холст</h3>
-                    <span>Текущий режим</span>
+                    <span>Блок</span>
                 </div>
                 <div class="nbde-card__body" id="nbd-stage-card"></div>
             </section>
@@ -77,7 +77,7 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
             <section class="nbde-card">
                 <div class="nbde-card__head">
                     <h3>Секция</h3>
-                    <span>Фон и контейнер</span>
+                    <span>Фон</span>
                 </div>
                 <div class="nbde-card__body" id="nbd-section-card"></div>
             </section>

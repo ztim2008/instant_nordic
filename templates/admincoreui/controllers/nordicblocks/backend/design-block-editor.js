@@ -1277,6 +1277,18 @@
         };
     }
 
+    function hasFreeRootBounds(element) {
+        return !!element && !String(element.parentId || '');
+    }
+
+    function getInteractionBounds(element, breakpoint) {
+        if (hasFreeRootBounds(element)) {
+            return null;
+        }
+
+        return getLocalHostSize(element, breakpoint);
+    }
+
     function getMinBoxSize(element, props) {
         var type = element && element.type ? String(element.type) : 'shape';
         var orientation = String((props && props.orientation) || 'horizontal');
@@ -1437,7 +1449,7 @@
         }
 
         if (state.uiState.isDirty) {
-            nodes.statusText.textContent = 'Есть несохранённые изменения artboard и элементов. Сохраните, чтобы записать обновлённый контракт блока.';
+            nodes.statusText.textContent = 'Есть несохранённые изменения.';
             nodes.statusText.classList.add('is-dirty');
             return;
         }
@@ -1452,7 +1464,7 @@
             return;
         }
 
-        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '. Белая область это block artboard, серое поле вокруг это workspace, zoom и pan только для навигации редактора.';
+        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '.';
     }
 
     function updateCanvasMeta() {
@@ -1538,7 +1550,6 @@
         var hasParent = selectionIds.length === 1 && !!getParentElement(selected);
         var html = '';
 
-        html += '<div class="nbde-inline-note">Белая область на canvas это block artboard. Внутри него живут grid и свободные объекты, а DOM остаётся только экранной проекцией contract-геометрии.</div>';
         html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
         html += renderSelectionBreadcrumbs();
         html += '<div class="nbde-action-grid">';
@@ -1579,8 +1590,6 @@
         var viewport = state.scene.viewport;
         var html = '';
 
-        html += '<div class="nbde-inline-note">Artboard-first режим: белый прямоугольник это сам блок. Grid container стартует от x=0, отрицательный x уводит объект в левую bleed-зону, а x за contentWidth выводит его вправо за grid.</div>';
-        html += '<div class="nbde-inline-note">Высота блока меняется локально для активного breakpoint. Если нужно повторить её на остальные breakpoint, используйте отдельное действие синхронизации.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
@@ -1725,7 +1734,7 @@
 
         if (!elements.length) {
             if (nodes.layersCard) {
-                nodes.layersCard.innerHTML = '<div class="nbde-card__empty">Палитра справа добавляет первый scene node на world-холст.</div>';
+                nodes.layersCard.innerHTML = '<div class="nbde-card__empty">Добавьте первый элемент.</div>';
             }
             return;
         }
@@ -1818,7 +1827,7 @@
             html += renderField('Внутренний gap', 'element-props', 'gap', props.gap || 16, 'number');
             html += '</div>';
         } else if (type === 'group') {
-            html += '<div class="nbde-card__empty">Группа теперь является parent node в scene. Изменение размера масштабирует child layout внутри world.</div>';
+            html += '<div class="nbde-card__empty">Группа объединяет дочерние элементы.</div>';
         }
 
         html += '</div>';
@@ -1868,11 +1877,11 @@
         } else if (element.type === 'icon') {
             html += renderField('Класс иконки', 'element-props', 'iconClass', props.iconClass || 'fas fa-star', 'string');
         } else if (element.type === 'divider') {
-            html += '<div class="nbde-inline-note">Разделитель полезен для вертикального или горизонтального ритма внутри контейнера.</div>';
+            html += '';
         } else if (element.type === 'container') {
-            html += '<div class="nbde-inline-note">Контейнер задаёт локальный parent scope для дочерних объектов. Если контейнер выбран, новые элементы добавляются внутрь него.</div>';
+            html += '';
         } else if (element.type === 'object') {
-            html += '<div class="nbde-inline-note">Объект является базовым shape-слоем. Через свойства он может быть плашкой, линией или кругом.</div>';
+            html += '';
         }
 
         return html;
@@ -1975,8 +1984,8 @@
             }
             if (nodes.propertiesCard) {
                 nodes.propertiesCard.innerHTML = state.uiState.rootInsertionMode
-                    ? '<div class="nbde-inline-note">Корень сцены активен. Следующий объект добавится в root scope, а не внутрь контейнера.</div>' + renderSelectionBreadcrumbs()
-                    : '<div class="nbde-card__empty">Выберите node на холсте или в списке слоёв.</div>';
+                    ? renderSelectionBreadcrumbs()
+                    : '<div class="nbde-card__empty">Выберите элемент.</div>';
             }
             return;
         }
@@ -1986,7 +1995,7 @@
                 nodes.propertiesSummary.textContent = selection.length + ' элементов';
             }
             if (nodes.propertiesCard) {
-                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Мультивыбор активен. Геометрия считается в world-space, а точные свойства показываются для одного узла.</div>';
+                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Выбрано несколько элементов.</div>';
             }
             return;
         }
@@ -2934,8 +2943,8 @@
             var minY = Number(hostSize.minY || 0);
             var maxX = Math.max(minX, Number(hostSize.width || 1) - Math.max(1, Number(base.box.w || 1)));
             var maxY = Math.max(minY, Number(hostSize.height || 1) - Math.max(1, Number(base.box.h || 1)));
-            var nextX = parentId ? clamp(offset, minX, maxX) : clamp(Number(stageMetrics.initialInsertX || 0) + offset, minX, maxX);
-            var nextY = parentId ? clamp(offset, minY, maxY) : clamp(Number(stageMetrics.initialInsertY || 0) + offset, minY, maxY);
+            var nextX = parentId ? clamp(offset, minX, maxX) : Number(stageMetrics.initialInsertX || 0) + offset;
+            var nextY = parentId ? clamp(offset, minY, maxY) : Number(stageMetrics.initialInsertY || 0) + offset;
 
             state.scene.layout[breakpoint][element.id] = {
                 x: nextX,
@@ -3628,6 +3637,7 @@
         var primaryStart;
         var primaryElement;
         var hostSize;
+        var interactionBounds;
         var nextPrimaryBox;
         var nextX;
         var nextY;
@@ -3650,6 +3660,7 @@
         }
 
         hostSize = getLocalHostSize(primaryElement, currentBreakpoint());
+        interactionBounds = getInteractionBounds(primaryElement, currentBreakpoint());
         nextPrimaryBox = GeometryCore.applyDragSession({
             startBox: primaryStart,
             startPointerWorld: {
@@ -3657,7 +3668,7 @@
                 y: drag.startWorldY
             }
         }, worldPoint, {
-            bounds: hostSize
+            bounds: interactionBounds
         });
         nextX = nextPrimaryBox.x;
         nextY = nextPrimaryBox.y;
@@ -3684,6 +3695,7 @@
             var branchData = element ? currentEditableBranch(element) : null;
             var startBox = drag.startBoxes[id];
             var localHostSize;
+            var localInteractionBounds;
             var nextBox;
 
             if (!branchData || !startBox || !element) {
@@ -3691,6 +3703,7 @@
             }
 
             localHostSize = getLocalHostSize(element, currentBreakpoint());
+            localInteractionBounds = getInteractionBounds(element, currentBreakpoint());
             nextBox = GeometryCore.applyDragSession({
                 startBox: startBox,
                 startPointerWorld: {
@@ -3701,7 +3714,7 @@
                 x: deltaX,
                 y: deltaY
             }, {
-                bounds: localHostSize
+                bounds: localInteractionBounds
             });
             branchData.box.x = nextBox.x;
             branchData.box.y = nextBox.y;
@@ -3744,6 +3757,7 @@
         var ySnap;
         var minX;
         var minY;
+        var interactionBounds;
 
         if (!resize || !worldPoint) {
             return false;
@@ -3760,6 +3774,7 @@
         minSize = getMinBoxSize(element, props);
         handle = resize.handle;
         hostSize = getLocalHostSize(element, currentBreakpoint());
+        interactionBounds = getInteractionBounds(element, currentBreakpoint());
         threshold = Number(editorRuntime.snapThreshold || 6);
 
         nextBox = GeometryCore.applyResizeSession({
@@ -3770,7 +3785,7 @@
                 y: resize.startWorldY
             }
         }, worldPoint, {
-            bounds: hostSize,
+            bounds: interactionBounds,
             minWidth: minSize.w,
             minHeight: minSize.h,
             keepAspectRatio: (element.type === 'svg' || element.type === 'video') && handle.length === 2
@@ -3812,14 +3827,16 @@
             state.interactionState.guideY = null;
         }
 
-        minX = Number(hostSize.minX || 0);
-        minY = Number(hostSize.minY || 0);
-        nextBox.x = clamp(nextBox.x, minX, hostSize.width - minSize.w);
-        nextBox.y = clamp(nextBox.y, minY, hostSize.height - minSize.h);
-        nextRight = clamp(nextBox.x + nextBox.w, nextBox.x + minSize.w, hostSize.width);
-        nextBottom = clamp(nextBox.y + nextBox.h, nextBox.y + minSize.h, hostSize.height);
-        nextBox.w = Math.max(minSize.w, Math.round(nextRight - nextBox.x));
-        nextBox.h = Math.max(minSize.h, Math.round(nextBottom - nextBox.y));
+        if (interactionBounds) {
+            minX = Number(hostSize.minX || 0);
+            minY = Number(hostSize.minY || 0);
+            nextBox.x = clamp(nextBox.x, minX, hostSize.width - minSize.w);
+            nextBox.y = clamp(nextBox.y, minY, hostSize.height - minSize.h);
+            nextRight = clamp(nextBox.x + nextBox.w, nextBox.x + minSize.w, hostSize.width);
+            nextBottom = clamp(nextBox.y + nextBox.h, nextBox.y + minSize.h, hostSize.height);
+            nextBox.w = Math.max(minSize.w, Math.round(nextRight - nextBox.x));
+            nextBox.h = Math.max(minSize.h, Math.round(nextBottom - nextBox.y));
+        }
 
         branchData.box.x = nextBox.x;
         branchData.box.y = nextBox.y;
