@@ -1542,7 +1542,7 @@
         html += '</div>';
         html += '<div class="nbde-shortcuts">';
         html += '<span>Shift+click: мультивыбор</span>';
-        html += '<span>Колесо: pan сцены, Ctrl/Cmd + колесо: zoom</span>';
+        html += '<span>Колесо: pan сцены, Shift + колесо: horizontal pan, Ctrl/Cmd + колесо: zoom</span>';
         html += '<span>Space+drag или средняя кнопка: pan</span>';
         html += '</div>';
         html += '<div class="nbde-palette-grid">';
@@ -1571,12 +1571,13 @@
         var html = '';
 
         html += '<div class="nbde-inline-note">Координата x=0 означает левую границу content container. Отрицательный x уводит объект в bleed-зону за пределы контента, но внутри window container.</div>';
-        html += '<div class="nbde-inline-note">Wheel без модификатора двигает canvas по сцене. Ctrl/Cmd + wheel меняет zoom только для текущего breakpoint.</div>';
+        html += '<div class="nbde-inline-note">Wheel без модификатора двигает canvas по сцене. Shift + wheel двигает по оси X, Ctrl/Cmd + wheel меняет zoom только для текущего breakpoint.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-reset">1:1</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="camera-reset">Камера</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="reveal-selection">Показать выделение</button>';
         html += '</div>';
         html += '<div class="nbde-camera-stats">zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
         html += '<div class="nbde-camera-stats">content ' + stageMetrics.contentWidth + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • margin ' + roundNumber(stageMetrics.outerMargin) + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px</div>';
@@ -2134,6 +2135,95 @@
         });
     }
 
+    function toCanvasBounds(bounds) {
+        var stageMetrics;
+
+        if (!bounds) {
+            return null;
+        }
+
+        stageMetrics = currentStageMetrics();
+
+        return {
+            x: Number(bounds.x || 0) + Number(stageMetrics.originX || 0),
+            y: Number(bounds.y || 0),
+            w: Math.max(1, Number(bounds.w || 1)),
+            h: Math.max(1, Number(bounds.h || 1))
+        };
+    }
+
+    function getVisibleCanvasRect() {
+        var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
+        var stageMetrics = currentStageMetrics();
+
+        return {
+            x: Number(state.scene.viewport.offsetX || 0),
+            y: Number(state.scene.viewport.offsetY || 0),
+            w: Math.max(1, Number(stageMetrics.windowWidth || 1) / zoom),
+            h: Math.max(1, Number(stageMetrics.height || 1) / zoom)
+        };
+    }
+
+    function revealCanvasBounds(canvasBounds, options) {
+        var visibleRect;
+        var padding;
+        var nextOffsetX;
+        var nextOffsetY;
+        var changed = false;
+
+        if (!canvasBounds) {
+            return false;
+        }
+
+        visibleRect = getVisibleCanvasRect();
+        padding = Math.max(12, Number((options && options.padding) || 48));
+        nextOffsetX = Number(state.scene.viewport.offsetX || 0);
+        nextOffsetY = Number(state.scene.viewport.offsetY || 0);
+
+        if (options && options.forceCenter) {
+            nextOffsetX = (Number(canvasBounds.x || 0) + (Number(canvasBounds.w || 0) / 2)) - (visibleRect.w / 2);
+            nextOffsetY = (Number(canvasBounds.y || 0) + (Number(canvasBounds.h || 0) / 2)) - (visibleRect.h / 2);
+        } else {
+            if ((Number(canvasBounds.w || 0) + (padding * 2)) >= visibleRect.w) {
+                nextOffsetX = (Number(canvasBounds.x || 0) + (Number(canvasBounds.w || 0) / 2)) - (visibleRect.w / 2);
+            } else if (Number(canvasBounds.x || 0) < (visibleRect.x + padding)) {
+                nextOffsetX = Number(canvasBounds.x || 0) - padding;
+            } else if ((Number(canvasBounds.x || 0) + Number(canvasBounds.w || 0)) > (visibleRect.x + visibleRect.w - padding)) {
+                nextOffsetX = Number(canvasBounds.x || 0) + Number(canvasBounds.w || 0) + padding - visibleRect.w;
+            }
+
+            if ((Number(canvasBounds.h || 0) + (padding * 2)) >= visibleRect.h) {
+                nextOffsetY = (Number(canvasBounds.y || 0) + (Number(canvasBounds.h || 0) / 2)) - (visibleRect.h / 2);
+            } else if (Number(canvasBounds.y || 0) < (visibleRect.y + padding)) {
+                nextOffsetY = Number(canvasBounds.y || 0) - padding;
+            } else if ((Number(canvasBounds.y || 0) + Number(canvasBounds.h || 0)) > (visibleRect.y + visibleRect.h - padding)) {
+                nextOffsetY = Number(canvasBounds.y || 0) + Number(canvasBounds.h || 0) + padding - visibleRect.h;
+            }
+        }
+
+        nextOffsetX = roundNumber(nextOffsetX);
+        nextOffsetY = roundNumber(nextOffsetY);
+
+        if (nextOffsetX !== Number(state.scene.viewport.offsetX || 0)) {
+            state.scene.viewport.offsetX = nextOffsetX;
+            changed = true;
+        }
+
+        if (nextOffsetY !== Number(state.scene.viewport.offsetY || 0)) {
+            state.scene.viewport.offsetY = nextOffsetY;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    function revealSelectionInViewport(forceCenter) {
+        return revealCanvasBounds(toCanvasBounds(buildSelectionBounds(getSelectionIds(), currentBreakpoint())), {
+            forceCenter: !!forceCenter,
+            padding: 48
+        });
+    }
+
     function buildSelectionOverlay() {
         var bounds = projectWorldBounds(buildSelectionBounds(getSelectionIds(), currentBreakpoint()));
 
@@ -2226,10 +2316,16 @@
         return '<button class="nbde-stage__height-handle' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Изменить высоту canvas"><span></span><small>' + Math.round(Number(stageMetrics.height || 0)) + 'px</small></button>';
     }
 
+    function renderStageHeightResizeEdge() {
+        return '<button class="nbde-stage__height-edge' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Потянуть нижний край холста"></button>';
+    }
+
     function beginStageResize(event) {
         event.preventDefault();
         event.stopPropagation();
-        acquirePointerCapture(event, 'stage-resize', { breakpoint: currentBreakpoint() });
+        if (event.pointerId != null) {
+            acquirePointerCapture(event, 'stage-resize', { breakpoint: currentBreakpoint() });
+        }
         state.interactionState.stageResize = {
             activeBreakpoint: currentBreakpoint(),
             startClientY: Number(event.clientY || 0),
@@ -2340,7 +2436,7 @@
 
         html += '</div></div></div>';
         html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + '</div>';
-        html += '<div class="nbde-stage__footer-controls">' + renderStageHeightResizeHandle(stageMetrics) + '</div>';
+        html += '<div class="nbde-stage__footer-controls">' + renderStageHeightResizeEdge() + renderStageHeightResizeHandle(stageMetrics) + '</div>';
         html += '</div>';
 
         if (nodes.canvasStage) {
@@ -3975,11 +4071,13 @@
             } else {
                 setSelection([actionNode.dataset.elementId || ''], actionNode.dataset.elementId || '');
             }
+            revealSelectionInViewport(false);
             renderAll();
             return;
         }
         if (action === 'select-parent') {
             focusParentSelection();
+            revealSelectionInViewport(false);
             renderAll();
             return;
         }
@@ -4032,6 +4130,14 @@
             resetViewport();
             return;
         }
+        if (action === 'reveal-selection') {
+            if (revealSelectionInViewport(true)) {
+                clearGuides();
+                renderCanvas();
+                renderStageCard();
+            }
+            return;
+        }
         if (applyToolbarAction(action)) {
             markDirty();
             renderAll();
@@ -4055,6 +4161,7 @@
         }
 
         setSelection([element.id], element.id);
+        revealSelectionInViewport(false);
         requestInlineFocus(element.id);
         renderLayersCard();
         renderPropertiesCard();
@@ -4172,6 +4279,16 @@
         beginStageResize(event);
     }, true);
 
+    document.addEventListener('mousedown', function (event) {
+        var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
+
+        if (!stageResizeNode || !root.contains(stageResizeNode)) {
+            return;
+        }
+
+        beginStageResize(event);
+    }, true);
+
     root.addEventListener('pointerdown', function (event) {
         var resizeNode = event.target.closest('[data-action="resize-element"]');
         var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
@@ -4233,8 +4350,12 @@
         handleResizeMove(event);
         handleDragMove(event);
     });
+    document.addEventListener('mousemove', function (event) {
+        handleStageResizeMove(event);
+    });
     document.addEventListener('pointerup', finishInteraction);
     document.addEventListener('pointercancel', finishInteraction);
+    document.addEventListener('mouseup', finishInteraction);
 
     root.addEventListener('wheel', function (event) {
         var stageViewport = event.target.closest('#nbd-stage-viewport');
@@ -4254,7 +4375,7 @@
             return;
         }
 
-        applyViewportScroll(event.deltaX, event.deltaY);
+        applyViewportScroll(event.shiftKey && !event.deltaX ? event.deltaY : event.deltaX, event.shiftKey && !event.deltaX ? 0 : event.deltaY);
     }, { passive: false });
 
     if (nodes.saveButton) {
@@ -4307,6 +4428,7 @@
             state.scene.viewport.zoom = 1;
             state.scene.viewport.offsetX = 0;
             state.scene.viewport.offsetY = 0;
+            revealSelectionInViewport(true);
             clearGuides();
             renderAll();
         });

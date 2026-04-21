@@ -349,9 +349,26 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 0;
+    height: 20px;
     z-index: 7;
     pointer-events: auto;
+}
+
+.nbde-stage__height-edge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -8px;
+    height: 16px;
+    border: 0;
+    border-top: 2px solid rgba(37, 99, 235, 0.14);
+    background: transparent;
+    cursor: ns-resize;
+}
+
+.nbde-stage__height-edge.is-active,
+.nbde-stage__height-edge:hover {
+    border-top-color: rgba(37, 99, 235, 0.48);
 }
 
 .nbde-stage__height-handle {
