@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockTypography.php';
+
 class NordicblocksDesignBlockContractNormalizer {
 
     private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'image', 'shape'];
@@ -230,6 +232,7 @@ class NordicblocksDesignBlockContractNormalizer {
                 'text'          => self::string($raw['text'] ?? 'Новый текст', 'Новый текст', 5000),
                 'tag'           => self::select($raw['tag'] ?? 'div', ['div', 'p', 'span', 'h1', 'h2', 'h3', 'h4'], 'div'),
                 'color'         => self::string($raw['color'] ?? '#0f172a', '#0f172a', 255),
+                'fontFamily'    => self::select($raw['fontFamily'] ?? 'montserrat', NordicblocksDesignBlockTypography::getFontFamilyValues(), 'montserrat'),
                 'fontSize'      => self::number($raw['fontSize'] ?? 48, 10, 240, 48),
                 'fontWeight'    => self::number($raw['fontWeight'] ?? 800, 100, 900, 800),
                 'lineHeight'    => self::number($raw['lineHeight'] ?? 120, 60, 240, 120),
@@ -245,6 +248,7 @@ class NordicblocksDesignBlockContractNormalizer {
                 'url'            => self::string($raw['url'] ?? '#', '#', 1024),
                 'targetBlank'    => self::bool($raw['targetBlank'] ?? false, false),
                 'color'          => self::string($raw['color'] ?? '#ffffff', '#ffffff', 255),
+                'fontFamily'     => self::select($raw['fontFamily'] ?? 'montserrat', NordicblocksDesignBlockTypography::getFontFamilyValues(), 'montserrat'),
                 'fontSize'       => self::number($raw['fontSize'] ?? 16, 10, 96, 16),
                 'fontWeight'     => self::number($raw['fontWeight'] ?? 700, 100, 900, 700),
                 'justifyContent' => self::select($raw['justifyContent'] ?? 'center', ['flex-start', 'center', 'flex-end'], 'center'),

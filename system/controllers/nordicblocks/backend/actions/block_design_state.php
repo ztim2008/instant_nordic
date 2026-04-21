@@ -2,6 +2,7 @@
 
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockContractNormalizer.php';
 require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockRenderPayloadBuilder.php';
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockTypography.php';
 
 class actionNordicblocksBlockDesignState extends cmsAction {
 
@@ -85,6 +86,10 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'image' => 'instantcms_image_modal',
                 'icon'  => 'instantcms_icon_modal',
                 'file'  => 'instantcms_file_modal',
+            ],
+            'typography' => [
+                'fontFamilies' => NordicblocksDesignBlockTypography::getFontFamilies(),
+                'fontFaceCss' => NordicblocksDesignBlockTypography::buildCatalogFontFaceCss(),
             ],
             'ui' => [
                 'activeBreakpoint' => 'desktop',

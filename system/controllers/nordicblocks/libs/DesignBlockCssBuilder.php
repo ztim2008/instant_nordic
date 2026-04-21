@@ -1,5 +1,7 @@
 <?php
 
+require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs/DesignBlockTypography.php';
+
 class NordicblocksDesignBlockCssBuilder {
 
     private static function normalizeType($type) {
@@ -47,10 +49,11 @@ class NordicblocksDesignBlockCssBuilder {
         $desktop = '';
         $tablet = '';
         $mobile = '';
+        $font_face_css = NordicblocksDesignBlockTypography::buildFontFaceCss(self::collectUsedFontFamilies((array) ($payload['elements'] ?? [])));
 
         self::collectElementCss((array) ($payload['elements'] ?? []), $section_id, '', false, $desktop, $tablet, $mobile);
 
-        $all = $base . $desktop;
+        $all = $font_face_css . $base . $desktop;
         if ($tablet !== '') {
             $all .= '@media (max-width: 991px){#' . $section_id . '{--nb-design-stage-width:var(--nb-design-stage-width-tablet);--nb-design-stage-min-height:var(--nb-design-stage-min-height-tablet);--nb-design-stage-padding-x:var(--nb-design-stage-padding-x-tablet);--nb-design-stage-padding-y:var(--nb-design-stage-padding-y-tablet);}' . $tablet . '}';
         }
@@ -59,6 +62,25 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         return ['all' => $all];
+    }
+
+    private static function collectUsedFontFamilies(array $elements, array $used = []) {
+        foreach ($elements as $element) {
+            if (!is_array($element)) {
+                continue;
+            }
+
+            foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
+                $props = (array) (($element[$breakpoint]['props'] ?? []));
+                if (!empty($props['fontFamily'])) {
+                    $used[] = (string) $props['fontFamily'];
+                }
+            }
+
+            $used = self::collectUsedFontFamilies((array) ($element['children'] ?? []), $used);
+        }
+
+        return array_values(array_unique($used));
     }
 
     public static function buildSectionInlineStyle(array $payload) {
@@ -167,9 +189,9 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         if ($type === 'text') {
-            $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
+            $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
         } elseif ($type === 'button') {
-            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';';
+            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';';
         } elseif ($type === 'photo' || $type === 'svg') {
             $css .= 'overflow:hidden;';
         } elseif ($type === 'video') {

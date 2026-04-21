@@ -115,9 +115,19 @@
 
     var KNOWN_PROP_KEYS = [
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
-        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'shape', 'objectFit', 'objectPosition',
+        'backdropBlur', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'shape', 'objectFit', 'objectPosition',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'text', 'url', 'src',
         'alt', 'poster', 'iconClass', 'label'
+    ];
+
+    var DEFAULT_FONT_FAMILIES = [
+        { value: 'system-ui', label: 'System UI', stack: 'system-ui,-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif', source: 'system' },
+        { value: 'montserrat', label: 'Montserrat', stack: '\'Montserrat\',sans-serif', source: 'local' },
+        { value: 'unbounded', label: 'Unbounded', stack: '\'Unbounded\',sans-serif', source: 'local' },
+        { value: 'play', label: 'Play', stack: '\'Play\',sans-serif', source: 'local' },
+        { value: 'philosopher', label: 'Philosopher', stack: '\'Philosopher\',serif', source: 'local' },
+        { value: 'playfair-display-sc', label: 'Playfair Display SC', stack: '\'Playfair Display SC\',serif', source: 'local' },
+        { value: 'russo-one', label: 'Russo One', stack: '\'Russo One\',sans-serif', source: 'local' }
     ];
 
     var AUTOSAVE_DELAY_MS = 1200;
@@ -139,6 +149,10 @@
             items: [],
             loading: false,
             error: ''
+        },
+        typography: {
+            fontFamilies: normalizeTypographyFamilies(getPath(bootstrap, 'typography.fontFamilies', [])),
+            fontFaceCss: String(getPath(bootstrap, 'typography.fontFaceCss', '') || '')
         },
         documentState: {
             block: null,
@@ -449,17 +463,20 @@
         if (type === 'text') {
             branch.props.text = 'Новый текст';
             branch.props.color = '#0f172a';
+            branch.props.fontFamily = 'montserrat';
             branch.props.fontSize = 36;
             branch.props.fontWeight = 800;
             branch.props.lineHeight = 120;
             branch.props.letterSpacing = 0;
             branch.props.textAlign = 'left';
+            branch.props.textTransform = 'none';
         } else if (type === 'button') {
             branch.box.w = 220;
             branch.box.h = 56;
             branch.props.text = 'Нажмите сюда';
             branch.props.url = '#';
             branch.props.color = '#ffffff';
+            branch.props.fontFamily = 'montserrat';
             branch.props.fontSize = 16;
             branch.props.fontWeight = 700;
             branch.props.backgroundColor = '#0f172a';
@@ -1026,6 +1043,66 @@
         });
 
         return bridge;
+    }
+
+    function normalizeTypographyFamilies(items) {
+        if (!Array.isArray(items) || !items.length) {
+            return DEFAULT_FONT_FAMILIES.slice();
+        }
+
+        return items.filter(function (item) {
+            return item && item.value;
+        }).map(function (item) {
+            return {
+                value: String(item.value),
+                label: String(item.label || item.value),
+                stack: String(item.stack || item.value),
+                source: String(item.source || 'system')
+            };
+        });
+    }
+
+    function getTypographyFontFamilies() {
+        return state.typography.fontFamilies && state.typography.fontFamilies.length ? state.typography.fontFamilies : DEFAULT_FONT_FAMILIES;
+    }
+
+    function findTypographyFontFamily(value) {
+        var normalized = String(value || 'montserrat');
+        var families = getTypographyFontFamilies();
+        var index;
+
+        for (index = 0; index < families.length; index += 1) {
+            if (families[index].value === normalized) {
+                return families[index];
+            }
+        }
+
+        return families[0] || DEFAULT_FONT_FAMILIES[0];
+    }
+
+    function resolveFontFamilyStack(value) {
+        return String((findTypographyFontFamily(value) || {}).stack || DEFAULT_FONT_FAMILIES[0].stack);
+    }
+
+    function renderFontFamilyField(label, value) {
+        return renderSelectField(label, 'element-props', 'fontFamily', value || 'montserrat', getTypographyFontFamilies().map(function (item) {
+            return {
+                value: item.value,
+                label: item.label
+            };
+        }));
+    }
+
+    function ensureTypographyStyles() {
+        var styleNode = document.getElementById('nbd-font-face-style');
+
+        if (!styleNode) {
+            styleNode = document.createElement('style');
+            styleNode.id = 'nbd-font-face-style';
+            document.head.appendChild(styleNode);
+        }
+
+        styleNode.textContent = String(state.typography.fontFaceCss || '');
     }
 
     function resolveBranch(element, breakpoint) {
@@ -2115,6 +2192,17 @@
         html += '</div>';
 
         if (element.type === 'text') {
+            html += '<div class="nbde-field-grid nbde-field-grid--2">';
+            html += renderSelectField('HTML тег', 'element-props', 'tag', props.tag || 'div', [
+                { value: 'div', label: 'div' },
+                { value: 'h1', label: 'H1' },
+                { value: 'h2', label: 'H2' },
+                { value: 'h3', label: 'H3' },
+                { value: 'h4', label: 'H4' },
+                { value: 'p', label: 'p' },
+                { value: 'span', label: 'span' }
+            ]);
+            html += '</div>';
             html += renderTextareaField('Текст', 'element-props', 'text', props.text || '');
         } else if (element.type === 'button') {
             html += renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда');
@@ -2153,6 +2241,7 @@
         html += renderField('Ширина', 'element-box', 'w', box.w || 0, 'number');
         html += renderField('Высота', 'element-box', 'h', box.h || 0, 'number');
         html += renderField('Слой', 'element-box', 'zIndex', box.zIndex || 1, 'number');
+        html += renderField('Поворот', 'element-props', 'rotate', props.rotate || 0, 'number');
 
         if (element.type === 'container') {
             html += renderField('Отступ сверху', 'element-props', 'paddingTop', props.paddingTop || 20, 'number');
@@ -2185,6 +2274,7 @@
         if (element.type === 'text') {
             html += renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string');
             html += renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
+            html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
             html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number');
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number');
             html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
@@ -2194,9 +2284,15 @@
                 { value: 'center', label: 'По центру' },
                 { value: 'right', label: 'Справа' }
             ]);
+            html += renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
+                { value: 'none', label: 'Обычный' },
+                { value: 'uppercase', label: 'UPPERCASE' },
+                { value: 'lowercase', label: 'lowercase' }
+            ]);
         } else if (element.type === 'button') {
             html += renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string');
             html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
+            html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
             html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
         } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
@@ -2344,6 +2440,7 @@
         var branch = resolveBranch(element, breakpoint);
         var box = branch.box || {};
         var props = branch.props || {};
+        var textTag = 'div';
         var selected = isSelected(element.id);
         var primary = String(state.uiState.selectedElementId || '') === String(element.id);
         var editing = String(state.uiState.editingTextId || '') === String(element.id) && isEditableType(element.type);
@@ -2363,9 +2460,10 @@
         }
 
         if (element.type === 'text') {
-            html += '<div class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left')) + '">' + textToHtml(props.text || '') + '</div>';
+            textTag = ['div', 'h1', 'h2', 'h3', 'h4', 'p', 'span'].indexOf(String(props.tag || 'div')) >= 0 ? String(props.tag || 'div') : 'div';
+            html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:' + String(props.color || '#0f172a') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none')) + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
         } else if (element.type === 'button') {
-            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#ffffff') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
+            html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#ffffff') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
             if (props.src) {
@@ -4685,10 +4783,13 @@
                 return item && item.type !== 'group' && isPaletteTypeEnabled(item.type);
             });
             state.pickers = payload.pickers || {};
+            state.typography.fontFamilies = normalizeTypographyFamilies(getPath(payload, 'typography.fontFamilies', state.typography.fontFamilies));
+            state.typography.fontFaceCss = String(getPath(payload, 'typography.fontFaceCss', state.typography.fontFaceCss) || '');
             state.editor.saveUrl = getPath(payload, 'editor.saveUrl', state.editor.saveUrl);
             state.editor.placeUrl = getPath(payload, 'editor.placeUrl', state.editor.placeUrl);
             state.editor.backUrl = getPath(payload, 'editor.backUrl', state.editor.backUrl);
             state.editor.csrfToken = getPath(payload, 'editor.csrfToken', state.editor.csrfToken);
+            ensureTypographyStyles();
             state.uiState.activeBreakpoint = getPath(payload, 'ui.activeBreakpoint', state.uiState.activeBreakpoint) || 'desktop';
             clearAutosaveTimer();
             state.uiState.isDirty = false;
@@ -5052,6 +5153,7 @@
         var resizeNode = event.target.closest('[data-action="resize-element"]');
         var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
         var wrapper = event.target.closest('.nbde-el');
+        var inlineTextNode = event.target.closest('[data-inline-edit="text"]');
         var stageViewport = event.target.closest('#nbd-stage-viewport');
         var worldPoint;
         var hitElement;
@@ -5078,6 +5180,19 @@
         if (resizeNode && wrapper) {
             beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event, worldPoint);
             return;
+        }
+
+        if (inlineTextNode && wrapper) {
+            hitElement = getElementById(wrapper.dataset.elementId || '');
+
+            if (hitElement && !hitElement.locked && isEditableType(hitElement.type) && isSelected(hitElement.id) && state.uiState.editingTextId !== hitElement.id) {
+                event.preventDefault();
+                event.stopPropagation();
+                requestInlineFocus(hitElement.id);
+                renderCanvas();
+                renderPropertiesCard();
+                return;
+            }
         }
 
         if (event.target.closest('[data-inline-edit="text"]') && state.uiState.editingTextId) {
