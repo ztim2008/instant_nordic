@@ -378,16 +378,47 @@
         return type === 'photo' || type === 'svg' || type === 'video';
     }
 
-    function getColorInputValue(value, fallback) {
+    function normalizeHexColor(value) {
         var normalized = String(value || '').trim();
 
-        if (/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(normalized)) {
-            return normalized.length === 4
-                ? '#' + normalized.charAt(1) + normalized.charAt(1) + normalized.charAt(2) + normalized.charAt(2) + normalized.charAt(3) + normalized.charAt(3)
-                : normalized;
+        if (!/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(normalized)) {
+            return '';
         }
 
-        return fallback;
+        return normalized.length === 4
+            ? '#' + normalized.charAt(1) + normalized.charAt(1) + normalized.charAt(2) + normalized.charAt(2) + normalized.charAt(3) + normalized.charAt(3)
+            : normalized;
+    }
+
+    function colorStringToHex(value) {
+        var normalized = String(value || '').trim();
+        var hexValue = normalizeHexColor(normalized);
+        var match;
+        var red;
+        var green;
+        var blue;
+
+        if (hexValue) {
+            return hexValue;
+        }
+
+        match = normalized.match(/^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})(?:\s*,\s*(?:0|1|0?\.[0-9]+))?\s*\)$/i);
+        if (!match) {
+            return '';
+        }
+
+        red = clamp(match[1], 0, 255);
+        green = clamp(match[2], 0, 255);
+        blue = clamp(match[3], 0, 255);
+
+        return '#'
+            + Number(red).toString(16).padStart(2, '0')
+            + Number(green).toString(16).padStart(2, '0')
+            + Number(blue).toString(16).padStart(2, '0');
+    }
+
+    function getColorInputValue(value, fallback) {
+        return colorStringToHex(value) || colorStringToHex(fallback) || '#000000';
     }
 
     function isColorFieldPath(path, kind) {
@@ -1902,9 +1933,11 @@
 
     function renderColorField(label, scope, path, value) {
         var fallback = getColorFieldFallback(path);
-        var colorValue = getColorInputValue(value, fallback);
+        var rawValue = String(value == null ? '' : value).trim();
+        var colorValue = getColorInputValue(rawValue, fallback);
+        var isEmpty = rawValue === '';
 
-        return '<div class="nbde-field nbde-field--color"><label>' + escapeHtml(label) + '</label><div class="nbde-color-control"><label class="nbde-color-swatch" aria-label="Выбрать цвет ' + escapeHtml(label) + '"><input type="color" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(colorValue) + '"><span style="background:' + escapeHtml(colorValue) + '"></span></label><input type="text" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(value == null ? '' : value) + '"></div></div>';
+        return '<div class="nbde-field nbde-field--color"><label>' + escapeHtml(label) + '</label><div class="nbde-color-control"><label class="nbde-color-swatch' + (isEmpty ? ' is-empty' : '') + '" aria-label="Выбрать цвет ' + escapeHtml(label) + '"><input type="color" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(colorValue) + '"><span' + (rawValue ? ' style="background:' + escapeHtml(rawValue) + '"' : '') + '></span></label><button class="nbde-mini-button nbde-color-clear' + (isEmpty ? ' is-empty' : '') + '" type="button" data-color-clear="1" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" aria-label="Очистить цвет ' + escapeHtml(label) + '">x</button><input type="text" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(value == null ? '' : value) + '"></div></div>';
     }
 
     function renderField(label, scope, path, value, kind) {
@@ -2755,14 +2788,15 @@
         styles.push('justify-content:' + String(props.justifyContent || 'center'));
         styles.push('gap:' + Number(props.gap != null ? props.gap : 10) + 'px');
         styles.push('padding:' + paddingTop + 'px ' + paddingRight + 'px ' + paddingBottom + 'px ' + paddingLeft + 'px');
-        styles.push('color:' + String(props.color || '#ffffff'));
+        styles.push('--nbde-button-base-color:' + String(props.color || '#ffffff'));
         styles.push('font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat'));
         styles.push('font-size:' + Number(props.fontSize || 16) + 'px');
         styles.push('font-weight:' + Number(props.fontWeight || 700));
         styles.push('line-height:' + (Number(props.lineHeight || 120) / 100));
         styles.push('letter-spacing:' + Number(props.letterSpacing || 0) + 'px');
         styles.push('text-transform:' + String(props.textTransform || 'none'));
-        styles.push('background:' + buildButtonBackgroundValue(props, false));
+        styles.push('--nbde-button-base-bg:' + buildButtonBackgroundValue(props, false));
+        styles.push('--nbde-button-base-border:' + String(props.borderColor || 'transparent'));
         styles.push('--nbde-button-icon-color:' + String(props.iconColor || props.color || '#ffffff'));
         styles.push('--nbde-button-hover-icon-color:' + String(props.hoverIconColor || props.hoverColor || props.iconColor || props.color || '#ffffff'));
         styles.push('--nbde-button-base-shadow:' + String(buildButtonShadowValue(props, false) || 'none'));
@@ -2772,7 +2806,10 @@
         styles.push('--nbde-button-hover-transform:' + buildButtonHoverTransform(props));
         styles.push('--nbde-button-hover-shadow:' + String(buildButtonShadowValue(props, true) || buildButtonShadowValue(props, false) || 'none'));
         styles.push('--nbde-button-transition-duration:' + Math.max(80, Number(props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms');
-        styles.push('box-shadow:var(--nbde-button-base-shadow)');
+        styles.push('background:var(--nbde-button-current-bg)');
+        styles.push('color:var(--nbde-button-current-color)');
+        styles.push('border-color:var(--nbde-button-current-border)');
+        styles.push('box-shadow:var(--nbde-button-current-shadow)');
 
         return styles.filter(Boolean).join(';');
     }
@@ -3813,6 +3850,8 @@
         var swatch;
         var preview;
         var textInput;
+        var clearButton;
+        var isEmpty = !String(input.value || '').trim();
 
         if (!input || String(input.type || '').toLowerCase() !== 'color') {
             return;
@@ -3821,9 +3860,18 @@
         swatch = input.closest('.nbde-color-swatch');
         preview = swatch ? swatch.querySelector('span') : null;
         textInput = input.closest('.nbde-color-control') ? input.closest('.nbde-color-control').querySelector('input[type="text"]') : null;
+        clearButton = input.closest('.nbde-color-control') ? input.closest('.nbde-color-control').querySelector('[data-color-clear]') : null;
 
         if (preview) {
             preview.style.background = input.value || '';
+        }
+
+        if (swatch) {
+            swatch.classList.toggle('is-empty', isEmpty);
+        }
+
+        if (clearButton) {
+            clearButton.classList.toggle('is-empty', isEmpty);
         }
 
         if (textInput) {
@@ -5642,9 +5690,18 @@
     });
 
     document.addEventListener('click', function (event) {
+        var colorClearTarget = event.target.closest('[data-color-clear]');
         if (state.uiState.addMenuOpen && !event.target.closest('[data-add-menu-root]')) {
             state.uiState.addMenuOpen = false;
             renderBlockCard();
+        }
+
+        if (colorClearTarget) {
+            event.preventDefault();
+            if (applyScopedValue(colorClearTarget.dataset.scope, colorClearTarget.dataset.path, '')) {
+                refreshAfterScopedMutation(colorClearTarget.dataset.scope, colorClearTarget.dataset.path);
+            }
+            return;
         }
 
         var target = event.target.closest('[data-media-picker-action]');

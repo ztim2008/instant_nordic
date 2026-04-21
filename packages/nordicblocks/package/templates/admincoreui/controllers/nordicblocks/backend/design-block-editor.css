@@ -723,6 +723,11 @@
 }
 
 .nbde-el__body--button {
+    --nbde-button-current-bg: var(--nbde-button-base-bg, transparent);
+    --nbde-button-current-color: var(--nbde-button-base-color, currentColor);
+    --nbde-button-current-border: var(--nbde-button-base-border, currentColor);
+    --nbde-button-current-shadow: var(--nbde-button-base-shadow, none);
+    --nbde-button-current-icon-color: var(--nbde-button-icon-color, currentColor);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -734,11 +739,11 @@
 }
 
 .nbde-el__body--button:hover {
-    background: var(--nbde-button-hover-bg);
-    color: var(--nbde-button-hover-color);
-    --nbde-button-icon-color: var(--nbde-button-hover-icon-color, var(--nbde-button-icon-color, currentColor));
-    border-color: var(--nbde-button-hover-border);
-    box-shadow: var(--nbde-button-hover-shadow, var(--nbde-button-base-shadow, none));
+    --nbde-button-current-bg: var(--nbde-button-hover-bg, var(--nbde-button-base-bg, transparent));
+    --nbde-button-current-color: var(--nbde-button-hover-color, var(--nbde-button-base-color, currentColor));
+    --nbde-button-current-icon-color: var(--nbde-button-hover-icon-color, var(--nbde-button-hover-color, currentColor));
+    --nbde-button-current-border: var(--nbde-button-hover-border, var(--nbde-button-base-border, currentColor));
+    --nbde-button-current-shadow: var(--nbde-button-hover-shadow, var(--nbde-button-base-shadow, none));
     transform: var(--nbde-button-hover-transform, translateY(0) scale(1));
 }
 
@@ -747,7 +752,7 @@
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
-    color: var(--nbde-button-icon-color, currentColor);
+    color: var(--nbde-button-current-icon-color, currentColor);
 }
 
 .nbde-el__button-icon .icms-svg-icon {
@@ -987,7 +992,7 @@
 }
 
 .nbde-color-control {
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: 34px 30px minmax(0, 1fr);
 }
 
 .nbde-field label {
@@ -1068,6 +1073,22 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(15, 23, 42, 0.08));
+}
+
+.nbde-color-swatch.is-empty span {
+    background:
+        linear-gradient(135deg, transparent 0 44%, rgba(148, 163, 184, 0.55) 44% 56%, transparent 56% 100%),
+        linear-gradient(45deg, #f8fafc 25%, #e2e8f0 25%, #e2e8f0 50%, #f8fafc 50%, #f8fafc 75%, #e2e8f0 75%, #e2e8f0 100%);
+    background-size: auto, 12px 12px;
+}
+
+.nbde-color-clear {
+    min-height: 34px;
+    padding: 0;
+}
+
+.nbde-color-clear.is-empty {
+    opacity: 0.45;
 }
 
 .nbde-picker-row {
