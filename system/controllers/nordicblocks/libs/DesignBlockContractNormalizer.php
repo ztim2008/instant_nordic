@@ -294,12 +294,24 @@ class NordicblocksDesignBlockContractNormalizer {
         }
 
         if ($type === 'photo' || $type === 'image' || $type === 'svg') {
-            return $common + [
+            $normalized = $common + [
                 'src'            => self::string($raw['src'] ?? '', '', 1024),
                 'alt'            => self::string($raw['alt'] ?? '', '', 255),
-                'objectFit'      => self::select($raw['objectFit'] ?? 'cover', ['cover', 'contain', 'fill'], 'cover'),
+                'objectFit'      => self::select($raw['objectFit'] ?? 'cover', ['cover', 'contain', 'fill', 'none', 'scale-down'], 'cover'),
                 'objectPosition' => self::select($raw['objectPosition'] ?? 'center center', ['center center', 'left top', 'right top', 'left bottom', 'right bottom'], 'center center'),
+                'objectPositionX' => self::number($raw['objectPositionX'] ?? 50, 0, 100, 50),
+                'objectPositionY' => self::number($raw['objectPositionY'] ?? 50, 0, 100, 50),
+                'filterBrightness' => self::number($raw['filterBrightness'] ?? 100, 0, 200, 100),
+                'filterContrast' => self::number($raw['filterContrast'] ?? 100, 0, 200, 100),
+                'filterSaturate' => self::number($raw['filterSaturate'] ?? 100, 0, 200, 100),
+                'filterGrayscale' => self::number($raw['filterGrayscale'] ?? 0, 0, 100, 0),
             ];
+
+            if ($normalized['src'] !== '' && strtolower((string) ($normalized['backgroundColor'] ?? '')) === '#e2e8f0') {
+                $normalized['backgroundColor'] = '';
+            }
+
+            return $normalized;
         }
 
         if ($type === 'video') {

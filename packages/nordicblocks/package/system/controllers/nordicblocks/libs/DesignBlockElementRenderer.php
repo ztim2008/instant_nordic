@@ -61,9 +61,7 @@ class NordicblocksDesignBlockElementRenderer {
         if ($type === 'photo' || $type === 'svg') {
             $src = trim((string) ($props['src'] ?? ''));
             $alt = (string) ($props['alt'] ?? '');
-            $fit = (string) ($props['objectFit'] ?? 'cover');
-            $position = (string) ($props['objectPosition'] ?? 'center center');
-            $style = ' style="width:100%;height:100%;display:block;object-fit:' . self::attr($fit) . ';object-position:' . self::attr($position) . '"';
+            $style = ' style="' . self::attr(self::buildImageStyle($props)) . '"';
             return '<div' . $attrs . '>' . ($src !== '' ? '<img src="' . self::attr($src) . '" alt="' . self::attr($alt) . '" loading="lazy"' . $style . '>' : '') . '</div>';
         }
 
@@ -125,6 +123,47 @@ class NordicblocksDesignBlockElementRenderer {
 
         $icon_class = self::sanitizeIconClass($value);
         return $icon_class !== '' ? '<i class="' . self::attr($icon_class) . '"></i>' : '';
+    }
+
+    private static function buildImageStyle(array $props) {
+        $style = 'width:100%;height:100%;display:block;object-fit:' . (string) ($props['objectFit'] ?? 'cover') . ';object-position:' . self::buildImageObjectPosition($props) . ';';
+        $filter = self::buildImageFilter($props);
+
+        if ($filter !== '') {
+            $style .= 'filter:' . $filter . ';';
+        }
+
+        return $style;
+    }
+
+    private static function buildImageObjectPosition(array $props) {
+        if (array_key_exists('objectPositionX', $props) || array_key_exists('objectPositionY', $props)) {
+            $x = max(0, min(100, (float) ($props['objectPositionX'] ?? 50)));
+            $y = max(0, min(100, (float) ($props['objectPositionY'] ?? 50)));
+
+            return $x . '% ' . $y . '%';
+        }
+
+        return (string) ($props['objectPosition'] ?? 'center center');
+    }
+
+    private static function buildImageFilter(array $props) {
+        $parts = [];
+
+        if ((float) ($props['filterBrightness'] ?? 100) !== 100.0) {
+            $parts[] = 'brightness(' . (float) $props['filterBrightness'] . '%)';
+        }
+        if ((float) ($props['filterContrast'] ?? 100) !== 100.0) {
+            $parts[] = 'contrast(' . (float) $props['filterContrast'] . '%)';
+        }
+        if ((float) ($props['filterSaturate'] ?? 100) !== 100.0) {
+            $parts[] = 'saturate(' . (float) $props['filterSaturate'] . '%)';
+        }
+        if ((float) ($props['filterGrayscale'] ?? 0) > 0.0) {
+            $parts[] = 'grayscale(' . (float) $props['filterGrayscale'] . '%)';
+        }
+
+        return implode(' ', $parts);
     }
 
     private static function escape($value) {

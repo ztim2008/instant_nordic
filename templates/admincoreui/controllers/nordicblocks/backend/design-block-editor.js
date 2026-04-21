@@ -597,7 +597,7 @@
             branch.props.alt = '';
             branch.props.objectFit = 'cover';
             branch.props.objectPosition = 'center center';
-            branch.props.backgroundColor = '#e2e8f0';
+            branch.props.backgroundColor = '';
             branch.props.borderRadius = 24;
         } else if (type === 'video') {
             branch.box.w = 420;
@@ -1993,6 +1993,62 @@
         ];
     }
 
+    function buildImageObjectPosition(props) {
+        var hasPointPosition = props && (props.objectPositionX != null || props.objectPositionY != null);
+        var x;
+        var y;
+
+        if (!hasPointPosition) {
+            return String((props && props.objectPosition) || 'center center');
+        }
+
+        x = Math.max(0, Math.min(100, Number(props.objectPositionX != null ? props.objectPositionX : 50)));
+        y = Math.max(0, Math.min(100, Number(props.objectPositionY != null ? props.objectPositionY : 50)));
+
+        return roundNumber(x, 2) + '% ' + roundNumber(y, 2) + '%';
+    }
+
+    function buildImageFilterValue(props) {
+        var parts = [];
+        var brightness = Number(props.filterBrightness != null ? props.filterBrightness : 100);
+        var contrast = Number(props.filterContrast != null ? props.filterContrast : 100);
+        var saturate = Number(props.filterSaturate != null ? props.filterSaturate : 100);
+        var grayscale = Number(props.filterGrayscale != null ? props.filterGrayscale : 0);
+
+        if (brightness !== 100) {
+            parts.push('brightness(' + brightness + '%)');
+        }
+        if (contrast !== 100) {
+            parts.push('contrast(' + contrast + '%)');
+        }
+        if (saturate !== 100) {
+            parts.push('saturate(' + saturate + '%)');
+        }
+        if (grayscale > 0) {
+            parts.push('grayscale(' + grayscale + '%)');
+        }
+
+        return parts.join(' ');
+    }
+
+    function buildImagePreviewStyle(props) {
+        var styles = [];
+        var filterValue = buildImageFilterValue(props || {});
+
+        styles.push('object-fit:' + String((props && props.objectFit) || 'cover'));
+        styles.push('object-position:' + buildImageObjectPosition(props || {}));
+        styles.push('border-radius:' + Number((props && props.borderRadius) || 0) + 'px');
+        if (filterValue) {
+            styles.push('filter:' + filterValue);
+        }
+
+        return styles.join(';');
+    }
+
+    function shouldPreferOriginalPreview(url) {
+        return /\.(png|svg|webp|gif)(?:[?#].*)?$/i.test(String(url || ''));
+    }
+
     function renderAddElementMenu() {
         var html = '<div class="nbde-add-menu">';
 
@@ -2533,13 +2589,24 @@
                 { value: 'lowercase', label: 'lowercase' }
             ]);
         } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
+            if (element.type === 'photo' || element.type === 'svg') {
+                html += renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
+            }
             html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
                 { value: 'cover', label: 'Cover' },
                 { value: 'contain', label: 'Contain' },
-                { value: 'fill', label: 'Fill' }
+                { value: 'fill', label: 'Fill' },
+                { value: 'none', label: 'None' },
+                { value: 'scale-down', label: 'Scale down' }
             ]);
             if (element.type === 'photo' || element.type === 'svg') {
                 html += renderSelectField('Позиция фото', 'element-props', 'objectPosition', props.objectPosition || 'center center', buildPhotoPositionOptions());
+                html += renderField('Позиция X %', 'element-props', 'objectPositionX', props.objectPositionX != null ? props.objectPositionX : 50, 'number');
+                html += renderField('Позиция Y %', 'element-props', 'objectPositionY', props.objectPositionY != null ? props.objectPositionY : 50, 'number');
+                html += renderField('Brightness %', 'element-props', 'filterBrightness', props.filterBrightness != null ? props.filterBrightness : 100, 'number');
+                html += renderField('Contrast %', 'element-props', 'filterContrast', props.filterContrast != null ? props.filterContrast : 100, 'number');
+                html += renderField('Saturate %', 'element-props', 'filterSaturate', props.filterSaturate != null ? props.filterSaturate : 100, 'number');
+                html += renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number');
             }
         } else if (element.type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
@@ -2635,11 +2702,16 @@
         return parts.join(';');
     }
 
-    function buildCommonBodyStyle(props, box) {
+    function buildCommonBodyStyle(props, box, elementType) {
         var styles = [];
+        var backgroundColor = String(props.backgroundColor || '').trim();
 
-        if (props.backgroundColor) {
-            styles.push('background:' + String(props.backgroundColor));
+        if ((elementType === 'photo' || elementType === 'svg') && props.src && backgroundColor.toLowerCase() === '#e2e8f0') {
+            backgroundColor = '';
+        }
+
+        if (backgroundColor) {
+            styles.push('background:' + backgroundColor);
         }
         if (props.borderRadius) {
             styles.push('border-radius:' + Number(props.borderRadius) + 'px');
@@ -2876,9 +2948,9 @@
         } else if (element.type === 'button') {
             html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildButtonPreviewStyle(props, box)) + '">' + renderButtonPreviewContent(props, editing) + '</div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
-            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
+            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box, element.type)) + '">';
             if (props.src) {
-                html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="object-fit:' + escapeHtml(props.objectFit || 'cover') + ';object-position:' + escapeHtml(props.objectPosition || 'center center') + ';border-radius:' + Number(props.borderRadius || 0) + 'px">';
+                html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="' + escapeHtml(buildImagePreviewStyle(props)) + '">';
             } else {
                 html += '<div class="nbde-el__placeholder">Задайте файл в свойствах элемента</div>';
             }
@@ -3698,7 +3770,10 @@
 
         items.forEach(function (item, index) {
             var media = item && item.media ? item.media : {};
-            var previewUrl = item.preview_url || item.preview_fallback_url || media.display || media.original || '';
+            var originalUrl = media.original || item.preview_fallback_url || '';
+            var previewUrl = shouldPreferOriginalPreview(originalUrl)
+                ? originalUrl
+                : (item.preview_url || item.preview_fallback_url || media.display || media.original || '');
             var title = item.title || item.alt || media.alt || media.original_path || ('Изображение ' + String(index + 1));
             var subtitle = media.original_path || item.original_path || '';
 

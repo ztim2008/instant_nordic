@@ -168,10 +168,15 @@ class NordicblocksDesignBlockCssBuilder {
         $css .= 'opacity:' . (max(0, min(100, (int) ($props['opacityPct'] ?? 100))) / 100) . ';';
         $css .= 'transform:rotate(' . (float) ($props['rotate'] ?? 0) . 'deg);';
 
+        $background_color = (string) ($props['backgroundColor'] ?? '');
+        if (($type === 'photo' || $type === 'svg') && !empty($props['src']) && strtolower(trim($background_color)) === '#e2e8f0') {
+            $background_color = '';
+        }
+
         if (!empty($props['backgroundCss'])) {
             $css .= 'background:' . self::css((string) $props['backgroundCss']) . ';';
-        } elseif (!empty($props['backgroundColor'])) {
-            $css .= 'background:' . self::css((string) $props['backgroundColor']) . ';';
+        } elseif ($background_color !== '') {
+            $css .= 'background:' . self::css($background_color) . ';';
         }
 
         if (!empty($props['borderRadius']) || $type === 'object' && (($props['shape'] ?? '') === 'circle')) {
