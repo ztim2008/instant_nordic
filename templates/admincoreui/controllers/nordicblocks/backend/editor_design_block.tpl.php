@@ -68,35 +68,45 @@ $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
 
             <section class="nbde-card">
                 <div class="nbde-card__head">
-                    <h3>Холст</h3>
-                    <span>Блок</span>
-                </div>
-                <div class="nbde-card__body" id="nbd-stage-card"></div>
-            </section>
-
-            <section class="nbde-card">
-                <div class="nbde-card__head">
-                    <h3>Секция</h3>
-                    <span>Фон</span>
-                </div>
-                <div class="nbde-card__body" id="nbd-section-card"></div>
-            </section>
-
-            <section class="nbde-card">
-                <div class="nbde-card__head">
-                    <h3>Слои</h3>
-                    <span id="nbd-layers-summary">0 элементов</span>
-                </div>
-                <div class="nbde-card__body" id="nbd-layers-card"></div>
-            </section>
-
-            <section class="nbde-card nbde-card--sticky">
-                <div class="nbde-card__head">
                     <h3>Свойства элемента</h3>
                     <span id="nbd-properties-summary">Ничего не выбрано</span>
                 </div>
                 <div class="nbde-card__body" id="nbd-properties-card"></div>
             </section>
+
+            <section class="nbde-card nbde-card--accordion is-collapsed">
+                <button class="nbde-card__head nbde-card__head--toggle" type="button" data-action="toggle-stage-card" aria-expanded="false">
+                    <span class="nbde-card__head-copy">
+                        <h3>Холст</h3>
+                        <span>Блок</span>
+                    </span>
+                    <span class="nbde-card__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="nbde-card__body" id="nbd-stage-card" hidden></div>
+            </section>
+
+            <section class="nbde-card nbde-card--accordion is-collapsed">
+                <button class="nbde-card__head nbde-card__head--toggle" type="button" data-action="toggle-section-card" aria-expanded="false">
+                    <span class="nbde-card__head-copy">
+                        <h3>Секция</h3>
+                        <span>Фон</span>
+                    </span>
+                    <span class="nbde-card__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="nbde-card__body" id="nbd-section-card" hidden></div>
+            </section>
+
+            <section class="nbde-card nbde-card--accordion is-collapsed">
+                <button class="nbde-card__head nbde-card__head--toggle" type="button" data-action="toggle-layers-card" aria-expanded="false">
+                    <span class="nbde-card__head-copy">
+                        <h3>Слои</h3>
+                        <span id="nbd-layers-summary">0 элементов</span>
+                    </span>
+                    <span class="nbde-card__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="nbde-card__body" id="nbd-layers-card" hidden></div>
+            </section>
+
         </aside>
     </div>
 </div>

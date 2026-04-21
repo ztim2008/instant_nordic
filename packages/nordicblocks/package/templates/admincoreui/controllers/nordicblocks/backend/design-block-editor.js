@@ -120,6 +120,8 @@
         'alt', 'poster', 'iconClass', 'label'
     ];
 
+    var AUTOSAVE_DELAY_MS = 1200;
+
     var state = {
         editor: {
             stateUrl: bootstrap.stateUrl || root.dataset.stateUrl || '',
@@ -165,7 +167,12 @@
             editingTextId: null,
             pendingFocusTextId: null,
             isDirty: false,
+            isAutosaveScheduled: false,
             isSaving: false,
+            saveMode: 'manual',
+            pendingSaveMode: '',
+            autosaveTimerId: null,
+            changeRevision: 0,
             lastError: ''
         },
         interactionState: {
@@ -1219,8 +1226,74 @@
 
     function markDirty() {
         state.uiState.isDirty = true;
+        state.uiState.changeRevision += 1;
         state.uiState.lastError = '';
+        scheduleAutosave();
         renderStatus();
+    }
+
+    function clearAutosaveTimer() {
+        if (!state.uiState.autosaveTimerId) {
+            return;
+        }
+
+        window.clearTimeout(state.uiState.autosaveTimerId);
+        state.uiState.autosaveTimerId = null;
+    }
+
+    function scheduleAutosave() {
+        clearAutosaveTimer();
+
+        if (!state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
+            state.uiState.isAutosaveScheduled = false;
+            return;
+        }
+
+        state.uiState.isAutosaveScheduled = true;
+        state.uiState.autosaveTimerId = window.setTimeout(function () {
+            state.uiState.autosaveTimerId = null;
+            state.uiState.isAutosaveScheduled = false;
+
+            if (!state.uiState.isDirty) {
+                renderStatus();
+                return;
+            }
+
+            saveContract({ mode: 'autosave' });
+        }, AUTOSAVE_DELAY_MS);
+    }
+
+    function buildSaveRequestBody(serializedContract) {
+        return JSON.stringify({
+            title: state.documentState.block && state.documentState.block.title ? state.documentState.block.title : '',
+            contract: serializedContract,
+            csrf_token: state.editor.csrfToken
+        });
+    }
+
+    function triggerKeepaliveSave() {
+        var serializedContract;
+
+        if (!state.uiState.isDirty || state.uiState.isSaving || !state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
+            return;
+        }
+
+        clearAutosaveTimer();
+        state.uiState.isAutosaveScheduled = false;
+        serializedContract = serializeSceneIntoContract(state.documentState.contract);
+
+        fetch(state.editor.saveUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            keepalive: true,
+            body: buildSaveRequestBody(serializedContract)
+        }).catch(function () {
+            return null;
+        });
     }
 
     function clearGuides() {
@@ -1583,12 +1656,16 @@
         }
 
         if (state.uiState.isSaving) {
-            nodes.statusText.textContent = 'Сохраняю artboard contract...';
+            nodes.statusText.textContent = state.uiState.saveMode === 'autosave'
+                ? 'Автосохраняю изменения...'
+                : 'Сохраняю artboard contract...';
             return;
         }
 
         if (state.uiState.isDirty) {
-            nodes.statusText.textContent = 'Есть несохранённые изменения.';
+            nodes.statusText.textContent = state.uiState.isAutosaveScheduled
+                ? 'Есть несохранённые изменения. Автосохранение...'
+                : 'Есть несохранённые изменения.';
             nodes.statusText.classList.add('is-dirty');
             return;
         }
@@ -1751,15 +1828,6 @@
         html += '</div>';
         html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
         html += renderSelectionBreadcrumbs();
-        html += '<div class="nbde-sidebar-section-title">Действия</div>';
-        html += '<div class="nbde-action-grid">';
-        html += '<button class="nbde-mini-button" type="button" data-action="select-root-context"' + (state.uiState.rootInsertionMode ? ' disabled' : '') + '>В корень</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="select-parent"' + (hasParent ? '' : ' disabled') + '>К parent</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
-        html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="group-selection"' + (selectionIds.length > 1 ? '' : ' disabled') + '>Группа</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="ungroup-selection">Разгруппа</button>';
-        html += '</div>';
 
         if (nodes.blockCard) {
             nodes.blockCard.innerHTML = html;
@@ -1841,7 +1909,7 @@
         var background = getPath(state.documentState.contract, 'design.section.background', {});
         var html = '';
 
-        html += '<div class="nbde-field-grid">';
+        html += '<div class="nbde-field-grid nbde-field-grid--2">';
         html += renderField('Название секции', 'section-content', 'name', section.name || '', 'string');
         html += renderSelectField('Фон секции', 'section-background', 'mode', background.mode || 'solid', [
             { value: 'solid', label: 'Сплошной' },
@@ -2919,6 +2987,123 @@
         renderPropertiesCard();
     }
 
+    function setStageCardExpanded(expanded) {
+        var section;
+        var toggle;
+
+        if (!nodes.stageCard) {
+            return;
+        }
+
+        section = nodes.stageCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        toggle = section.querySelector('[data-action="toggle-stage-card"]');
+        section.classList.toggle('is-collapsed', !expanded);
+        nodes.stageCard.hidden = !expanded;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+
+    function toggleStageCard() {
+        var section;
+
+        if (!nodes.stageCard) {
+            return;
+        }
+
+        section = nodes.stageCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        setStageCardExpanded(section.classList.contains('is-collapsed'));
+    }
+
+    function setSectionCardExpanded(expanded) {
+        var section;
+        var toggle;
+
+        if (!nodes.sectionCard) {
+            return;
+        }
+
+        section = nodes.sectionCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        toggle = section.querySelector('[data-action="toggle-section-card"]');
+        section.classList.toggle('is-collapsed', !expanded);
+        nodes.sectionCard.hidden = !expanded;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+
+    function toggleSectionCard() {
+        var section;
+
+        if (!nodes.sectionCard) {
+            return;
+        }
+
+        section = nodes.sectionCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        setSectionCardExpanded(section.classList.contains('is-collapsed'));
+    }
+
+    function setLayersCardExpanded(expanded) {
+        var section;
+        var toggle;
+
+        if (!nodes.layersCard) {
+            return;
+        }
+
+        section = nodes.layersCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        toggle = section.querySelector('[data-action="toggle-layers-card"]');
+        section.classList.toggle('is-collapsed', !expanded);
+        nodes.layersCard.hidden = !expanded;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+
+    function toggleLayersCard() {
+        var section;
+
+        if (!nodes.layersCard) {
+            return;
+        }
+
+        section = nodes.layersCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        setLayersCardExpanded(section.classList.contains('is-collapsed'));
+    }
+
     function beginNumberScrub(event, scrubNode) {
         var input;
 
@@ -3118,6 +3303,43 @@
 
     function applyScopedInput(input) {
         return applyScopedValue(input.dataset.scope, input.dataset.path, coerceValue(input));
+    }
+
+    function syncColorControlUi(input) {
+        var swatch;
+        var preview;
+        var textInput;
+
+        if (!input || String(input.type || '').toLowerCase() !== 'color') {
+            return;
+        }
+
+        swatch = input.closest('.nbde-color-swatch');
+        preview = swatch ? swatch.querySelector('span') : null;
+        textInput = input.closest('.nbde-color-control') ? input.closest('.nbde-color-control').querySelector('input[type="text"]') : null;
+
+        if (preview) {
+            preview.style.background = input.value || '';
+        }
+
+        if (textInput) {
+            textInput.value = input.value || '';
+        }
+    }
+
+    function applyScopedColorPreview(input) {
+        if (!input || String(input.type || '').toLowerCase() !== 'color') {
+            return false;
+        }
+
+        if (!applyScopedInput(input)) {
+            return false;
+        }
+
+        syncColorControlUi(input);
+        markDirty();
+        renderCanvas();
+        return true;
     }
 
     function nextElementId(type) {
@@ -4348,20 +4570,35 @@
         };
     }
 
-    async function saveContract() {
+    async function saveContract(options) {
+        options = options || {};
+
         var response;
         var payload;
         var serializedContract;
+        var saveRevision;
+        var normalizedContract;
+        var requestedMode = options.mode === 'autosave' ? 'autosave' : 'manual';
 
         if (!state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
             return;
         }
 
+        if (state.uiState.isSaving) {
+            state.uiState.pendingSaveMode = requestedMode === 'manual' ? 'manual' : (state.uiState.pendingSaveMode || 'autosave');
+            return;
+        }
+
+        clearAutosaveTimer();
+        state.uiState.isAutosaveScheduled = false;
+
         state.uiState.isSaving = true;
+        state.uiState.saveMode = requestedMode;
         state.uiState.lastError = '';
         renderStatus();
 
         serializedContract = serializeSceneIntoContract(state.documentState.contract);
+        saveRevision = state.uiState.changeRevision;
 
         try {
             response = await fetch(state.editor.saveUrl, {
@@ -4371,11 +4608,7 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'same-origin',
-                body: JSON.stringify({
-                    title: state.documentState.block.title || '',
-                    contract: serializedContract,
-                    csrf_token: state.editor.csrfToken
-                })
+                body: buildSaveRequestBody(serializedContract)
             });
             payload = await response.json();
 
@@ -4383,22 +4616,41 @@
                 throw new Error(payload.error || 'save_failed');
             }
 
-            state.documentState.contract = normalizeContract(payload.contract || serializedContract);
-            state.scene = buildSceneFromContract(state.documentState.contract);
+            normalizedContract = normalizeContract(payload.contract || serializedContract);
             state.documentState.lastSavedAt = new Date().toLocaleTimeString('ru-RU', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
             });
-            state.uiState.isDirty = false;
             state.uiState.lastError = '';
-            renderAll();
+
+            if (state.uiState.changeRevision === saveRevision) {
+                state.documentState.contract = normalizedContract;
+                state.scene = buildSceneFromContract(state.documentState.contract);
+                state.uiState.isDirty = false;
+                renderAll();
+            } else {
+                state.uiState.isDirty = true;
+                renderStatus();
+            }
         } catch (error) {
             state.uiState.lastError = 'Ошибка сохранения: ' + (error && error.message ? error.message : 'неизвестная ошибка');
             renderStatus();
         } finally {
             state.uiState.isSaving = false;
+            state.uiState.saveMode = 'manual';
             renderStatus();
+
+            if (state.uiState.pendingSaveMode) {
+                requestedMode = state.uiState.pendingSaveMode;
+                state.uiState.pendingSaveMode = '';
+                window.setTimeout(function () {
+                    saveContract({ mode: requestedMode });
+                }, 0);
+            } else if (state.uiState.isDirty) {
+                scheduleAutosave();
+                renderStatus();
+            }
         }
     }
 
@@ -4438,7 +4690,12 @@
             state.editor.backUrl = getPath(payload, 'editor.backUrl', state.editor.backUrl);
             state.editor.csrfToken = getPath(payload, 'editor.csrfToken', state.editor.csrfToken);
             state.uiState.activeBreakpoint = getPath(payload, 'ui.activeBreakpoint', state.uiState.activeBreakpoint) || 'desktop';
+            clearAutosaveTimer();
             state.uiState.isDirty = false;
+            state.uiState.isAutosaveScheduled = false;
+            state.uiState.pendingSaveMode = '';
+            state.uiState.saveMode = 'manual';
+            state.uiState.changeRevision = 0;
             state.uiState.lastError = '';
             state.uiState.editingTextId = null;
             state.uiState.pendingFocusTextId = null;
@@ -4485,6 +4742,21 @@
         if (action === 'toggle-add-menu') {
             state.uiState.addMenuOpen = !state.uiState.addMenuOpen;
             renderBlockCard();
+            return;
+        }
+
+        if (action === 'toggle-stage-card') {
+            toggleStageCard();
+            return;
+        }
+
+        if (action === 'toggle-section-card') {
+            toggleSectionCard();
+            return;
+        }
+
+        if (action === 'toggle-layers-card') {
+            toggleLayersCard();
             return;
         }
 
@@ -4646,6 +4918,16 @@
             setSelection([inlineElement.id], inlineElement.id);
             markDirty();
             renderPropertiesCard();
+            return;
+        }
+
+        if (applyToolbarColor(target)) {
+            markDirty();
+            renderCanvas();
+            return;
+        }
+
+        if (applyScopedColorPreview(target)) {
             return;
         }
 
@@ -4866,7 +5148,7 @@
 
     if (nodes.saveButton) {
         nodes.saveButton.addEventListener('click', function () {
-            saveContract();
+            saveContract({ mode: 'manual' });
         });
     }
 
@@ -4881,7 +5163,7 @@
 
         if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 's') {
             event.preventDefault();
-            saveContract();
+            saveContract({ mode: 'manual' });
             return;
         }
 
@@ -4908,6 +5190,17 @@
         }
     });
 
+    window.addEventListener('beforeunload', function (event) {
+        if (!state.uiState.isDirty && !state.uiState.isSaving) {
+            return;
+        }
+
+        triggerKeepaliveSave();
+        event.preventDefault();
+        event.returnValue = '';
+        return '';
+    });
+
     Array.prototype.forEach.call(root.querySelectorAll('[data-breakpoint]'), function (button) {
         button.addEventListener('click', function () {
             state.uiState.activeBreakpoint = button.dataset.breakpoint || 'desktop';
@@ -4920,6 +5213,9 @@
         });
     });
 
+    setStageCardExpanded(false);
+    setSectionCardExpanded(false);
+    setLayersCardExpanded(false);
     attachDebugApi();
     loadState();
 })();

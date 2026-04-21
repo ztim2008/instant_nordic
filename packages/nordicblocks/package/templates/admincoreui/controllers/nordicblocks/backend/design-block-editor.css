@@ -231,6 +231,47 @@
     margin-bottom: 8px;
 }
 
+.nbde-card__head-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.nbde-card__head--toggle {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nbde-card__chevron {
+    position: relative;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+}
+
+.nbde-card__chevron::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #64748b;
+    border-bottom: 2px solid #64748b;
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+}
+
+.nbde-card--accordion.is-collapsed .nbde-card__chevron::before {
+    transform: rotate(-45deg);
+}
+
 .nbde-canvas-panel__head strong,
 .nbde-card__head h3 {
     margin: 0;
@@ -783,6 +824,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.nbde-card__body[hidden] {
+    display: none;
 }
 
 .nbde-addbar {
