@@ -49,10 +49,10 @@ class NordicblocksDesignBlockElementRenderer {
         if ($type === 'button') {
             $url = trim((string) ($props['url'] ?? '#'));
             $target = !empty($props['targetBlank']) ? ' target="_blank" rel="noopener noreferrer"' : '';
-            $icon_class = self::sanitizeIconClass((string) ($props['iconClass'] ?? ''));
+            $icon_markup = self::renderIconMarkup((string) ($props['iconClass'] ?? ''));
             $icon_position = (($props['iconPosition'] ?? 'start') === 'end') ? 'end' : 'start';
             $label = '<span class="nb-design-button__label">' . nl2br(self::escape((string) ($props['text'] ?? 'Подробнее'))) . '</span>';
-            $icon = $icon_class !== '' ? '<span class="nb-design-button__icon" aria-hidden="true"><i class="' . self::attr($icon_class) . '"></i></span>' : '';
+            $icon = $icon_markup !== '' ? '<span class="nb-design-button__icon" aria-hidden="true">' . $icon_markup . '</span>' : '';
             $content = $icon !== '' && $icon_position === 'end' ? $label . $icon : $icon . $label;
 
             return '<div' . $attrs . '><a class="nb-design-button__link" href="' . self::attr($url !== '' ? $url : '#') . '"' . $target . '>' . $content . '</a></div>';
@@ -78,8 +78,7 @@ class NordicblocksDesignBlockElementRenderer {
         }
 
         if ($type === 'icon') {
-            $icon_class = preg_replace('/[^a-z0-9_\-: ]/i', '', (string) ($props['iconClass'] ?? 'fas fa-star'));
-            return '<div' . $attrs . '><i class="' . self::attr($icon_class) . '"></i></div>';
+            return '<div' . $attrs . '>' . self::renderIconMarkup((string) ($props['iconClass'] ?? 'fas fa-star')) . '</div>';
         }
 
         if ($type === 'container') {
@@ -95,6 +94,37 @@ class NordicblocksDesignBlockElementRenderer {
 
     private static function sanitizeIconClass($value) {
         return trim(preg_replace('/[^a-z0-9_\-: ]/i', '', (string) $value));
+    }
+
+    private static function parseIconToken($value) {
+        if (!preg_match('/^([a-z0-9_\-]+):([a-z0-9_\-]+)(?::.*)?$/i', trim((string) $value), $matches)) {
+            return null;
+        }
+
+        return [
+            'file' => $matches[1],
+            'name' => $matches[2],
+        ];
+    }
+
+    private static function renderIconMarkup($value) {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return '';
+        }
+
+        $icon_token = self::parseIconToken($value);
+        if ($icon_token && function_exists('html_svg_icon')) {
+            $svg = html_svg_icon($icon_token['file'], $icon_token['name'], 16, false);
+
+            if (is_string($svg) && $svg !== '') {
+                return $svg;
+            }
+        }
+
+        $icon_class = self::sanitizeIconClass($value);
+        return $icon_class !== '' ? '<i class="' . self::attr($icon_class) . '"></i>' : '';
     }
 
     private static function escape($value) {

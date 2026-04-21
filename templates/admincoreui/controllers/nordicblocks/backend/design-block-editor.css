@@ -736,6 +736,7 @@
 .nbde-el__body--button:hover {
     background: var(--nbde-button-hover-bg);
     color: var(--nbde-button-hover-color);
+    --nbde-button-icon-color: var(--nbde-button-hover-icon-color, var(--nbde-button-icon-color, currentColor));
     border-color: var(--nbde-button-hover-border);
     box-shadow: var(--nbde-button-hover-shadow, var(--nbde-button-base-shadow, none));
     transform: var(--nbde-button-hover-transform, translateY(0) scale(1));
@@ -746,6 +747,19 @@
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
+    color: var(--nbde-button-icon-color, currentColor);
+}
+
+.nbde-el__button-icon .icms-svg-icon {
+    display: block;
+    width: 1.1em;
+    height: 1.1em;
+    fill: currentColor;
+}
+
+.nbde-el__button-icon i {
+    font-size: 1em;
+    line-height: 1;
 }
 
 .nbde-el__button-label {
@@ -1419,6 +1433,37 @@
 }
 
 .nbde-inspector-section__head span {
+    color: var(--nbde-muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.nbde-inspector-subsection {
+    padding: 10px;
+    border: 1px solid var(--nbde-border);
+    background: #fbfdff;
+}
+
+.nbde-inspector-subsection + .nbde-inspector-subsection {
+    margin-top: 8px;
+}
+
+.nbde-inspector-subsection__head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.nbde-inspector-subsection__head strong {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--nbde-text);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.nbde-inspector-subsection__head span {
     color: var(--nbde-muted);
     font-size: 11px;
     line-height: 1.45;

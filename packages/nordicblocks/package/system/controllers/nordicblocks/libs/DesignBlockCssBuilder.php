@@ -123,7 +123,7 @@ class NordicblocksDesignBlockCssBuilder {
     }
 
     private static function baseCss($section_id) {
-        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;gap:inherit;width:100%;height:100%;padding:inherit;color:inherit;text-decoration:none;box-sizing:border-box;line-height:inherit;letter-spacing:inherit;text-transform:inherit;transition:background-color .18s ease,color .18s ease,border-color .18s ease}#' . $section_id . ' .nb-design-button__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
+        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;gap:inherit;width:100%;height:100%;padding:inherit;color:inherit;text-decoration:none;box-sizing:border-box;line-height:inherit;letter-spacing:inherit;text-transform:inherit;transition:background-color .18s ease,color .18s ease,border-color .18s ease}#' . $section_id . ' .nb-design-button__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--nb-design-button-icon-color,currentColor)}#' . $section_id . ' .nb-design-button__icon .icms-svg-icon{display:block;width:1.1em;height:1.1em;fill:currentColor}#' . $section_id . ' .nb-design-button__icon i{font-size:1em;line-height:1}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
     }
 
     private static function collectElementCss(array $elements, $section_id, $parent_type, $flow_child, &$desktop, &$tablet, &$mobile) {
@@ -194,7 +194,11 @@ class NordicblocksDesignBlockCssBuilder {
         if ($type === 'text') {
             $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
         } elseif ($type === 'button') {
-            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';gap:' . (int) ($props['gap'] ?? 10) . 'px;padding:' . (int) ($props['paddingTop'] ?? 16) . 'px ' . (int) ($props['paddingRight'] ?? 28) . 'px ' . (int) ($props['paddingBottom'] ?? 16) . 'px ' . (int) ($props['paddingLeft'] ?? 28) . 'px;color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';line-height:' . ((float) ($props['lineHeight'] ?? 120) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';background:' . self::buildButtonBackgroundCss($props, false) . ';transition:background ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),border-color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),transform ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),box-shadow ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1);';
+            $button_shadow = self::buildButtonShadowCss($props, false);
+            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';gap:' . (int) ($props['gap'] ?? 10) . 'px;padding:' . (int) ($props['paddingTop'] ?? 16) . 'px ' . (int) ($props['paddingRight'] ?? 28) . 'px ' . (int) ($props['paddingBottom'] ?? 16) . 'px ' . (int) ($props['paddingLeft'] ?? 28) . 'px;color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';--nb-design-button-icon-color:' . self::css((string) ($props['iconColor'] ?? ($props['color'] ?? '#ffffff'))) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';line-height:' . ((float) ($props['lineHeight'] ?? 120) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';background:' . self::buildButtonBackgroundCss($props, false) . ';transition:background ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),border-color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),transform ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),box-shadow ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1);';
+            if ($button_shadow !== '') {
+                $css .= 'box-shadow:' . self::css($button_shadow) . ';';
+            }
         } elseif ($type === 'photo' || $type === 'svg') {
             $css .= 'overflow:hidden;';
         } elseif ($type === 'video') {
@@ -237,8 +241,12 @@ class NordicblocksDesignBlockCssBuilder {
         if (!empty($props['hoverBorderColor'])) {
             $css .= 'border-color:' . self::css((string) $props['hoverBorderColor']) . ';';
         }
-        if (!empty($props['hoverShadow'])) {
-            $css .= 'box-shadow:' . self::css((string) $props['hoverShadow']) . ';';
+        $hover_shadow = self::buildButtonShadowCss($props, true);
+        if ($hover_shadow !== '') {
+            $css .= 'box-shadow:' . self::css($hover_shadow) . ';';
+        }
+        if (!empty($props['hoverIconColor']) || !empty($props['hoverColor'])) {
+            $css .= '--nb-design-button-icon-color:' . self::css((string) ($props['hoverIconColor'] ?? ($props['hoverColor'] ?? ''))) . ';';
         }
         if ((float) ($props['hoverLift'] ?? 0) > 0 || (float) ($props['hoverScalePct'] ?? 100) !== 100.0) {
             $css .= 'transform:' . self::buildButtonHoverTransform($props) . ';';
@@ -273,6 +281,27 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         return self::css((string) ($hover ? ($props['hoverBackgroundColor'] ?? ($props['backgroundColor'] ?? '#0f172a')) : ($props['backgroundColor'] ?? '#0f172a')));
+    }
+
+    private static function buildButtonShadowCss(array $props, $hover = false) {
+        $prefix = $hover ? 'hoverShadow' : 'shadow';
+        $raw = trim((string) ($hover ? ($props['hoverShadow'] ?? '') : ($props['boxShadow'] ?? '')));
+        $x = (float) ($props[$prefix . 'X'] ?? 0);
+        $y = (float) ($props[$prefix . 'Y'] ?? 0);
+        $blur = max(0, (float) ($props[$prefix . 'Blur'] ?? 0));
+        $spread = (float) ($props[$prefix . 'Spread'] ?? 0);
+        $color = trim((string) ($props[$prefix . 'Color'] ?? ''));
+        $inset = !empty($props[$prefix . 'Inset']);
+
+        if ($inset || $x !== 0.0 || $y !== 0.0 || $blur !== 0.0 || $spread !== 0.0 || $color !== '') {
+            if ($color === '') {
+                $color = $hover ? (string) ($props['shadowColor'] ?? 'rgba(15,23,42,0.18)') : 'rgba(15,23,42,0.18)';
+            }
+
+            return ($inset ? 'inset ' : '') . $x . 'px ' . $y . 'px ' . $blur . 'px ' . $spread . 'px ' . self::css($color);
+        }
+
+        return $raw;
     }
 
     private static function buildButtonHoverTransform(array $props) {

@@ -8,6 +8,34 @@ $editor_css = @file_get_contents(__DIR__ . '/design-block-editor.css') ?: '';
 $editor_geometry_core_js = @file_get_contents(__DIR__ . '/design-block-geometry-core.js') ?: '';
 $editor_interaction_core_js = @file_get_contents(__DIR__ . '/design-block-interaction-core.js') ?: '';
 $editor_js  = @file_get_contents(__DIR__ . '/design-block-editor.js') ?: '';
+$icon_sprite_urls = [];
+$site_root_path = rtrim((string) cmsConfig::get('root_path'), '/') . '/';
+$site_root_url = rtrim((string) cmsConfig::get('root'), '/') . '/';
+$http_template = (string) cmsConfig::get('http_template');
+
+foreach ([$http_template, 'modern'] as $template_name) {
+    $template_name = trim((string) $template_name);
+
+    if ($template_name === '') {
+        continue;
+    }
+
+    $icons_dir = $site_root_path . 'templates/' . $template_name . '/images/icons/';
+
+    if (!is_dir($icons_dir)) {
+        continue;
+    }
+
+    foreach ((array) glob($icons_dir . '*.svg') as $icon_file) {
+        $file_name = pathinfo($icon_file, PATHINFO_FILENAME);
+
+        if ($file_name === '' || isset($icon_sprite_urls[$file_name])) {
+            continue;
+        }
+
+        $icon_sprite_urls[$file_name] = $site_root_url . 'templates/' . $template_name . '/images/icons/' . basename($icon_file);
+    }
+}
 ?>
 
 <style><?= $editor_css ?></style>
@@ -119,6 +147,7 @@ window.NordicblocksDesignBlockBootstrap = <?= json_encode([
     'backUrl'   => $back_url,
     'placeUrl'  => $place_url,
     'iconPickerUrl' => href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']),
+    'iconSpriteUrls' => $icon_sprite_urls,
     'devFlags'  => [
         'geometryDebug' => !empty($_GET['nb_debug_geometry'])
     ],

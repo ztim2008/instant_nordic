@@ -120,6 +120,8 @@
         'backdropBlur', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'shape', 'objectFit', 'objectPosition',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
         'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
+        'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset',
+        'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
         'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration'
     ];
@@ -143,6 +145,7 @@
             backUrl: bootstrap.backUrl || root.dataset.backUrl || '',
             placeUrl: bootstrap.placeUrl || root.dataset.placeUrl || '',
             iconPickerUrl: bootstrap.iconPickerUrl || '',
+            iconSpriteUrls: bootstrap.iconSpriteUrls || {},
             csrfToken: bootstrap.csrfToken || ''
         },
         palette: [],
@@ -392,7 +395,7 @@
             return false;
         }
 
-        return /(color|backgroundColor|borderColor|gradientFrom|gradientTo|hoverColor|hoverBackgroundColor|hoverBorderColor|hoverGradientFrom|hoverGradientTo|fill)$/i.test(String(path || ''));
+        return /(color|backgroundColor|borderColor|gradientFrom|gradientTo|hoverColor|hoverBackgroundColor|hoverBorderColor|hoverGradientFrom|hoverGradientTo|fill|iconColor|hoverIconColor|shadowColor|hoverShadowColor)$/i.test(String(path || ''));
     }
 
     function getColorFieldFallback(path) {
@@ -415,6 +418,18 @@
         }
         if (/hoverBorderColor$/i.test(path)) {
             return '#94a3b8';
+        }
+        if (/hoverIconColor$/i.test(path)) {
+            return '#ffffff';
+        }
+        if (/iconColor$/i.test(path)) {
+            return '#ffffff';
+        }
+        if (/hoverShadowColor$/i.test(path)) {
+            return 'rgba(15,23,42,0.28)';
+        }
+        if (/shadowColor$/i.test(path)) {
+            return 'rgba(15,23,42,0.18)';
         }
         if (/(backgroundColor|fill)$/i.test(path)) {
             return '#f97316';
@@ -450,7 +465,7 @@
             return Math.max(1, rounded);
         }
 
-        if (['borderRadius', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'gutter', 'bleedLeft', 'bleedRight', 'outerMargin', 'gridSize', 'snapThreshold', 'lineHeight', 'letterSpacing', 'gradientAngle', 'initialInsertY'].indexOf(tail) !== -1) {
+        if (['borderRadius', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'gutter', 'bleedLeft', 'bleedRight', 'outerMargin', 'gridSize', 'snapThreshold', 'lineHeight', 'letterSpacing', 'gradientAngle', 'initialInsertY', 'shadowBlur', 'shadowSpread', 'hoverShadowBlur', 'hoverShadowSpread'].indexOf(tail) !== -1) {
             return Math.max(0, rounded);
         }
 
@@ -513,18 +528,32 @@
             branch.props.gap = 10;
             branch.props.iconClass = '';
             branch.props.iconPosition = 'start';
+            branch.props.iconColor = '';
+            branch.props.hoverIconColor = '';
             branch.props.backgroundMode = 'solid';
             branch.props.backgroundColor = '#0f172a';
             branch.props.gradientFrom = '#0f172a';
             branch.props.gradientTo = '#1d4ed8';
             branch.props.gradientAngle = 135;
             branch.props.borderRadius = 999;
+            branch.props.shadowX = 0;
+            branch.props.shadowY = 0;
+            branch.props.shadowBlur = 0;
+            branch.props.shadowSpread = 0;
+            branch.props.shadowColor = '';
+            branch.props.shadowInset = false;
             branch.props.hoverBackgroundMode = 'inherit';
             branch.props.hoverBackgroundColor = '';
             branch.props.hoverGradientFrom = '#111827';
             branch.props.hoverGradientTo = '#2563eb';
             branch.props.hoverColor = '';
             branch.props.hoverBorderColor = '';
+            branch.props.hoverShadowX = 0;
+            branch.props.hoverShadowY = 0;
+            branch.props.hoverShadowBlur = 0;
+            branch.props.hoverShadowSpread = 0;
+            branch.props.hoverShadowColor = '';
+            branch.props.hoverShadowInset = false;
             branch.props.hoverScalePct = 100;
             branch.props.hoverLift = 0;
             branch.props.hoverShadow = '';
@@ -2237,6 +2266,21 @@
         return html;
     }
 
+    function renderInspectorSubsection(title, body, description) {
+        var html = '<div class="nbde-inspector-subsection">';
+
+        html += '<div class="nbde-inspector-subsection__head">';
+        html += '<strong>' + escapeHtml(title) + '</strong>';
+        if (description) {
+            html += '<span>' + escapeHtml(description) + '</span>';
+        }
+        html += '</div>';
+        html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Нет полей.</div>';
+        html += '</div>';
+
+        return html;
+    }
+
     function renderElementContentFields(element, props) {
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
@@ -2258,20 +2302,27 @@
             html += '</div>';
             html += renderTextareaField('Текст', 'element-props', 'text', props.text || '');
         } else if (element.type === 'button') {
-            html += renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда');
-            html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string');
-            html += renderPickerField('Иконка', 'element-props', 'iconClass', props.iconClass || '', 'string', {
+            html += renderInspectorSubsection('Текст и ссылка',
+                renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда')
+                + '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string')
+                + renderCheckboxField('Открывать в новой вкладке', 'element-props', 'targetBlank', !!props.targetBlank)
+                + '</div>'
+            );
+            html += renderInspectorSubsection('Иконка',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderPickerField('Иконка', 'element-props', 'iconClass', props.iconClass || '', 'string', {
                 pickerKind: 'icon',
                 pickerLabel: 'Выбрать иконку',
                 clearLabel: 'Без иконки'
-            });
-            html += renderSelectField('Позиция иконки', 'element-props', 'iconPosition', props.iconPosition || 'start', [
+            })
+                + renderSelectField('Позиция иконки', 'element-props', 'iconPosition', props.iconPosition || 'start', [
                 { value: 'start', label: 'Слева' },
                 { value: 'end', label: 'Справа' }
-            ]);
-            html += renderCheckboxField('Открывать в новой вкладке', 'element-props', 'targetBlank', !!props.targetBlank);
-            html += '</div>';
+            ])
+                + '</div>',
+                'Поддерживаются системные SVG sprite tokens вида brands:telegram.'
+            );
         } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
             html += renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
@@ -2325,6 +2376,102 @@
     }
 
     function renderElementStyleFields(element, props) {
+        if (element.type === 'button') {
+            return renderInspectorSubsection('Каркас',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number')
+                + renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + '</div>'
+            )
+            + renderInspectorSubsection('Фон',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Тип фона', 'element-props', 'backgroundMode', props.backgroundMode || 'solid', [
+                    { value: 'solid', label: 'Сплошной' },
+                    { value: 'gradient', label: 'Градиент' }
+                ])
+                + renderField('Угол градиента', 'element-props', 'gradientAngle', props.gradientAngle != null ? props.gradientAngle : 135, 'number')
+                + (((props.backgroundMode || 'solid') === 'gradient')
+                    ? renderField('Градиент от', 'element-props', 'gradientFrom', props.gradientFrom || '#0f172a', 'string')
+                        + renderField('Градиент к', 'element-props', 'gradientTo', props.gradientTo || '#1d4ed8', 'string')
+                    : renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string'))
+                + '</div>'
+            )
+            + renderInspectorSubsection('Типографика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string')
+                + renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string')
+                + renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat')
+                + renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number')
+                + renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number')
+                + renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number')
+                + renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number')
+                + renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
+                    { value: 'none', label: 'Обычный' },
+                    { value: 'uppercase', label: 'UPPERCASE' },
+                    { value: 'lowercase', label: 'lowercase' }
+                ])
+                + '</div>'
+            )
+            + renderInspectorSubsection('Иконка',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Цвет иконки', 'element-props', 'iconColor', props.iconColor || '', 'string')
+                + renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string')
+                + renderField('Gap иконка/текст', 'element-props', 'gap', props.gap || 10, 'number')
+                + renderSelectField('Выравнивание контента', 'element-props', 'justifyContent', props.justifyContent || 'center', [
+                    { value: 'flex-start', label: 'Слева' },
+                    { value: 'center', label: 'По центру' },
+                    { value: 'flex-end', label: 'Справа' }
+                ])
+                + '</div>'
+            )
+            + renderInspectorSubsection('Тень',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Тень X', 'element-props', 'shadowX', props.shadowX != null ? props.shadowX : 0, 'number')
+                + renderField('Тень Y', 'element-props', 'shadowY', props.shadowY != null ? props.shadowY : 0, 'number')
+                + renderField('Размытие', 'element-props', 'shadowBlur', props.shadowBlur != null ? props.shadowBlur : 0, 'number')
+                + renderField('Spread', 'element-props', 'shadowSpread', props.shadowSpread != null ? props.shadowSpread : 0, 'number')
+                + renderField('Цвет тени', 'element-props', 'shadowColor', props.shadowColor || '', 'string')
+                + renderCheckboxField('Внутренняя тень', 'element-props', 'shadowInset', !!props.shadowInset)
+                + '</div>',
+                'Старое raw поле boxShadow остаётся как fallback для уже сохранённых блоков.'
+            )
+            + renderInspectorSubsection('Hover',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+                    { value: 'inherit', label: 'Как обычный' },
+                    { value: 'solid', label: 'Свой цвет' },
+                    { value: 'gradient', label: 'Свой градиент' }
+                ])
+                + (((props.hoverBackgroundMode || 'inherit') === 'gradient')
+                    ? renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || '#111827', 'string')
+                        + renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || '#2563eb', 'string')
+                    : (((props.hoverBackgroundMode || 'inherit') === 'solid')
+                        ? renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string')
+                        : ''))
+                + renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string')
+                + renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number')
+                + renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number')
+                + renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number')
+                + renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number')
+                + renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string')
+                + renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset)
+                + renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number')
+                + renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number')
+                + renderField('Длительность анимации', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number')
+                + '</div>'
+            )
+            + renderInspectorSubsection('Отступы',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Padding top', 'element-props', 'paddingTop', props.paddingTop || 16, 'number')
+                + renderField('Padding right', 'element-props', 'paddingRight', props.paddingRight || 28, 'number')
+                + renderField('Padding bottom', 'element-props', 'paddingBottom', props.paddingBottom || 16, 'number')
+                + renderField('Padding left', 'element-props', 'paddingLeft', props.paddingLeft || 28, 'number')
+                + '</div>'
+            );
+        }
+
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
         html += renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number');
@@ -2351,56 +2498,6 @@
                 { value: 'uppercase', label: 'UPPERCASE' },
                 { value: 'lowercase', label: 'lowercase' }
             ]);
-        } else if (element.type === 'button') {
-            html += renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string');
-            html += renderSelectField('Тип фона', 'element-props', 'backgroundMode', props.backgroundMode || 'solid', [
-                { value: 'solid', label: 'Сплошной' },
-                { value: 'gradient', label: 'Градиент' }
-            ]);
-            html += renderField('Угол градиента', 'element-props', 'gradientAngle', props.gradientAngle != null ? props.gradientAngle : 135, 'number');
-            if ((props.backgroundMode || 'solid') === 'gradient') {
-                html += renderField('Градиент от', 'element-props', 'gradientFrom', props.gradientFrom || '#0f172a', 'string');
-                html += renderField('Градиент к', 'element-props', 'gradientTo', props.gradientTo || '#1d4ed8', 'string');
-            } else {
-                html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
-            }
-            html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
-                { value: 'inherit', label: 'Как обычный' },
-                { value: 'solid', label: 'Свoй цвет' },
-                { value: 'gradient', label: 'Свoй градиент' }
-            ]);
-            if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
-                html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || '#111827', 'string');
-                html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || '#2563eb', 'string');
-            } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
-                html += renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
-            }
-            html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
-            html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
-            html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
-            html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
-            html += renderField('Hover тень', 'element-props', 'hoverShadow', props.hoverShadow || '', 'string');
-            html += renderField('Длительность анимации', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
-            html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
-            html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
-            html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
-            html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
-            html += renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number');
-            html += renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
-                { value: 'none', label: 'Обычный' },
-                { value: 'uppercase', label: 'UPPERCASE' },
-                { value: 'lowercase', label: 'lowercase' }
-            ]);
-            html += renderSelectField('Выравнивание контента', 'element-props', 'justifyContent', props.justifyContent || 'center', [
-                { value: 'flex-start', label: 'Слева' },
-                { value: 'center', label: 'По центру' },
-                { value: 'flex-end', label: 'Справа' }
-            ]);
-            html += renderField('Gap иконка/текст', 'element-props', 'gap', props.gap || 10, 'number');
-            html += renderField('Padding top', 'element-props', 'paddingTop', props.paddingTop || 16, 'number');
-            html += renderField('Padding right', 'element-props', 'paddingRight', props.paddingRight || 28, 'number');
-            html += renderField('Padding bottom', 'element-props', 'paddingBottom', props.paddingBottom || 16, 'number');
-            html += renderField('Padding left', 'element-props', 'paddingLeft', props.paddingLeft || 28, 'number');
         } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
             html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
                 { value: 'cover', label: 'Cover' },
@@ -2550,6 +2647,73 @@
         return value === 'gradient' ? 'gradient' : 'solid';
     }
 
+    function parseIconToken(value) {
+        var match = String(value || '').trim().match(/^([a-z0-9_-]+):([a-z0-9_-]+)(?::.*)?$/i);
+
+        if (!match) {
+            return null;
+        }
+
+        return {
+            file: match[1],
+            name: match[2]
+        };
+    }
+
+    function renderInlineIconMarkup(value, extraClass) {
+        var iconValue = String(value || '').trim();
+        var parsed = parseIconToken(iconValue);
+        var spriteUrl = parsed ? String(getPath(state, 'editor.iconSpriteUrls.' + parsed.file, '') || '') : '';
+        var classes = 'icms-svg-icon' + (extraClass ? ' ' + extraClass : '');
+
+        if (parsed && spriteUrl) {
+            return '<svg class="' + escapeHtml(classes) + '" fill="currentColor" aria-hidden="true"><use href="' + escapeHtml(spriteUrl + '#' + parsed.name) + '"></use></svg>';
+        }
+
+        if (!iconValue) {
+            return '';
+        }
+
+        return '<i class="' + escapeHtml(iconValue) + '"></i>';
+    }
+
+    function buildStructuredShadowValue(offsetX, offsetY, blur, spread, color, inset, fallbackColor) {
+        var normalizedColor = String(color || '').trim() || String(fallbackColor || '').trim() || 'rgba(15,23,42,0.18)';
+
+        return (inset ? 'inset ' : '')
+            + Number(offsetX || 0) + 'px '
+            + Number(offsetY || 0) + 'px '
+            + Math.max(0, Number(blur || 0)) + 'px '
+            + Math.max(0, Number(spread || 0)) + 'px '
+            + normalizedColor;
+    }
+
+    function buildButtonShadowValue(props, hoverMode) {
+        var prefix = hoverMode ? 'hoverShadow' : 'shadow';
+        var rawValue = String(hoverMode ? (props.hoverShadow || '') : (props.boxShadow || '')).trim();
+        var offsetX = Number(props[prefix + 'X'] != null ? props[prefix + 'X'] : 0);
+        var offsetY = Number(props[prefix + 'Y'] != null ? props[prefix + 'Y'] : 0);
+        var blur = Number(props[prefix + 'Blur'] != null ? props[prefix + 'Blur'] : 0);
+        var spread = Number(props[prefix + 'Spread'] != null ? props[prefix + 'Spread'] : 0);
+        var color = String(props[prefix + 'Color'] || '').trim();
+        var inset = !!props[prefix + 'Inset'];
+        var hasStructuredShadow = inset || offsetX !== 0 || offsetY !== 0 || blur !== 0 || spread !== 0 || color !== '';
+
+        if (hasStructuredShadow) {
+            return buildStructuredShadowValue(
+                offsetX,
+                offsetY,
+                blur,
+                spread,
+                color,
+                inset,
+                hoverMode ? (props.shadowColor || 'rgba(15,23,42,0.18)') : 'rgba(15,23,42,0.18)'
+            );
+        }
+
+        return rawValue;
+    }
+
     function buildButtonBackgroundValue(props, hoverMode) {
         var mode = hoverMode
             ? normalizeButtonBackgroundMode(props.hoverBackgroundMode, true)
@@ -2599,12 +2763,14 @@
         styles.push('letter-spacing:' + Number(props.letterSpacing || 0) + 'px');
         styles.push('text-transform:' + String(props.textTransform || 'none'));
         styles.push('background:' + buildButtonBackgroundValue(props, false));
-        styles.push('--nbde-button-base-shadow:' + String(props.boxShadow || 'none'));
+        styles.push('--nbde-button-icon-color:' + String(props.iconColor || props.color || '#ffffff'));
+        styles.push('--nbde-button-hover-icon-color:' + String(props.hoverIconColor || props.hoverColor || props.iconColor || props.color || '#ffffff'));
+        styles.push('--nbde-button-base-shadow:' + String(buildButtonShadowValue(props, false) || 'none'));
         styles.push('--nbde-button-hover-bg:' + buildButtonBackgroundValue(props, true));
         styles.push('--nbde-button-hover-color:' + String(props.hoverColor || props.color || '#ffffff'));
         styles.push('--nbde-button-hover-border:' + String(props.hoverBorderColor || props.borderColor || 'transparent'));
         styles.push('--nbde-button-hover-transform:' + buildButtonHoverTransform(props));
-        styles.push('--nbde-button-hover-shadow:' + String(props.hoverShadow || props.boxShadow || 'none'));
+        styles.push('--nbde-button-hover-shadow:' + String(buildButtonShadowValue(props, true) || buildButtonShadowValue(props, false) || 'none'));
         styles.push('--nbde-button-transition-duration:' + Math.max(80, Number(props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms');
         styles.push('box-shadow:var(--nbde-button-base-shadow)');
 
@@ -2620,7 +2786,13 @@
             return label;
         }
 
-        icon = '<span class="nbde-el__button-icon" aria-hidden="true"><i class="' + escapeHtml(iconClass) + '"></i></span>';
+        icon = renderInlineIconMarkup(iconClass, 'nbde-el__button-icon-svg');
+
+        if (!icon) {
+            return label;
+        }
+
+        icon = '<span class="nbde-el__button-icon" aria-hidden="true">' + icon + '</span>';
         return normalizeButtonIconPosition(props.iconPosition) === 'end' ? label + icon : icon + label;
     }
 
