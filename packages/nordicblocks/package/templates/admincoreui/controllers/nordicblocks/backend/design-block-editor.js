@@ -160,6 +160,7 @@
             activeBreakpoint: 'desktop',
             selectionIds: [],
             selectedElementId: null,
+            addMenuOpen: false,
             rootInsertionMode: false,
             editingTextId: null,
             pendingFocusTextId: null,
@@ -175,6 +176,7 @@
             pan: null,
             pointerCapture: null,
             pointerTelemetry: null,
+            numberScrub: null,
             stageResize: null,
             spacePressed: false
         }
@@ -355,6 +357,61 @@
         }
 
         return fallback;
+    }
+
+    function isColorFieldPath(path, kind) {
+        if (kind === 'number') {
+            return false;
+        }
+
+        return /(^|\.)(color|backgroundColor|borderColor|gradientFrom|gradientTo|fill)$/i.test(String(path || ''));
+    }
+
+    function getColorFieldFallback(path) {
+        path = String(path || '');
+
+        if (/gradientFrom$/i.test(path)) {
+            return '#f8fafc';
+        }
+        if (/gradientTo$/i.test(path)) {
+            return '#e2e8f0';
+        }
+        if (/borderColor$/i.test(path)) {
+            return '#cbd5e1';
+        }
+        if (/(backgroundColor|fill)$/i.test(path)) {
+            return '#f97316';
+        }
+
+        return '#0f172a';
+    }
+
+    function getPathTail(path) {
+        var segments = String(path || '').split('.');
+        return segments.length ? segments[segments.length - 1] : '';
+    }
+
+    function normalizeScrubNumberValue(path, value) {
+        var tail = getPathTail(path);
+        var rounded = roundNumber(value);
+
+        if (tail === 'opacityPct') {
+            return clamp(rounded, 0, 100);
+        }
+
+        if (tail === 'zIndex') {
+            return Math.max(1, rounded);
+        }
+
+        if (['w', 'h', 'minHeight', 'windowWidth', 'contentWidth', 'columnWidth', 'columns', 'fontSize', 'fontWeight', 'size', 'borderWidth'].indexOf(tail) !== -1) {
+            return Math.max(1, rounded);
+        }
+
+        if (['borderRadius', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'gutter', 'bleedLeft', 'bleedRight', 'outerMargin', 'gridSize', 'snapThreshold', 'lineHeight', 'letterSpacing', 'gradientAngle', 'initialInsertY'].indexOf(tail) !== -1) {
+            return Math.max(0, rounded);
+        }
+
+        return rounded;
     }
 
     function defaultBranch(type) {
@@ -1608,8 +1665,29 @@
         updateCanvasMeta();
     }
 
+    function renderNumberField(label, scope, path, value) {
+        return '<div class="nbde-field nbde-field--number"><label>' + escapeHtml(label) + '</label><div class="nbde-number-control"><button class="nbde-number-scrub" type="button" data-number-scrub="1" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" aria-label="Изменить ' + escapeHtml(label) + ' движением мыши"></button><input type="number" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="number" value="' + escapeHtml(value == null ? '' : value) + '"></div></div>';
+    }
+
+    function renderColorField(label, scope, path, value) {
+        var fallback = getColorFieldFallback(path);
+        var colorValue = getColorInputValue(value, fallback);
+
+        return '<div class="nbde-field nbde-field--color"><label>' + escapeHtml(label) + '</label><div class="nbde-color-control"><label class="nbde-color-swatch" aria-label="Выбрать цвет ' + escapeHtml(label) + '"><input type="color" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(colorValue) + '"><span style="background:' + escapeHtml(colorValue) + '"></span></label><input type="text" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" value="' + escapeHtml(value == null ? '' : value) + '"></div></div>';
+    }
+
     function renderField(label, scope, path, value, kind) {
-        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><input type="' + (kind === 'number' ? 'number' : 'text') + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"></div>';
+        kind = kind || 'string';
+
+        if (kind === 'number') {
+            return renderNumberField(label, scope, path, value);
+        }
+
+        if (isColorFieldPath(path, kind)) {
+            return renderColorField(label, scope, path, value);
+        }
+
+        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><input type="text" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind) + '" value="' + escapeHtml(value == null ? '' : value) + '"></div>';
     }
 
     function renderPickerField(label, scope, path, value, kind, options) {
@@ -1645,28 +1723,8 @@
         ];
     }
 
-    function renderBlockCard() {
-        var selectionIds = getSelectionIds();
-        var selected = getSelectedElement();
-        var hasParent = selectionIds.length === 1 && !!getParentElement(selected);
-        var html = '';
-
-        html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
-        html += renderSelectionBreadcrumbs();
-        html += '<div class="nbde-action-grid">';
-        html += '<button class="nbde-mini-button" type="button" data-action="select-root-context"' + (state.uiState.rootInsertionMode ? ' disabled' : '') + '>В корень</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="select-parent"' + (hasParent ? '' : ' disabled') + '>К parent</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
-        html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="group-selection"' + (selectionIds.length > 1 ? '' : ' disabled') + '>Группа</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="ungroup-selection">Разгруппа</button>';
-        html += '</div>';
-        html += '<div class="nbde-shortcuts">';
-        html += '<span>Shift+click: мультивыбор</span>';
-        html += '<span>Колесо: pan сцены, Shift + колесо: horizontal pan, Ctrl/Cmd + колесо: zoom</span>';
-        html += '<span>Space+drag или средняя кнопка: pan</span>';
-        html += '</div>';
-        html += '<div class="nbde-palette-grid">';
+    function renderAddElementMenu() {
+        var html = '<div class="nbde-add-menu">';
 
         state.palette.forEach(function (item) {
             html += '<button class="nbde-palette-button nbde-palette-item" type="button" data-action="add-element" data-type="' + escapeHtml(item.type) + '">';
@@ -1675,6 +1733,32 @@
             html += '</button>';
         });
 
+        html += '</div>';
+        return html;
+    }
+
+    function renderBlockCard() {
+        var selectionIds = getSelectionIds();
+        var selected = getSelectedElement();
+        var hasParent = selectionIds.length === 1 && !!getParentElement(selected);
+        var html = '';
+
+        html += '<div class="nbde-addbar" data-add-menu-root>';
+        html += '<button class="nbde-addbar__button" type="button" data-action="toggle-add-menu" aria-expanded="' + (state.uiState.addMenuOpen ? 'true' : 'false') + '"><span class="nbde-addbar__plus">+</span><span>Добавить</span></button>';
+        if (state.uiState.addMenuOpen) {
+            html += renderAddElementMenu();
+        }
+        html += '</div>';
+        html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
+        html += renderSelectionBreadcrumbs();
+        html += '<div class="nbde-sidebar-section-title">Действия</div>';
+        html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-root-context"' + (state.uiState.rootInsertionMode ? ' disabled' : '') + '>В корень</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-parent"' + (hasParent ? '' : ' disabled') + '>К parent</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
+        html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="group-selection"' + (selectionIds.length > 1 ? '' : ' disabled') + '>Группа</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="ungroup-selection">Разгруппа</button>';
         html += '</div>';
 
         if (nodes.blockCard) {
@@ -2825,8 +2909,75 @@
         if (scope === 'element-root' && path === 'name') {
             renderLayersCard();
         }
+        if (scope === 'stage' || scope === 'runtime-editor') {
+            renderStageCard();
+        }
+        if (scope === 'section-content' || scope === 'section-background') {
+            renderSectionCard();
+        }
         renderCanvas();
         renderPropertiesCard();
+    }
+
+    function beginNumberScrub(event, scrubNode) {
+        var input;
+
+        if (!scrubNode) {
+            return;
+        }
+
+        input = scrubNode.parentNode ? scrubNode.parentNode.querySelector('input[data-kind="number"]') : null;
+
+        if (!input) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        state.interactionState.numberScrub = {
+            scope: input.dataset.scope || '',
+            path: input.dataset.path || '',
+            startClientX: Number(event.clientX || 0),
+            startValue: Number(input.value || 0),
+            lastValue: Number(input.value || 0)
+        };
+    }
+
+    function applyNumberScrubAtClientX(numberScrub, clientX, fastMode) {
+        var multiplier;
+        var delta;
+        var nextValue;
+
+        if (!numberScrub) {
+            return false;
+        }
+
+        multiplier = fastMode ? 10 : 1;
+        delta = roundNumber((Number(clientX || 0) - Number(numberScrub.startClientX || 0)) / 8) * multiplier;
+        nextValue = normalizeScrubNumberValue(numberScrub.path, Number(numberScrub.startValue || 0) + delta);
+
+        if (nextValue === numberScrub.lastValue) {
+            return false;
+        }
+
+        numberScrub.lastValue = nextValue;
+
+        if (!applyScopedValue(numberScrub.scope, numberScrub.path, nextValue)) {
+            return false;
+        }
+
+        refreshAfterScopedMutation(numberScrub.scope, numberScrub.path);
+        return true;
+    }
+
+    function handleNumberScrubMove(event) {
+        if (!state.interactionState.numberScrub) {
+            return;
+        }
+
+        event.preventDefault();
+        applyNumberScrubAtClientX(state.interactionState.numberScrub, event.clientX, !!event.shiftKey);
     }
 
     function closeSystemModal() {
@@ -4039,7 +4190,7 @@
             return;
         }
 
-        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan && !state.interactionState.stageResize) {
+        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.pan && !state.interactionState.stageResize && !state.interactionState.numberScrub) {
             return;
         }
 
@@ -4047,6 +4198,7 @@
         state.interactionState.drag = null;
         state.interactionState.resize = null;
         state.interactionState.pan = null;
+        state.interactionState.numberScrub = null;
         state.interactionState.stageResize = null;
         clearGuides();
         renderPropertiesCard();
@@ -4330,7 +4482,14 @@
 
         action = actionNode.dataset.action;
 
+        if (action === 'toggle-add-menu') {
+            state.uiState.addMenuOpen = !state.uiState.addMenuOpen;
+            renderBlockCard();
+            return;
+        }
+
         if (action === 'add-element') {
+            state.uiState.addMenuOpen = false;
             addElement(actionNode.dataset.type || 'text');
             return;
         }
@@ -4510,6 +4669,11 @@
     });
 
     document.addEventListener('click', function (event) {
+        if (state.uiState.addMenuOpen && !event.target.closest('[data-add-menu-root]')) {
+            state.uiState.addMenuOpen = false;
+            renderBlockCard();
+        }
+
         var target = event.target.closest('[data-media-picker-action]');
         var index;
 
@@ -4563,6 +4727,16 @@
     }, true);
 
     document.addEventListener('pointerdown', function (event) {
+        var scrubNode = event.target.closest('[data-number-scrub]');
+
+        if (!scrubNode || !root.contains(scrubNode)) {
+            return;
+        }
+
+        beginNumberScrub(event, scrubNode);
+    }, true);
+
+    document.addEventListener('pointerdown', function (event) {
         var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
 
         if (!stageResizeNode || !root.contains(stageResizeNode)) {
@@ -4570,6 +4744,16 @@
         }
 
         beginStageResize(event);
+    }, true);
+
+    document.addEventListener('mousedown', function (event) {
+        var scrubNode = event.target.closest('[data-number-scrub]');
+
+        if (!scrubNode || !root.contains(scrubNode)) {
+            return;
+        }
+
+        beginNumberScrub(event, scrubNode);
     }, true);
 
     document.addEventListener('mousedown', function (event) {
@@ -4645,12 +4829,14 @@
 
     document.addEventListener('pointermove', function (event) {
         updatePointerTelemetry(event);
+        handleNumberScrubMove(event);
         handlePanMove(event);
         handleStageResizeMove(event);
         handleResizeMove(event);
         handleDragMove(event);
     });
     document.addEventListener('mousemove', function (event) {
+        handleNumberScrubMove(event);
         handleStageResizeMove(event);
     });
     document.addEventListener('pointerup', finishInteraction);
