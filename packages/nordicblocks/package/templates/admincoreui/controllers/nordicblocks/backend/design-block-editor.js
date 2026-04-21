@@ -26,45 +26,65 @@
 
     var STAGE_DEFAULTS = {
         desktop: {
-            width: 1200,
+            windowWidth: 1440,
+            contentWidth: 1110,
             minHeight: 680,
-            paddingX: 24,
-            paddingY: 24,
-            grid: {
-                columns: 12,
-                gutter: 20,
-                bleedX: 160
+            outerMargin: 165,
+            bleedLeft: 165,
+            bleedRight: 165,
+            columns: 12,
+            gutter: 30,
+            columnWidth: 65,
+            initialInsertX: 0,
+            initialInsertY: 24,
+            gridOverlay: {
+                color: '#0f172a',
+                opacity: 8
             }
         },
         tablet: {
-            width: 768,
+            windowWidth: 768,
+            contentWidth: 672,
             minHeight: 560,
-            paddingX: 20,
-            paddingY: 20,
-            grid: {
-                columns: 8,
-                gutter: 16,
-                bleedX: 96
+            outerMargin: 48,
+            bleedLeft: 48,
+            bleedRight: 48,
+            columns: 8,
+            gutter: 16,
+            columnWidth: 70,
+            initialInsertX: 0,
+            initialInsertY: 20,
+            gridOverlay: {
+                color: '#0f172a',
+                opacity: 8
             }
         },
         mobile: {
-            width: 390,
+            windowWidth: 390,
+            contentWidth: 342,
             minHeight: 440,
-            paddingX: 16,
-            paddingY: 16,
-            grid: {
-                columns: 4,
-                gutter: 12,
-                bleedX: 32
+            outerMargin: 24,
+            bleedLeft: 24,
+            bleedRight: 24,
+            columns: 4,
+            gutter: 12,
+            columnWidth: 76.5,
+            initialInsertX: 0,
+            initialInsertY: 16,
+            gridOverlay: {
+                color: '#0f172a',
+                opacity: 8
             }
         }
     };
 
     var TYPE_LABELS = {
         text: 'Текст',
-        image: 'Изображение',
+        image: 'Фото',
+        photo: 'Фото',
         button: 'Кнопка',
-        shape: 'Фигура',
+        shape: 'Объект',
+        object: 'Объект',
         icon: 'Иконка',
         container: 'Контейнер',
         video: 'Видео',
@@ -75,14 +95,9 @@
 
     var PALETTE_V1_TYPES = {
         text: true,
-        image: true,
         button: true,
-        shape: true,
-        container: true,
-        icon: true,
-        divider: true,
-        video: true,
-        svg: true
+        object: true,
+        photo: true
     };
 
     var CONTENT_PROP_KEYS = {
@@ -97,7 +112,7 @@
 
     var KNOWN_PROP_KEYS = [
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
-        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'objectFit',
+        'backdropBlur', 'color', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'fill', 'shape', 'objectFit',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'text', 'url', 'src',
         'alt', 'poster', 'iconClass', 'label'
     ];
@@ -112,6 +127,14 @@
         },
         palette: [],
         pickers: {},
+        mediaPicker: {
+            kind: '',
+            scope: '',
+            path: '',
+            items: [],
+            loading: false,
+            error: ''
+        },
         documentState: {
             block: null,
             contract: null,
@@ -275,8 +298,24 @@
         return (BREAKPOINTS[key] || BREAKPOINTS.desktop).label;
     }
 
+    function normalizeElementType(type) {
+        type = String(type || '');
+
+        if (type === 'image') {
+            return 'photo';
+        }
+
+        if (type === 'shape') {
+            return 'object';
+        }
+
+        return type;
+    }
+
     function getTypeLabel(type) {
         var index;
+
+        type = normalizeElementType(type);
 
         for (index = 0; index < state.palette.length; index++) {
             if (state.palette[index].type === type) {
@@ -288,15 +327,17 @@
     }
 
     function isPaletteTypeEnabled(type) {
-        return !!PALETTE_V1_TYPES[String(type || '')];
+        return !!PALETTE_V1_TYPES[normalizeElementType(type)];
     }
 
     function isEditableType(type) {
+        type = normalizeElementType(type);
         return type === 'text' || type === 'button';
     }
 
     function isMediaType(type) {
-        return type === 'image' || type === 'svg' || type === 'video';
+        type = normalizeElementType(type);
+        return type === 'photo' || type === 'svg' || type === 'video';
     }
 
     function getColorInputValue(value, fallback) {
@@ -312,6 +353,7 @@
     }
 
     function defaultBranch(type) {
+        type = normalizeElementType(type);
         var branch = {
             box: {
                 x: 0,
@@ -353,7 +395,7 @@
             branch.props.fontWeight = 700;
             branch.props.backgroundColor = '#0f172a';
             branch.props.borderRadius = 999;
-        } else if (type === 'image' || type === 'svg') {
+        } else if (type === 'photo' || type === 'svg') {
             branch.box.w = 420;
             branch.box.h = 260;
             branch.props.src = '';
@@ -368,12 +410,13 @@
             branch.props.poster = '';
             branch.props.objectFit = 'cover';
             branch.props.borderRadius = 24;
-        } else if (type === 'shape') {
+        } else if (type === 'object') {
             branch.box.w = 220;
             branch.box.h = 220;
             branch.props.fill = '#f97316';
             branch.props.backgroundColor = '#f97316';
             branch.props.borderRadius = 24;
+            branch.props.shape = 'rect';
         } else if (type === 'icon') {
             branch.box.w = 72;
             branch.box.h = 72;
@@ -406,7 +449,7 @@
     }
 
     function normalizeLegacyElementShape(element, index) {
-        var type = element && element.type ? String(element.type) : 'text';
+        var type = normalizeElementType(element && element.type ? String(element.type) : 'text');
         var normalized = clone(element || {});
         var base = defaultBranch(type);
 
@@ -537,18 +580,50 @@
             var defaults = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
             var stageBranch = Object.assign({}, defaults, normalized.layout.stage[breakpoint] || {});
 
-            stageBranch.grid = Object.assign({}, defaults.grid, stageBranch.grid || {});
+            stageBranch.gridOverlay = Object.assign({}, defaults.gridOverlay || {}, stageBranch.gridOverlay || {});
+            stageBranch.columns = Number(stageBranch.columns || getPath(stageBranch, 'grid.columns', defaults.columns));
+            stageBranch.gutter = Number(stageBranch.gutter || getPath(stageBranch, 'grid.gutter', defaults.gutter));
+            stageBranch.columnWidth = Number(stageBranch.columnWidth || defaults.columnWidth);
+            stageBranch.contentWidth = Number(stageBranch.contentWidth || stageBranch.width || ((stageBranch.columns * stageBranch.columnWidth) + (Math.max(0, stageBranch.columns - 1) * stageBranch.gutter)));
 
-            if (stageBranch.grid.bleedX == null) {
-                if (breakpoint === 'desktop' && legacyEditorRuntime.bleedXDesktop != null) {
-                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXDesktop || defaults.grid.bleedX);
+            if (stageBranch.outerMargin == null) {
+                if (stageBranch.windowWidth != null) {
+                    stageBranch.outerMargin = Math.max(0, (Number(stageBranch.windowWidth || 0) - Number(stageBranch.contentWidth || 0)) / 2);
+                } else if (stageBranch.grid && stageBranch.grid.bleedX != null) {
+                    stageBranch.outerMargin = Number(stageBranch.grid.bleedX || defaults.outerMargin);
+                } else {
+                    stageBranch.outerMargin = defaults.outerMargin;
                 }
-                if (breakpoint === 'tablet' && legacyEditorRuntime.bleedXTablet != null) {
-                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXTablet || defaults.grid.bleedX);
+            }
+
+            if (stageBranch.windowWidth == null) {
+                stageBranch.windowWidth = Number(stageBranch.contentWidth || defaults.contentWidth) + (Number(stageBranch.outerMargin || defaults.outerMargin) * 2);
+            }
+
+            if (stageBranch.bleedLeft == null) {
+                if (stageBranch.grid && stageBranch.grid.bleedX != null) {
+                    stageBranch.bleedLeft = Number(stageBranch.grid.bleedX || defaults.bleedLeft);
+                } else if (breakpoint === 'desktop' && legacyEditorRuntime.bleedXDesktop != null) {
+                    stageBranch.bleedLeft = Number(legacyEditorRuntime.bleedXDesktop || defaults.bleedLeft);
+                } else if (breakpoint === 'tablet' && legacyEditorRuntime.bleedXTablet != null) {
+                    stageBranch.bleedLeft = Number(legacyEditorRuntime.bleedXTablet || defaults.bleedLeft);
+                } else if (breakpoint === 'mobile' && legacyEditorRuntime.bleedXMobile != null) {
+                    stageBranch.bleedLeft = Number(legacyEditorRuntime.bleedXMobile || defaults.bleedLeft);
+                } else {
+                    stageBranch.bleedLeft = Number(stageBranch.outerMargin || defaults.outerMargin);
                 }
-                if (breakpoint === 'mobile' && legacyEditorRuntime.bleedXMobile != null) {
-                    stageBranch.grid.bleedX = Number(legacyEditorRuntime.bleedXMobile || defaults.grid.bleedX);
-                }
+            }
+
+            if (stageBranch.bleedRight == null) {
+                stageBranch.bleedRight = stageBranch.bleedLeft;
+            }
+
+            if (stageBranch.gridOverlay.color == null) {
+                stageBranch.gridOverlay.color = legacyEditorRuntime.columnsGridColor || defaults.gridOverlay.color;
+            }
+
+            if (stageBranch.gridOverlay.opacity == null) {
+                stageBranch.gridOverlay.opacity = legacyEditorRuntime.columnsGridOpacity == null ? defaults.gridOverlay.opacity : legacyEditorRuntime.columnsGridOpacity;
             }
 
             normalized.layout.stage[breakpoint] = stageBranch;
@@ -727,24 +802,37 @@
     function buildStageMetrics(stage, breakpoint) {
         var defaults = getStageDefaults(breakpoint);
         var stageBranch = Object.assign({}, defaults, stage || {});
-        var grid = Object.assign({}, defaults.grid, stageBranch.grid || {});
-        var columns = Math.max(1, Number(grid.columns || defaults.grid.columns));
-        var gutter = Math.max(0, Number(grid.gutter || defaults.grid.gutter));
-        var gridWidth = Math.max(1, Number(stageBranch.width || defaults.width));
-        var bleedX = Math.max(0, Number(grid.bleedX || defaults.grid.bleedX));
-        var usableWidth = Math.max(columns, gridWidth - (Math.max(0, columns - 1) * gutter));
+        var columns = Math.max(1, Number(stageBranch.columns || getPath(stageBranch, 'grid.columns', defaults.columns)));
+        var gutter = Math.max(0, Number(stageBranch.gutter || getPath(stageBranch, 'grid.gutter', defaults.gutter)));
+        var explicitColumnWidth = Math.max(1, Number(stageBranch.columnWidth || defaults.columnWidth));
+        var contentWidth = Math.max(1, Number(stageBranch.contentWidth || stageBranch.width || ((columns * explicitColumnWidth) + (Math.max(0, columns - 1) * gutter))));
+        var outerMargin = stageBranch.outerMargin == null
+            ? Math.max(0, (Number(stageBranch.windowWidth || (contentWidth + (defaults.outerMargin * 2))) - contentWidth) / 2)
+            : Math.max(0, Number(stageBranch.outerMargin || 0));
+        var windowWidth = stageBranch.outerMargin == null && stageBranch.windowWidth != null
+            ? Math.max(1, Number(stageBranch.windowWidth || 1))
+            : Math.max(1, contentWidth + (outerMargin * 2));
+        var bleedLeft = Math.max(0, Number(stageBranch.bleedLeft != null ? stageBranch.bleedLeft : getPath(stageBranch, 'grid.bleedX', defaults.bleedLeft)));
+        var bleedRight = Math.max(0, Number(stageBranch.bleedRight != null ? stageBranch.bleedRight : getPath(stageBranch, 'grid.bleedX', defaults.bleedRight)));
+        var usableWidth = Math.max(columns, contentWidth - (Math.max(0, columns - 1) * gutter));
+        var gridOverlay = Object.assign({}, defaults.gridOverlay || {}, stageBranch.gridOverlay || {});
 
         return {
-            width: gridWidth,
+            width: contentWidth,
+            contentWidth: contentWidth,
             height: Math.max(1, Number(stageBranch.minHeight || defaults.minHeight)),
-            paddingX: Math.max(0, Number(stageBranch.paddingX || defaults.paddingX)),
-            paddingY: Math.max(0, Number(stageBranch.paddingY || defaults.paddingY)),
+            initialInsertX: Number(stageBranch.initialInsertX == null ? defaults.initialInsertX : stageBranch.initialInsertX),
+            initialInsertY: Number(stageBranch.initialInsertY == null ? defaults.initialInsertY : stageBranch.initialInsertY),
             columns: columns,
             gutter: gutter,
-            bleedX: bleedX,
-            originX: bleedX,
-            windowWidth: gridWidth + (bleedX * 2),
-            columnWidth: usableWidth / columns
+            bleedLeft: bleedLeft,
+            bleedRight: bleedRight,
+            originX: outerMargin,
+            outerMargin: outerMargin,
+            windowWidth: windowWidth,
+            columnWidth: usableWidth / columns,
+            gridColor: String(gridOverlay.color || '#0f172a'),
+            gridOpacity: clamp(gridOverlay.opacity == null ? 8 : gridOverlay.opacity, 0, 100)
         };
     }
 
@@ -1158,9 +1246,9 @@
 
         if (!parent) {
             return {
-                width: Math.max(1, stageMetrics.width + stageMetrics.bleedX),
+                width: Math.max(1, stageMetrics.width + stageMetrics.bleedRight),
                 height: Math.max(1, stageMetrics.height),
-                minX: -stageMetrics.bleedX,
+                minX: -stageMetrics.bleedLeft,
                 minY: 0
             };
         }
@@ -1368,7 +1456,7 @@
 
         if (nodes.canvasMeta) {
             nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint())
-                + ' • grid ' + (stage.width || 0) + 'px'
+                + ' • content ' + stageMetrics.contentWidth + 'px'
                 + ' • window ' + stageMetrics.windowWidth + 'px'
                 + ' • ' + stageMetrics.columns + ' cols'
                 + ' • h ' + (stage.minHeight || 0) + 'px'
@@ -1398,6 +1486,14 @@
 
     function renderField(label, scope, path, value, kind) {
         return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><input type="' + (kind === 'number' ? 'number' : 'text') + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"></div>';
+    }
+
+    function renderPickerField(label, scope, path, value, kind, options) {
+        var inputType = options && options.inputType ? options.inputType : 'text';
+        var pickerLabel = options && options.pickerLabel ? options.pickerLabel : 'Выбрать';
+        var clearLabel = options && options.clearLabel ? options.clearLabel : 'Очистить';
+
+        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><div class="nbde-picker-row"><input type="' + escapeHtml(inputType) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"><button class="nbde-mini-button nbde-picker-button" type="button" data-picker-action="open" data-picker-kind="image" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(pickerLabel) + '</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-picker-action="clear" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(clearLabel) + '</button></div></div>';
     }
 
     function renderTextareaField(label, scope, path, value) {
@@ -1462,7 +1558,7 @@
         var viewport = state.scene.viewport;
         var html = '';
 
-        html += '<div class="nbde-inline-note">Координата x=0 означает левую границу grid container. Отрицательный x уводит элемент в bleed-область window container.</div>';
+        html += '<div class="nbde-inline-note">Координата x=0 означает левую границу content container. Отрицательный x уводит объект в bleed-зону за пределы контента, но внутри window container.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
@@ -1470,19 +1566,23 @@
         html += '<button class="nbde-mini-button" type="button" data-action="camera-reset">Камера</button>';
         html += '</div>';
         html += '<div class="nbde-camera-stats">zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
-        html += '<div class="nbde-camera-stats">grid ' + stageMetrics.width + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • bleed ' + stageMetrics.bleedX + 'px</div>';
+        html += '<div class="nbde-camera-stats">content ' + stageMetrics.contentWidth + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • margin ' + roundNumber(stageMetrics.outerMargin) + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px</div>';
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
-        html += renderField('Ширина grid', 'stage', 'width', stage.width, 'number');
+        html += renderField('Ширина окна', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
+        html += renderField('Ширина контента', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
         html += renderField('Мин. высота world', 'stage', 'minHeight', stage.minHeight, 'number');
-        html += renderField('Стартовый offset X', 'stage', 'paddingX', stage.paddingX, 'number');
-        html += renderField('Стартовый offset Y', 'stage', 'paddingY', stage.paddingY, 'number');
-        html += renderField('Колонки', 'stage', 'grid.columns', getPath(stage, 'grid.columns', stageMetrics.columns), 'number');
-        html += renderField('Gutter', 'stage', 'grid.gutter', getPath(stage, 'grid.gutter', stageMetrics.gutter), 'number');
-        html += renderField('Bleed X', 'stage', 'grid.bleedX', getPath(stage, 'grid.bleedX', stageMetrics.bleedX), 'number');
+        html += renderField('Внешний отступ', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
+        html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
+        html += renderField('Bleed справа', 'stage', 'bleedRight', getPath(stage, 'bleedRight', stageMetrics.bleedRight), 'number');
+        html += renderField('Колонки', 'stage', 'columns', getPath(stage, 'columns', stageMetrics.columns), 'number');
+        html += renderField('Gutter', 'stage', 'gutter', getPath(stage, 'gutter', stageMetrics.gutter), 'number');
+        html += renderField('Колонка', 'stage', 'columnWidth', roundNumber(getPath(stage, 'columnWidth', stageMetrics.columnWidth)), 'number');
+        html += renderField('Стартовая вставка X', 'stage', 'initialInsertX', getPath(stage, 'initialInsertX', stageMetrics.initialInsertX), 'number');
+        html += renderField('Стартовая вставка Y', 'stage', 'initialInsertY', getPath(stage, 'initialInsertY', stageMetrics.initialInsertY), 'number');
         html += renderField('Шаг сетки', 'runtime-editor', 'gridSize', editorRuntime.gridSize, 'number');
         html += renderField('Порог привязки', 'runtime-editor', 'snapThreshold', editorRuntime.snapThreshold, 'number');
-        html += renderField('Цвет колонок', 'runtime-editor', 'columnsGridColor', editorRuntime.columnsGridColor || '#0f172a', 'string');
-        html += renderField('Прозрачность колонок %', 'runtime-editor', 'columnsGridOpacity', editorRuntime.columnsGridOpacity == null ? 8 : editorRuntime.columnsGridOpacity, 'number');
+        html += renderField('Цвет колонок', 'stage', 'gridOverlay.color', getPath(stage, 'gridOverlay.color', stageMetrics.gridColor), 'string');
+        html += renderField('Прозрачность колонок %', 'stage', 'gridOverlay.opacity', getPath(stage, 'gridOverlay.opacity', stageMetrics.gridOpacity), 'number');
         html += '</div>';
         html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="snapToGrid" data-kind="boolean" ' + (editorRuntime.snapToGrid ? 'checked' : '') + '>Привязка в world-координатах</label>';
         html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showGuides" data-kind="boolean" ' + (editorRuntime.showGuides ? 'checked' : '') + '>Показывать направляющие</label>';
@@ -1521,7 +1621,7 @@
         html += renderField('Градиент: от', 'section-background', 'gradientFrom', background.gradientFrom || '#f8fafc', 'string');
         html += renderField('Градиент: до', 'section-background', 'gradientTo', background.gradientTo || '#e2e8f0', 'string');
         html += renderField('Угол градиента', 'section-background', 'gradientAngle', background.gradientAngle || 135, 'number');
-        html += renderField('Фоновое изображение', 'section-background', 'image', background.image || '', 'string');
+        html += renderPickerField('Фоновое изображение', 'section-background', 'image', background.image || '', 'string');
         html += '</div>';
 
         if (nodes.sectionCard) {
@@ -1627,8 +1727,8 @@
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
             html += renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 999, 'number');
             html += '</div>';
-        } else if (type === 'image' || type === 'svg') {
-            html += renderField('Файл', 'element-props', 'src', props.src || '', 'string');
+        } else if (type === 'photo' || type === 'svg') {
+            html += renderPickerField('Файл', 'element-props', 'src', props.src || '', 'string');
             html += renderField('Alt', 'element-props', 'alt', props.alt || '', 'string');
             html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
                 { value: 'cover', label: 'Cover' },
@@ -1643,8 +1743,13 @@
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
-        } else if (type === 'shape') {
+        } else if (type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
+            html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
+                { value: 'rect', label: 'Прямоугольник' },
+                { value: 'circle', label: 'Круг' },
+                { value: 'line', label: 'Линия' }
+            ]);
         } else if (type === 'icon') {
             html += renderField('Класс иконки', 'element-props', 'iconClass', props.iconClass || 'fas fa-star', 'string');
             html += renderField('Цвет', 'element-props', 'color', props.color || '#0f172a', 'string');
@@ -1702,9 +1807,9 @@
             html += renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string');
             html += renderField('Техническая роль', 'element-root', 'role', element.role || '', 'string');
             html += '</div>';
-        } else if (element.type === 'image' || element.type === 'svg') {
+        } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
+            html += renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
             html += renderField('Alt', 'element-props', 'alt', props.alt || '', 'string');
             html += '</div>';
         } else if (element.type === 'video') {
@@ -1718,8 +1823,8 @@
             html += '<div class="nbde-inline-note">Разделитель полезен для вертикального или горизонтального ритма внутри контейнера.</div>';
         } else if (element.type === 'container') {
             html += '<div class="nbde-inline-note">Контейнер задаёт локальный parent scope для дочерних объектов. Если контейнер выбран, новые элементы добавляются внутрь него.</div>';
-        } else if (element.type === 'shape') {
-            html += '<div class="nbde-inline-note">У фигуры нет текстового content-слоя. Здесь остаётся только имя элемента и его роль в сцене.</div>';
+        } else if (element.type === 'object') {
+            html += '<div class="nbde-inline-note">Объект является базовым shape-слоем. Через свойства он может быть плашкой, линией или кругом.</div>';
         }
 
         return html;
@@ -1779,14 +1884,19 @@
             html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
             html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
-        } else if (element.type === 'image' || element.type === 'svg' || element.type === 'video') {
+        } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
             html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
                 { value: 'cover', label: 'Cover' },
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
-        } else if (element.type === 'shape') {
+        } else if (element.type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
+            html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
+                { value: 'rect', label: 'Прямоугольник' },
+                { value: 'circle', label: 'Круг' },
+                { value: 'line', label: 'Линия' }
+            ]);
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
             html += renderField('Размер иконки', 'element-props', 'size', props.size || 32, 'number');
@@ -1936,7 +2046,7 @@
             html += '<div class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left')) + '">' + textToHtml(props.text || '') + '</div>';
         } else if (element.type === 'button') {
             html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#ffffff') + ';font-size:' + Number(props.fontSize || 16) + 'px;font-weight:' + Number(props.fontWeight || 700) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><span class="nbde-el__button-label' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text">' + textToHtml(props.text || 'Нажмите сюда') + '</span></div>';
-        } else if (element.type === 'image' || element.type === 'svg') {
+        } else if (element.type === 'photo' || element.type === 'svg') {
             html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '">';
             if (props.src) {
                 html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="object-fit:' + escapeHtml(props.objectFit || 'cover') + ';border-radius:' + Number(props.borderRadius || 0) + 'px">';
@@ -1946,8 +2056,8 @@
             html += '</div>';
         } else if (element.type === 'video') {
             html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
-        } else if (element.type === 'shape') {
-            html += '<div class="nbde-el__body" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || props.fill || '#f97316')) + '"></div>';
+        } else if (element.type === 'object') {
+            html += '<div class="nbde-el__body" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String((props.shape || 'rect') === 'line' ? 'transparent' : (props.backgroundColor || props.fill || '#f97316')) + ';border-radius:' + Number((props.shape || 'rect') === 'circle' ? 9999 : (props.borderRadius || 0)) + 'px;' + ((props.shape || 'rect') === 'line' ? ('border-top:' + Math.max(1, Number(props.borderWidth || 2)) + 'px solid ' + String(props.borderColor || props.backgroundColor || props.fill || '#f97316') + ';height:0;top:' + Math.round(Number(box.h || 1) / 2) + 'px;') : '')) + '"></div>';
         } else if (element.type === 'icon') {
             html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
         } else if (element.type === 'divider') {
@@ -2059,7 +2169,7 @@
                 html += '<label class="nbde-toolbar__color"><input type="color" data-toolbar-color="text" value="' + escapeHtml(getColorInputValue(props.color, primary.type === 'button' ? '#ffffff' : '#0f172a')) + '"></label>';
             }
 
-            if (primary.type === 'shape') {
+            if (primary.type === 'object') {
                 html += '<span class="nbde-toolbar__separator"></span>';
                 html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-radius-decrease">R-</button>';
                 html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-radius-increase">R+</button>';
@@ -2075,6 +2185,28 @@
         return 'translate(' + roundNumber(-Number(viewport.offsetX || 0) * Number(viewport.zoom || 1)) + 'px,' + roundNumber(-Number(viewport.offsetY || 0) * Number(viewport.zoom || 1)) + 'px) scale(' + Number(viewport.zoom || 1) + ')';
     }
 
+    function syncStageDimensions(stageBranch, changedPath) {
+        var columns = Math.max(1, Number(stageBranch.columns || 1));
+        var gutter = Math.max(0, Number(stageBranch.gutter || 0));
+        var outerMargin = Math.max(0, Number(stageBranch.outerMargin || 0));
+        var contentWidth = Math.max(1, Number(stageBranch.contentWidth || 1));
+        var columnWidth = Math.max(1, Number(stageBranch.columnWidth || 1));
+
+        if (changedPath === 'columns' || changedPath === 'gutter' || changedPath === 'columnWidth') {
+            contentWidth = Math.max(1, roundNumber((columns * columnWidth) + (Math.max(0, columns - 1) * gutter)));
+            stageBranch.contentWidth = contentWidth;
+        } else if (changedPath === 'contentWidth') {
+            columnWidth = Math.max(1, (contentWidth - (Math.max(0, columns - 1) * gutter)) / columns);
+            stageBranch.columnWidth = roundNumber(columnWidth * 100) / 100;
+        }
+
+        if (changedPath === 'windowWidth') {
+            stageBranch.outerMargin = Math.max(0, roundNumber((Math.max(1, Number(stageBranch.windowWidth || 1)) - contentWidth) / 2));
+        } else {
+            stageBranch.windowWidth = Math.max(1, roundNumber(contentWidth + (Math.max(0, Number(stageBranch.outerMargin || outerMargin)) * 2)));
+        }
+    }
+
     function renderCanvas() {
         var contract = state.documentState.contract;
         var tree = buildTree(getElements(), currentBreakpoint());
@@ -2083,8 +2215,8 @@
         var background = getPath(contract, 'design.section.background', {});
         var viewport = state.scene.viewport;
         var html = '';
-        var columnsOpacity = clamp(editorRuntime.columnsGridOpacity == null ? 8 : editorRuntime.columnsGridOpacity, 0, 100);
-        var columnsColor = String(editorRuntime.columnsGridColor || '#0f172a');
+        var columnsOpacity = stageMetrics.gridOpacity;
+        var columnsColor = stageMetrics.gridColor;
         var index;
 
         viewport.width = stageMetrics.windowWidth;
@@ -2156,10 +2288,46 @@
         renderCanvas();
     }
 
-    function applyScopedInput(input) {
-        var scope = input.dataset.scope;
-        var path = input.dataset.path;
-        var value = coerceValue(input);
+    function getScopedValue(scope, path) {
+        var element = getSelectedElement();
+        var branch;
+
+        if (!scope || !path) {
+            return '';
+        }
+
+        if (scope === 'stage') {
+            return getPath(state.documentState.contract.layout.stage[currentBreakpoint()], path, '');
+        }
+        if (scope === 'runtime-editor') {
+            return getPath(state.documentState.contract.runtime.editor, path, '');
+        }
+        if (scope === 'section-content') {
+            return getPath(state.documentState.contract.content.section, path, '');
+        }
+        if (scope === 'section-background') {
+            return getPath(state.documentState.contract.design.section.background, path, '');
+        }
+        if (!element || getSelectionIds().length > 1) {
+            return '';
+        }
+
+        branch = currentEditableBranch(element);
+
+        if (scope === 'element-root') {
+            return getPath(element, path, '');
+        }
+        if (scope === 'element-box') {
+            return getPath(branch.box, path, '');
+        }
+        if (scope === 'element-props') {
+            return getPath(branch.props, path, '');
+        }
+
+        return '';
+    }
+
+    function applyScopedValue(scope, path, value) {
         var element = getSelectedElement();
         var branch;
 
@@ -2168,7 +2336,11 @@
         }
 
         if (scope === 'stage') {
-            setPath(state.documentState.contract.layout.stage[currentBreakpoint()], path, value);
+            branch = state.documentState.contract.layout.stage[currentBreakpoint()];
+            setPath(branch, path, value);
+            if (['windowWidth', 'contentWidth', 'outerMargin', 'columnWidth', 'columns', 'gutter'].indexOf(path) !== -1) {
+                syncStageDimensions(branch, path);
+            }
             return true;
         }
         if (scope === 'runtime-editor') {
@@ -2203,6 +2375,155 @@
         }
 
         return false;
+    }
+
+    function refreshAfterScopedMutation(scope, path) {
+        markDirty();
+        if (scope === 'element-root' && path === 'name') {
+            renderLayersCard();
+        }
+        renderCanvas();
+        renderPropertiesCard();
+    }
+
+    function closeSystemModal() {
+        if (window.icms && icms.modal && typeof icms.modal.close === 'function') {
+            icms.modal.close();
+        }
+    }
+
+    function buildImagePickerCards() {
+        var items = Array.isArray(state.mediaPicker.items) ? state.mediaPicker.items : [];
+        var html = '';
+
+        if (state.mediaPicker.loading) {
+            return '<div class="nbde-image-picker__empty">Загрузка медиабиблиотеки...</div>';
+        }
+
+        if (state.mediaPicker.error) {
+            return '<div class="nbde-image-picker__empty nbde-image-picker__empty--error">' + escapeHtml(state.mediaPicker.error) + '</div>';
+        }
+
+        if (!items.length) {
+            return '<div class="nbde-image-picker__empty">В медиабиблиотеке пока нет изображений.</div>';
+        }
+
+        items.forEach(function (item, index) {
+            var media = item && item.media ? item.media : {};
+            var previewUrl = item.preview_url || item.preview_fallback_url || media.display || media.original || '';
+            var title = item.title || item.alt || media.alt || media.original_path || ('Изображение ' + String(index + 1));
+            var subtitle = media.original_path || item.original_path || '';
+
+            html += '<button class="nbde-image-picker__card" type="button" data-media-picker-action="select" data-media-index="' + String(index) + '">';
+            html += '<span class="nbde-image-picker__preview">';
+            html += previewUrl
+                ? '<img src="' + escapeHtml(previewUrl) + '" alt="' + escapeHtml(title) + '">'
+                : '<span class="nbde-image-picker__placeholder">Нет preview</span>';
+            html += '</span>';
+            html += '<span class="nbde-image-picker__meta">';
+            html += '<strong>' + escapeHtml(title) + '</strong>';
+            if (subtitle) {
+                html += '<span>' + escapeHtml(subtitle) + '</span>';
+            }
+            html += '</span>';
+            html += '</button>';
+        });
+
+        return '<div class="nbde-image-picker__grid">' + html + '</div>';
+    }
+
+    function renderImagePickerModal() {
+        var html;
+        var currentValue = getScopedValue(state.mediaPicker.scope, state.mediaPicker.path) || '';
+
+        if (!window.icms || !icms.modal || typeof icms.modal.openHtml !== 'function') {
+            return false;
+        }
+
+        html = '<div class="nbde-image-picker">';
+        html += '<div class="nbde-image-picker__head">';
+        html += '<div><strong>NordicBlocks media library</strong><span>Выберите изображение для текущего поля или очистите значение.</span></div>';
+        html += '<div class="nbde-image-picker__actions"><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-media-picker-action="clear-current">Очистить поле</button></div>';
+        html += '</div>';
+        if (currentValue) {
+            html += '<div class="nbde-image-picker__current">Текущее значение: <span>' + escapeHtml(currentValue) + '</span></div>';
+        }
+        html += buildImagePickerCards();
+        html += '</div>';
+
+        icms.modal.openHtml(html, 'Выбрать изображение');
+        return true;
+    }
+
+    async function openImagePicker(scope, path) {
+        var response;
+        var payload;
+
+        state.mediaPicker.kind = 'image';
+        state.mediaPicker.scope = scope || '';
+        state.mediaPicker.path = path || '';
+        state.mediaPicker.error = '';
+
+        if (!renderImagePickerModal()) {
+            return false;
+        }
+
+        if (state.mediaPicker.items.length || state.mediaPicker.loading) {
+            return true;
+        }
+
+        state.mediaPicker.loading = true;
+        renderImagePickerModal();
+
+        try {
+            response = await fetch('/nordicblocks/media_list', {
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            payload = await response.json();
+
+            if (!response.ok || !payload.ok) {
+                throw new Error(payload && payload.error ? payload.error : 'media_list_failed');
+            }
+
+            state.mediaPicker.items = Array.isArray(payload.files) ? payload.files : [];
+            state.mediaPicker.error = '';
+        } catch (error) {
+            state.mediaPicker.items = [];
+            state.mediaPicker.error = 'Не удалось загрузить медиабиблиотеку.';
+        } finally {
+            state.mediaPicker.loading = false;
+            renderImagePickerModal();
+        }
+
+        return true;
+    }
+
+    function selectImageFromPicker(index) {
+        var item = Array.isArray(state.mediaPicker.items) ? state.mediaPicker.items[index] : null;
+        var media = item && item.media ? item.media : null;
+        var value = media && (media.original || media.display)
+            ? (media.original || media.display)
+            : (item && (item.preview_url || item.preview_fallback_url) ? (item.preview_url || item.preview_fallback_url) : '');
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var altValue = media && media.alt ? media.alt : (item && (item.alt || item.title) ? (item.alt || item.title) : '');
+
+        if (!value || !applyScopedValue(state.mediaPicker.scope, state.mediaPicker.path, value)) {
+            return false;
+        }
+
+        if (state.mediaPicker.scope === 'element-props' && state.mediaPicker.path === 'src' && element && branch && !String(branch.props.alt || '').trim() && altValue) {
+            applyScopedValue('element-props', 'alt', altValue);
+        }
+
+        refreshAfterScopedMutation(state.mediaPicker.scope, state.mediaPicker.path);
+        closeSystemModal();
+        return true;
+    }
+
+    function applyScopedInput(input) {
+        return applyScopedValue(input.dataset.scope, input.dataset.path, coerceValue(input));
     }
 
     function nextElementId(type) {
@@ -2256,6 +2577,7 @@
     }
 
     function addElement(type) {
+        type = normalizeElementType(type);
         var elements = getElements();
         var base = defaultBranch(type);
         var split = splitProps(type, base.props || {});
@@ -2284,13 +2606,14 @@
 
         ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
             var stageBranch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, currentStageConfig());
+            var stageMetrics = buildStageMetrics(stageBranch, breakpoint);
             var hostSize = getLocalHostSize(element, breakpoint);
             var minX = Number(hostSize.minX || 0);
             var minY = Number(hostSize.minY || 0);
             var maxX = Math.max(minX, Number(hostSize.width || 1) - Math.max(1, Number(base.box.w || 1)));
             var maxY = Math.max(minY, Number(hostSize.height || 1) - Math.max(1, Number(base.box.h || 1)));
-            var nextX = parentId ? clamp(offset, minX, maxX) : Number(stageBranch.paddingX || 24) + offset;
-            var nextY = parentId ? clamp(offset, minY, maxY) : Number(stageBranch.paddingY || 24) + offset;
+            var nextX = parentId ? clamp(offset, minX, maxX) : clamp(Number(stageMetrics.initialInsertX || 0) + offset, minX, maxX);
+            var nextY = parentId ? clamp(offset, minY, maxY) : clamp(Number(stageMetrics.initialInsertY || 0) + offset, minY, maxY);
 
             state.scene.layout[breakpoint][element.id] = {
                 x: nextX,
@@ -2659,7 +2982,7 @@
     }
 
     function buildStageXCandidates(stageMetrics, editorRuntime) {
-        var result = buildLinearCandidates(-stageMetrics.bleedX, stageMetrics.width + stageMetrics.bleedX, editorRuntime.gridSize);
+        var result = buildLinearCandidates(-stageMetrics.bleedLeft, stageMetrics.width + stageMetrics.bleedRight, editorRuntime.gridSize);
         var cursor = 0;
         var index;
 
@@ -3522,7 +3845,22 @@
 
     root.addEventListener('click', function (event) {
         var actionNode = event.target.closest('[data-action]');
+        var pickerNode = event.target.closest('[data-picker-action]');
         var action;
+
+        if (pickerNode) {
+            event.preventDefault();
+            if (pickerNode.dataset.pickerAction === 'clear') {
+                if (applyScopedValue(pickerNode.dataset.scope || '', pickerNode.dataset.path || '', '')) {
+                    refreshAfterScopedMutation(pickerNode.dataset.scope || '', pickerNode.dataset.path || '');
+                }
+                return;
+            }
+            if (pickerNode.dataset.pickerAction === 'open' && pickerNode.dataset.pickerKind === 'image') {
+                openImagePicker(pickerNode.dataset.scope || '', pickerNode.dataset.path || '');
+                return;
+            }
+        }
 
         if (!actionNode) {
             return;
@@ -3660,12 +3998,7 @@
         }
 
         if (applyScopedInput(target)) {
-            markDirty();
-            if (target.dataset.scope === 'element-root' && target.dataset.path === 'name') {
-                renderLayersCard();
-            }
-            renderCanvas();
-            renderPropertiesCard();
+            refreshAfterScopedMutation(target.dataset.scope, target.dataset.path);
         }
     });
 
@@ -3679,12 +4012,33 @@
         }
 
         if (applyScopedInput(target)) {
-            markDirty();
-            if (target.dataset.scope === 'element-root' && target.dataset.path === 'name') {
-                renderLayersCard();
+            refreshAfterScopedMutation(target.dataset.scope, target.dataset.path);
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        var target = event.target.closest('[data-media-picker-action]');
+        var index;
+
+        if (!target) {
+            return;
+        }
+
+        if (target.dataset.mediaPickerAction === 'clear-current') {
+            event.preventDefault();
+            if (applyScopedValue(state.mediaPicker.scope, state.mediaPicker.path, '')) {
+                refreshAfterScopedMutation(state.mediaPicker.scope, state.mediaPicker.path);
             }
-            renderCanvas();
-            renderPropertiesCard();
+            closeSystemModal();
+            return;
+        }
+
+        if (target.dataset.mediaPickerAction === 'select') {
+            event.preventDefault();
+            index = Number(target.dataset.mediaIndex || -1);
+            if (Number.isFinite(index) && index >= 0) {
+                selectImageFromPicker(index);
+            }
         }
     });
 

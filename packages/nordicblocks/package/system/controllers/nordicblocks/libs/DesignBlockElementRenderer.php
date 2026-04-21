@@ -2,6 +2,20 @@
 
 class NordicblocksDesignBlockElementRenderer {
 
+    private static function normalizeType($type) {
+        $type = (string) $type;
+
+        if ($type === 'image') {
+            return 'photo';
+        }
+
+        if ($type === 'shape') {
+            return 'object';
+        }
+
+        return $type;
+    }
+
     public static function render(array $payload) {
         return self::renderElements((array) ($payload['elements'] ?? []));
     }
@@ -22,7 +36,7 @@ class NordicblocksDesignBlockElementRenderer {
 
     private static function renderElement(array $element) {
         $id = (string) ($element['id'] ?? '');
-        $type = (string) ($element['type'] ?? 'text');
+        $type = self::normalizeType((string) ($element['type'] ?? 'text'));
         $props = is_array($element['desktop']['props'] ?? null) ? $element['desktop']['props'] : [];
         $classes = 'nb-design-el nb-design-el--' . self::attr($type);
         $attrs = ' class="' . $classes . '" data-el-id="' . self::attr($id) . '" data-nb-entity="element:' . self::attr($id) . '"';
@@ -38,7 +52,7 @@ class NordicblocksDesignBlockElementRenderer {
             return '<div' . $attrs . '><a class="nb-design-button__link" href="' . self::attr($url !== '' ? $url : '#') . '"' . $target . '>' . self::escape((string) ($props['text'] ?? 'Подробнее')) . '</a></div>';
         }
 
-        if ($type === 'image' || $type === 'svg') {
+        if ($type === 'photo' || $type === 'svg') {
             $src = trim((string) ($props['src'] ?? ''));
             $alt = (string) ($props['alt'] ?? '');
             return '<div' . $attrs . '>' . ($src !== '' ? '<img src="' . self::attr($src) . '" alt="' . self::attr($alt) . '" loading="lazy">' : '') . '</div>';

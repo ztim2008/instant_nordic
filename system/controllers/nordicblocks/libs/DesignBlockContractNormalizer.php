@@ -2,7 +2,7 @@
 
 class NordicblocksDesignBlockContractNormalizer {
 
-    private static $allowed_element_types = ['text', 'image', 'button', 'shape', 'icon', 'container', 'video', 'divider', 'svg'];
+    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'image', 'shape'];
     private static $allowed_background_modes = ['theme', 'solid', 'gradient', 'image'];
 
     public static function supportsType($type) {
@@ -172,7 +172,7 @@ class NordicblocksDesignBlockContractNormalizer {
     }
 
     private static function normalizeElement(array $raw, $index) {
-        $type = self::select($raw['type'] ?? 'text', self::$allowed_element_types, 'text');
+        $type = self::normalizeElementType($raw['type'] ?? 'text');
         $id   = self::id($raw['id'] ?? ($type . '-' . ($index + 1)), $type . '-' . ($index + 1));
         $desktop = self::normalizeElementBranch($type, $raw['desktop'] ?? $raw, []);
         $tablet  = self::normalizeElementBranch($type, $raw['tablet'] ?? [], $desktop);
@@ -251,7 +251,7 @@ class NordicblocksDesignBlockContractNormalizer {
             ];
         }
 
-        if ($type === 'image' || $type === 'svg') {
+        if ($type === 'photo' || $type === 'image' || $type === 'svg') {
             return $common + [
                 'src'       => self::string($raw['src'] ?? '', '', 1024),
                 'alt'       => self::string($raw['alt'] ?? '', '', 255),
@@ -271,10 +271,10 @@ class NordicblocksDesignBlockContractNormalizer {
             ];
         }
 
-        if ($type === 'shape') {
+        if ($type === 'object' || $type === 'shape') {
             return $common + [
-                'shape' => self::select($raw['shape'] ?? 'rect', ['rect', 'pill', 'circle'], 'rect'),
-                'fill'  => self::string($raw['fill'] ?? '#dbeafe', '#dbeafe', 255),
+                'shape' => self::select($raw['shape'] ?? 'rect', ['rect', 'pill', 'circle', 'line'], 'rect'),
+                'fill'  => self::string($raw['fill'] ?? ($raw['backgroundColor'] ?? '#dbeafe'), '#dbeafe', 255),
             ];
         }
 
@@ -338,21 +338,21 @@ class NordicblocksDesignBlockContractNormalizer {
         return [
             [
                 'id'   => 'shape-accent',
-                'type' => 'shape',
+                'type' => 'object',
                 'name' => 'Accent Shape',
                 'role' => 'accent',
                 'parentId' => '',
                 'desktop' => [
                     'box' => ['x' => 820, 'y' => 72, 'w' => 280, 'h' => 280, 'zIndex' => 1, 'visible' => true],
-                    'props' => self::normalizeTypeProps('shape', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)', 'blur' => 0]),
+                    'props' => self::normalizeTypeProps('object', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)', 'blur' => 0]),
                 ],
                 'tablet' => [
                     'box' => ['x' => 500, 'y' => 70, 'w' => 220, 'h' => 220, 'zIndex' => 1, 'visible' => true],
-                    'props' => self::normalizeTypeProps('shape', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)']),
+                    'props' => self::normalizeTypeProps('object', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)']),
                 ],
                 'mobile' => [
                     'box' => ['x' => 210, 'y' => 54, 'w' => 120, 'h' => 120, 'zIndex' => 1, 'visible' => true],
-                    'props' => self::normalizeTypeProps('shape', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)']),
+                    'props' => self::normalizeTypeProps('object', ['shape' => 'circle', 'fill' => 'linear-gradient(135deg,#f97316 0%,#fb7185 100%)']),
                 ],
             ],
             [
@@ -413,6 +413,20 @@ class NordicblocksDesignBlockContractNormalizer {
                 ],
             ],
         ];
+    }
+
+    private static function normalizeElementType($type) {
+        $type = self::select($type, self::$allowed_element_types, 'text');
+
+        if ($type === 'image') {
+            return 'photo';
+        }
+
+        if ($type === 'shape') {
+            return 'object';
+        }
+
+        return $type;
     }
 
     private static function id($value, $default = '') {

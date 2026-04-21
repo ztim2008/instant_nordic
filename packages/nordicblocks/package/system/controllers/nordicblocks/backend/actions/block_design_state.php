@@ -76,14 +76,9 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                 'version' => 1,
                 'items' => [
                     ['type' => 'text', 'label' => 'Текст', 'description' => 'Заголовки, подписи и абзацы'],
-                    ['type' => 'image', 'label' => 'Изображение', 'description' => 'Фото, обложки и декоративные картинки'],
                     ['type' => 'button', 'label' => 'Кнопка', 'description' => 'CTA и ссылки'],
-                    ['type' => 'shape', 'label' => 'Фигура', 'description' => 'Плашки, круги и цветовые акценты'],
-                    ['type' => 'container', 'label' => 'Контейнер', 'description' => 'Группировка и flex-layout'],
-                    ['type' => 'icon', 'label' => 'Иконка', 'description' => 'Font Awesome и декоративные маркеры'],
-                    ['type' => 'divider', 'label' => 'Разделитель', 'description' => 'Вертикальные и горизонтальные ритм-линии'],
-                    ['type' => 'video', 'label' => 'Видео', 'description' => 'Видео-панели с poster и runtime src'],
-                    ['type' => 'svg', 'label' => 'SVG', 'description' => 'SVG-ассеты и векторные изображения'],
+                    ['type' => 'object', 'label' => 'Объект', 'description' => 'Прямоугольники, круги, линии и базовые shape-объекты'],
+                    ['type' => 'photo', 'label' => 'Фото', 'description' => 'Фотографии, обложки и медиа-поверхности'],
                 ],
             ],
             'pickers' => [

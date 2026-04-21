@@ -2,6 +2,45 @@
 
 class NordicblocksDesignBlockCssBuilder {
 
+    private static function normalizeType($type) {
+        $type = (string) $type;
+
+        if ($type === 'image') {
+            return 'photo';
+        }
+
+        if ($type === 'shape') {
+            return 'object';
+        }
+
+        return $type;
+    }
+
+    private static function resolveStageBranch(array $stage, $breakpoint, array $fallback) {
+        $branch = isset($stage[$breakpoint]) && is_array($stage[$breakpoint]) ? $stage[$breakpoint] : [];
+        $grid = isset($branch['grid']) && is_array($branch['grid']) ? $branch['grid'] : [];
+        $grid_overlay = isset($branch['gridOverlay']) && is_array($branch['gridOverlay']) ? $branch['gridOverlay'] : [];
+        $columns = max(1, (int) ($branch['columns'] ?? ($grid['columns'] ?? $fallback['columns'])));
+        $gutter = max(0, (int) ($branch['gutter'] ?? ($grid['gutter'] ?? $fallback['gutter'])));
+        $column_width = max(1, (float) ($branch['columnWidth'] ?? $fallback['columnWidth']));
+        $content_width = max(1, (int) ($branch['contentWidth'] ?? ($columns * $column_width) + (max(0, $columns - 1) * $gutter)));
+        $outer_margin = array_key_exists('outerMargin', $branch)
+            ? max(0, (int) $branch['outerMargin'])
+            : max(0, ((int) ($branch['windowWidth'] ?? ($content_width + ($fallback['outerMargin'] * 2))) - $content_width) / 2);
+
+        return [
+            'contentWidth' => $content_width,
+            'minHeight' => max(1, (int) ($branch['minHeight'] ?? $fallback['minHeight'])),
+            'outerMargin' => $outer_margin,
+            'columns' => $columns,
+            'gutter' => $gutter,
+            'gridOverlay' => [
+                'color' => (string) ($grid_overlay['color'] ?? '#0f172a'),
+                'opacity' => max(0, min(100, (int) ($grid_overlay['opacity'] ?? 8))),
+            ],
+        ];
+    }
+
     public static function build(array $payload) {
         $section_id = (string) ($payload['sectionId'] ?? 'nb-design-block');
         $base = self::baseCss($section_id);
@@ -25,20 +64,23 @@ class NordicblocksDesignBlockCssBuilder {
     public static function buildSectionInlineStyle(array $payload) {
         $stage = (array) ($payload['stage'] ?? []);
         $background = (array) ($payload['section']['background'] ?? []);
+        $desktop = self::resolveStageBranch($stage, 'desktop', ['contentWidth' => 1110, 'outerMargin' => 165, 'columns' => 12, 'gutter' => 30, 'columnWidth' => 65, 'minHeight' => 680]);
+        $tablet = self::resolveStageBranch($stage, 'tablet', ['contentWidth' => 672, 'outerMargin' => 48, 'columns' => 8, 'gutter' => 16, 'columnWidth' => 70, 'minHeight' => 560]);
+        $mobile = self::resolveStageBranch($stage, 'mobile', ['contentWidth' => 342, 'outerMargin' => 24, 'columns' => 4, 'gutter' => 12, 'columnWidth' => 76.5, 'minHeight' => 440]);
 
         $style = [
-            '--nb-design-stage-width:' . (int) ($stage['desktop']['width'] ?? 1200) . 'px',
-            '--nb-design-stage-min-height:' . (int) ($stage['desktop']['minHeight'] ?? 640) . 'px',
-            '--nb-design-stage-padding-x:' . (int) ($stage['desktop']['paddingX'] ?? 24) . 'px',
-            '--nb-design-stage-padding-y:' . (int) ($stage['desktop']['paddingY'] ?? 24) . 'px',
-            '--nb-design-stage-width-tablet:' . (int) ($stage['tablet']['width'] ?? 768) . 'px',
-            '--nb-design-stage-min-height-tablet:' . (int) ($stage['tablet']['minHeight'] ?? 540) . 'px',
-            '--nb-design-stage-padding-x-tablet:' . (int) ($stage['tablet']['paddingX'] ?? 20) . 'px',
-            '--nb-design-stage-padding-y-tablet:' . (int) ($stage['tablet']['paddingY'] ?? 20) . 'px',
-            '--nb-design-stage-width-mobile:' . (int) ($stage['mobile']['width'] ?? 390) . 'px',
-            '--nb-design-stage-min-height-mobile:' . (int) ($stage['mobile']['minHeight'] ?? 420) . 'px',
-            '--nb-design-stage-padding-x-mobile:' . (int) ($stage['mobile']['paddingX'] ?? 16) . 'px',
-            '--nb-design-stage-padding-y-mobile:' . (int) ($stage['mobile']['paddingY'] ?? 16) . 'px',
+            '--nb-design-stage-width:' . (int) $desktop['contentWidth'] . 'px',
+            '--nb-design-stage-min-height:' . (int) $desktop['minHeight'] . 'px',
+            '--nb-design-stage-padding-x:0px',
+            '--nb-design-stage-padding-y:0px',
+            '--nb-design-stage-width-tablet:' . (int) $tablet['contentWidth'] . 'px',
+            '--nb-design-stage-min-height-tablet:' . (int) $tablet['minHeight'] . 'px',
+            '--nb-design-stage-padding-x-tablet:0px',
+            '--nb-design-stage-padding-y-tablet:0px',
+            '--nb-design-stage-width-mobile:' . (int) $mobile['contentWidth'] . 'px',
+            '--nb-design-stage-min-height-mobile:' . (int) $mobile['minHeight'] . 'px',
+            '--nb-design-stage-padding-x-mobile:0px',
+            '--nb-design-stage-padding-y-mobile:0px',
         ];
 
         $mode = (string) ($background['mode'] ?? 'solid');
@@ -59,7 +101,7 @@ class NordicblocksDesignBlockCssBuilder {
     }
 
     private static function baseCss($section_id) {
-        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:hidden}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;width:100%;height:100%;color:inherit;text-decoration:none}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
+        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;width:100%;height:100%;color:inherit;text-decoration:none}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
     }
 
     private static function collectElementCss(array $elements, $section_id, $parent_type, $flow_child, &$desktop, &$tablet, &$mobile) {
@@ -69,7 +111,7 @@ class NordicblocksDesignBlockCssBuilder {
             }
 
             $selector = '#' . $section_id . ' [data-el-id="' . self::attr((string) $element['id']) . '"]';
-            $type = (string) ($element['type'] ?? 'text');
+            $type = self::normalizeType((string) ($element['type'] ?? 'text'));
             $desktop .= $selector . '{' . self::buildElementCss($type, (array) ($element['desktop'] ?? []), $flow_child) . '}';
             $tablet  .= $selector . '{' . self::buildElementCss($type, (array) ($element['tablet'] ?? []), $flow_child) . '}';
             $mobile  .= $selector . '{' . self::buildElementCss($type, (array) ($element['mobile'] ?? []), $flow_child) . '}';
@@ -107,11 +149,11 @@ class NordicblocksDesignBlockCssBuilder {
             $css .= 'background:' . self::css((string) $props['backgroundColor']) . ';';
         }
 
-        if (!empty($props['borderRadius']) || $type === 'shape' && (($props['shape'] ?? '') === 'circle')) {
-            $radius = $type === 'shape' && (($props['shape'] ?? '') === 'circle') ? 9999 : (int) ($props['borderRadius'] ?? 0);
+        if (!empty($props['borderRadius']) || $type === 'object' && (($props['shape'] ?? '') === 'circle')) {
+            $radius = $type === 'object' && (($props['shape'] ?? '') === 'circle') ? 9999 : (int) ($props['borderRadius'] ?? 0);
             $css .= 'border-radius:' . $radius . 'px;';
         }
-        if (!empty($props['borderWidth'])) {
+        if (!empty($props['borderWidth']) && !($type === 'object' && (($props['shape'] ?? '') === 'line'))) {
             $css .= 'border:' . (int) $props['borderWidth'] . 'px ' . self::css((string) ($props['borderStyle'] ?? 'solid')) . ' ' . self::css((string) ($props['borderColor'] ?? '#cbd5e1')) . ';';
         }
         if (!empty($props['boxShadow'])) {
@@ -128,12 +170,16 @@ class NordicblocksDesignBlockCssBuilder {
             $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
         } elseif ($type === 'button') {
             $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';';
-        } elseif ($type === 'image' || $type === 'svg') {
+        } elseif ($type === 'photo' || $type === 'svg') {
             $css .= 'overflow:hidden;';
         } elseif ($type === 'video') {
             $css .= 'overflow:hidden;background:#020617;';
-        } elseif ($type === 'shape') {
-            $css .= 'background:' . self::css((string) ($props['fill'] ?? '#dbeafe')) . ';';
+        } elseif ($type === 'object') {
+            if (($props['shape'] ?? '') === 'line') {
+                $css .= 'background:transparent;height:0;top:' . max(0, (int) round($height / 2)) . 'px;border-top:' . max(1, (int) ($props['borderWidth'] ?? 2)) . 'px solid ' . self::css((string) ($props['borderColor'] ?? $props['backgroundColor'] ?? $props['fill'] ?? '#dbeafe')) . ';';
+            } else {
+                $css .= 'background:' . self::css((string) ($props['fill'] ?? '#dbeafe')) . ';';
+            }
         } elseif ($type === 'icon') {
             $css .= 'display:flex;align-items:center;justify-content:center;color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-size:' . (float) ($props['size'] ?? 24) . 'px;';
         } elseif ($type === 'divider') {
