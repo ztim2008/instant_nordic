@@ -255,6 +255,10 @@ class NordicblocksDesignBlockContractNormalizer {
                 'letterSpacing'  => self::number($raw['letterSpacing'] ?? 0, -20, 40, 0),
                 'textTransform'  => self::select($raw['textTransform'] ?? 'none', ['none', 'uppercase', 'lowercase'], 'none'),
                 'justifyContent' => self::select($raw['justifyContent'] ?? 'center', ['flex-start', 'center', 'flex-end'], 'center'),
+                'backgroundMode' => self::select($raw['backgroundMode'] ?? 'solid', ['solid', 'gradient'], 'solid'),
+                'gradientFrom'   => self::string($raw['gradientFrom'] ?? '#0f172a', '#0f172a', 255),
+                'gradientTo'     => self::string($raw['gradientTo'] ?? '#1d4ed8', '#1d4ed8', 255),
+                'gradientAngle'  => self::number($raw['gradientAngle'] ?? 135, 0, 360, 135),
                 'paddingTop'     => self::number($raw['paddingTop'] ?? 16, 0, 240, 16),
                 'paddingRight'   => self::number($raw['paddingRight'] ?? 28, 0, 240, 28),
                 'paddingBottom'  => self::number($raw['paddingBottom'] ?? 16, 0, 240, 16),
@@ -262,9 +266,16 @@ class NordicblocksDesignBlockContractNormalizer {
                 'gap'            => self::number($raw['gap'] ?? 10, 0, 120, 10),
                 'iconClass'      => self::string($raw['iconClass'] ?? '', '', 255),
                 'iconPosition'   => self::select($raw['iconPosition'] ?? 'start', ['start', 'end'], 'start'),
+                'hoverBackgroundMode' => self::select($raw['hoverBackgroundMode'] ?? 'inherit', ['inherit', 'solid', 'gradient'], 'inherit'),
                 'hoverColor'     => self::string($raw['hoverColor'] ?? '', '', 255),
                 'hoverBackgroundColor' => self::string($raw['hoverBackgroundColor'] ?? '', '', 255),
+                'hoverGradientFrom' => self::string($raw['hoverGradientFrom'] ?? '#111827', '#111827', 255),
+                'hoverGradientTo' => self::string($raw['hoverGradientTo'] ?? '#2563eb', '#2563eb', 255),
                 'hoverBorderColor' => self::string($raw['hoverBorderColor'] ?? '', '', 255),
+                'hoverScalePct'  => self::number($raw['hoverScalePct'] ?? 100, 90, 120, 100),
+                'hoverLift'      => self::number($raw['hoverLift'] ?? 0, 0, 24, 0),
+                'hoverShadow'    => self::string($raw['hoverShadow'] ?? '', '', 255),
+                'transitionDuration' => self::number($raw['transitionDuration'] ?? 220, 80, 1200, 220),
             ];
         }
 

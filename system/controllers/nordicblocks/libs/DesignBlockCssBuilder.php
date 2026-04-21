@@ -194,7 +194,7 @@ class NordicblocksDesignBlockCssBuilder {
         if ($type === 'text') {
             $css .= 'color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 400) . ';line-height:' . ((float) ($props['lineHeight'] ?? 140) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-align:' . self::css((string) ($props['textAlign'] ?? 'left')) . ';text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';white-space:pre-wrap;';
         } elseif ($type === 'button') {
-            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';gap:' . (int) ($props['gap'] ?? 10) . 'px;padding:' . (int) ($props['paddingTop'] ?? 16) . 'px ' . (int) ($props['paddingRight'] ?? 28) . 'px ' . (int) ($props['paddingBottom'] ?? 16) . 'px ' . (int) ($props['paddingLeft'] ?? 28) . 'px;color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';line-height:' . ((float) ($props['lineHeight'] ?? 120) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';';
+            $css .= 'display:flex;align-items:center;justify-content:' . self::css((string) ($props['justifyContent'] ?? 'center')) . ';gap:' . (int) ($props['gap'] ?? 10) . 'px;padding:' . (int) ($props['paddingTop'] ?? 16) . 'px ' . (int) ($props['paddingRight'] ?? 28) . 'px ' . (int) ($props['paddingBottom'] ?? 16) . 'px ' . (int) ($props['paddingLeft'] ?? 28) . 'px;color:' . self::css((string) ($props['color'] ?? '#ffffff')) . ';font-family:' . NordicblocksDesignBlockTypography::resolveCssStack((string) ($props['fontFamily'] ?? 'montserrat')) . ';font-size:' . (float) ($props['fontSize'] ?? 16) . 'px;font-weight:' . (int) ($props['fontWeight'] ?? 700) . ';line-height:' . ((float) ($props['lineHeight'] ?? 120) / 100) . ';letter-spacing:' . (float) ($props['letterSpacing'] ?? 0) . 'px;text-transform:' . self::css((string) ($props['textTransform'] ?? 'none')) . ';background:' . self::buildButtonBackgroundCss($props, false) . ';transition:background ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),border-color ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),transform ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1),box-shadow ' . (int) ($props['transitionDuration'] ?? 220) . 'ms cubic-bezier(0.22,1,0.36,1);';
         } elseif ($type === 'photo' || $type === 'svg') {
             $css .= 'overflow:hidden;';
         } elseif ($type === 'video') {
@@ -225,15 +225,23 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         $css = '';
+        $hoverBackground = self::buildButtonBackgroundCss($props, true);
 
-        if (!empty($props['hoverBackgroundColor'])) {
-            $css .= 'background:' . self::css((string) $props['hoverBackgroundColor']) . ';';
+        if ($hoverBackground !== '') {
+            $css .= 'background:' . $hoverBackground . ';';
         }
+
         if (!empty($props['hoverColor'])) {
             $css .= 'color:' . self::css((string) $props['hoverColor']) . ';';
         }
         if (!empty($props['hoverBorderColor'])) {
             $css .= 'border-color:' . self::css((string) $props['hoverBorderColor']) . ';';
+        }
+        if (!empty($props['hoverShadow'])) {
+            $css .= 'box-shadow:' . self::css((string) $props['hoverShadow']) . ';';
+        }
+        if ((float) ($props['hoverLift'] ?? 0) > 0 || (float) ($props['hoverScalePct'] ?? 100) !== 100.0) {
+            $css .= 'transform:' . self::buildButtonHoverTransform($props) . ';';
         }
 
         if ($css === '') {
@@ -241,6 +249,37 @@ class NordicblocksDesignBlockCssBuilder {
         }
 
         return $selector . ':hover,' . $selector . ':focus-within{' . $css . '}';
+    }
+
+    private static function buildButtonBackgroundCss(array $props, $hover = false) {
+        $mode = $hover
+            ? (string) ($props['hoverBackgroundMode'] ?? 'inherit')
+            : (string) ($props['backgroundMode'] ?? 'solid');
+
+        if ($hover && $mode === 'inherit') {
+            return self::buildButtonBackgroundCss($props, false);
+        }
+
+        if ($mode === 'gradient') {
+            $angle = (float) ($props['gradientAngle'] ?? 135);
+            $from = $hover
+                ? (string) ($props['hoverGradientFrom'] ?? ($props['gradientFrom'] ?? ($props['backgroundColor'] ?? '#0f172a')))
+                : (string) ($props['gradientFrom'] ?? ($props['backgroundColor'] ?? '#0f172a'));
+            $to = $hover
+                ? (string) ($props['hoverGradientTo'] ?? ($props['gradientTo'] ?? ($props['backgroundColor'] ?? '#1d4ed8')))
+                : (string) ($props['gradientTo'] ?? ($props['backgroundColor'] ?? '#1d4ed8'));
+
+            return 'linear-gradient(' . $angle . 'deg,' . self::css($from) . ',' . self::css($to) . ')';
+        }
+
+        return self::css((string) ($hover ? ($props['hoverBackgroundColor'] ?? ($props['backgroundColor'] ?? '#0f172a')) : ($props['backgroundColor'] ?? '#0f172a')));
+    }
+
+    private static function buildButtonHoverTransform(array $props) {
+        $lift = max(0, (float) ($props['hoverLift'] ?? 0));
+        $scale = max(0.9, min(1.2, ((float) ($props['hoverScalePct'] ?? 100) / 100)));
+
+        return 'translateY(' . (-$lift) . 'px) scale(' . round($scale, 3) . ')';
     }
 
     private static function css($value) {

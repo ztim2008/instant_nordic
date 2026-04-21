@@ -118,6 +118,7 @@ window.NordicblocksDesignBlockBootstrap = <?= json_encode([
     'saveUrl'   => $save_url,
     'backUrl'   => $back_url,
     'placeUrl'  => $place_url,
+    'iconPickerUrl' => href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']),
     'devFlags'  => [
         'geometryDebug' => !empty($_GET['nb_debug_geometry'])
     ],

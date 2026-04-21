@@ -729,13 +729,16 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    transform: translateY(0) scale(1);
+    transition: background var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), border-color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), transform var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nbde-el__body--button:hover {
     background: var(--nbde-button-hover-bg);
     color: var(--nbde-button-hover-color);
     border-color: var(--nbde-button-hover-border);
+    box-shadow: var(--nbde-button-hover-shadow, var(--nbde-button-base-shadow, none));
+    transform: var(--nbde-button-hover-transform, translateY(0) scale(1));
 }
 
 .nbde-el__button-icon {

@@ -119,7 +119,9 @@
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
         'backdropBlur', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'shape', 'objectFit', 'objectPosition',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
-        'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label'
+        'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
+        'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
+        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration'
     ];
 
     var DEFAULT_FONT_FAMILIES = [
@@ -140,6 +142,7 @@
             saveUrl: bootstrap.saveUrl || root.dataset.saveUrl || '',
             backUrl: bootstrap.backUrl || root.dataset.backUrl || '',
             placeUrl: bootstrap.placeUrl || root.dataset.placeUrl || '',
+            iconPickerUrl: bootstrap.iconPickerUrl || '',
             csrfToken: bootstrap.csrfToken || ''
         },
         palette: [],
@@ -389,7 +392,7 @@
             return false;
         }
 
-        return /(^|\.)(color|backgroundColor|borderColor|gradientFrom|gradientTo|fill)$/i.test(String(path || ''));
+        return /(color|backgroundColor|borderColor|gradientFrom|gradientTo|hoverColor|hoverBackgroundColor|hoverBorderColor|hoverGradientFrom|hoverGradientTo|fill)$/i.test(String(path || ''));
     }
 
     function getColorFieldFallback(path) {
@@ -401,11 +404,26 @@
         if (/gradientTo$/i.test(path)) {
             return '#e2e8f0';
         }
+        if (/hoverGradientFrom$/i.test(path)) {
+            return '#ffffff';
+        }
+        if (/hoverGradientTo$/i.test(path)) {
+            return '#dbeafe';
+        }
         if (/borderColor$/i.test(path)) {
             return '#cbd5e1';
         }
+        if (/hoverBorderColor$/i.test(path)) {
+            return '#94a3b8';
+        }
         if (/(backgroundColor|fill)$/i.test(path)) {
             return '#f97316';
+        }
+        if (/hoverBackgroundColor$/i.test(path)) {
+            return '#111827';
+        }
+        if (/hoverColor$/i.test(path)) {
+            return '#ffffff';
         }
 
         return '#0f172a';
@@ -495,11 +513,22 @@
             branch.props.gap = 10;
             branch.props.iconClass = '';
             branch.props.iconPosition = 'start';
+            branch.props.backgroundMode = 'solid';
             branch.props.backgroundColor = '#0f172a';
+            branch.props.gradientFrom = '#0f172a';
+            branch.props.gradientTo = '#1d4ed8';
+            branch.props.gradientAngle = 135;
             branch.props.borderRadius = 999;
+            branch.props.hoverBackgroundMode = 'inherit';
             branch.props.hoverBackgroundColor = '';
+            branch.props.hoverGradientFrom = '#111827';
+            branch.props.hoverGradientTo = '#2563eb';
             branch.props.hoverColor = '';
             branch.props.hoverBorderColor = '';
+            branch.props.hoverScalePct = 100;
+            branch.props.hoverLift = 0;
+            branch.props.hoverShadow = '';
+            branch.props.transitionDuration = 220;
         } else if (type === 'photo' || type === 'svg') {
             branch.box.w = 420;
             branch.box.h = 260;
@@ -1871,8 +1900,9 @@
         var inputType = options && options.inputType ? options.inputType : 'text';
         var pickerLabel = options && options.pickerLabel ? options.pickerLabel : 'Выбрать';
         var clearLabel = options && options.clearLabel ? options.clearLabel : 'Очистить';
+        var pickerKind = options && options.pickerKind ? options.pickerKind : 'image';
 
-        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><div class="nbde-picker-row"><input type="' + escapeHtml(inputType) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"><button class="nbde-mini-button nbde-picker-button" type="button" data-picker-action="open" data-picker-kind="image" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(pickerLabel) + '</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-picker-action="clear" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(clearLabel) + '</button></div></div>';
+        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><div class="nbde-picker-row"><input type="' + escapeHtml(inputType) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"><button class="nbde-mini-button nbde-picker-button" type="button" data-picker-action="open" data-picker-kind="' + escapeHtml(pickerKind) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(pickerLabel) + '</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-picker-action="clear" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(clearLabel) + '</button></div></div>';
     }
 
     function renderTextareaField(label, scope, path, value) {
@@ -2231,7 +2261,11 @@
             html += renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда');
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
             html += renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string');
-            html += renderField('Иконка', 'element-props', 'iconClass', props.iconClass || '', 'string');
+            html += renderPickerField('Иконка', 'element-props', 'iconClass', props.iconClass || '', 'string', {
+                pickerKind: 'icon',
+                pickerLabel: 'Выбрать иконку',
+                clearLabel: 'Без иконки'
+            });
             html += renderSelectField('Позиция иконки', 'element-props', 'iconPosition', props.iconPosition || 'start', [
                 { value: 'start', label: 'Слева' },
                 { value: 'end', label: 'Справа' }
@@ -2319,10 +2353,34 @@
             ]);
         } else if (element.type === 'button') {
             html += renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string');
-            html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
+            html += renderSelectField('Тип фона', 'element-props', 'backgroundMode', props.backgroundMode || 'solid', [
+                { value: 'solid', label: 'Сплошной' },
+                { value: 'gradient', label: 'Градиент' }
+            ]);
+            html += renderField('Угол градиента', 'element-props', 'gradientAngle', props.gradientAngle != null ? props.gradientAngle : 135, 'number');
+            if ((props.backgroundMode || 'solid') === 'gradient') {
+                html += renderField('Градиент от', 'element-props', 'gradientFrom', props.gradientFrom || '#0f172a', 'string');
+                html += renderField('Градиент к', 'element-props', 'gradientTo', props.gradientTo || '#1d4ed8', 'string');
+            } else {
+                html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
+            }
+            html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+                { value: 'inherit', label: 'Как обычный' },
+                { value: 'solid', label: 'Свoй цвет' },
+                { value: 'gradient', label: 'Свoй градиент' }
+            ]);
+            if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+                html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || '#111827', 'string');
+                html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || '#2563eb', 'string');
+            } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+                html += renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
+            }
             html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
-            html += renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
             html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+            html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+            html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+            html += renderField('Hover тень', 'element-props', 'hoverShadow', props.hoverShadow || '', 'string');
+            html += renderField('Длительность анимации', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
             html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
             html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
             html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
@@ -2482,6 +2540,44 @@
         return String(value || 'start') === 'end' ? 'end' : 'start';
     }
 
+    function normalizeButtonBackgroundMode(value, allowInherit) {
+        value = String(value || 'solid');
+
+        if (allowInherit && value === 'inherit') {
+            return 'inherit';
+        }
+
+        return value === 'gradient' ? 'gradient' : 'solid';
+    }
+
+    function buildButtonBackgroundValue(props, hoverMode) {
+        var mode = hoverMode
+            ? normalizeButtonBackgroundMode(props.hoverBackgroundMode, true)
+            : normalizeButtonBackgroundMode(props.backgroundMode, false);
+        var angle = Math.max(0, Number(props.gradientAngle != null ? props.gradientAngle : 135));
+        var fromColor;
+        var toColor;
+
+        if (hoverMode && mode === 'inherit') {
+            return buildButtonBackgroundValue(props, false);
+        }
+
+        if (mode === 'gradient') {
+            fromColor = hoverMode ? (props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#0f172a') : (props.gradientFrom || props.backgroundColor || '#0f172a');
+            toColor = hoverMode ? (props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#1d4ed8') : (props.gradientTo || props.backgroundColor || '#1d4ed8');
+            return 'linear-gradient(' + angle + 'deg, ' + String(fromColor) + ', ' + String(toColor) + ')';
+        }
+
+        return String(hoverMode ? (props.hoverBackgroundColor || props.backgroundColor || '#0f172a') : (props.backgroundColor || '#0f172a'));
+    }
+
+    function buildButtonHoverTransform(props) {
+        var scale = Number(props.hoverScalePct != null ? props.hoverScalePct : 100) / 100;
+        var lift = Number(props.hoverLift != null ? props.hoverLift : 0);
+
+        return 'translateY(' + (-lift) + 'px) scale(' + roundNumber(scale, 3) + ')';
+    }
+
     function buildButtonPreviewStyle(props, box) {
         var styles = [];
         var paddingTop = Number(props.paddingTop != null ? props.paddingTop : 16);
@@ -2502,10 +2598,15 @@
         styles.push('line-height:' + (Number(props.lineHeight || 120) / 100));
         styles.push('letter-spacing:' + Number(props.letterSpacing || 0) + 'px');
         styles.push('text-transform:' + String(props.textTransform || 'none'));
-        styles.push('background:' + String(props.backgroundColor || '#0f172a'));
-        styles.push('--nbde-button-hover-bg:' + String(props.hoverBackgroundColor || props.backgroundColor || '#0f172a'));
+        styles.push('background:' + buildButtonBackgroundValue(props, false));
+        styles.push('--nbde-button-base-shadow:' + String(props.boxShadow || 'none'));
+        styles.push('--nbde-button-hover-bg:' + buildButtonBackgroundValue(props, true));
         styles.push('--nbde-button-hover-color:' + String(props.hoverColor || props.color || '#ffffff'));
         styles.push('--nbde-button-hover-border:' + String(props.hoverBorderColor || props.borderColor || 'transparent'));
+        styles.push('--nbde-button-hover-transform:' + buildButtonHoverTransform(props));
+        styles.push('--nbde-button-hover-shadow:' + String(props.hoverShadow || props.boxShadow || 'none'));
+        styles.push('--nbde-button-transition-duration:' + Math.max(80, Number(props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms');
+        styles.push('box-shadow:var(--nbde-button-base-shadow)');
 
         return styles.filter(Boolean).join(';');
     }
@@ -3472,6 +3573,39 @@
             state.mediaPicker.loading = false;
             renderImagePickerModal();
         }
+
+        return true;
+    }
+
+    function openIconPicker(scope, path) {
+        var iconPickerUrl = String(getPath(state, 'editor.iconPickerUrl', '') || '');
+
+        if (!iconPickerUrl) {
+            return false;
+        }
+
+        if (!window.icms || !icms.modal || typeof icms.modal.openAjax !== 'function') {
+            window.open(iconPickerUrl, '_blank');
+            return true;
+        }
+
+        icms.modal.openAjax(iconPickerUrl, {}, function () {
+            Array.prototype.forEach.call(document.querySelectorAll('.icon-select'), function (iconNode) {
+                iconNode.addEventListener('click', function (event) {
+                    var nextValue;
+
+                    event.preventDefault();
+                    nextValue = iconNode.getAttribute('data-name') || '';
+
+                    if (applyScopedValue(scope, path, nextValue)) {
+                        refreshAfterScopedMutation(scope, path);
+                    }
+
+                    closeSystemModal();
+                    return false;
+                }, { once: true });
+            });
+        }, 'Выбрать иконку');
 
         return true;
     }
@@ -5110,6 +5244,10 @@
             }
             if (pickerNode.dataset.pickerAction === 'open' && pickerNode.dataset.pickerKind === 'image') {
                 openImagePicker(pickerNode.dataset.scope || '', pickerNode.dataset.path || '');
+                return;
+            }
+            if (pickerNode.dataset.pickerAction === 'open' && pickerNode.dataset.pickerKind === 'icon') {
+                openIconPicker(pickerNode.dataset.scope || '', pickerNode.dataset.path || '');
                 return;
             }
         }
