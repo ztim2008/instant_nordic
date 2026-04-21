@@ -1633,7 +1633,7 @@ class modelNordicblocks extends cmsModel {
             return strlen((string) $b) <=> strlen((string) $a);
         });
 
-        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'];
         $groups      = [];
 
         $iterator = new RecursiveIteratorIterator(

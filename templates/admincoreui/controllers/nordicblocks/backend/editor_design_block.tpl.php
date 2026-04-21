@@ -146,6 +146,7 @@ window.NordicblocksDesignBlockBootstrap = <?= json_encode([
     'saveUrl'   => $save_url,
     'backUrl'   => $back_url,
     'placeUrl'  => $place_url,
+    'mediaUploadUrl' => href_to('nordicblocks', 'media_upload'),
     'iconPickerUrl' => href_to('admin', 'settings', ['theme', cmsConfig::get('http_template'), 'icon_list']),
     'iconSpriteUrls' => $icon_sprite_urls,
     'devFlags'  => [

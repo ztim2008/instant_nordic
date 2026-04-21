@@ -144,6 +144,7 @@
             saveUrl: bootstrap.saveUrl || root.dataset.saveUrl || '',
             backUrl: bootstrap.backUrl || root.dataset.backUrl || '',
             placeUrl: bootstrap.placeUrl || root.dataset.placeUrl || '',
+            mediaUploadUrl: bootstrap.mediaUploadUrl || '',
             iconPickerUrl: bootstrap.iconPickerUrl || '',
             iconSpriteUrls: bootstrap.iconSpriteUrls || {},
             csrfToken: bootstrap.csrfToken || ''
@@ -3730,7 +3731,7 @@
         html = '<div class="nbde-image-picker">';
         html += '<div class="nbde-image-picker__head">';
         html += '<div><strong>NordicBlocks media library</strong><span>Выберите изображение для текущего поля или очистите значение.</span></div>';
-        html += '<div class="nbde-image-picker__actions"><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-media-picker-action="clear-current">Очистить поле</button></div>';
+        html += '<div class="nbde-image-picker__actions"><button class="nbde-mini-button nbde-picker-button" type="button" data-media-picker-action="upload">Загрузить PNG/SVG</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-media-picker-action="clear-current">Очистить поле</button></div>';
         html += '</div>';
         if (currentValue) {
             html += '<div class="nbde-image-picker__current">Текущее значение: <span>' + escapeHtml(currentValue) + '</span></div>';
@@ -3784,6 +3785,88 @@
         }
 
         return true;
+    }
+
+    function triggerImageUpload() {
+        var uploadUrl = String(getPath(state, 'editor.mediaUploadUrl', '') || '');
+        var input;
+
+        if (!uploadUrl) {
+            state.mediaPicker.error = 'Upload endpoint не настроен.';
+            renderImagePickerModal();
+            return false;
+        }
+
+        input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.png,.jpg,.jpeg,.gif,.webp,.svg,image/png,image/jpeg,image/gif,image/webp,image/svg+xml';
+        input.style.display = 'none';
+        input.addEventListener('change', function () {
+            var file = input.files && input.files[0] ? input.files[0] : null;
+
+            if (!file) {
+                input.remove();
+                return;
+            }
+
+            uploadImageFromPicker(file).finally(function () {
+                input.remove();
+            });
+        }, { once: true });
+
+        document.body.appendChild(input);
+        input.click();
+        return true;
+    }
+
+    async function uploadImageFromPicker(file) {
+        var uploadUrl = String(getPath(state, 'editor.mediaUploadUrl', '') || '');
+        var formData = new FormData();
+        var response;
+        var payload;
+        var uploadedUrl;
+
+        if (!uploadUrl) {
+            state.mediaPicker.error = 'Upload endpoint не настроен.';
+            renderImagePickerModal();
+            return false;
+        }
+
+        state.mediaPicker.error = '';
+        state.mediaPicker.loading = true;
+        renderImagePickerModal();
+        formData.append('file', file);
+
+        try {
+            response = await fetch(uploadUrl, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+            payload = await response.json();
+
+            if (!response.ok || !payload.ok) {
+                throw new Error(payload && payload.error ? payload.error : 'upload_failed');
+            }
+
+            uploadedUrl = getPath(payload, 'media.original', '') || payload.url || '';
+            if (!uploadedUrl) {
+                throw new Error('upload_failed');
+            }
+
+            state.mediaPicker.items = [];
+            if (applyScopedValue(state.mediaPicker.scope, state.mediaPicker.path, uploadedUrl)) {
+                refreshAfterScopedMutation(state.mediaPicker.scope, state.mediaPicker.path);
+            }
+            closeSystemModal();
+            return true;
+        } catch (error) {
+            state.mediaPicker.loading = false;
+            state.mediaPicker.error = 'Не удалось загрузить файл. Поддерживаются PNG, JPG, WEBP, GIF и SVG.';
+            renderImagePickerModal();
+            return false;
+        }
     }
 
     function openIconPicker(scope, path) {
@@ -5717,6 +5800,12 @@
                 refreshAfterScopedMutation(state.mediaPicker.scope, state.mediaPicker.path);
             }
             closeSystemModal();
+            return;
+        }
+
+        if (target.dataset.mediaPickerAction === 'upload') {
+            event.preventDefault();
+            triggerImageUpload();
             return;
         }
 

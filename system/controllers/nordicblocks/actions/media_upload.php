@@ -27,7 +27,8 @@ class actionNordicblocksMediaUpload extends cmsAction {
                 'image/jpeg',
                 'image/png',
                 'image/gif',
-                'image/webp'
+                'image/webp',
+                'image/svg+xml'
             ]);
 
         $result = $this->cms_uploader->upload('file');
