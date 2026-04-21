@@ -1432,12 +1432,12 @@
         }
 
         if (state.uiState.isSaving) {
-            nodes.statusText.textContent = 'Сохраняю scene contract...';
+            nodes.statusText.textContent = 'Сохраняю artboard contract...';
             return;
         }
 
         if (state.uiState.isDirty) {
-            nodes.statusText.textContent = 'Источник истины сейчас в scene/world model. Сохраните, чтобы записать сериализованный контракт.';
+            nodes.statusText.textContent = 'Есть несохранённые изменения artboard и элементов. Сохраните, чтобы записать обновлённый контракт блока.';
             nodes.statusText.classList.add('is-dirty');
             return;
         }
@@ -1452,7 +1452,7 @@
             return;
         }
 
-        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '. Canvas работает как сцена: world координаты, viewport камера и DOM-проекция.';
+        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '. Белая область это block artboard, серое поле вокруг это workspace, zoom и pan только для навигации редактора.';
     }
 
     function updateCanvasMeta() {
@@ -1464,13 +1464,11 @@
 
         if (nodes.canvasMeta) {
             nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint())
-                + ' • content ' + stageMetrics.contentWidth + 'px'
-                + ' • window ' + stageMetrics.windowWidth + 'px'
+                + ' • artboard ' + stageMetrics.windowWidth + 'x' + (stage.minHeight || 0) + 'px'
+                + ' • grid ' + stageMetrics.contentWidth + 'px'
                 + ' • ' + stageMetrics.columns + ' cols'
                 + ' • overflow ' + stageMetrics.overflowMode
-                + ' • h ' + (stage.minHeight || 0) + 'px'
-                + ' • zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '%'
-                + ' • camera ' + roundNumber(viewport.offsetX) + ',' + roundNumber(viewport.offsetY)
+                + ' • view ' + Math.round(Number(viewport.zoom || 1) * 100) + '% @ ' + roundNumber(viewport.offsetX) + ',' + roundNumber(viewport.offsetY)
                 + ' • ' + elements.length + ' узл.'
                 + ' • ' + selectionCount + ' выбрано';
         }
@@ -1540,7 +1538,7 @@
         var hasParent = selectionIds.length === 1 && !!getParentElement(selected);
         var html = '';
 
-        html += '<div class="nbde-inline-note">Редактор хранит геометрию в scene/layout. DOM служит только screen-проекцией world-узлов.</div>';
+        html += '<div class="nbde-inline-note">Белая область на canvas это block artboard. Внутри него живут grid и свободные объекты, а DOM остаётся только экранной проекцией contract-геометрии.</div>';
         html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
         html += renderSelectionBreadcrumbs();
         html += '<div class="nbde-action-grid">';
@@ -1581,30 +1579,31 @@
         var viewport = state.scene.viewport;
         var html = '';
 
-        html += '<div class="nbde-inline-note">Координата x=0 означает левую границу content container. Отрицательный x уводит объект в bleed-зону за пределы контента, но внутри window container.</div>';
-        html += '<div class="nbde-inline-note">Wheel без модификатора двигает canvas по сцене. Shift + wheel двигает по оси X, Ctrl/Cmd + wheel меняет zoom только для текущего breakpoint.</div>';
+        html += '<div class="nbde-inline-note">Artboard-first режим: белый прямоугольник это сам блок. Grid container стартует от x=0, отрицательный x уводит объект в левую bleed-зону, а x за contentWidth выводит его вправо за grid.</div>';
+        html += '<div class="nbde-inline-note">Высота блока меняется локально для активного breakpoint. Если нужно повторить её на остальные breakpoint, используйте отдельное действие синхронизации.</div>';
         html += '<div class="nbde-action-grid">';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-out">Zoom -</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-in">Zoom +</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="zoom-reset">1:1</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="camera-reset">Камера</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="focus-artboard">Фокус блока</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="reveal-selection">Показать выделение</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="apply-stage-height-all">Высоту -> все</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="left-bleed">Bleed L</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="content">Контент</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="focus-stage-zone" data-zone="right-bleed">Bleed R</button>';
         html += '</div>';
-        html += '<div class="nbde-camera-stats">zoom ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
-        html += '<div class="nbde-camera-stats">content ' + stageMetrics.contentWidth + 'px • window ' + stageMetrics.windowWidth + 'px • columns ' + stageMetrics.columns + ' • column ' + roundNumber(stageMetrics.columnWidth) + 'px • gutter ' + stageMetrics.gutter + 'px • margin ' + roundNumber(stageMetrics.outerMargin) + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px • overflow ' + stageMetrics.overflowMode + '</div>';
+        html += '<div class="nbde-camera-stats">artboard ' + stageMetrics.windowWidth + 'x' + stageMetrics.height + 'px • grid ' + stageMetrics.contentWidth + 'px • columns ' + stageMetrics.columns + ' • gutter ' + stageMetrics.gutter + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px • overflow ' + stageMetrics.overflowMode + '</div>';
+        html += '<div class="nbde-camera-stats">editor view ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
-        html += renderField('Ширина окна', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
-        html += renderField('Ширина контента', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
-        html += renderField('Мин. высота world', 'stage', 'minHeight', stage.minHeight, 'number');
-        html += renderSelectField('Overflow mode', 'stage', 'overflowMode', getPath(stage, 'overflowMode', stageMetrics.overflowMode), [
+        html += renderField('Ширина artboard', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
+        html += renderField('Ширина grid', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
+        html += renderField('Высота artboard', 'stage', 'minHeight', stage.minHeight, 'number');
+        html += renderSelectField('Overflow artboard', 'stage', 'overflowMode', getPath(stage, 'overflowMode', stageMetrics.overflowMode), [
             { value: 'auto', label: 'Auto' },
             { value: 'hidden', label: 'Hidden' },
             { value: 'visible', label: 'Visible' }
         ]);
-        html += renderField('Внешний отступ', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
+        html += renderField('Поле workspace', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
         html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
         html += renderField('Bleed справа', 'stage', 'bleedRight', getPath(stage, 'bleedRight', stageMetrics.bleedRight), 'number');
         html += renderField('Колонки', 'stage', 'columns', getPath(stage, 'columns', stageMetrics.columns), 'number');
@@ -2338,6 +2337,17 @@
         return heights;
     }
 
+    function ensureStageBranch(breakpoint) {
+        var branch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, null);
+
+        if (branch && typeof branch === 'object') {
+            return branch;
+        }
+
+        state.documentState.contract.layout.stage[breakpoint] = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
+        return state.documentState.contract.layout.stage[breakpoint];
+    }
+
     function applyViewportScroll(screenDeltaX, screenDeltaY) {
         var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
 
@@ -2382,12 +2392,45 @@
         return true;
     }
 
+    function focusArtboard() {
+        var stageMetrics = currentStageMetrics();
+
+        if (!revealCanvasBounds({
+            x: 0,
+            y: 0,
+            w: Math.max(1, Number(stageMetrics.windowWidth || 1)),
+            h: Math.max(1, Number(stageMetrics.height || 1))
+        }, { forceCenter: true, padding: 24 })) {
+            return false;
+        }
+
+        clearGuides();
+        renderCanvas();
+        renderStageCard();
+        return true;
+    }
+
+    function applyStageHeightToAllBreakpoints() {
+        var activeBreakpoint = currentBreakpoint();
+        var sourceBranch = ensureStageBranch(activeBreakpoint);
+        var sourceHeight = Math.max(240, Number(sourceBranch.minHeight || currentStageMetrics().height));
+
+        Object.keys(BREAKPOINTS).forEach(function (breakpoint) {
+            ensureStageBranch(breakpoint).minHeight = sourceHeight;
+        });
+
+        markDirty();
+        renderCanvas();
+        renderStageCard();
+        return true;
+    }
+
     function renderStageHeightResizeHandle(stageMetrics) {
-        return '<button class="nbde-stage__height-handle' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Изменить высоту canvas"><span></span><small>' + Math.round(Number(stageMetrics.height || 0)) + 'px</small></button>';
+        return '<button class="nbde-stage__height-handle' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Изменить высоту artboard"><span></span><small>Artboard ' + Math.round(Number(stageMetrics.height || 0)) + 'px</small></button>';
     }
 
     function renderStageHeightResizeEdge() {
-        return '<button class="nbde-stage__height-edge' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Потянуть нижний край холста"></button>';
+        return '<button class="nbde-stage__height-edge' + (state.interactionState.stageResize ? ' is-active' : '') + '" type="button" data-action="resize-stage-height" aria-label="Потянуть нижний край artboard"></button>';
     }
 
     function beginStageResize(event) {
@@ -2399,7 +2442,8 @@
         state.interactionState.stageResize = {
             activeBreakpoint: currentBreakpoint(),
             startClientY: Number(event.clientY || 0),
-            startHeights: collectStageHeights()
+            startHeights: collectStageHeights(),
+            startZoom: Math.max(0.01, Number(state.scene.viewport.zoom || 1))
         };
         clearGuides();
         renderStageCard();
@@ -2408,28 +2452,27 @@
 
     function applyStageResizeAtClientY(stageResize, clientY) {
         var activeBreakpoint = stageResize.activeBreakpoint || currentBreakpoint();
-        var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
+        var zoom = Math.max(0.01, Number(stageResize.startZoom || state.scene.viewport.zoom || 1));
         var startHeights = stageResize.startHeights || {};
         var activeStartHeight = Math.max(240, Number(startHeights[activeBreakpoint] || currentStageMetrics().height));
         var nextActiveHeight = Math.max(240, Math.round(activeStartHeight + ((Number(clientY || 0) - Number(stageResize.startClientY || 0)) / zoom)));
-        var ratio = nextActiveHeight / Math.max(1, activeStartHeight);
 
-        Object.keys(BREAKPOINTS).forEach(function (breakpoint) {
-            var branch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, null);
-            var baseHeight = Math.max(240, Number(startHeights[breakpoint] || buildStageMetrics(branch || {}, breakpoint).height));
-
-            if (!branch || typeof branch !== 'object') {
-                state.documentState.contract.layout.stage[breakpoint] = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
-                branch = state.documentState.contract.layout.stage[breakpoint];
-            }
-
-            branch.minHeight = Math.max(240, Math.round(baseHeight * ratio));
-        });
+        ensureStageBranch(activeBreakpoint).minHeight = nextActiveHeight;
 
         markDirty();
         renderCanvas();
         renderStageCard();
         return true;
+    }
+
+    function renderArtboardGuides(stageMetrics) {
+        var rightBleedStart = Number(stageMetrics.originX || 0) + Number(stageMetrics.contentWidth || 0);
+
+        return ''
+            + '<div class="nbde-stage__window-frame"></div>'
+            + '<div class="nbde-stage__bleed nbde-stage__bleed--left" style="width:' + Math.max(0, Number(stageMetrics.originX || 0)) + 'px"></div>'
+            + '<div class="nbde-stage__bleed nbde-stage__bleed--right" style="left:' + rightBleedStart + 'px;width:' + Math.max(0, Number(stageMetrics.windowWidth || 0) - rightBleedStart) + 'px"></div>'
+            + '<div class="nbde-stage__grid-outline" style="left:' + Number(stageMetrics.originX || 0) + 'px;width:' + Number(stageMetrics.contentWidth || 0) + 'px"></div>';
     }
 
     function syncStageDimensions(stageBranch, changedPath) {
@@ -2499,10 +2542,11 @@
         viewport.width = stageMetrics.windowWidth;
         viewport.height = stageMetrics.height;
 
-        html += '<div class="nbde-stage nbde-stage--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto') + '" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
+        html += '<div class="nbde-stage nbde-stage--overflow-' + escapeHtml(stageMetrics.overflowMode || 'auto') + (state.interactionState.stageResize ? ' is-resizing' : '') + '" id="nbd-stage-scene" style="--nbde-stage-width:' + viewport.width + 'px;--nbde-stage-height:' + viewport.height + 'px;--nbde-grid-width:' + stageMetrics.width + 'px;--nbde-grid-left:' + stageMetrics.originX + 'px;--nbde-grid-columns:' + stageMetrics.columns + ';--nbde-grid-gutter:' + stageMetrics.gutter + 'px;">';
         html += '<div class="nbde-stage__viewport' + (state.interactionState.pan ? ' is-panning' : '') + '" id="nbd-stage-viewport">';
         html += '<div class="nbde-stage__world" id="nbd-stage-world" style="transform:' + escapeHtml(buildViewportTransform(viewport)) + '">';
         html += '<div class="nbde-stage__surface" style="' + escapeHtml(buildBackgroundStyle(background)) + '">';
+        html += renderArtboardGuides(stageMetrics);
 
         if (editorRuntime.showColumnsGrid) {
             html += '<div class="nbde-stage__columns" style="color:' + escapeHtml(columnsColor) + ';opacity:' + (columnsOpacity / 100) + '">';
@@ -4226,8 +4270,16 @@
             zoomTo(null, Number(state.scene.viewport.zoom || 1) / 1.15);
             return;
         }
+        if (action === 'focus-artboard') {
+            focusArtboard();
+            return;
+        }
         if (action === 'zoom-reset' || action === 'camera-reset') {
             resetViewport();
+            return;
+        }
+        if (action === 'apply-stage-height-all') {
+            applyStageHeightToAllBreakpoints();
             return;
         }
         if (action === 'focus-stage-zone') {
