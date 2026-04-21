@@ -73,6 +73,18 @@
         group: 'Группа'
     };
 
+    var PALETTE_V1_TYPES = {
+        text: true,
+        image: true,
+        button: true,
+        shape: true,
+        container: true,
+        icon: true,
+        divider: true,
+        video: true,
+        svg: true
+    };
+
     var CONTENT_PROP_KEYS = {
         text: true,
         url: true,
@@ -122,6 +134,7 @@
             activeBreakpoint: 'desktop',
             selectionIds: [],
             selectedElementId: null,
+            rootInsertionMode: false,
             editingTextId: null,
             pendingFocusTextId: null,
             isDirty: false,
@@ -272,6 +285,10 @@
         }
 
         return TYPE_LABELS[type] || type || 'Элемент';
+    }
+
+    function isPaletteTypeEnabled(type) {
+        return !!PALETTE_V1_TYPES[String(type || '')];
     }
 
     function isEditableType(type) {
@@ -661,6 +678,40 @@
         return null;
     }
 
+    function getParentElement(elementOrId) {
+        var element = typeof elementOrId === 'string' ? getElementById(elementOrId) : elementOrId;
+
+        if (!element || !element.parentId) {
+            return null;
+        }
+
+        return getElementById(element.parentId);
+    }
+
+    function getElementDepth(elementOrId) {
+        var depth = 0;
+        var parent = getParentElement(elementOrId);
+
+        while (parent) {
+            depth += 1;
+            parent = getParentElement(parent);
+        }
+
+        return depth;
+    }
+
+    function buildElementPath(elementId) {
+        var path = [];
+        var current = getElementById(elementId);
+
+        while (current) {
+            path.unshift(current);
+            current = getParentElement(current);
+        }
+
+        return path;
+    }
+
     function currentStageConfig() {
         return getPath(state.documentState.contract, 'layout.stage.' + currentBreakpoint(), {});
     }
@@ -864,11 +915,28 @@
         return InteractionCore.getRootSelectionIds(getSelectionSceneNodes(), ids || getSelectionIds());
     }
 
+    function setRootInsertionMode() {
+        state.uiState.selectionIds = [];
+        state.uiState.selectedElementId = null;
+        state.uiState.rootInsertionMode = true;
+
+        if (state.uiState.editingTextId) {
+            state.uiState.editingTextId = null;
+            state.uiState.pendingFocusTextId = null;
+        }
+    }
+
     function setSelection(ids, primaryId) {
+        if (!Array.isArray(ids) || !ids.length) {
+            setRootInsertionMode();
+            return;
+        }
+
         var selectionState = InteractionCore.createSelectionState(getSelectionSceneNodes(), ids || [], primaryId);
 
         state.uiState.selectionIds = selectionState.selectionIds;
         state.uiState.selectedElementId = selectionState.primaryId;
+        state.uiState.rootInsertionMode = false;
 
         if (state.uiState.editingTextId && selectionState.selectionIds.indexOf(String(state.uiState.editingTextId)) === -1) {
             state.uiState.editingTextId = null;
@@ -883,7 +951,7 @@
     }
 
     function clearSelection() {
-        setSelection([], null);
+        setRootInsertionMode();
     }
 
     function isSelected(id) {
@@ -898,12 +966,82 @@
         return getSelectionIds().map(getElementById).filter(Boolean);
     }
 
+    function focusParentSelection() {
+        var selected = getSelectedElement();
+        var parent = selected ? getParentElement(selected) : null;
+
+        if (!parent) {
+            clearSelection();
+            return;
+        }
+
+        setSelection([parent.id], parent.id);
+    }
+
+    function getInsertionContextElement() {
+        var selected = getSelectedElement();
+
+        if (!selected || getSelectionIds().length !== 1) {
+            return null;
+        }
+
+        if (selected.type === 'container' || selected.type === 'group') {
+            return selected;
+        }
+
+        return getParentElement(selected);
+    }
+
+    function describeInsertionContext() {
+        var selection = getSelectionIds();
+        var selected = getSelectedElement();
+        var context = getInsertionContextElement();
+
+        if (state.uiState.rootInsertionMode || !selection.length) {
+            return 'Корень сцены';
+        }
+
+        if (selection.length > 1) {
+            return 'Корень сцены (мультивыбор)';
+        }
+
+        if (context && selected && String(context.id) === String(selected.id)) {
+            return 'Внутрь ' + (context.name || getTypeLabel(context.type));
+        }
+
+        if (context) {
+            return 'Внутрь ' + (context.name || getTypeLabel(context.type));
+        }
+
+        return 'Корень сцены';
+    }
+
+    function renderSelectionBreadcrumbs() {
+        var selected = getSelectedElement();
+        var path = selected ? buildElementPath(selected.id) : [];
+        var html = '<div class="nbde-crumbs">';
+
+        html += '<button class="nbde-crumb' + ((state.uiState.rootInsertionMode || !path.length) ? ' is-active' : '') + '" type="button" data-action="select-root-context">Сцена</button>';
+
+        path.forEach(function (element) {
+            html += '<span class="nbde-crumb-sep">/</span>';
+            html += '<button class="nbde-crumb' + (String(state.uiState.selectedElementId || '') === String(element.id) ? ' is-active' : '') + '" type="button" data-action="select-element" data-element-id="' + escapeHtml(element.id) + '">' + escapeHtml(element.name || getTypeLabel(element.type)) + '</button>';
+        });
+
+        html += '</div>';
+        return html;
+    }
+
     function ensureSelectionState() {
         var ids = getSelectionIds();
         var elements = getElements();
 
         if (ids.length) {
             setSelection(ids, state.uiState.selectedElementId);
+            return;
+        }
+
+        if (state.uiState.rootInsertionMode) {
             return;
         }
 
@@ -1213,9 +1351,12 @@
             return;
         }
 
-        nodes.statusText.textContent = selectionCount > 1
-            ? 'Выбрано ' + selectionCount + ' узлов. Shift+click добавляет в selection, группа создаёт parent node.'
-            : 'Canvas работает как сцена: world координаты, viewport камера и DOM-проекция.';
+        if (selectionCount > 1) {
+            nodes.statusText.textContent = 'Выбрано ' + selectionCount + ' узлов. Новая вставка пойдёт в root scope, пока не останется один primary context.';
+            return;
+        }
+
+        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '. Canvas работает как сцена: world координаты, viewport камера и DOM-проекция.';
     }
 
     function updateCanvasMeta() {
@@ -1276,10 +1417,16 @@
 
     function renderBlockCard() {
         var selectionIds = getSelectionIds();
+        var selected = getSelectedElement();
+        var hasParent = selectionIds.length === 1 && !!getParentElement(selected);
         var html = '';
 
         html += '<div class="nbde-inline-note">Редактор хранит геометрию в scene/layout. DOM служит только screen-проекцией world-узлов.</div>';
+        html += '<div class="nbde-context-note"><strong>Новая вставка:</strong> ' + escapeHtml(describeInsertionContext()) + '</div>';
+        html += renderSelectionBreadcrumbs();
         html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-root-context"' + (state.uiState.rootInsertionMode ? ' disabled' : '') + '>В корень</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-parent"' + (hasParent ? '' : ' disabled') + '>К parent</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
         html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="group-selection"' + (selectionIds.length > 1 ? '' : ' disabled') + '>Группа</button>';
@@ -1382,17 +1529,51 @@
         }
     }
 
-    function renderLayersCard() {
-        var elements = getElements().slice();
+    function renderLayerTreeItems(source, selectionIds, selectedPathIds, insertionContextId) {
         var html = '';
-        var selectionIds = getSelectionIds();
 
-        elements.sort(function (left, right) {
-            return Number(resolveBranch(right, currentBreakpoint()).box.zIndex || 0) - Number(resolveBranch(left, currentBreakpoint()).box.zIndex || 0);
+        source.forEach(function (element) {
+            var active = selectionIds.indexOf(String(element.id)) >= 0;
+            var ancestor = !active && selectedPathIds.indexOf(String(element.id)) >= 0;
+            var isContext = insertionContextId && String(insertionContextId) === String(element.id);
+            var children = element.children || [];
+            var depth = getElementDepth(element);
+
+            html += '<div class="nbde-layer-row">';
+            html += '<button class="nbde-layer-button' + (active ? ' is-active' : '') + (ancestor ? ' is-ancestor' : '') + (isContext ? ' is-context' : '') + '" style="--nbde-layer-depth:' + depth + '" type="button" data-action="select-element" data-element-id="' + escapeHtml(element.id) + '">';
+            html += '<span class="nbde-layer-meta">';
+            html += '<span class="nbde-layer-title"><strong>' + escapeHtml(element.name || getTypeLabel(element.type)) + '</strong><span>' + escapeHtml(getTypeLabel(element.type)) + '</span></span>';
+            html += '<span class="nbde-layer-flags">';
+            if (isContext) {
+                html += '<span class="nbde-layer-pill is-context">insert</span>';
+            }
+            if (children.length) {
+                html += '<span class="nbde-layer-pill">' + children.length + ' child</span>';
+            }
+            html += '</span></span></button>';
+
+            if (children.length) {
+                html += renderLayerTreeItems(children, selectionIds, selectedPathIds, insertionContextId);
+            }
+
+            html += '</div>';
         });
 
+        return html;
+    }
+
+    function renderLayersCard() {
+        var elements = getElements().slice();
+        var tree = buildTree(elements, currentBreakpoint());
+        var html = '';
+        var selectionIds = getSelectionIds();
+        var selectedPathIds = buildElementPath(state.uiState.selectedElementId || '').map(function (element) {
+            return String(element.id);
+        });
+        var insertionContext = getInsertionContextElement();
+
         if (nodes.layersSummary) {
-            nodes.layersSummary.textContent = elements.length + ' элементов';
+            nodes.layersSummary.textContent = elements.length + ' элементов • ' + describeInsertionContext();
         }
 
         if (!elements.length) {
@@ -1401,19 +1582,13 @@
             }
             return;
         }
-
-        html += '<div class="nbde-layer-list">';
-        elements.forEach(function (element) {
-            var active = selectionIds.indexOf(String(element.id)) >= 0;
-            html += '<button class="nbde-layer-button' + (active ? ' is-active' : '') + '" type="button" data-action="select-element" data-element-id="' + escapeHtml(element.id) + '">';
-            html += '<span class="nbde-layer-meta">';
-            html += '<strong>' + escapeHtml(element.name || getTypeLabel(element.type)) + '</strong>';
-            html += '<span>' + escapeHtml(getTypeLabel(element.type)) + '</span>';
-            html += '</span>';
-            html += '</button>';
-        });
+        html += renderSelectionBreadcrumbs();
+        html += '<div class="nbde-layer-list nbde-layer-list--tree">';
+        html += renderLayerTreeItems(tree, selectionIds, selectedPathIds, insertionContext ? insertionContext.id : '');
         html += '</div>';
         html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-root-context"' + (state.uiState.rootInsertionMode ? ' disabled' : '') + '>В корень</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="select-parent"' + ((selectionIds.length === 1 && getParentElement(getSelectedElement())) ? '' : ' disabled') + '>К parent</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-backward">Ниже</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="send-to-back">Вниз</button>';
@@ -1497,6 +1672,134 @@
         return html;
     }
 
+    function renderInspectorSection(title, description, body) {
+        var html = '<section class="nbde-inspector-section">';
+
+        html += '<div class="nbde-inspector-section__head">';
+        html += '<strong>' + escapeHtml(title) + '</strong>';
+        if (description) {
+            html += '<span>' + escapeHtml(description) + '</span>';
+        }
+        html += '</div>';
+        html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Для этого блока здесь пока нет дополнительных настроек.</div>';
+        html += '</section>';
+
+        return html;
+    }
+
+    function renderElementContentFields(element, props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string');
+        html += renderField('Роль', 'element-root', 'role', element.role || '', 'string');
+        html += '</div>';
+
+        if (element.type === 'text') {
+            html += renderTextareaField('Текст', 'element-props', 'text', props.text || '');
+        } else if (element.type === 'button') {
+            html += renderTextareaField('Текст кнопки', 'element-props', 'text', props.text || 'Нажмите сюда');
+            html += '<div class="nbde-field-grid nbde-field-grid--2">';
+            html += renderField('Ссылка', 'element-props', 'url', props.url || '#', 'string');
+            html += renderField('Техническая роль', 'element-root', 'role', element.role || '', 'string');
+            html += '</div>';
+        } else if (element.type === 'image' || element.type === 'svg') {
+            html += '<div class="nbde-field-grid nbde-field-grid--2">';
+            html += renderField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
+            html += renderField('Alt', 'element-props', 'alt', props.alt || '', 'string');
+            html += '</div>';
+        } else if (element.type === 'video') {
+            html += '<div class="nbde-field-grid nbde-field-grid--2">';
+            html += renderField('Видео файл', 'element-props', 'src', props.src || '', 'string');
+            html += renderField('Постер', 'element-props', 'poster', props.poster || '', 'string');
+            html += '</div>';
+        } else if (element.type === 'icon') {
+            html += renderField('Класс иконки', 'element-props', 'iconClass', props.iconClass || 'fas fa-star', 'string');
+        } else if (element.type === 'divider') {
+            html += '<div class="nbde-inline-note">Разделитель полезен для вертикального или горизонтального ритма внутри контейнера.</div>';
+        } else if (element.type === 'container') {
+            html += '<div class="nbde-inline-note">Контейнер задаёт локальный parent scope для дочерних объектов. Если контейнер выбран, новые элементы добавляются внутрь него.</div>';
+        } else if (element.type === 'shape') {
+            html += '<div class="nbde-inline-note">У фигуры нет текстового content-слоя. Здесь остаётся только имя элемента и его роль в сцене.</div>';
+        }
+
+        return html;
+    }
+
+    function renderElementLayoutFields(element, props, box) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderField('X', 'element-box', 'x', box.x || 0, 'number');
+        html += renderField('Y', 'element-box', 'y', box.y || 0, 'number');
+        html += renderField('Ширина', 'element-box', 'w', box.w || 0, 'number');
+        html += renderField('Высота', 'element-box', 'h', box.h || 0, 'number');
+        html += renderField('Слой', 'element-box', 'zIndex', box.zIndex || 1, 'number');
+
+        if (element.type === 'container') {
+            html += renderField('Отступ сверху', 'element-props', 'paddingTop', props.paddingTop || 20, 'number');
+            html += renderField('Отступ справа', 'element-props', 'paddingRight', props.paddingRight || 20, 'number');
+            html += renderField('Отступ снизу', 'element-props', 'paddingBottom', props.paddingBottom || 20, 'number');
+            html += renderField('Отступ слева', 'element-props', 'paddingLeft', props.paddingLeft || 20, 'number');
+            html += renderField('Внутренний gap', 'element-props', 'gap', props.gap || 16, 'number');
+        }
+
+        if (element.type === 'divider') {
+            html += renderSelectField('Ориентация', 'element-props', 'orientation', props.orientation || 'horizontal', [
+                { value: 'horizontal', label: 'Горизонтально' },
+                { value: 'vertical', label: 'Вертикально' }
+            ]);
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function renderElementStyleFields(element, props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number');
+        html += renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number');
+        html += renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number');
+        html += renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string');
+        html += renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string');
+
+        if (element.type === 'text') {
+            html += renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string');
+            html += renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
+            html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number');
+            html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number');
+            html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
+            html += renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number');
+            html += renderSelectField('Выравнивание', 'element-props', 'textAlign', props.textAlign || 'left', [
+                { value: 'left', label: 'Слева' },
+                { value: 'center', label: 'По центру' },
+                { value: 'right', label: 'Справа' }
+            ]);
+        } else if (element.type === 'button') {
+            html += renderField('Цвет текста', 'element-props', 'color', props.color || '#ffffff', 'string');
+            html += renderField('Цвет кнопки', 'element-props', 'backgroundColor', props.backgroundColor || '#0f172a', 'string');
+            html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 16, 'number');
+            html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 700, 'number');
+        } else if (element.type === 'image' || element.type === 'svg' || element.type === 'video') {
+            html += renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
+                { value: 'cover', label: 'Cover' },
+                { value: 'contain', label: 'Contain' },
+                { value: 'fill', label: 'Fill' }
+            ]);
+        } else if (element.type === 'shape') {
+            html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
+        } else if (element.type === 'icon') {
+            html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
+            html += renderField('Размер иконки', 'element-props', 'size', props.size || 32, 'number');
+        } else if (element.type === 'divider') {
+            html += renderField('Цвет разделителя', 'element-props', 'backgroundColor', props.backgroundColor || props.color || '#cbd5e1', 'string');
+        } else if (element.type === 'container') {
+            html += renderField('Фон контейнера', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
+        }
+
+        html += '</div>';
+        return html;
+    }
+
     function renderPropertiesCard() {
         var selection = getSelectedElements();
         var element = getSelectedElement();
@@ -1507,10 +1810,12 @@
 
         if (!selection.length || !element) {
             if (nodes.propertiesSummary) {
-                nodes.propertiesSummary.textContent = 'Ничего не выбрано';
+                nodes.propertiesSummary.textContent = state.uiState.rootInsertionMode ? 'Корень сцены' : 'Ничего не выбрано';
             }
             if (nodes.propertiesCard) {
-                nodes.propertiesCard.innerHTML = '<div class="nbde-card__empty">Выберите node на холсте или в списке слоёв.</div>';
+                nodes.propertiesCard.innerHTML = state.uiState.rootInsertionMode
+                    ? '<div class="nbde-inline-note">Корень сцены активен. Следующий объект добавится в root scope, а не внутрь контейнера.</div>' + renderSelectionBreadcrumbs()
+                    : '<div class="nbde-card__empty">Выберите node на холсте или в списке слоёв.</div>';
             }
             return;
         }
@@ -1533,21 +1838,15 @@
             nodes.propertiesSummary.textContent = (element.name || getTypeLabel(element.type)) + ' • ' + getTypeLabel(element.type);
         }
 
-        html += '<div class="nbde-field-grid nbde-field-grid--2">';
-        html += renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string');
-        html += renderField('Роль', 'element-root', 'role', element.role || '', 'string');
-        html += renderField('X', 'element-box', 'x', box.x || 0, 'number');
-        html += renderField('Y', 'element-box', 'y', box.y || 0, 'number');
-        html += renderField('Ширина', 'element-box', 'w', box.w || 0, 'number');
-        html += renderField('Высота', 'element-box', 'h', box.h || 0, 'number');
-        html += renderField('Слой', 'element-box', 'zIndex', box.zIndex || 1, 'number');
-        html += renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number');
-        html += renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number');
-        html += renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number');
-        html += renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string');
-        html += renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string');
+        html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="duplicate-element">Дублировать</button>';
+        html += '<button class="nbde-danger-button" type="button" data-action="delete-element">Удалить</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="move-layer-backward">Ниже</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
         html += '</div>';
-        html += renderTypeSpecificFields(element.type, props);
+        html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
+        html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
+        html += renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props));
 
         if (nodes.propertiesCard) {
             nodes.propertiesCard.innerHTML = html;
@@ -1918,17 +2217,56 @@
         return candidate;
     }
 
+    function getInsertionParentId() {
+        if (state.uiState.rootInsertionMode) {
+            return '';
+        }
+
+        var selected = getSelectedElement();
+
+        if (!selected || getSelectionIds().length !== 1) {
+            return '';
+        }
+
+        if (selected.type === 'container' || selected.type === 'group') {
+            return String(selected.id || '');
+        }
+
+        return String(selected.parentId || '');
+    }
+
+    function getInsertionOffset(parentId) {
+        return getElements().filter(function (element) {
+            return String(element.parentId || '') === String(parentId || '');
+        }).length * 18;
+    }
+
+    function getInsertionZIndex(parentId, breakpoint) {
+        var maxZIndex = 0;
+
+        getElements().forEach(function (element) {
+            if (String(element.parentId || '') !== String(parentId || '')) {
+                return;
+            }
+
+            maxZIndex = Math.max(maxZIndex, Number(resolveBranch(element, breakpoint).box.zIndex || 0));
+        });
+
+        return maxZIndex + 1;
+    }
+
     function addElement(type) {
         var elements = getElements();
         var base = defaultBranch(type);
         var split = splitProps(type, base.props || {});
-        var offset = elements.length * 18;
+        var parentId = getInsertionParentId();
+        var offset = getInsertionOffset(parentId);
         var element = {
             id: nextElementId(type),
             type: type,
             name: getTypeLabel(type),
             role: '',
-            parentId: '',
+            parentId: parentId,
             hidden: false,
             locked: false,
             constraints: { horizontal: 'left', vertical: 'top' },
@@ -1946,14 +2284,21 @@
 
         ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
             var stageBranch = getPath(state.documentState.contract, 'layout.stage.' + breakpoint, currentStageConfig());
+            var hostSize = getLocalHostSize(element, breakpoint);
+            var minX = Number(hostSize.minX || 0);
+            var minY = Number(hostSize.minY || 0);
+            var maxX = Math.max(minX, Number(hostSize.width || 1) - Math.max(1, Number(base.box.w || 1)));
+            var maxY = Math.max(minY, Number(hostSize.height || 1) - Math.max(1, Number(base.box.h || 1)));
+            var nextX = parentId ? clamp(offset, minX, maxX) : Number(stageBranch.paddingX || 24) + offset;
+            var nextY = parentId ? clamp(offset, minY, maxY) : Number(stageBranch.paddingY || 24) + offset;
 
             state.scene.layout[breakpoint][element.id] = {
-                x: Number(stageBranch.paddingX || 24) + offset,
-                y: Number(stageBranch.paddingY || 24) + offset,
+                x: nextX,
+                y: nextY,
                 width: Math.max(1, Number(base.box.w || 1)),
                 height: Math.max(1, Number(base.box.h || 1)),
                 rotation: Number(base.props.rotate || 0),
-                zIndex: elements.length + 1,
+                zIndex: getInsertionZIndex(parentId, breakpoint),
                 visible: true
             };
             state.scene.props[breakpoint][element.id] = clone(base.props || {});
@@ -3148,7 +3493,7 @@
             state.documentState.contract = normalizeContract(payload.contract || {});
             state.scene = buildSceneFromContract(state.documentState.contract);
             state.palette = getPath(payload, 'palette.items', []).filter(function (item) {
-                return item && item.type !== 'group';
+                return item && item.type !== 'group' && isPaletteTypeEnabled(item.type);
             });
             state.pickers = payload.pickers || {};
             state.editor.saveUrl = getPath(payload, 'editor.saveUrl', state.editor.saveUrl);
@@ -3161,7 +3506,13 @@
             state.uiState.editingTextId = null;
             state.uiState.pendingFocusTextId = null;
             clearGuides();
-            setSelection(getPath(payload, 'ui.selectionIds', []), getPath(payload, 'ui.selectedElementId', null));
+            if (getPath(payload, 'ui.selectionIds', []).length) {
+                setSelection(getPath(payload, 'ui.selectionIds', []), getPath(payload, 'ui.selectedElementId', null));
+            } else {
+                state.uiState.selectionIds = [];
+                state.uiState.selectedElementId = null;
+                state.uiState.rootInsertionMode = false;
+            }
             renderAll();
         } catch (error) {
             state.uiState.lastError = 'Ошибка загрузки редактора: ' + (error && error.message ? error.message : 'неизвестная ошибка');
@@ -3193,6 +3544,16 @@
             } else {
                 setSelection([actionNode.dataset.elementId || ''], actionNode.dataset.elementId || '');
             }
+            renderAll();
+            return;
+        }
+        if (action === 'select-parent') {
+            focusParentSelection();
+            renderAll();
+            return;
+        }
+        if (action === 'select-root-context') {
+            clearSelection();
             renderAll();
             return;
         }
