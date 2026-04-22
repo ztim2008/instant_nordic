@@ -18,6 +18,7 @@
 ## Ключевые документы
 
 - [NORDICBLOCKS-INSPECTOR-WEEK-PLAN-2026-04-17.md](NORDICBLOCKS-INSPECTOR-WEEK-PLAN-2026-04-17.md)
+- [NORDICBLOCKS-UPDATE-PROMPT.md](NORDICBLOCKS-UPDATE-PROMPT.md)
 - [LANDING-BUILDER-MASTER-PLAN-2026-04-03.md](LANDING-BUILDER-MASTER-PLAN-2026-04-03.md)
 - [docs/PROJECT-OVERVIEW.md](docs/PROJECT-OVERVIEW.md)
 - [docs/DEVELOPMENT-WORKFLOW.md](docs/DEVELOPMENT-WORKFLOW.md)
@@ -61,6 +62,7 @@
 
 - Базовый установочный архив считается главным опорным релизом первого этапа.
 - Следующие поставки выпускать как обновления компонента `nordicblocks`, совместимые с установкой поверх базового архива.
+- Для каждой версии `nordicblocks` вести короткий список изменений в `packages/nordicblocks/CHANGELOG.md`.
 - В installable архив не включать рабочую markdown/txt документацию и внутренние notes, если они не нужны рантайму или установщику.
 
 ## CLI примечание

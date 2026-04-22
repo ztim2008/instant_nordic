@@ -150,6 +150,26 @@
 
     var AUTOSAVE_DELAY_MS = 1200;
     var ENABLE_AUTOSAVE = false;
+    var FOCUS_MODE_STORAGE_KEY = 'nordicblocks.designBlockEditor.focusMode';
+
+    function readFocusModePreference() {
+        try {
+            return window.localStorage && window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY) === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function writeFocusModePreference(enabled) {
+        try {
+            if (!window.localStorage) {
+                return;
+            }
+            window.localStorage.setItem(FOCUS_MODE_STORAGE_KEY, enabled ? '1' : '0');
+        } catch (error) {
+            return;
+        }
+    }
 
     var state = {
         editor: {
@@ -203,6 +223,7 @@
         uiState: {
             activeBreakpoint: 'desktop',
             sidebarCollapsed: false,
+            focusMode: false,
             selectionIds: [],
             selectedElementId: null,
             deferredFieldDrafts: {},
@@ -256,8 +277,11 @@
         layersCard: document.getElementById('nbd-layers-card'),
         propertiesCard: document.getElementById('nbd-properties-card'),
         saveButton: document.getElementById('nbd-save-button'),
+        focusModeButton: document.getElementById('nbd-focus-mode-button'),
         sidebar: document.getElementById('nbd-sidebar')
     };
+
+    state.uiState.focusMode = readFocusModePreference();
 
     var geometryDebugEnabled = !!(bootstrap.devFlags && bootstrap.devFlags.geometryDebug);
 
@@ -2560,12 +2584,11 @@
     }
 
     function renderStatus() {
-        var selectionCount = getSelectionIds().length;
-
         if (!nodes.statusText) {
             return;
         }
 
+        nodes.statusText.classList.remove('is-hidden');
         nodes.statusText.classList.remove('is-dirty');
         nodes.statusText.classList.remove('is-error');
 
@@ -2595,18 +2618,28 @@
             return;
         }
 
-        if (selectionCount > 1) {
-            nodes.statusText.textContent = 'Выбрано ' + selectionCount + ' узлов. Новая вставка пойдёт в root scope, пока не останется один primary context.';
-            return;
-        }
-
-        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '.';
+        nodes.statusText.textContent = '';
+        nodes.statusText.classList.add('is-hidden');
     }
 
     function renderShellLayout() {
         var sidebarToggle;
+        var focusModeButton;
 
         root.classList.toggle('is-sidebar-collapsed', !!state.uiState.sidebarCollapsed);
+        root.classList.toggle('is-focus-mode', !!state.uiState.focusMode);
+
+        if (document.body) {
+            document.body.classList.toggle('nbde-focus-mode', !!state.uiState.focusMode);
+        }
+
+        focusModeButton = nodes.focusModeButton;
+
+        if (focusModeButton) {
+            focusModeButton.textContent = state.uiState.focusMode ? 'Обычный режим' : 'Фокус-режим';
+            focusModeButton.setAttribute('aria-pressed', state.uiState.focusMode ? 'true' : 'false');
+            focusModeButton.setAttribute('title', state.uiState.focusMode ? 'Вернуться к обычному виду страницы' : 'Скрыть chrome CMS и оставить редактор в фокусе');
+        }
 
         if (!nodes.sidebar) {
             return;
@@ -6950,6 +6983,13 @@
 
         if (action === 'toggle-sidebar') {
             state.uiState.sidebarCollapsed = !state.uiState.sidebarCollapsed;
+            renderShellLayout();
+            return;
+        }
+
+        if (action === 'toggle-focus-mode') {
+            state.uiState.focusMode = !state.uiState.focusMode;
+            writeFocusModePreference(state.uiState.focusMode);
             renderShellLayout();
             return;
         }

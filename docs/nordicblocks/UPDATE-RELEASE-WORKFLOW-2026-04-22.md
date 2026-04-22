@@ -23,6 +23,10 @@
 1. `packages/nordicblocks/VERSION`
 2. `packages/nordicblocks/manifest.ru.ini`
 
+Release notes по версиям вести в:
+
+3. `packages/nordicblocks/CHANGELOG.md`
+
 Синхронизация выполняется только через:
 
 ```bash
@@ -60,11 +64,13 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 2. прогнать целевой узкий smoke по изменённому scope;
 3. при изменении runtime/admin файлов проверить package mirror parity;
 4. обновить версию через `scripts/nordicblocks-version-sync.sh`;
-5. собрать `nordicblocks-update` архив;
-6. проверить состав архива через `unzip -l`;
-7. убедиться, что в архив не попали рабочие docs, `*.md`, `*.txt`, внутренние notes;
-8. сделать manual update smoke поверх уже установленного компонента;
-9. зафиксировать release outcome в worklog.
+5. обновить `packages/nordicblocks/CHANGELOG.md` и кратко записать, что вошло в релиз;
+	Для ускорения можно просто копировать секцию `Шаблон следующей записи` из `packages/nordicblocks/CHANGELOG.md`.
+6. собрать `nordicblocks-update` архив;
+7. проверить состав архива через `unzip -l`;
+8. убедиться, что в архив не попали рабочие docs, `*.md`, `*.txt`, внутренние notes;
+9. сделать manual update smoke поверх уже установленного компонента;
+10. зафиксировать release outcome в worklog.
 
 ## Минимальный проверочный контур
 
