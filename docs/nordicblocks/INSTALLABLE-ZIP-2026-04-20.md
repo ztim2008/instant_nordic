@@ -58,6 +58,21 @@ bash scripts/build-nordicblocks-package.sh
 
 Версия архива берётся из секции `[version]` в `packages/nordicblocks/manifest.ru.ini`.
 
+После завершения первого этапа этот installable ZIP считается базовым архивом для fresh-install.
+
+Дальнейшие поставки нужно выпускать отдельным update-контуром:
+
+```bash
+bash scripts/build-nordicblocks-update-package.sh 0.1.1
+```
+
+Update-архив публикуется как:
+
+1. `dist/nordicblocks-update.zip`
+2. `dist/nordicblocks-update-<version>.zip`
+
+Отдельный release workflow зафиксирован в `docs/nordicblocks/UPDATE-RELEASE-WORKFLOW-2026-04-22.md`.
+
 ## Что именно проверять перед поставкой
 
 Минимальная валидация installable ZIP:

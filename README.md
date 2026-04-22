@@ -25,6 +25,7 @@
 - [docs/WORKLOG.md](docs/WORKLOG.md)
 - [docs/nordicblocks/GLOBAL-DESIGN-FOUNDATION-V2.md](docs/nordicblocks/GLOBAL-DESIGN-FOUNDATION-V2.md)
 - [docs/nordicblocks/CATALOG-BROWSER-V1.md](docs/nordicblocks/CATALOG-BROWSER-V1.md)
+- [docs/nordicblocks/UPDATE-RELEASE-WORKFLOW-2026-04-22.md](docs/nordicblocks/UPDATE-RELEASE-WORKFLOW-2026-04-22.md)
 - [AGENTS.md](AGENTS.md)
 - [AGENT-CHEATSHEET.md](AGENT-CHEATSHEET.md)
 

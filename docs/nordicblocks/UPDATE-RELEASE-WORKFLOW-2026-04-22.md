@@ -1,0 +1,84 @@
+# NordicBlocks: update release workflow после базового installable архива
+
+Дата: 2026-04-22
+
+## Статус
+
+Первый этап NordicBlocks закрыт базовым installable архивом.
+
+Дальше delivery-модель такая:
+
+1. базовый архив `nordicblocks.zip` используется как опорная свежая установка;
+2. новые поставки выпускаются как update-пакеты компонента `nordicblocks`;
+3. update-пакет собирается из того же package source-of-truth, но проходит отдельный release contour и публикуется отдельным именем архива.
+
+## Source of truth
+
+Для update-релизов источником правды остаётся директория:
+
+1. `packages/nordicblocks/`
+
+Версия компонента теперь ведётся в двух связанных точках:
+
+1. `packages/nordicblocks/VERSION`
+2. `packages/nordicblocks/manifest.ru.ini`
+
+Синхронизация выполняется только через:
+
+```bash
+bash scripts/nordicblocks-version-sync.sh 0.1.1
+```
+
+или без аргумента, если целевая версия уже записана в `VERSION`.
+
+## Команды релиза
+
+Базовая сборка installable архива:
+
+```bash
+bash scripts/build-nordicblocks-package.sh
+```
+
+Update-сборка поверх того же package tree:
+
+```bash
+bash scripts/build-nordicblocks-update-package.sh 0.1.1
+```
+
+Результат update-сборки:
+
+1. `dist/nordicblocks-update.zip`
+2. `dist/nordicblocks-update-<version>.zip`
+
+Важно: по структуре это тот же совместимый InstantCMS package, но он публикуется как update-artifact и должен ставиться поверх уже установленного базового релиза.
+
+## Release checklist
+
+Перед выпуском update-пакета обязательно:
+
+1. синхронизировать live source и `packages/nordicblocks/package/`;
+2. прогнать целевой узкий smoke по изменённому scope;
+3. при изменении runtime/admin файлов проверить package mirror parity;
+4. обновить версию через `scripts/nordicblocks-version-sync.sh`;
+5. собрать `nordicblocks-update` архив;
+6. проверить состав архива через `unzip -l`;
+7. убедиться, что в архив не попали рабочие docs, `*.md`, `*.txt`, внутренние notes;
+8. сделать manual update smoke поверх уже установленного компонента;
+9. зафиксировать release outcome в worklog.
+
+## Минимальный проверочный контур
+
+```bash
+bash scripts/build-nordicblocks-update-package.sh 0.1.1
+unzip -l dist/nordicblocks-update.zip
+/opt/php84/bin/php -l packages/nordicblocks/install.php
+/opt/php84/bin/php scripts/nordicblocks-flow-smoke.php
+```
+
+Если change-set затрагивает editor/runtime parity, этого недостаточно без ручного smoke на установленном компоненте.
+
+## Политика публикации
+
+1. Новый full install archive не считается стандартным способом поставки после первого этапа.
+2. Стандартный путь релиза теперь: `base install once -> component updates`.
+3. Полный installable архив сохраняется как опорный baseline и как fallback для чистой установки.

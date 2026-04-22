@@ -60,7 +60,7 @@ return [
     'default_editor'              => 3,
     'show_breadcrumbs'            => 1,
     'check_spoofing_type'         => 0,
-    'production_time'             => 1776876659,
+    'production_time'             => 1776876660,
     'native_yaml'                 => 0,
     'session_save_handler'        => 'files',
     'session_name'                => 'ICMS69E8FC72293B5',

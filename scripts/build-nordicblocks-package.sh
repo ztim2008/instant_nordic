@@ -4,6 +4,7 @@ set -euo pipefail
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 package_dir="$root_dir/packages/nordicblocks"
 dist_dir="$root_dir/dist"
+preflight_script="$root_dir/scripts/nordicblocks-package-preflight.sh"
 
 manifest_file="$package_dir/manifest.ru.ini"
 installer_file="$package_dir/install.php"
@@ -34,6 +35,12 @@ if [[ ! -d "$payload_dir" ]]; then
     echo "Missing package payload directory: $payload_dir" >&2
     exit 1
 fi
+
+if [[ ! -x "$preflight_script" ]]; then
+    chmod +x "$preflight_script"
+fi
+
+bash "$preflight_script"
 
 php_bin="/opt/php84/bin/php"
 if [[ ! -x "$php_bin" ]]; then
