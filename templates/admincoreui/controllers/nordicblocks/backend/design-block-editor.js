@@ -2987,8 +2987,7 @@
                 + renderField('Brightness фона %', 'element-props', 'backdropBrightness', props.backdropBrightness != null ? props.backdropBrightness : 100, 'number')
                 + '</div>',
                 'Используйте, когда нужно отойти от мастер-контрола и вручную докрутить характер стекла.'
-            )
-            + renderInspectorSubsection('Hover', renderSharedHoverFields(element, props));
+            );
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
             html += renderField('Размер иконки', 'element-props', 'size', props.size || 32, 'number');
