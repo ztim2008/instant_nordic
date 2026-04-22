@@ -1,0 +1,124 @@
+{
+    "title": "Лента новостей",
+    "category": "content",
+    "description": "Карточечная лента материалов с ручным режимом и подключением к content_list InstantCMS.",
+    "version": "1.0",
+    "fields": [
+        {
+            "key": "heading",
+            "label": "Заголовок секции",
+            "type": "text",
+            "default": "Последние новости"
+        },
+        {
+            "key": "layout_preset",
+            "label": "Visual preset",
+            "type": "select",
+            "default": "default",
+            "options": [
+                { "value": "default", "label": "Default editorial" },
+                { "value": "swiss", "label": "Swiss grid" }
+            ]
+        },
+        {
+            "key": "intro",
+            "label": "Описание секции",
+            "type": "textarea",
+            "rows": 3,
+            "default": "Редакционная лента, которую можно заполнить вручную или подключить к данным InstantCMS без расхождения preview и live."
+        },
+        {
+            "key": "more_link_label",
+            "label": "Текст ссылки",
+            "type": "text",
+            "default": "Все материалы"
+        },
+        {
+            "key": "more_link_url",
+            "label": "URL ссылки",
+            "type": "text",
+            "default": "/news"
+        },
+        {
+            "key": "items",
+            "label": "Карточки",
+            "type": "repeater",
+            "item_label": "Карточка",
+            "add_label": "Добавить карточку",
+            "default": [
+                {
+                    "category": "События",
+                    "category_url": "/news/category/sobytiya",
+                    "title": "Весенний релиз NordicBlocks вышел в живую сборку",
+                    "excerpt": "Обновили SSR-слой, привели preview к live и подготовили основу для новых контентных блоков.",
+                    "link_label": "Подробнее",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Превью релиза NordicBlocks",
+                    "date": "18 апреля 2026",
+                    "views": "1240",
+                    "comments": "18"
+                },
+                {
+                    "category": "Продукт",
+                    "category_url": "/news/category/product",
+                    "title": "Новая лента новостей работает в ручном и data-режиме",
+                    "excerpt": "Один и тот же блок подходит и для демо-наполнения, и для боевой привязки к типу контента news.",
+                    "link_label": "Изучить",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Карточки новостей в интерфейсе",
+                    "date": "17 апреля 2026",
+                    "views": "980",
+                    "comments": "9"
+                },
+                {
+                    "category": "Гайды",
+                    "category_url": "/news/category/guides",
+                    "title": "Как собрать редакционную главную без второго page builder",
+                    "excerpt": "Секции, карточки и типографика теперь живут в одном SSR-runtime и не расходятся между редактором и фронтом.",
+                    "link_label": "Читать",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Редакционная главная с карточками",
+                    "date": "16 апреля 2026",
+                    "views": "760",
+                    "comments": "5"
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Рубрика", "type": "text", "default": "Новости" },
+                { "key": "category_url", "label": "URL рубрики", "type": "text", "default": "" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новая карточка" },
+                { "key": "excerpt", "label": "Анонс", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
+                { "key": "link_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },
+                { "key": "url", "label": "URL", "type": "text", "default": "/news" },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "date", "label": "Дата", "type": "text", "default": "" },
+                { "key": "views", "label": "Просмотры", "type": "text", "default": "" },
+                { "key": "comments", "label": "Комментарии", "type": "text", "default": "" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 3 },
+        { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 1 },
+        { "key": "card_gap_desktop", "label": "Gap desktop", "type": "number", "default": 18 },
+        { "key": "card_gap_mobile", "label": "Gap mobile", "type": "number", "default": 14 },
+        { "key": "show_more_link", "label": "Показывать ссылку", "type": "boolean", "default": "1" },
+        { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать рубрику", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать анонс", "type": "boolean", "default": "1" },
+        { "key": "show_date", "label": "Показывать дату", "type": "boolean", "default": "1" },
+        { "key": "show_views", "label": "Показывать просмотры", "type": "boolean", "default": "1" },
+        { "key": "show_comments", "label": "Показывать комментарии", "type": "boolean", "default": "1" }
+    ]
+}

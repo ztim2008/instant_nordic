@@ -17,6 +17,16 @@ function after_install_package() {
 
 class NordicblocksPackageSync {
 
+    private static function getTableCharset() {
+        $charset = (string) cmsConfig::get('db_charset');
+
+        if ($charset === '') {
+            return 'utf8mb4';
+        }
+
+        return preg_match('/^[a-zA-Z0-9_]+$/', $charset) ? $charset : 'utf8mb4';
+    }
+
     public static function apply($db) {
         self::ensureBlocksTable($db);
         self::ensureWidget($db, 'nordicblocks_block', 'NordicBlocks: блок');
@@ -25,6 +35,8 @@ class NordicblocksPackageSync {
     }
 
     private static function ensureBlocksTable($db) {
+
+        $charset = self::getTableCharset();
 
         $db->query(
             "CREATE TABLE IF NOT EXISTS `{#}nordicblocks_blocks` (
@@ -38,7 +50,7 @@ class NordicblocksPackageSync {
                 PRIMARY KEY (`id`),
                 KEY `type` (`type`),
                 KEY `status` (`status`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            ) ENGINE=InnoDB DEFAULT CHARSET={$charset}"
         );
     }
 

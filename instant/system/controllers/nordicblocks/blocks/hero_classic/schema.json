@@ -1,0 +1,448 @@
+{
+  "badge": {
+    "type": "text",
+    "label": "Бейдж",
+    "default": "Donor Hero #1",
+    "placeholder": "Необязательно",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Основной текстовый контент hero-блока."
+  },
+  "title": {
+    "type": "text",
+    "label": "Заголовок",
+    "default": "Запустите сильный лендинг на InstantCMS",
+    "placeholder": "Введите заголовок...",
+    "maxLength": 120,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Основной текстовый контент hero-блока."
+  },
+  "subtitle": {
+    "type": "textarea",
+    "label": "Подзаголовок",
+    "default": "SSR-блоки, стандартное размещение через виджеты и единый runtime без takeover-магии.",
+    "placeholder": "Введите подзаголовок...",
+    "rows": 3,
+    "maxLength": 320,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Основной текстовый контент hero-блока."
+  },
+  "showDivider": {
+    "type": "boolean",
+    "label": "Показать разделитель",
+    "default": true,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Основной текстовый контент hero-блока."
+  },
+  "textAlign": {
+    "type": "select",
+    "label": "Выравнивание текста",
+    "default": "center",
+    "options": [
+      { "label": "По центру", "value": "center" },
+      { "label": "Слева", "value": "left" },
+      { "label": "Справа", "value": "right" }
+    ],
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста и ширина контентной колонки."
+  },
+  "contentMaxWidth": {
+    "type": "number",
+    "label": "Макс. ширина контента",
+    "default": 980,
+    "min": 480,
+    "max": 1440,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста и ширина контентной колонки."
+  },
+  "minHeightDesktop": {
+    "type": "number",
+    "label": "Мин. высота — desktop",
+    "default": 0,
+    "min": 0,
+    "max": 1400,
+    "step": 10,
+    "unit": "px",
+    "help": "0 = высота по контенту.",
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста, ширина контентной колонки и высота блока."
+  },
+  "minHeightMobile": {
+    "type": "number",
+    "label": "Мин. высота — mobile",
+    "default": 0,
+    "min": 0,
+    "max": 1000,
+    "step": 10,
+    "unit": "px",
+    "help": "0 = высота по контенту.",
+    "section": "layout",
+    "section_label": "Макет и позиционирование",
+    "section_hint": "Позиция текста, ширина контентной колонки и высота блока."
+  },
+  "backgroundMode": {
+    "type": "select",
+    "label": "Тип фона",
+    "default": "solid",
+    "options": [
+      { "label": "Сплошной цвет", "value": "solid" },
+      { "label": "Градиент", "value": "gradient" },
+      { "label": "Фото", "value": "image" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgColor": {
+    "type": "color",
+    "label": "Цвет фона",
+    "default": "#f4efe8",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgGradientStart": {
+    "type": "color",
+    "label": "Градиент — старт",
+    "default": "#111827",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgGradientEnd": {
+    "type": "color",
+    "label": "Градиент — конец",
+    "default": "#334155",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgGradientAngle": {
+    "type": "number",
+    "label": "Угол градиента",
+    "default": 135,
+    "min": 0,
+    "max": 360,
+    "step": 1,
+    "unit": "deg",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgImage": {
+    "type": "image",
+    "label": "Фоновое фото",
+    "default": "",
+    "help": "Фото выбирается через текущую медиабиблиотеку редактора.",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgImagePosition": {
+    "type": "select",
+    "label": "Позиция фото",
+    "default": "center center",
+    "options": [
+      { "label": "По центру", "value": "center center" },
+      { "label": "Сверху", "value": "center top" },
+      { "label": "Снизу", "value": "center bottom" },
+      { "label": "Слева", "value": "left center" },
+      { "label": "Справа", "value": "right center" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgOverlayColor": {
+    "type": "color",
+    "label": "Цвет затемнения",
+    "default": "#0f172a",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "bgOverlayOpacity": {
+    "type": "number",
+    "label": "Прозрачность затемнения",
+    "default": 35,
+    "min": 0,
+    "max": 90,
+    "step": 1,
+    "unit": "%",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Цвет, градиент, фоновое фото и затемнение."
+  },
+  "badgeColor": {
+    "type": "color",
+    "label": "Цвет бейджа",
+    "default": "#b42318",
+    "section": "text",
+    "section_label": "Цвет текста",
+    "section_hint": "Цвета отдельных текстовых сущностей."
+  },
+  "titleColor": {
+    "type": "color",
+    "label": "Цвет заголовка",
+    "default": "#111827",
+    "section": "text",
+    "section_label": "Цвет текста",
+    "section_hint": "Цвета отдельных текстовых сущностей."
+  },
+  "subtitleColor": {
+    "type": "color",
+    "label": "Цвет подзаголовка",
+    "default": "#475569",
+    "section": "text",
+    "section_label": "Цвет текста",
+    "section_hint": "Цвета отдельных текстовых сущностей."
+  },
+  "titleDesktopPx": {
+    "type": "number",
+    "label": "Заголовок — desktop",
+    "default": 96,
+    "min": 24,
+    "max": 200,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "titleMobilePx": {
+    "type": "number",
+    "label": "Заголовок — mobile",
+    "default": 52,
+    "min": 18,
+    "max": 140,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "subtitleDesktopPx": {
+    "type": "number",
+    "label": "Подзаголовок — desktop",
+    "default": 24,
+    "min": 10,
+    "max": 64,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "subtitleMobilePx": {
+    "type": "number",
+    "label": "Подзаголовок — mobile",
+    "default": 18,
+    "min": 10,
+    "max": 48,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "titleTag": {
+    "type": "select",
+    "label": "Заголовок — HTML тег",
+    "default": "h1",
+    "options": [
+      { "label": "DIV", "value": "div" },
+      { "label": "H1", "value": "h1" },
+      { "label": "H2", "value": "h2" },
+      { "label": "H3", "value": "h3" }
+    ],
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "titleWeight": {
+    "type": "select",
+    "label": "Заголовок — жирность",
+    "default": "900",
+    "options": [
+      { "label": "400 — Normal", "value": "400" },
+      { "label": "500 — Medium", "value": "500" },
+      { "label": "600 — SemiBold", "value": "600" },
+      { "label": "700 — Bold", "value": "700" },
+      { "label": "800 — ExtraBold", "value": "800" },
+      { "label": "900 — Black", "value": "900" }
+    ],
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для desktop и mobile."
+  },
+  "showButton": {
+    "type": "boolean",
+    "label": "Показать кнопку",
+    "default": true,
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonText": {
+    "type": "text",
+    "label": "Текст кнопки",
+    "default": "Начать",
+    "placeholder": "Текст кнопки",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonLink": {
+    "type": "url",
+    "label": "Ссылка кнопки",
+    "default": "#",
+    "placeholder": "#section или https://...",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonTarget": {
+    "type": "select",
+    "label": "Открывать ссылку",
+    "default": "_self",
+    "options": [
+      { "label": "В текущем окне", "value": "_self" },
+      { "label": "В новом окне", "value": "_blank" },
+      { "label": "В родительском окне", "value": "_parent" },
+      { "label": "В верхнем окне", "value": "_top" }
+    ],
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonStyle": {
+    "type": "select",
+    "label": "Стиль кнопки",
+    "default": "primary",
+    "options": [
+      { "label": "Заполненная", "value": "primary" },
+      { "label": "Контурная", "value": "outline" }
+    ],
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonTextColor": {
+    "type": "color",
+    "label": "Цвет текста кнопки",
+    "default": "#ffffff",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonBgColor": {
+    "type": "color",
+    "label": "Цвет фона кнопки",
+    "default": "#111827",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonBorderColor": {
+    "type": "color",
+    "label": "Цвет рамки кнопки",
+    "default": "#111827",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "buttonRadius": {
+    "type": "number",
+    "label": "Радиус кнопки",
+    "default": 999,
+    "min": 0,
+    "max": 999,
+    "step": 1,
+    "unit": "px",
+    "section": "button",
+    "section_label": "Кнопка и ссылка",
+    "section_hint": "Текст, ссылка, открытие в новом окне и стиль кнопки."
+  },
+  "paddingTopDesktop": {
+    "type": "number",
+    "label": "Padding top — desktop",
+    "default": 96,
+    "min": 0,
+    "max": 240,
+    "step": 1,
+    "unit": "px",
+    "section": "spacing",
+    "section_label": "Отступы",
+    "section_hint": "Вертикальные отступы блока на desktop и mobile."
+  },
+  "paddingBottomDesktop": {
+    "type": "number",
+    "label": "Padding bottom — desktop",
+    "default": 96,
+    "min": 0,
+    "max": 240,
+    "step": 1,
+    "unit": "px",
+    "section": "spacing",
+    "section_label": "Отступы",
+    "section_hint": "Вертикальные отступы блока на desktop и mobile."
+  },
+  "paddingTopMobile": {
+    "type": "number",
+    "label": "Padding top — mobile",
+    "default": 56,
+    "min": 0,
+    "max": 200,
+    "step": 1,
+    "unit": "px",
+    "section": "spacing",
+    "section_label": "Отступы",
+    "section_hint": "Вертикальные отступы блока на desktop и mobile."
+  },
+  "paddingBottomMobile": {
+    "type": "number",
+    "label": "Padding bottom — mobile",
+    "default": 56,
+    "min": 0,
+    "max": 200,
+    "step": 1,
+    "unit": "px",
+    "section": "spacing",
+    "section_label": "Отступы",
+    "section_hint": "Вертикальные отступы блока на desktop и mobile."
+  },
+  "blockAnimation": {
+    "type": "select",
+    "label": "Анимация появления",
+    "default": "none",
+    "options": [
+      { "label": "Без анимации", "value": "none" },
+      { "label": "Fade Up", "value": "fade-up" },
+      { "label": "Fade In", "value": "fade-in" },
+      { "label": "Zoom In", "value": "zoom-in" }
+    ],
+    "section": "effects",
+    "section_label": "Появление",
+    "section_hint": "Легкая CSS-анимация блока без дополнительных зависимостей."
+  },
+  "blockAnimationDelay": {
+    "type": "number",
+    "label": "Задержка анимации",
+    "default": 0,
+    "min": 0,
+    "max": 1500,
+    "step": 50,
+    "unit": "ms",
+    "section": "effects",
+    "section_label": "Появление",
+    "section_hint": "Легкая CSS-анимация блока без дополнительных зависимостей."
+  }
+}

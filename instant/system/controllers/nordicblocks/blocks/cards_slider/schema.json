@@ -1,0 +1,344 @@
+{
+    "title": "Карточки-слайдер",
+    "type": "cards_slider",
+    "profile": "slider_cards",
+    "generator": {
+        "name": "nordicblocks-scaffold",
+        "managed": true,
+        "stage": 3,
+        "profile": "slider_cards",
+        "designSystemMode": "global-first",
+        "sourceModeProfile": "content_list"
+    },
+    "fields": [
+        {
+            "key": "heading",
+            "type": "text",
+            "default": "Подборка кейсов, запусков и материалов"
+        },
+        {
+            "key": "subheading",
+            "type": "textarea",
+            "default": "Полноширинный editorial rail для свежих материалов InstantCMS: крупные карточки, свайп на мобильном и controlled navigation без block-private shell логики."
+        },
+        {
+            "key": "theme",
+            "type": "select",
+            "default": "light"
+        },
+        {
+            "key": "section_link_label",
+            "type": "text",
+            "default": "Смотреть все материалы"
+        },
+        {
+            "key": "section_link_url",
+            "type": "text",
+            "default": "/news"
+        },
+        {
+            "key": "content_width",
+            "type": "number",
+            "default": 1600
+        },
+        {
+            "key": "padding_top_desktop",
+            "type": "number",
+            "default": 72
+        },
+        {
+            "key": "padding_bottom_desktop",
+            "type": "number",
+            "default": 72
+        },
+        {
+            "key": "padding_top_mobile",
+            "type": "number",
+            "default": 40
+        },
+        {
+            "key": "padding_bottom_mobile",
+            "type": "number",
+            "default": 40
+        },
+        {
+            "key": "slides_per_view_desktop",
+            "type": "number",
+            "default": 3
+        },
+        {
+            "key": "slides_per_view_mobile",
+            "type": "number",
+            "default": 1
+        },
+        {
+            "key": "slide_gap_desktop",
+            "type": "number",
+            "default": 24
+        },
+        {
+            "key": "slide_gap_mobile",
+            "type": "number",
+            "default": 16
+        },
+        {
+            "key": "header_gap_desktop",
+            "type": "number",
+            "default": 28
+        },
+        {
+            "key": "header_gap_mobile",
+            "type": "number",
+            "default": 18
+        },
+        {
+            "key": "min_height_desktop",
+            "type": "number",
+            "default": 0
+        },
+        {
+            "key": "min_height_mobile",
+            "type": "number",
+            "default": 0
+        },
+        {
+            "key": "show_navigation",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_pagination",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_progress",
+            "type": "select",
+            "default": "0"
+        },
+        {
+            "key": "show_media",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_eyebrow",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_text",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_meta",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_primary_cta",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "show_secondary_cta",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "navigation_position_desktop",
+            "type": "select",
+            "default": "overlay"
+        },
+        {
+            "key": "navigation_position_mobile",
+            "type": "select",
+            "default": "hidden"
+        },
+        {
+            "key": "pagination_position_desktop",
+            "type": "select",
+            "default": "below"
+        },
+        {
+            "key": "pagination_position_mobile",
+            "type": "select",
+            "default": "below"
+        },
+        {
+            "key": "progress_position_desktop",
+            "type": "select",
+            "default": "below"
+        },
+        {
+            "key": "progress_position_mobile",
+            "type": "select",
+            "default": "below"
+        },
+        {
+            "key": "swipe",
+            "type": "select",
+            "default": "1"
+        },
+        {
+            "key": "autoplay",
+            "type": "select",
+            "default": "0"
+        },
+        {
+            "key": "loop",
+            "type": "select",
+            "default": "0"
+        },
+        {
+            "key": "autoplay_delay",
+            "type": "number",
+            "default": 4500
+        },
+        {
+            "key": "transition_ms",
+            "type": "number",
+            "default": 450
+        },
+        {
+            "key": "media_aspect_ratio",
+            "type": "select",
+            "default": "4:3"
+        },
+        {
+            "key": "media_object_fit",
+            "type": "select",
+            "default": "cover"
+        },
+        {
+            "key": "media_radius",
+            "type": "number",
+            "default": 24
+        },
+        {
+            "key": "slides",
+            "type": "repeater",
+            "default": [
+                {
+                    "eyebrow": "NordicBlocks",
+                    "title": "Полноширинный slider shell для first-wave family",
+                    "text": "Один rail для demo-карточек и для InstantCMS content_list без block-private renderer fork: shared inspector, shared shell и controlled runtime state.",
+                    "primary_cta_label": "Разобрать rollout",
+                    "primary_cta_url": "/docs/nordicblocks/CARDS-SLIDER-ROLLOUT-MAP-2026-04-20.md",
+                    "secondary_cta_label": "V1 spec",
+                    "secondary_cta_url": "/docs/nordicblocks/CARDS-SLIDER-V1.md",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "image_alt": "Editorial cover для cards_slider demo",
+                    "date": "20.04.2026",
+                    "meta_label": "Shared runtime",
+                    "record_url": "/docs/nordicblocks/CARDS-SLIDER-V1.md"
+                },
+                {
+                    "eyebrow": "InstantCMS",
+                    "title": "Контракт слайдов работает и в manual, и в content_list режиме",
+                    "text": "Slide payload держит eyebrow, title, text, media, meta и CTA отдельно, чтобы preview и public runtime не расходились по структуре и binding semantics.",
+                    "primary_cta_label": "Открыть family spec",
+                    "primary_cta_url": "/docs/nordicblocks/SLIDER-FAMILY-V1.md",
+                    "secondary_cta_label": "Проверить checklist",
+                    "secondary_cta_url": "/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "image_alt": "Demo visual для InstantCMS cards slider",
+                    "date": "20.04.2026",
+                    "meta_label": "Content list ready",
+                    "record_url": "/docs/nordicblocks/SLIDER-FAMILY-V1.md"
+                },
+                {
+                    "eyebrow": "Mobile baseline",
+                    "title": "Swipe на телефоне остаётся обязательной baseline-механикой",
+                    "text": "Даже без JS rail остаётся читаемым и листается нативным scroll-snap, а при включённом JS navigation, pagination и progress отражают активную группу карточек.",
+                    "primary_cta_label": "Открыть worklog",
+                    "primary_cta_url": "/docs/nordicblocks/WORKLOG-2026-04-20.md",
+                    "secondary_cta_label": "Статус rollout",
+                    "secondary_cta_url": "/docs/nordicblocks/CARDS-SLIDER-ROLLOUT-MAP-2026-04-20.md",
+                    "image": "/upload/nordicblocks/demo/hero-figma-light-10-11-bg.jpg",
+                    "image_alt": "Mobile swipe demo background",
+                    "date": "20.04.2026",
+                    "meta_label": "Swipe first",
+                    "record_url": "/docs/nordicblocks/WORKLOG-2026-04-20.md"
+                },
+                {
+                    "eyebrow": "Demo content",
+                    "title": "Starter slides сразу выглядят как живой showcase, а не пустой scaffold",
+                    "text": "Блок поднимается с готовыми demo карточками, после чего может быть мгновенно переведён на InstantCMS-записи через data source panel без ручного шаблонного заполнения.",
+                    "primary_cta_label": "Смотреть checklist",
+                    "primary_cta_url": "/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json",
+                    "secondary_cta_label": "Family rules",
+                    "secondary_cta_url": "/docs/nordicblocks/SLIDER-FAMILY-V1.md",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "image_alt": "Demo background для starter slides",
+                    "date": "20.04.2026",
+                    "meta_label": "Starter rail",
+                    "record_url": "/docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json"
+                }
+            ],
+            "fields": [
+                {
+                    "key": "eyebrow",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "title",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "text",
+                    "type": "textarea",
+                    "default": ""
+                },
+                {
+                    "key": "primary_cta_label",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "primary_cta_url",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "secondary_cta_label",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "secondary_cta_url",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "image",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "image_alt",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "date",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "meta_label",
+                    "type": "text",
+                    "default": ""
+                },
+                {
+                    "key": "record_url",
+                    "type": "text",
+                    "default": ""
+                }
+            ]
+        }
+    ]
+}

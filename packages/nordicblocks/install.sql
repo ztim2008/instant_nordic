@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS `{#}nordicblocks_pages` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `key` (`key`),
     KEY `status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- NordicBlocks: библиотека standalone блоков (новая архитектура)
 CREATE TABLE IF NOT EXISTS `{#}nordicblocks_blocks` (
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `{#}nordicblocks_blocks` (
     PRIMARY KEY (`id`),
     KEY `type` (`type`),
     KEY `status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- NordicBlocks: глобальные настройки дизайн‑системы (одна строка)
 CREATE TABLE IF NOT EXISTS `{#}nordicblocks_design` (
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS `{#}nordicblocks_design` (
     `tokens_json` mediumtext,
     `updated_at`  datetime     NOT NULL,
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- NordicBlocks: кэш рендера блоков (SSR‑фрагменты)
 CREATE TABLE IF NOT EXISTS `{#}nordicblocks_cache` (
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `{#}nordicblocks_cache` (
     `html`       mediumtext   NOT NULL,
     `expires_at` datetime     NOT NULL,
     PRIMARY KEY (`cache_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- NordicBlocks: регистрация виджета для размещения одиночного блока
 INSERT INTO `{#}widgets`

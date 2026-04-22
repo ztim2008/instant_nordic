@@ -1,0 +1,251 @@
+{
+    "title":    "Hero — заголовок секции",
+    "category": "hero",
+    "version":  "1.0",
+    "fields": [
+        {
+            "key":     "layout",
+            "label":   "Раскладка",
+            "type":    "select",
+            "default": "centered",
+            "options": [
+                { "value": "centered", "label": "По центру"   },
+                { "value": "left",     "label": "Слева"       },
+                { "value": "split",    "label": "Текст + фото" }
+            ]
+        },
+        {
+            "key":     "theme",
+            "label":   "Тема секции",
+            "type":    "select",
+            "default": "light",
+            "options": [
+                { "value": "light", "label": "Светлая" },
+                { "value": "dark",  "label": "Тёмная"  },
+                { "value": "accent","label": "Акцент"  }
+            ]
+        },
+        {
+            "key":     "eyebrow",
+            "label":   "Надзаголовок",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "heading",
+            "label":   "Заголовок",
+            "type":    "text",
+            "default": "Создавайте сайты быстро"
+        },
+        {
+            "key":     "subheading",
+            "label":   "Подзаголовок",
+            "type":    "textarea",
+            "default": "Визуальный конструктор лендингов для InstantCMS"
+        },
+        {
+            "key":     "btn_primary_label",
+            "label":   "Кнопка (главная)",
+            "type":    "text",
+            "default": "Начать бесплатно"
+        },
+        {
+            "key":     "btn_primary_url",
+            "label":   "Ссылка кнопки",
+            "type":    "text",
+            "default": "#"
+        },
+        {
+            "key":     "btn_secondary_label",
+            "label":   "Кнопка (второстепенная)",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "btn_secondary_url",
+            "label":   "Ссылка второй кнопки",
+            "type":    "text",
+            "default": "#"
+        },
+        {
+            "key":     "image",
+            "label":   "Изображение (для split)",
+            "type":    "image",
+            "default": ""
+        },
+        {
+            "key":     "image_alt",
+            "label":   "Alt текст изображения",
+            "type":    "text",
+            "default": ""
+        },
+        {
+            "key":     "heading_tag",
+            "label":   "Заголовок — HTML тег",
+            "type":    "select",
+            "default": "h1",
+            "options": [
+                { "value": "div", "label": "DIV" },
+                { "value": "h1", "label": "H1" },
+                { "value": "h2", "label": "H2" },
+                { "value": "h3", "label": "H3" }
+            ]
+        },
+        {
+            "key":     "heading_weight",
+            "label":   "Заголовок — жирность",
+            "type":    "select",
+            "default": "900",
+            "options": [
+                { "value": "400", "label": "400 — Normal" },
+                { "value": "500", "label": "500 — Medium" },
+                { "value": "600", "label": "600 — SemiBold" },
+                { "value": "700", "label": "700 — Bold" },
+                { "value": "800", "label": "800 — ExtraBold" },
+                { "value": "900", "label": "900 — Black" }
+            ]
+        },
+        {
+            "key":     "block_animation",
+            "label":   "Анимация появления",
+            "type":    "select",
+            "default": "none",
+            "options": [
+                { "value": "none", "label": "Без анимации" },
+                { "value": "fade-up", "label": "Fade Up" },
+                { "value": "fade-in", "label": "Fade In" },
+                { "value": "zoom-in", "label": "Zoom In" }
+            ]
+        },
+        {
+            "key":     "block_animation_delay",
+            "label":   "Задержка анимации",
+            "type":    "number",
+            "default": 0,
+            "min": 0,
+            "max": 1500,
+            "step": 50
+        },
+        {
+            "key":     "title_size_desktop",
+            "label":   "Заголовок — размер desktop",
+            "type":    "number",
+            "default": 64,
+            "min":     12,
+            "max":     240,
+            "step":    1
+        },
+        {
+            "key":     "title_size_mobile",
+            "label":   "Заголовок — размер mobile",
+            "type":    "number",
+            "default": 40,
+            "min":     12,
+            "max":     240,
+            "step":    1
+        },
+        {
+            "key":     "subtitle_size_desktop",
+            "label":   "Подзаголовок — размер desktop",
+            "type":    "number",
+            "default": 20,
+            "min":     10,
+            "max":     120,
+            "step":    1
+        },
+        {
+            "key":     "subtitle_size_mobile",
+            "label":   "Подзаголовок — размер mobile",
+            "type":    "number",
+            "default": 18,
+            "min":     10,
+            "max":     120,
+            "step":    1
+        },
+        {
+            "key":     "content_width",
+            "label":   "Ширина контента",
+            "type":    "number",
+            "default": 640,
+            "min":     280,
+            "max":     1440,
+            "step":    10
+        },
+        {
+            "key":     "padding_top_desktop",
+            "label":   "Отступ сверху desktop",
+            "type":    "number",
+            "default": 96,
+            "min":     0,
+            "max":     300,
+            "step":    4
+        },
+        {
+            "key":     "padding_bottom_desktop",
+            "label":   "Отступ снизу desktop",
+            "type":    "number",
+            "default": 96,
+            "min":     0,
+            "max":     300,
+            "step":    4
+        },
+        {
+            "key":     "padding_top_mobile",
+            "label":   "Отступ сверху mobile",
+            "type":    "number",
+            "default": 56,
+            "min":     0,
+            "max":     300,
+            "step":    4
+        },
+        {
+            "key":     "padding_bottom_mobile",
+            "label":   "Отступ снизу mobile",
+            "type":    "number",
+            "default": 56,
+            "min":     0,
+            "max":     300,
+            "step":    4
+        },
+        {
+            "key":     "min_height_desktop",
+            "label":   "Минимальная высота desktop",
+            "type":    "number",
+            "default": 0,
+            "min":     0,
+            "max":     1200,
+            "step":    10
+        },
+        {
+            "key":     "min_height_mobile",
+            "label":   "Минимальная высота mobile",
+            "type":    "number",
+            "default": 0,
+            "min":     0,
+            "max":     1200,
+            "step":    10
+        },
+        {
+            "key":     "btn_primary_style",
+            "label":   "Стиль основной кнопки",
+            "type":    "select",
+            "default": "primary",
+            "options": [
+                { "value": "primary", "label": "Primary" },
+                { "value": "outline", "label": "Outline" },
+                { "value": "ghost", "label": "Ghost" }
+            ]
+        },
+        {
+            "key":     "btn_secondary_style",
+            "label":   "Стиль вторичной кнопки",
+            "type":    "select",
+            "default": "outline",
+            "options": [
+                { "value": "primary", "label": "Primary" },
+                { "value": "outline", "label": "Outline" },
+                { "value": "ghost", "label": "Ghost" }
+            ]
+        }
+    ]
+}

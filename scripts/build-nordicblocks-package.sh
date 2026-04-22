@@ -76,6 +76,10 @@ cp "$installer_file" "$tmp_dir/install.php"
 cp "$install_sql" "$tmp_dir/install.sql"
 cp -R "$payload_dir" "$tmp_dir/package"
 
+# Keep installable archives runtime-only even if working docs appear in payload later.
+find "$tmp_dir/package" -type d \( -name docs -o -name .github \) -prune -exec rm -rf {} +
+find "$tmp_dir/package" -type f \( -name '*.md' -o -name '*.txt' \) -delete
+
 rm -f "$archive_path"
 rm -f "$versioned_archive_path"
 

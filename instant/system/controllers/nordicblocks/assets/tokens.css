@@ -1,0 +1,300 @@
+/*
+ * NordicBlocks Design System — tokens.css
+ *
+ * Базовый слой токенов и универсальных примитивов runtime.
+ * Значения из design action переопределяют эти переменные inline-стилем,
+ * поэтому здесь важны чистая структура и безопасные дефолты.
+ */
+
+:root {
+    /* ── ЦВЕТА ── */
+    --nb-color-accent:     #b42318;
+    --nb-color-accent-alt: #8a1910;
+    --nb-color-bg:         #ffffff;
+    --nb-color-bg-alt:     #f7f7f6;
+    --nb-color-bg-dark:    #111111;
+    --nb-color-text:       #1a1a1a;
+    --nb-color-text-muted: #6b7280;
+    --nb-color-border:     #e5e7eb;
+    --nb-color-surface:    #ffffff;
+
+    /* ── ШРИФТЫ (fluid clamp) ── */
+    --nb-text-xs:   clamp(0.6875rem, 0.63rem + 0.25vw, 0.8125rem);
+    --nb-text-sm:   clamp(0.8125rem, 0.75rem + 0.26vw, 0.9375rem);
+    --nb-text-base: clamp(1rem, 0.94rem + 0.27vw, 1.125rem);
+    --nb-text-lg:   clamp(1.125rem, 1.05rem + 0.34vw, 1.25rem);
+    --nb-text-xl:   clamp(1.25rem, 1.1rem + 0.65vw, 1.5rem);
+    --nb-text-2xl:  clamp(1.5rem, 1.2rem + 1.3vw, 2rem);
+    --nb-text-3xl:  clamp(1.875rem, 1.5rem + 1.7vw, 2.5rem);
+    --nb-text-4xl:  clamp(2.25rem, 1.5rem + 3.4vw, 3.5rem);
+    --nb-text-hero: clamp(2.5rem, 1.8rem + 5vw, 4.5rem);
+
+    /* ── ОТСТУПЫ (fluid clamp) ── */
+    --nb-space-xs:  clamp(0.25rem, 0.2rem + 0.22vw, 0.5rem);
+    --nb-space-sm:  clamp(0.5rem, 0.4rem + 0.37vw, 0.75rem);
+    --nb-space-md:  clamp(1rem, 0.8rem + 0.74vw, 1.5rem);
+    --nb-space-lg:  clamp(1.5rem, 1rem + 2.2vw, 3rem);
+    --nb-space-xl:  clamp(2rem, 1.2rem + 3.7vw, 4rem);
+    --nb-space-2xl: clamp(3rem, 1.5rem + 6.85vw, 6rem);
+    --nb-space-3xl: clamp(4rem, 2rem + 10.4vw, 7.5rem);
+
+    /* ── СЕКЦИИ И КОНТЕЙНЕР ── */
+    --nb-section-py:      clamp(3rem, 2rem + 5vw, 6rem);
+    --nb-section-padding: var(--nb-section-py);
+    --nb-section-gap:     clamp(2rem, 1rem + 7.4vw, 5rem);
+    --nb-container-max:   1200px;
+    --nb-container-px:    clamp(1rem, 0.5rem + 2.5vw, 2rem);
+
+    /* ── РАДИУСЫ ── */
+    --nb-radius-sm:    4px;
+    --nb-radius-md:    8px;
+    --nb-radius-lg:    16px;
+    --nb-radius-xl:    24px;
+    --nb-radius-pill:  9999px;
+    --nb-radius:       var(--nb-radius-md);
+    --nb-radius-card:  var(--nb-radius-lg);
+    --nb-radius-btn:   var(--nb-radius-md);
+    --nb-radius-media: var(--nb-radius-card);
+
+    /* ── ТЕНИ И ГРАНИЦЫ ── */
+    --nb-shadow-sm:   0 1px 2px 0 rgb(0 0 0 / .06);
+    --nb-shadow-md:   0 4px 12px 0 rgb(0 0 0 / .08);
+    --nb-shadow-lg:   0 8px 32px 0 rgb(0 0 0 / .12);
+    --nb-shadow-card: var(--nb-shadow-md);
+    --nb-border-width: 1px;
+
+    /* ── ТИПОГРАФИКА ── */
+    --nb-font-sans:   'Inter', 'Helvetica Neue', Arial, sans-serif;
+    --nb-font-serif:  'Playfair Display', Georgia, serif;
+    --nb-font-mono:   'JetBrains Mono', 'Courier New', monospace;
+    --nb-font-body:   var(--nb-font-sans);
+    --nb-font-head:   var(--nb-font-sans);
+    --nb-font-button: var(--nb-font-body);
+    --nb-leading-tight:   1.2;
+    --nb-leading-snug:    1.375;
+    --nb-leading-normal:  1.5;
+    --nb-leading-relaxed: 1.625;
+    --nb-tracking-tight:  -0.02em;
+    --nb-tracking-normal: 0;
+    --nb-tracking-wide:   0.05em;
+    --nb-weight-normal:   400;
+    --nb-weight-medium:   500;
+    --nb-weight-semibold: 600;
+    --nb-weight-bold:     700;
+    --nb-weight-black:    900;
+
+    /* ── ПЕРЕХОДЫ ── */
+    --nb-ease:         cubic-bezier(.4, 0, .2, 1);
+    --nb-duration-sm:  150ms;
+    --nb-duration-md:  250ms;
+    --nb-duration-lg:  400ms;
+    --nb-transition:   var(--nb-duration-md) var(--nb-ease);
+    --nb-surface-motion-duration: 0ms;
+
+    /* ── КНОПКИ ── */
+    --nb-btn-font-size:      var(--nb-text-base);
+    --nb-btn-padding-y:      var(--nb-space-sm);
+    --nb-btn-padding-x:      var(--nb-space-lg);
+    --nb-btn-primary-bg:     var(--nb-color-accent);
+    --nb-btn-primary-text:   #ffffff;
+    --nb-btn-primary-border: var(--nb-color-accent);
+    --nb-btn-primary-bg-hover:     var(--nb-color-accent-alt);
+    --nb-btn-primary-text-hover:   #ffffff;
+    --nb-btn-primary-border-hover: var(--nb-color-accent-alt);
+    --nb-btn-primary-bg-active:     var(--nb-color-accent-alt);
+    --nb-btn-primary-text-active:   #ffffff;
+    --nb-btn-primary-border-active: var(--nb-color-accent-alt);
+    --nb-btn-outline-bg:            transparent;
+    --nb-btn-outline-text:          var(--nb-color-accent);
+    --nb-btn-outline-border:        var(--nb-color-accent);
+    --nb-btn-outline-bg-hover:      var(--nb-color-accent);
+    --nb-btn-outline-text-hover:    #ffffff;
+    --nb-btn-outline-border-hover:  var(--nb-color-accent);
+    --nb-btn-outline-bg-active:     var(--nb-color-accent-alt);
+    --nb-btn-outline-text-active:   #ffffff;
+    --nb-btn-outline-border-active: var(--nb-color-accent-alt);
+    --nb-btn-ghost-bg:              transparent;
+    --nb-btn-ghost-text:            var(--nb-color-text);
+    --nb-btn-ghost-border:          var(--nb-color-border);
+    --nb-btn-ghost-bg-hover:        var(--nb-color-bg-alt);
+    --nb-btn-ghost-text-hover:      var(--nb-color-text);
+    --nb-btn-ghost-border-hover:    var(--nb-color-border);
+    --nb-btn-ghost-bg-active:       var(--nb-color-bg-alt);
+    --nb-btn-ghost-text-active:     var(--nb-color-text);
+    --nb-btn-ghost-border-active:   var(--nb-color-border);
+    --nb-btn-hover-transform:       none;
+    --nb-btn-hover-shadow:          none;
+    --nb-btn-active-transform:      scale(.98);
+    --nb-btn-glint-opacity:         0;
+    --nb-btn-glint-color:           rgba(255, 255, 255, .45);
+    --nb-btn-glint-duration:        900ms;
+    --nb-focus-ring:                rgb(180 35 24 / .22);
+
+    /* ── Z-INDEX ── */
+    --nb-z-base:    0;
+    --nb-z-raised:  10;
+    --nb-z-overlay: 100;
+    --nb-z-modal:   200;
+    --nb-z-toast:   300;
+}
+
+/* ── ТЁМНАЯ ТЕМА ── */
+[data-nb-theme="dark"] {
+    --nb-color-bg:         #111111;
+    --nb-color-bg-alt:     #1c1c1c;
+    --nb-color-bg-dark:    #000000;
+    --nb-color-text:       #f5f5f5;
+    --nb-color-text-muted: #9ca3af;
+    --nb-color-border:     #2d2d2d;
+    --nb-color-surface:    #1c1c1c;
+}
+
+/* ── ACCENT ТЕМА ── */
+[data-nb-theme="accent"] {
+    --nb-color-bg:         var(--nb-color-accent);
+    --nb-color-bg-alt:     color-mix(in srgb, var(--nb-color-accent) 88%, black 12%);
+    --nb-color-text:       #ffffff;
+    --nb-color-text-muted: rgba(255,255,255,.8);
+    --nb-color-border:     color-mix(in srgb, var(--nb-color-accent-alt) 70%, white 30%);
+    --nb-color-surface:    color-mix(in srgb, var(--nb-color-accent) 92%, white 8%);
+}
+
+/* ── БАЗОВЫЕ ПРИМИТИВЫ ── */
+.nb-section {
+    padding-top: var(--nb-section-py);
+    padding-bottom: var(--nb-section-py);
+    background: var(--nb-color-bg);
+    color: var(--nb-color-text);
+}
+
+.nb-container {
+    width: 100%;
+    max-width: var(--nb-container-max);
+    margin-inline: auto;
+    padding-inline: var(--nb-container-px);
+}
+
+/* ── КНОПКИ ── */
+.nb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--nb-space-xs);
+    padding: var(--nb-btn-padding-y) var(--nb-btn-padding-x);
+    border: 2px solid transparent;
+    border-radius: var(--nb-radius-btn);
+    font-family: var(--nb-font-button, var(--nb-font-body));
+    font-size: var(--nb-btn-font-size, var(--nb-text-base));
+    font-weight: var(--nb-weight-semibold);
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background var(--nb-transition), color var(--nb-transition),
+        border-color var(--nb-transition), box-shadow var(--nb-transition),
+        transform var(--nb-duration-sm) var(--nb-ease);
+}
+
+.nb-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-135%);
+    background: linear-gradient(
+        110deg,
+        transparent 0%,
+        transparent 42%,
+        var(--nb-btn-glint-color) 50%,
+        transparent 58%,
+        transparent 100%
+    );
+    transition: transform var(--nb-btn-glint-duration) ease, opacity var(--nb-duration-sm) var(--nb-ease);
+}
+
+.nb-btn:hover {
+    transform: var(--nb-btn-hover-transform, none);
+    box-shadow: var(--nb-btn-hover-shadow, none);
+}
+
+.nb-btn:hover::after {
+    opacity: var(--nb-btn-glint-opacity, 0);
+    transform: translateX(135%);
+}
+
+.nb-btn:active {
+    transform: var(--nb-btn-active-transform, scale(.98));
+}
+
+.nb-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--nb-focus-ring), var(--nb-btn-hover-shadow, none);
+}
+
+.nb-btn--primary {
+    background: var(--nb-btn-primary-bg);
+    color: var(--nb-btn-primary-text);
+    border-color: var(--nb-btn-primary-border);
+}
+
+.nb-btn--primary:hover {
+    background: var(--nb-btn-primary-bg-hover);
+    color: var(--nb-btn-primary-text-hover);
+    border-color: var(--nb-btn-primary-border-hover);
+}
+
+.nb-btn--primary:active {
+    background: var(--nb-btn-primary-bg-active);
+    color: var(--nb-btn-primary-text-active);
+    border-color: var(--nb-btn-primary-border-active);
+}
+
+.nb-btn--outline {
+    background: var(--nb-btn-outline-bg);
+    color: var(--nb-btn-outline-text);
+    border-color: var(--nb-btn-outline-border);
+}
+
+.nb-btn--outline:hover {
+    background: var(--nb-btn-outline-bg-hover);
+    color: var(--nb-btn-outline-text-hover);
+    border-color: var(--nb-btn-outline-border-hover);
+}
+
+.nb-btn--outline:active {
+    background: var(--nb-btn-outline-bg-active);
+    color: var(--nb-btn-outline-text-active);
+    border-color: var(--nb-btn-outline-border-active);
+}
+
+.nb-btn--ghost {
+    background: var(--nb-btn-ghost-bg);
+    color: var(--nb-btn-ghost-text);
+    border-color: var(--nb-btn-ghost-border);
+}
+
+.nb-btn--ghost:hover {
+    background: var(--nb-btn-ghost-bg-hover);
+    color: var(--nb-btn-ghost-text-hover);
+    border-color: var(--nb-btn-ghost-border-hover);
+}
+
+.nb-btn--ghost:active {
+    background: var(--nb-btn-ghost-bg-active);
+    color: var(--nb-btn-ghost-text-active);
+    border-color: var(--nb-btn-ghost-border-active);
+}
+
+.nb-btn--outline-white {
+    background: transparent;
+    color: #ffffff;
+    border-color: rgba(255,255,255,.5);
+}
+
+.nb-btn--outline-white:hover {
+    background: rgba(255,255,255,.12);
+    color: #ffffff;
+}

@@ -1,0 +1,357 @@
+{
+  "background_mode": {
+    "type": "select",
+    "label": "Тип фона",
+    "default": "color",
+    "options": [
+      { "label": "Цвет", "value": "color" },
+      { "label": "Градиент", "value": "gradient" },
+      { "label": "Изображение", "value": "image" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_color": {
+    "type": "color",
+    "label": "Цвет фона",
+    "default": "#fbfaf6",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_gradient_from": {
+    "type": "color",
+    "label": "Градиент: начало",
+    "default": "#fbfaf6",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_gradient_to": {
+    "type": "color",
+    "label": "Градиент: конец",
+    "default": "#f0ebe2",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_gradient_angle": {
+    "type": "number",
+    "label": "Угол градиента",
+    "default": 135,
+    "min": 0,
+    "max": 360,
+    "step": 1,
+    "unit": "deg",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_image": {
+    "type": "image",
+    "label": "Фоновое изображение",
+    "default": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_image_position": {
+    "type": "select",
+    "label": "Позиция фонового изображения",
+    "default": "center center",
+    "options": [
+      { "label": "По центру", "value": "center center" },
+      { "label": "Сверху", "value": "top center" },
+      { "label": "Снизу", "value": "bottom center" },
+      { "label": "Слева", "value": "center left" },
+      { "label": "Справа", "value": "center right" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_overlay_color": {
+    "type": "color",
+    "label": "Цвет затемнения фона",
+    "default": "#ffffff",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "background_overlay_opacity": {
+    "type": "number",
+    "label": "Прозрачность затемнения",
+    "default": 22,
+    "min": 0,
+    "max": 90,
+    "step": 1,
+    "unit": "%",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фон секции и изображение обложки."
+  },
+  "kicker": {
+    "type": "text",
+    "label": "Кикер",
+    "default": "NORDIC JOURNAL",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты обложечного hero и нижние карточки."
+  },
+  "title": {
+    "type": "textarea",
+    "label": "Заголовок",
+    "default": "Скандинавский журнал. Новый выпуск.",
+    "rows": 3,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты обложечного hero и нижние карточки."
+  },
+  "meta_line": {
+    "type": "text",
+    "label": "Мета-строка",
+    "default": "Январь 2026 · 7 минут чтения",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты обложечного hero и нижние карточки."
+  },
+  "subtitle": {
+    "type": "textarea",
+    "label": "Подзаголовок",
+    "default": "Минимализм, воздух, типографика и фотоконтент. Собираем лендинги как редакторскую полосу.",
+    "rows": 4,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты обложечного hero и нижние карточки."
+  },
+  "cover_image": {
+    "type": "image",
+    "label": "Изображение обложки",
+    "default": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+    "section": "media",
+    "section_label": "Обложка",
+    "section_hint": "Правый медиа-блок и подпись под ним."
+  },
+  "cover_image_alt": {
+    "type": "text",
+    "label": "ALT для обложки",
+    "default": "Обложка выпуска",
+    "section": "media",
+    "section_label": "Обложка",
+    "section_hint": "Правый медиа-блок и подпись под ним."
+  },
+  "cover_label": {
+    "type": "text",
+    "label": "Подпись к обложке",
+    "default": "Обложка",
+    "section": "media",
+    "section_label": "Обложка",
+    "section_hint": "Правый медиа-блок и подпись под ним."
+  },
+  "cover_card_title": {
+    "type": "text",
+    "label": "Заголовок под обложкой",
+    "default": "",
+    "section": "media",
+    "section_label": "Обложка",
+    "section_hint": "Правый медиа-блок и подпись под ним."
+  },
+  "title_size_desktop": {
+    "type": "number",
+    "label": "Заголовок desktop",
+    "default": 78,
+    "min": 28,
+    "max": 180,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры заголовка и подзаголовка."
+  },
+  "title_size_mobile": {
+    "type": "number",
+    "label": "Заголовок mobile",
+    "default": 42,
+    "min": 18,
+    "max": 120,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры заголовка и подзаголовка."
+  },
+  "subtitle_size_desktop": {
+    "type": "number",
+    "label": "Подзаголовок desktop",
+    "default": 21,
+    "min": 12,
+    "max": 60,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры заголовка и подзаголовка."
+  },
+  "subtitle_size_mobile": {
+    "type": "number",
+    "label": "Подзаголовок mobile",
+    "default": 18,
+    "min": 12,
+    "max": 48,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры заголовка и подзаголовка."
+  },
+  "content_width": {
+    "type": "number",
+    "label": "Макс. ширина композиции",
+    "default": 1380,
+    "min": 960,
+    "max": 1680,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Сетка, ширина и вертикальные отступы."
+  },
+  "padding_top_desktop": {
+    "type": "number",
+    "label": "Отступ сверху desktop",
+    "default": 88,
+    "min": 0,
+    "max": 220,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Сетка, ширина и вертикальные отступы."
+  },
+  "padding_bottom_desktop": {
+    "type": "number",
+    "label": "Отступ снизу desktop",
+    "default": 64,
+    "min": 0,
+    "max": 220,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Сетка, ширина и вертикальные отступы."
+  },
+  "padding_top_mobile": {
+    "type": "number",
+    "label": "Отступ сверху mobile",
+    "default": 32,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Сетка, ширина и вертикальные отступы."
+  },
+  "padding_bottom_mobile": {
+    "type": "number",
+    "label": "Отступ снизу mobile",
+    "default": 28,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Сетка, ширина и вертикальные отступы."
+  },
+  "show_button": {
+    "type": "boolean",
+    "label": "Показать кнопку",
+    "default": true,
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Основной CTA слева под текстом."
+  },
+  "button_text": {
+    "type": "text",
+    "label": "Текст кнопки",
+    "default": "Читать выпуск",
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Основной CTA слева под текстом."
+  },
+  "button_link": {
+    "type": "text",
+    "label": "Ссылка кнопки",
+    "default": "#next",
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Основной CTA слева под текстом."
+  },
+  "button_target": {
+    "type": "select",
+    "label": "Открывать ссылку",
+    "default": "_self",
+    "options": [
+      { "label": "В текущем окне", "value": "_self" },
+      { "label": "В новом окне", "value": "_blank" }
+    ],
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Основной CTA слева под текстом."
+  },
+  "show_highlights": {
+    "type": "boolean",
+    "label": "Показать карточки-хайлайты",
+    "default": true,
+    "section": "highlights",
+    "section_label": "Хайлайты",
+    "section_hint": "Нижние карточки с краткими тезисами."
+  },
+  "highlights": {
+    "type": "repeater",
+    "label": "Карточки-хайлайты",
+    "section": "highlights",
+    "section_label": "Хайлайты",
+    "section_hint": "Нижние карточки с краткими тезисами.",
+    "fields": [
+      {
+        "key": "title",
+        "type": "text",
+        "label": "Заголовок",
+        "default": "Материалы"
+      },
+      {
+        "key": "text",
+        "type": "textarea",
+        "label": "Описание",
+        "default": "Готовые блоки в журнальном стиле.",
+        "rows": 3
+      },
+      {
+        "key": "link",
+        "type": "text",
+        "label": "Ссылка",
+        "default": ""
+      }
+    ],
+    "default": [
+      {
+        "title": "Материалы",
+        "text": "Готовые блоки в журнальном стиле.",
+        "link": "#blocks"
+      },
+      {
+        "title": "Сетка",
+        "text": "Адаптивная типографика и отступы.",
+        "link": ""
+      },
+      {
+        "title": "Медиа",
+        "text": "Галерея, загрузка и URL без боли.",
+        "link": ""
+      }
+    ]
+  }
+}

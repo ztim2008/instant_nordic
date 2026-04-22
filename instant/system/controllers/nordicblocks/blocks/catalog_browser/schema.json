@@ -1,0 +1,174 @@
+{
+    "title": "Каталог",
+    "category": "catalog",
+    "description": "Первый block type catalog family: каталог услуг, работ, кейсов и mini-catalog сценариев на лендинге.",
+    "version": "1.0",
+    "fields": [
+        {
+            "key": "heading",
+            "label": "Заголовок секции",
+            "type": "text",
+            "default": "Каталог"
+        },
+        {
+            "key": "intro",
+            "label": "Подзаголовок секции",
+            "type": "textarea",
+            "rows": 3,
+            "default": "Управляемый каталог услуг, работ или товаров без checkout, но с сильной карточечной подачей."
+        },
+        {
+            "key": "section_link_label",
+            "label": "Текст ссылки секции",
+            "type": "text",
+            "default": "Открыть все"
+        },
+        {
+            "key": "section_link_url",
+            "label": "URL ссылки секции",
+            "type": "text",
+            "default": "/catalog"
+        },
+        {
+            "key": "items",
+            "label": "Карточки",
+            "type": "repeater",
+            "item_label": "Карточка",
+            "add_label": "Добавить карточку",
+            "default": [
+                {
+                    "category": "Услуги",
+                    "category_url": "/catalog/services",
+                    "title": "Комплексный аудит",
+                    "excerpt": "Быстрый аудит с приоритетами, сметой и понятной картой следующих шагов.",
+                    "price": "12000",
+                    "price_old": "15000",
+                    "currency": "RUB",
+                    "badge": "Популярно",
+                    "tags": "аудит, стратегия",
+                    "url": "/catalog/audit",
+                    "cta_label": "Запросить",
+                    "cta_kind": "url",
+                    "cta_url": "/contact",
+                    "messenger_type": "none",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Комплексный аудит",
+                    "availability": "available",
+                    "gallery": "[{\"src\":\"/upload/nordicblocks/demo/hero-magazine-01-cover.jpg\",\"alt\":\"Комплексный аудит\",\"caption\":\"Обложка услуги\"},{\"src\":\"/upload/nordicblocks/demo/hero-magazine-01-bg.jpg\",\"alt\":\"Комплексный аудит\",\"caption\":\"Деталь кейса\"}]"
+                },
+                {
+                    "category": "Кейсы",
+                    "category_url": "/catalog/cases",
+                    "title": "Серия интерьерных проектов",
+                    "excerpt": "Подборка реализованных объектов с акцентом на материалы, детали и фотоподачу.",
+                    "price": "0",
+                    "price_old": "",
+                    "currency": "RUB",
+                    "badge": "Новый кейс",
+                    "tags": "портфолио, интерьер",
+                    "url": "/catalog/interiors",
+                    "cta_label": "Смотреть кейс",
+                    "cta_kind": "url",
+                    "cta_url": "/catalog/interiors",
+                    "messenger_type": "none",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Интерьерный кейс",
+                    "availability": "available",
+                    "gallery": ""
+                },
+                {
+                    "category": "Мини-магазин",
+                    "category_url": "/catalog/shop",
+                    "title": "Базовый набор материалов",
+                    "excerpt": "Комплект стартовых материалов для тестового проекта без оформления заказа на сайте.",
+                    "price": "5900",
+                    "price_old": "6900",
+                    "currency": "RUB",
+                    "badge": "-15%",
+                    "tags": "набор, материалы",
+                    "url": "/catalog/materials",
+                    "cta_label": "Написать",
+                    "cta_kind": "telegram",
+                    "cta_url": "https://t.me/example",
+                    "messenger_type": "telegram",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Набор материалов",
+                    "availability": "limited",
+                    "gallery": ""
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Категория", "type": "text", "default": "Категория" },
+                { "key": "category_url", "label": "URL категории", "type": "text", "default": "" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новая карточка" },
+                { "key": "excerpt", "label": "Описание", "type": "textarea", "rows": 4, "default": "Короткое описание карточки каталога." },
+                { "key": "price", "label": "Цена", "type": "text", "default": "0" },
+                { "key": "price_old", "label": "Старая цена", "type": "text", "default": "" },
+                { "key": "currency", "label": "Валюта", "type": "text", "default": "RUB" },
+                { "key": "badge", "label": "Badge", "type": "text", "default": "" },
+                { "key": "tags", "label": "Теги", "type": "text", "default": "" },
+                { "key": "url", "label": "URL карточки", "type": "text", "default": "/catalog" },
+                { "key": "cta_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },
+                { "key": "cta_kind", "label": "Тип CTA", "type": "select", "default": "url", "options": [
+                    { "value": "url", "label": "URL" },
+                    { "value": "whatsapp", "label": "WhatsApp" },
+                    { "value": "telegram", "label": "Telegram" },
+                    { "value": "phone", "label": "Телефон" },
+                    { "value": "none", "label": "Без CTA" }
+                ] },
+                { "key": "cta_url", "label": "URL CTA", "type": "text", "default": "" },
+                { "key": "messenger_type", "label": "Тип мессенджера", "type": "select", "default": "none", "options": [
+                    { "value": "none", "label": "Нет" },
+                    { "value": "whatsapp", "label": "WhatsApp" },
+                    { "value": "telegram", "label": "Telegram" }
+                ] },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "availability", "label": "Наличие", "type": "select", "default": "available", "options": [
+                    { "value": "available", "label": "Доступно" },
+                    { "value": "limited", "label": "Ограничено" },
+                    { "value": "on_request", "label": "По запросу" },
+                    { "value": "hidden", "label": "Скрыто" }
+                ] },
+                { "key": "gallery", "label": "Галерея", "type": "textarea", "rows": 3, "default": "" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание header", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 3 },
+        { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 1 },
+        { "key": "collection_mode", "label": "Режим длинного каталога", "type": "select", "default": "all", "options": [
+            { "value": "all", "label": "Все карточки" },
+            { "value": "load_more", "label": "Кнопка Показать ещё" },
+            { "value": "pagination", "label": "Пагинация" }
+        ] },
+        { "key": "items_per_page", "label": "Карточек на шаг или страницу", "type": "number", "default": 6 },
+        { "key": "show_results_count", "label": "Показывать счётчик результатов", "type": "boolean", "default": "1" },
+        { "key": "show_search", "label": "Показывать поиск", "type": "boolean", "default": "1" },
+        { "key": "show_category_filter", "label": "Показывать фильтр категорий", "type": "boolean", "default": "1" },
+        { "key": "show_price_filter", "label": "Показывать фильтр цены", "type": "boolean", "default": "1" },
+        { "key": "show_sort", "label": "Показывать сортировку", "type": "boolean", "default": "1" },
+        { "key": "show_active_filters", "label": "Показывать активные фильтры", "type": "boolean", "default": "1" },
+        { "key": "search_in_title", "label": "Искать по заголовку", "type": "boolean", "default": "1" },
+        { "key": "search_in_excerpt", "label": "Искать по описанию", "type": "boolean", "default": "1" },
+        { "key": "search_in_category", "label": "Искать по категории", "type": "boolean", "default": "1" },
+        { "key": "search_in_badge", "label": "Искать по badge", "type": "boolean", "default": "1" },
+        { "key": "search_in_tags", "label": "Искать по тегам", "type": "boolean", "default": "1" },
+        { "key": "search_in_price", "label": "Искать по цене", "type": "boolean", "default": "0" },
+        { "key": "search_in_availability", "label": "Искать по наличию", "type": "boolean", "default": "1" },
+        { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать категорию", "type": "boolean", "default": "1" },
+        { "key": "show_badge", "label": "Показывать badge", "type": "boolean", "default": "1" },
+        { "key": "show_price", "label": "Показывать цену", "type": "boolean", "default": "1" },
+        { "key": "show_old_price", "label": "Показывать старую цену", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать описание", "type": "boolean", "default": "1" },
+        { "key": "show_cta", "label": "Показывать CTA", "type": "boolean", "default": "1" }
+    ]
+}
