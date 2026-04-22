@@ -40,6 +40,7 @@ class NordicblocksDesignBlockElementRenderer {
         $props = is_array($element['desktop']['props'] ?? null) ? $element['desktop']['props'] : [];
         $classes = 'nb-design-el nb-design-el--' . self::attr($type);
         $attrs = ' class="' . $classes . '" data-el-id="' . self::attr($id) . '" data-nb-entity="element:' . self::attr($id) . '"';
+        $attrs .= self::buildMotionAttrs($element);
 
         if ($type === 'text') {
             $tag = self::selectTag((string) ($props['tag'] ?? 'div'));
@@ -84,6 +85,44 @@ class NordicblocksDesignBlockElementRenderer {
         }
 
         return '<div' . $attrs . '></div>';
+    }
+
+    private static function buildMotionAttrs(array $element) {
+        $attrs = '';
+        $has_motion = false;
+        $desktop_trigger = 'none';
+        $desktop_preset = 'fade-up';
+
+        foreach (['desktop', 'tablet', 'mobile'] as $breakpoint) {
+            $props = is_array($element[$breakpoint]['props'] ?? null) ? $element[$breakpoint]['props'] : [];
+            $motion_trigger = (string) ($props['motionTrigger'] ?? 'none');
+            $motion_preset = (string) ($props['motionPreset'] ?? 'fade-up');
+
+            if ($breakpoint === 'desktop') {
+                $desktop_trigger = $motion_trigger;
+                $desktop_preset = $motion_preset;
+            }
+
+            if (in_array($motion_trigger, ['entry', 'scroll'], true)) {
+                $has_motion = true;
+            }
+
+            $attrs .= ' data-motion-trigger-' . $breakpoint . '="' . self::attr($motion_trigger) . '"';
+            $attrs .= ' data-motion-preset-' . $breakpoint . '="' . self::attr($motion_preset) . '"';
+        }
+
+        if (!$has_motion) {
+            return $attrs;
+        }
+
+        $attrs .= ' data-motion="1"';
+
+        if (in_array($desktop_trigger, ['entry', 'scroll'], true)) {
+            $attrs .= ' data-motion-active-trigger="' . self::attr($desktop_trigger) . '"';
+            $attrs .= ' data-motion-active-preset="' . self::attr($desktop_preset) . '"';
+        }
+
+        return $attrs;
     }
 
     private static function selectTag($tag) {

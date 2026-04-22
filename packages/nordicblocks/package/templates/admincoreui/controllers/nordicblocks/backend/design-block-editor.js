@@ -123,7 +123,7 @@
         'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
-        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration'
+        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration', 'motionTrigger', 'motionPreset', 'motionDuration', 'motionDelay', 'motionEasing', 'motionAmount'
     ];
 
     var DEFAULT_FONT_FAMILIES = [
@@ -2861,29 +2861,7 @@
                 'Старое raw поле boxShadow остаётся как fallback для уже сохранённых блоков.'
             )
             + renderInspectorSubsection('Hover',
-                '<div class="nbde-field-grid nbde-field-grid--2">'
-                + renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
-                    { value: 'inherit', label: 'Как обычный' },
-                    { value: 'solid', label: 'Свой цвет' },
-                    { value: 'gradient', label: 'Свой градиент' }
-                ])
-                + (((props.hoverBackgroundMode || 'inherit') === 'gradient')
-                    ? renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || '#111827', 'string')
-                        + renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || '#2563eb', 'string')
-                    : (((props.hoverBackgroundMode || 'inherit') === 'solid')
-                        ? renderField('Hover цвет кнопки', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string')
-                        : ''))
-                + renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string')
-                + renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number')
-                + renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number')
-                + renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number')
-                + renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number')
-                + renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string')
-                + renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset)
-                + renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number')
-                + renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number')
-                + renderField('Длительность анимации', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number')
-                + '</div>'
+                renderSharedHoverFields(element, props)
             )
             + renderInspectorSubsection('Отступы',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -3009,7 +2987,8 @@
                 + renderField('Brightness фона %', 'element-props', 'backdropBrightness', props.backdropBrightness != null ? props.backdropBrightness : 100, 'number')
                 + '</div>',
                 'Используйте, когда нужно отойти от мастер-контрола и вручную докрутить характер стекла.'
-            );
+            )
+            + renderInspectorSubsection('Hover', renderSharedHoverFields(element, props));
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
             html += renderField('Размер иконки', 'element-props', 'size', props.size || 32, 'number');
@@ -3020,7 +2999,90 @@
         }
 
         html += '</div>';
+
+        if (supportsSharedHover(element.type)) {
+            html += renderInspectorSubsection('Hover', renderSharedHoverFields(element, props));
+        }
+
         return html;
+    }
+
+    function supportsSharedHover(type) {
+        return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
+    }
+
+    function supportsMotion(type) {
+        return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
+    }
+
+    function renderSharedHoverFields(element, props) {
+        var type = element.type;
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+            { value: 'inherit', label: 'Без смены' },
+            { value: 'solid', label: 'Свой цвет' },
+            { value: 'gradient', label: 'Свой градиент' }
+        ]);
+
+        if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+            html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#111827', 'string');
+            html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#2563eb', 'string');
+        } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+            html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
+        }
+
+        if (type === 'text' || type === 'button') {
+            html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+        }
+        if (type === 'button') {
+            html += renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string');
+        }
+
+        html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+        html += renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number');
+        html += renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number');
+        html += renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number');
+        html += renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number');
+        html += renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string');
+        html += renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset);
+        html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+        html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+        html += renderField('Длительность hover', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderAnimationFields(element, props) {
+        if (!supportsMotion(element.type)) {
+            return '';
+        }
+
+        return '<div class="nbde-field-grid nbde-field-grid--2">'
+            + renderSelectField('Триггер', 'element-props', 'motionTrigger', props.motionTrigger || 'none', [
+                { value: 'none', label: 'Без анимации' },
+                { value: 'entry', label: 'При появлении' },
+                { value: 'scroll', label: 'При скролле' }
+            ])
+            + renderSelectField('Пресет', 'element-props', 'motionPreset', props.motionPreset || 'fade-up', [
+                { value: 'fade-up', label: 'Fade Up' },
+                { value: 'fade-down', label: 'Fade Down' },
+                { value: 'slide-left', label: 'Slide Left' },
+                { value: 'slide-right', label: 'Slide Right' },
+                { value: 'zoom-in', label: 'Zoom In' },
+                { value: 'soft-pop', label: 'Soft Pop' }
+            ])
+            + renderField('Длительность ms', 'element-props', 'motionDuration', props.motionDuration != null ? props.motionDuration : 650, 'number')
+            + renderField('Задержка ms', 'element-props', 'motionDelay', props.motionDelay != null ? props.motionDelay : 0, 'number')
+            + renderSelectField('Кривая', 'element-props', 'motionEasing', props.motionEasing || 'smooth', [
+                { value: 'smooth', label: 'Smooth' },
+                { value: 'soft', label: 'Soft' },
+                { value: 'snappy', label: 'Snappy' },
+                { value: 'linear', label: 'Linear' }
+            ])
+            + renderField('Амплитуда', 'element-props', 'motionAmount', props.motionAmount != null ? props.motionAmount : 32, 'number')
+            + '</div>';
     }
 
     function renderPropertiesCard() {
@@ -3072,6 +3134,9 @@
         html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
         html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
         html += renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props));
+        if (supportsMotion(element.type)) {
+            html += renderInspectorSection('Анимация', 'Entry/scroll пресет и hover-динамика для выбранного объекта.', renderAnimationFields(element, props));
+        }
 
         if (nodes.propertiesCard) {
             nodes.propertiesCard.innerHTML = html;
