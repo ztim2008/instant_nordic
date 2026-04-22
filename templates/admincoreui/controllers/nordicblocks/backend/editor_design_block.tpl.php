@@ -52,9 +52,11 @@ foreach ([$http_template, 'modern'] as $template_name) {
         <div class="nbde-topbar__main">
             <a class="nbde-ghost-button" href="<?= htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8') ?>">К списку блоков</a>
             <div class="nbde-titlebox">
-                <span class="nbde-badge">Дизайн-блок</span>
+                <div class="nbde-titlebox__row">
+                    <span class="nbde-badge">Дизайн-блок</span>
+                    <div class="nbde-statusline" id="nbd-status-text">Загрузка редактора...</div>
+                </div>
                 <input class="nbde-title-input" id="nbd-title-input" type="text" value="<?= htmlspecialchars((string) ($block['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Название блока">
-                <div class="nbde-statusline" id="nbd-status-text">Загрузка редактора...</div>
             </div>
         </div>
         <div class="nbde-topbar__actions">
@@ -85,7 +87,11 @@ foreach ([$http_template, 'modern'] as $template_name) {
             </div>
         </section>
 
-        <aside class="nbde-sidebar">
+        <aside class="nbde-sidebar" id="nbd-sidebar">
+            <button class="nbde-sidebar__toggle" type="button" data-action="toggle-sidebar" aria-expanded="true" aria-controls="nbd-sidebar">
+                <span class="nbde-sidebar__toggle-icon" aria-hidden="true"></span>
+                <span class="nbde-sidebar__toggle-text">Свернуть панель</span>
+            </button>
             <section class="nbde-card">
                 <div class="nbde-card__head">
                     <h3>Дизайн-блок</h3>
@@ -94,7 +100,7 @@ foreach ([$http_template, 'modern'] as $template_name) {
                 <div class="nbde-card__body" id="nbd-block-card"></div>
             </section>
 
-            <section class="nbde-card">
+            <section class="nbde-card nbde-card--properties">
                 <div class="nbde-card__head">
                     <h3>Свойства элемента</h3>
                     <span id="nbd-properties-summary">Ничего не выбрано</span>

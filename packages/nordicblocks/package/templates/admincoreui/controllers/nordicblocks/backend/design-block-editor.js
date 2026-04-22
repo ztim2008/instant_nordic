@@ -190,6 +190,7 @@
         },
         uiState: {
             activeBreakpoint: 'desktop',
+            sidebarCollapsed: false,
             selectionIds: [],
             selectedElementId: null,
             contextMenu: {
@@ -241,7 +242,8 @@
         sectionCard: document.getElementById('nbd-section-card'),
         layersCard: document.getElementById('nbd-layers-card'),
         propertiesCard: document.getElementById('nbd-properties-card'),
-        saveButton: document.getElementById('nbd-save-button')
+        saveButton: document.getElementById('nbd-save-button'),
+        sidebar: document.getElementById('nbd-sidebar')
     };
 
     var geometryDebugEnabled = !!(bootstrap.devFlags && bootstrap.devFlags.geometryDebug);
@@ -2182,6 +2184,24 @@
         nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '.';
     }
 
+    function renderShellLayout() {
+        var sidebarToggle;
+
+        root.classList.toggle('is-sidebar-collapsed', !!state.uiState.sidebarCollapsed);
+
+        if (!nodes.sidebar) {
+            return;
+        }
+
+        sidebarToggle = nodes.sidebar.querySelector('[data-action="toggle-sidebar"]');
+
+        if (sidebarToggle) {
+            sidebarToggle.setAttribute('aria-expanded', state.uiState.sidebarCollapsed ? 'false' : 'true');
+            sidebarToggle.setAttribute('title', state.uiState.sidebarCollapsed ? 'Развернуть панель' : 'Свернуть панель');
+            sidebarToggle.setAttribute('aria-label', state.uiState.sidebarCollapsed ? 'Развернуть панель' : 'Свернуть панель');
+        }
+    }
+
     function updateCanvasWorkareaClass() {
         var stageMetrics;
         var outsideVisibilityMode;
@@ -2470,19 +2490,25 @@
         var section = getPath(state.documentState.contract, 'content.section', {});
         var background = getPath(state.documentState.contract, 'design.section.background', {});
         var html = '';
+        var mode = background.mode || 'solid';
 
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
         html += renderField('Название секции', 'section-content', 'name', section.name || '', 'string');
-        html += renderSelectField('Фон секции', 'section-background', 'mode', background.mode || 'solid', [
+        html += renderSelectField('Фон секции', 'section-background', 'mode', mode, [
             { value: 'solid', label: 'Сплошной' },
             { value: 'gradient', label: 'Градиент' },
             { value: 'image', label: 'Изображение' }
         ]);
-        html += renderField('Цвет фона', 'section-background', 'color', background.color || '#f5f7fb', 'string');
-        html += renderField('Градиент: от', 'section-background', 'gradientFrom', background.gradientFrom || '#f8fafc', 'string');
-        html += renderField('Градиент: до', 'section-background', 'gradientTo', background.gradientTo || '#e2e8f0', 'string');
-        html += renderField('Угол градиента', 'section-background', 'gradientAngle', background.gradientAngle || 135, 'number');
-        html += renderPickerField('Фоновое изображение', 'section-background', 'image', background.image || '', 'string');
+        if (mode === 'gradient') {
+            html += renderField('Градиент: от', 'section-background', 'gradientFrom', background.gradientFrom || '#f8fafc', 'string');
+            html += renderField('Градиент: до', 'section-background', 'gradientTo', background.gradientTo || '#e2e8f0', 'string');
+            html += renderField('Угол градиента', 'section-background', 'gradientAngle', background.gradientAngle || 135, 'number');
+        } else if (mode === 'image') {
+            html += renderField('Цвет подложки', 'section-background', 'color', background.color || '#f5f7fb', 'string');
+            html += renderPickerField('Фоновое изображение', 'section-background', 'image', background.image || '', 'string');
+        } else {
+            html += renderField('Цвет фона', 'section-background', 'color', background.color || '#f5f7fb', 'string');
+        }
         html += '</div>';
 
         if (nodes.sectionCard) {
@@ -2523,8 +2549,8 @@
             }
             html += '</span></span></button>';
             html += '<div class="nbde-layer-actions">';
-            html += '<button class="nbde-layer-toggle' + (!visible ? ' is-active' : '') + '" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + (!visible ? 'Показать' : 'Скрыть') + '</button>';
-            html += '<button class="nbde-layer-toggle' + (locked ? ' is-active' : '') + '" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (locked ? 'Unlock' : 'Lock') + '</button>';
+            html += '<button class="nbde-layer-toggle' + (!visible ? ' is-active' : '') + '" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '" title="' + escapeHtml(!visible ? 'Показать слой' : 'Скрыть слой') + '" aria-label="' + escapeHtml(!visible ? 'Показать слой' : 'Скрыть слой') + '">' + (!visible ? 'Показать' : 'Скрыть') + '</button>';
+            html += '<button class="nbde-layer-toggle' + (locked ? ' is-active' : '') + '" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '" title="' + escapeHtml(locked ? 'Разблокировать слой' : 'Заблокировать слой') + '" aria-label="' + escapeHtml(locked ? 'Разблокировать слой' : 'Заблокировать слой') + '">' + (locked ? 'Разблок' : 'Блок') + '</button>';
             html += '</div>';
             html += '</div>';
 
@@ -3875,6 +3901,7 @@
             });
         }
 
+        html += '</div>';
         html += '<div class="nbde-stage__footer-controls">' + renderStageHeightResizeEdge() + renderStageHeightResizeHandle(stageMetrics) + '</div>';
         html += '</div></div></div>';
         html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + renderContextMenu() + '</div>';
@@ -3898,6 +3925,7 @@
 
     function renderAll() {
         ensureSelectionState();
+        renderShellLayout();
         renderTopbar();
         renderBlockCard();
         renderStageCard();
@@ -6241,6 +6269,12 @@
         if (action === 'toggle-add-menu') {
             state.uiState.addMenuOpen = !state.uiState.addMenuOpen;
             renderBlockCard();
+            return;
+        }
+
+        if (action === 'toggle-sidebar') {
+            state.uiState.sidebarCollapsed = !state.uiState.sidebarCollapsed;
+            renderShellLayout();
             return;
         }
 
