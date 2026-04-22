@@ -76,6 +76,10 @@ class NordicblocksDesignBlockElementRenderer {
             return '<div' . $attrs . '>' . ($src !== '' ? '<video src="' . self::attr($src) . '" poster="' . self::attr($poster) . '" playsinline' . $controls . $autoplay . $muted . $loop . '></video>' : '') . '</div>';
         }
 
+        if ($type === 'embed') {
+            return self::renderEmbedElement($attrs, $props);
+        }
+
         if ($type === 'icon') {
             return '<div' . $attrs . '>' . self::renderIconMarkup((string) ($props['iconClass'] ?? 'fas fa-star')) . '</div>';
         }
@@ -203,6 +207,104 @@ class NordicblocksDesignBlockElementRenderer {
         }
 
         return implode(' ', $parts);
+    }
+
+    private static function renderEmbedElement($attrs, array $props) {
+        $frame_markup = self::buildEmbedFrameMarkup($props);
+
+        if ($frame_markup === '') {
+            return '<div' . $attrs . '><div class="nb-design-embed__placeholder">Добавьте HTML код или URL iframe в свойствах элемента</div></div>';
+        }
+
+        return '<div' . $attrs . '><div class="nb-design-embed__surface">' . $frame_markup . '</div></div>';
+    }
+
+    private static function buildEmbedFrameMarkup(array $props) {
+        $title = trim((string) ($props['title'] ?? 'Встраиваемый блок'));
+        $title = $title !== '' ? $title : 'Встраиваемый блок';
+        $loading = !empty($props['lazy']) ? 'lazy' : 'eager';
+        $sandbox = self::buildEmbedSandbox((string) ($props['sandboxProfile'] ?? 'strict'));
+        $allow = self::buildEmbedAllow($props);
+        $referrer_policy = trim((string) ($props['referrerPolicy'] ?? 'strict-origin-when-cross-origin'));
+        $source_mode = self::resolveEmbedSourceMode($props);
+        $frame_attrs = ' class="nb-design-embed__frame" title="' . self::attr($title) . '" loading="' . self::attr($loading) . '" referrerpolicy="' . self::attr($referrer_policy) . '"';
+
+        if ($sandbox !== '') {
+            $frame_attrs .= ' sandbox="' . self::attr($sandbox) . '"';
+        }
+
+        if ($allow !== '') {
+            $frame_attrs .= ' allow="' . self::attr($allow) . '"';
+        }
+
+        if (!empty($props['allowFullscreen'])) {
+            $frame_attrs .= ' allowfullscreen';
+        }
+
+        if ($source_mode === 'url') {
+            $url = trim((string) ($props['url'] ?? ''));
+
+            if (!preg_match('~^https?://~i', $url)) {
+                return '';
+            }
+
+            return '<iframe' . $frame_attrs . ' src="' . self::attr($url) . '"></iframe>';
+        }
+
+        $code = trim((string) ($props['code'] ?? ''));
+        if ($code === '') {
+            return '';
+        }
+
+        return '<iframe' . $frame_attrs . ' srcdoc="' . self::attr(self::buildEmbedSrcdoc($code, $title)) . '"></iframe>';
+    }
+
+    private static function resolveEmbedSourceMode(array $props) {
+        $source_mode = (string) ($props['sourceMode'] ?? 'html');
+
+        if ($source_mode === 'url' && trim((string) ($props['url'] ?? '')) !== '') {
+            return 'url';
+        }
+
+        if (trim((string) ($props['code'] ?? '')) !== '') {
+            return 'html';
+        }
+
+        return $source_mode === 'url' ? 'url' : 'html';
+    }
+
+    private static function buildEmbedSandbox($profile) {
+        $profiles = [
+            'strict' => 'allow-scripts allow-popups',
+            'forms' => 'allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox',
+            'media' => 'allow-scripts allow-popups allow-presentation',
+            'trusted' => 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads',
+        ];
+
+        return $profiles[$profile] ?? $profiles['strict'];
+    }
+
+    private static function buildEmbedAllow(array $props) {
+        $allow = ['autoplay', 'clipboard-write', 'encrypted-media', 'picture-in-picture'];
+        $profile = (string) ($props['sandboxProfile'] ?? 'strict');
+
+        if (in_array($profile, ['media', 'trusted'], true) || !empty($props['allowFullscreen'])) {
+            $allow[] = 'fullscreen';
+        }
+
+        if (in_array($profile, ['forms', 'trusted'], true)) {
+            $allow[] = 'payment';
+        }
+
+        return implode('; ', array_values(array_unique($allow)));
+    }
+
+    private static function buildEmbedSrcdoc($code, $title) {
+        return '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+            . self::escape($title)
+            . '</title><style>html,body{margin:0;padding:0;background:transparent;min-height:100%;}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:auto;}iframe{max-width:100%;}img,video{max-width:100%;height:auto;display:block;}</style></head><body>'
+            . $code
+            . '</body></html>';
     }
 
     private static function escape($value) {

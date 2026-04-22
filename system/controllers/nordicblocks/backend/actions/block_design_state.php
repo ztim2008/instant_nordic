@@ -80,6 +80,7 @@ class actionNordicblocksBlockDesignState extends cmsAction {
                     ['type' => 'button', 'label' => 'Кнопка', 'description' => 'CTA и ссылки'],
                     ['type' => 'object', 'label' => 'Объект', 'description' => 'Прямоугольники, круги, линии и базовые shape-объекты'],
                     ['type' => 'photo', 'label' => 'Фото', 'description' => 'Фотографии, обложки и медиа-поверхности'],
+                    ['type' => 'embed', 'label' => 'Вставка', 'description' => 'HTML код, iframe, карты, формы и внешние сервисы'],
                 ],
             ],
             'pickers' => [

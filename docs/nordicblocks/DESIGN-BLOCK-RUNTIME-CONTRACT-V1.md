@@ -242,14 +242,17 @@ Normalizer всегда возвращает shape:
 Допустимые типы только такие:
 
 1. `text`
-2. `image`
+2. `photo`
 3. `button`
-4. `shape`
+4. `object`
 5. `icon`
 6. `container`
 7. `video`
 8. `divider`
 9. `svg`
+10. `embed`
+
+Legacy aliases `image -> photo` и `shape -> object` допускаются только как transitional input layer и не должны становиться каноническим output type после normalizer-а.
 
 Неизвестный тип не должен доходить до renderer-а. Он должен:
 
@@ -263,14 +266,15 @@ Normalizer всегда возвращает shape:
 Для каждого типа нужен dedicated allowlist:
 
 1. `normalizeTextProps()`
-2. `normalizeImageProps()`
+2. `normalizePhotoProps()`
 3. `normalizeButtonProps()`
-4. `normalizeShapeProps()`
+4. `normalizeObjectProps()`
 5. `normalizeIconProps()`
 6. `normalizeContainerProps()`
 7. `normalizeVideoProps()`
 8. `normalizeDividerProps()`
 9. `normalizeSvgProps()`
+10. `normalizeEmbedProps()`
 
 ### 5.5 Common style normalizer
 
@@ -445,7 +449,7 @@ Builder должен отдавать:
 3. text transform/style/decoration;
 4. alignment vars.
 
-### 9.2 `image` / `svg`
+### 9.2 `photo` / `svg`
 
 Builder должен отдавать:
 
@@ -476,7 +480,7 @@ Builder должен отдавать:
 4. gradient CSS vars if enabled;
 5. disabled state.
 
-### 9.5 `shape`
+### 9.5 `object`
 
 Builder должен отдавать:
 
@@ -516,6 +520,18 @@ Builder должен отдавать:
 5. layout mode `absolute|flex`;
 6. flex settings if enabled;
 7. nested child payloads.
+
+### 9.9 `embed`
+
+Builder должен отдавать:
+
+1. `sourceMode = html|url`;
+2. `code` только для `srcdoc`-режима и только после server-side normalizer allowlist;
+3. `url` только для iframe URL режима;
+4. `title`;
+5. `lazy` / `allowFullscreen`;
+6. `sandboxProfile` и `referrerPolicy`;
+7. markup hint: sandboxed `iframe`, а не raw HTML в DOM страницы.
 
 ---
 

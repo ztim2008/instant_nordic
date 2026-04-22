@@ -4,7 +4,7 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 
 class NordicblocksDesignBlockContractNormalizer {
 
-    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'image', 'shape'];
+    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'embed', 'image', 'shape'];
     private static $allowed_background_modes = ['theme', 'solid', 'gradient', 'image'];
 
     public static function supportsType($type) {
@@ -326,6 +326,19 @@ class NordicblocksDesignBlockContractNormalizer {
                 'controls'  => self::bool($raw['controls'] ?? true, true),
                 'loop'      => self::bool($raw['loop'] ?? false, false),
                 'objectFit' => self::select($raw['objectFit'] ?? 'cover', ['cover', 'contain', 'fill'], 'cover'),
+            ];
+        }
+
+        if ($type === 'embed') {
+            return $common + [
+                'sourceMode' => self::select($raw['sourceMode'] ?? 'html', ['html', 'url'], 'html'),
+                'code' => self::string($raw['code'] ?? '', '', 30000),
+                'url' => self::string($raw['url'] ?? '', '', 2048),
+                'title' => self::string($raw['title'] ?? 'Встраиваемый блок', 'Встраиваемый блок', 255),
+                'lazy' => self::bool($raw['lazy'] ?? true, true),
+                'allowFullscreen' => self::bool($raw['allowFullscreen'] ?? false, false),
+                'sandboxProfile' => self::select($raw['sandboxProfile'] ?? 'strict', ['strict', 'forms', 'media', 'trusted'], 'strict'),
+                'referrerPolicy' => self::select($raw['referrerPolicy'] ?? 'strict-origin-when-cross-origin', ['no-referrer', 'origin', 'strict-origin', 'strict-origin-when-cross-origin', 'unsafe-url'], 'strict-origin-when-cross-origin'),
             ];
         }
 

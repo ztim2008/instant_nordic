@@ -93,6 +93,7 @@
         video: 'Видео',
         divider: 'Разделитель',
         svg: 'SVG',
+        embed: 'Вставка',
         group: 'Группа'
     };
 
@@ -100,7 +101,8 @@
         text: true,
         button: true,
         object: true,
-        photo: true
+        photo: true,
+        embed: true
     };
 
     var CONTENT_PROP_KEYS = {
@@ -110,6 +112,13 @@
         src: true,
         alt: true,
         poster: true,
+        code: true,
+        sourceMode: true,
+        title: true,
+        sandboxProfile: true,
+        lazy: true,
+        allowFullscreen: true,
+        referrerPolicy: true,
         iconClass: true,
         iconPosition: true,
         label: true
@@ -119,7 +128,7 @@
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
         'backdropBlur', 'backdropSaturate', 'backdropBrightness', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'fillOpacityPct', 'shape', 'objectFit', 'objectPosition', 'objectPositionX', 'objectPositionY',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
-        'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
+        'alt', 'poster', 'code', 'sourceMode', 'title', 'sandboxProfile', 'lazy', 'allowFullscreen', 'referrerPolicy', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
         'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
@@ -411,7 +420,109 @@
 
     function isMediaType(type) {
         type = normalizeElementType(type);
-        return type === 'photo' || type === 'svg' || type === 'video';
+        return type === 'photo' || type === 'svg' || type === 'video' || type === 'embed';
+    }
+
+    function resolveEmbedSourceMode(props) {
+        props = props || {};
+
+        if (String(props.sourceMode || '') === 'url' && String(props.url || '').trim()) {
+            return 'url';
+        }
+
+        if (String(props.code || '').trim()) {
+            return 'html';
+        }
+
+        return String(props.sourceMode || 'html') === 'url' ? 'url' : 'html';
+    }
+
+    function buildEmbedSandboxValue(profile) {
+        var profiles = {
+            strict: 'allow-scripts allow-popups',
+            forms: 'allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox',
+            media: 'allow-scripts allow-popups allow-presentation',
+            trusted: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads'
+        };
+
+        return profiles[String(profile || 'strict')] || profiles.strict;
+    }
+
+    function buildEmbedAllowValue(props) {
+        var allow = ['autoplay', 'clipboard-write', 'encrypted-media', 'picture-in-picture'];
+        var profile = String((props && props.sandboxProfile) || 'strict');
+
+        if (profile === 'media' || profile === 'trusted' || !!(props && props.allowFullscreen)) {
+            allow.push('fullscreen');
+        }
+
+        if (profile === 'forms' || profile === 'trusted') {
+            allow.push('payment');
+        }
+
+        return allow.filter(function (value, index, list) {
+            return list.indexOf(value) === index;
+        }).join('; ');
+    }
+
+    function buildEmbedPreviewSrcdoc(props) {
+        var title = escapeHtml((props && props.title) || 'Встраиваемый блок');
+        var code = String((props && props.code) || '');
+
+        return '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+            + title
+            + '</title><style>html,body{margin:0;padding:0;background:transparent;min-height:100%;}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:auto;}iframe{max-width:100%;}img,video{max-width:100%;height:auto;display:block;}</style></head><body>'
+            + code
+            + '</body></html>';
+    }
+
+    function buildEmbedPreviewFrame(props) {
+        var sourceMode = resolveEmbedSourceMode(props);
+        var title = String((props && props.title) || 'Встраиваемый блок');
+        var loading = props && props.lazy === false ? 'eager' : 'lazy';
+        var sandbox = buildEmbedSandboxValue(props && props.sandboxProfile);
+        var allow = buildEmbedAllowValue(props || {});
+        var html = '<iframe class="nbde-el__embed-frame" title="' + escapeHtml(title) + '" loading="' + escapeHtml(loading) + '" sandbox="' + escapeHtml(sandbox) + '" referrerpolicy="' + escapeHtml((props && props.referrerPolicy) || 'strict-origin-when-cross-origin') + '"';
+
+        if (allow) {
+            html += ' allow="' + escapeHtml(allow) + '"';
+        }
+
+        if (props && props.allowFullscreen) {
+            html += ' allowfullscreen';
+        }
+
+        if (sourceMode === 'url') {
+            if (!/^https?:\/\//i.test(String((props && props.url) || ''))) {
+                return '';
+            }
+
+            html += ' src="' + escapeHtml(props.url) + '"';
+        } else {
+            if (!String((props && props.code) || '').trim()) {
+                return '';
+            }
+
+            html += ' srcdoc="' + escapeHtml(buildEmbedPreviewSrcdoc(props || {})) + '"';
+        }
+
+        html += '></iframe>';
+        return html;
+    }
+
+    function getEmbedSourceModeLabel(value) {
+        return String(value || 'html') === 'url' ? 'Адрес iframe' : 'HTML-код';
+    }
+
+    function getEmbedSandboxProfileLabel(value) {
+        var labels = {
+            strict: 'Строгий',
+            forms: 'Формы',
+            media: 'Медиа',
+            trusted: 'Доверенный'
+        };
+
+        return labels[String(value || 'strict')] || labels.strict;
     }
 
     function normalizeHexColor(value) {
@@ -891,6 +1002,19 @@
             branch.props.src = '';
             branch.props.poster = '';
             branch.props.objectFit = 'cover';
+            branch.props.borderRadius = 24;
+        } else if (type === 'embed') {
+            branch.box.w = 480;
+            branch.box.h = 320;
+            branch.props.sourceMode = 'html';
+            branch.props.code = '';
+            branch.props.url = '';
+            branch.props.title = 'Встраиваемый блок';
+            branch.props.lazy = true;
+            branch.props.allowFullscreen = false;
+            branch.props.sandboxProfile = 'strict';
+            branch.props.referrerPolicy = 'strict-origin-when-cross-origin';
+            branch.props.backgroundColor = '#ffffff';
             branch.props.borderRadius = 24;
         } else if (type === 'object') {
             branch.box.w = 220;
@@ -2530,7 +2654,7 @@
                 html += '<span class="nbde-layer-pill">hidden</span>';
             }
             if (locked) {
-                html += '<span class="nbde-layer-pill">lock</span>';
+                html += '<span class="nbde-layer-pill">блок</span>';
             }
             if (children.length) {
                 html += '<span class="nbde-layer-pill">' + children.length + ' child</span>';
@@ -2640,6 +2764,17 @@
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
+        } else if (type === 'embed') {
+            html += renderSelectField('Источник', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
+                { value: 'html', label: 'HTML код' },
+                { value: 'url', label: 'Адрес iframe' }
+            ]);
+            if (resolveEmbedSourceMode(props) === 'url') {
+                html += renderField('URL iframe', 'element-props', 'url', props.url || '', 'string');
+            } else {
+                html += renderTextareaField('HTML код', 'element-props', 'code', props.code || '');
+            }
+            html += renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string');
         } else if (type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
             html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
@@ -2756,6 +2891,40 @@
             html += renderField('Видео файл', 'element-props', 'src', props.src || '', 'string');
             html += renderField('Постер', 'element-props', 'poster', props.poster || '', 'string');
             html += '</div>';
+        } else if (element.type === 'embed') {
+            html += renderInspectorSubsection('Источник',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Тип источника', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
+                    { value: 'html', label: 'HTML код' },
+                    { value: 'url', label: 'Адрес iframe' }
+                ])
+                + renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string')
+                + '</div>'
+                + (resolveEmbedSourceMode(props) === 'url'
+                    ? renderField('URL iframe', 'element-props', 'url', props.url || '', 'string')
+                    : renderTextareaField('HTML код', 'element-props', 'code', props.code || '')),
+                'Код не встраивается напрямую в DOM страницы. Runtime рендерит его через sandbox iframe.'
+            );
+            html += renderInspectorSubsection('Безопасность и runtime',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Профиль sandbox', 'element-props', 'sandboxProfile', props.sandboxProfile || 'strict', [
+                    { value: 'strict', label: 'Строгий' },
+                    { value: 'forms', label: 'Формы' },
+                    { value: 'media', label: 'Медиа' },
+                    { value: 'trusted', label: 'Доверенный' }
+                ])
+                + renderSelectField('Политика referrer', 'element-props', 'referrerPolicy', props.referrerPolicy || 'strict-origin-when-cross-origin', [
+                    { value: 'strict-origin-when-cross-origin', label: 'Строгий origin при переходе между доменами' },
+                    { value: 'strict-origin', label: 'Только origin в строгом режиме' },
+                    { value: 'origin', label: 'Только origin' },
+                    { value: 'no-referrer', label: 'Не передавать referrer' },
+                    { value: 'unsafe-url', label: 'Полный URL' }
+                ])
+                + renderCheckboxField('Ленивая загрузка', 'element-props', 'lazy', props.lazy !== false)
+                + renderCheckboxField('Разрешить fullscreen', 'element-props', 'allowFullscreen', !!props.allowFullscreen)
+                + '</div>',
+                'Для карт и форм обычно достаточно профиля «Формы». «Доверенный» нужен только для совместимости с более тяжёлыми внешними виджетами.'
+            );
         } else if (element.type === 'icon') {
             html += renderField('Класс иконки', 'element-props', 'iconClass', props.iconClass || 'fas fa-star', 'string');
         } else if (element.type === 'divider') {
@@ -2919,6 +3088,8 @@
                 html += renderField('Saturate %', 'element-props', 'filterSaturate', props.filterSaturate != null ? props.filterSaturate : 100, 'number');
                 html += renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number');
             }
+        } else if (element.type === 'embed') {
+            html += renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '#ffffff', 'string');
         } else if (element.type === 'object') {
             return renderInspectorSubsection('Пресеты',
                 renderObjectPresetButtons(),
@@ -3128,7 +3299,7 @@
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-backward">Ниже</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + ((branch.box || {}).visible === false ? 'Показать' : 'Скрыть') + '</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Unlock' : 'Lock') + '</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Разблокировать' : 'Заблокировать') + '</button>';
         html += '</div>';
         html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
         html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
@@ -3417,6 +3588,15 @@
             html += '</div>';
         } else if (element.type === 'video') {
             html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
+        } else if (element.type === 'embed') {
+            html += '<div class="nbde-el__body nbde-el__body--embed" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#ffffff')) + '">';
+            if (buildEmbedPreviewFrame(props)) {
+                html += buildEmbedPreviewFrame(props);
+                html += '<div class="nbde-el__embed-meta">' + escapeHtml(getEmbedSourceModeLabel(resolveEmbedSourceMode(props))) + ' · ' + escapeHtml(getEmbedSandboxProfileLabel(props.sandboxProfile || 'strict')) + '</div>';
+            } else {
+                html += '<div class="nbde-el__placeholder">Добавьте HTML код или iframe URL в свойствах элемента</div>';
+            }
+            html += '</div>';
         } else if (element.type === 'object') {
             html += '<div class="nbde-el__body" style="' + escapeHtml(buildObjectPreviewStyle(props, box)) + '"></div>';
         } else if (element.type === 'icon') {
@@ -3426,7 +3606,7 @@
         } else if (element.type === 'container' || element.type === 'group') {
             html += '<div class="nbde-el__body nbde-el__body--group" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '"></div>';
             if (element.type === 'group') {
-                html += '<div class="nbde-group-label">Group</div>';
+                html += '<div class="nbde-group-label">Группа</div>';
             }
             html += '<div class="nbde-el__children-host" style="top:' + Number(element.type === 'container' ? (props.paddingTop || 0) : 0) + 'px;right:' + Number(element.type === 'container' ? (props.paddingRight || 0) : 0) + 'px;bottom:' + Number(element.type === 'container' ? (props.paddingBottom || 0) : 0) + 'px;left:' + Number(element.type === 'container' ? (props.paddingLeft || 0) : 0) + 'px;">';
             (element.children || []).forEach(function (child) {
