@@ -331,12 +331,15 @@ class NordicblocksDesignBlockContractNormalizer {
 
         if ($type === 'embed') {
             return $common + [
+                'provider' => self::select($raw['provider'] ?? 'generic', ['generic', 'rutube', 'vk_video', 'kinescope'], 'generic'),
                 'sourceMode' => self::select($raw['sourceMode'] ?? 'html', ['html', 'url'], 'html'),
                 'code' => self::string($raw['code'] ?? '', '', 30000),
                 'url' => self::string($raw['url'] ?? '', '', 2048),
                 'title' => self::string($raw['title'] ?? 'Встраиваемый блок', 'Встраиваемый блок', 255),
+                'aspectRatio' => self::select($raw['aspectRatio'] ?? 'free', ['free', '16:9', '4:3', '1:1', '9:16', '21:9'], 'free'),
                 'lazy' => self::bool($raw['lazy'] ?? true, true),
                 'allowFullscreen' => self::bool($raw['allowFullscreen'] ?? false, false),
+                'hideScrollbars' => self::bool($raw['hideScrollbars'] ?? false, false),
                 'sandboxProfile' => self::select($raw['sandboxProfile'] ?? 'strict', ['strict', 'forms', 'media', 'trusted'], 'strict'),
                 'referrerPolicy' => self::select($raw['referrerPolicy'] ?? 'strict-origin-when-cross-origin', ['no-referrer', 'origin', 'strict-origin', 'strict-origin-when-cross-origin', 'unsafe-url'], 'strict-origin-when-cross-origin'),
             ];

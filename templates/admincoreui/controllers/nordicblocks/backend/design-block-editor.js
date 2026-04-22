@@ -112,12 +112,15 @@
         src: true,
         alt: true,
         poster: true,
+        provider: true,
         code: true,
         sourceMode: true,
         title: true,
+        aspectRatio: true,
         sandboxProfile: true,
         lazy: true,
         allowFullscreen: true,
+        hideScrollbars: true,
         referrerPolicy: true,
         iconClass: true,
         iconPosition: true,
@@ -128,7 +131,7 @@
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
         'backdropBlur', 'backdropSaturate', 'backdropBrightness', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'fillOpacityPct', 'shape', 'objectFit', 'objectPosition', 'objectPositionX', 'objectPositionY',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
-        'alt', 'poster', 'code', 'sourceMode', 'title', 'sandboxProfile', 'lazy', 'allowFullscreen', 'referrerPolicy', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
+        'alt', 'poster', 'provider', 'code', 'sourceMode', 'title', 'aspectRatio', 'sandboxProfile', 'lazy', 'allowFullscreen', 'hideScrollbars', 'referrerPolicy', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
         'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
@@ -202,6 +205,7 @@
             sidebarCollapsed: false,
             selectionIds: [],
             selectedElementId: null,
+            deferredFieldDrafts: {},
             contextMenu: {
                 open: false,
                 x: 0,
@@ -478,6 +482,7 @@
 
     function buildEmbedPreviewFrame(props) {
         var sourceMode = resolveEmbedSourceMode(props);
+        var provider = resolveEmbedProvider(props);
         var title = String((props && props.title) || 'Встраиваемый блок');
         var loading = props && props.lazy === false ? 'eager' : 'lazy';
         var sandbox = buildEmbedSandboxValue(props && props.sandboxProfile);
@@ -492,12 +497,18 @@
             html += ' allowfullscreen';
         }
 
+        if (props && props.hideScrollbars) {
+            html += ' scrolling="no"';
+        }
+
         if (sourceMode === 'url') {
-            if (!/^https?:\/\//i.test(String((props && props.url) || ''))) {
+            var normalizedUrl = normalizeEmbedUrl((props && props.url) || '', provider);
+
+            if (!/^https?:\/\//i.test(String(normalizedUrl || ''))) {
                 return '';
             }
 
-            html += ' src="' + escapeHtml(props.url) + '"';
+            html += ' src="' + escapeHtml(normalizedUrl) + '"';
         } else {
             if (!String((props && props.code) || '').trim()) {
                 return '';
@@ -514,6 +525,27 @@
         return String(value || 'html') === 'url' ? 'Адрес iframe' : 'HTML-код';
     }
 
+    function normalizeEmbedProvider(value) {
+        var normalized = String(value || 'generic').trim();
+
+        if (normalized === 'rutube' || normalized === 'vk_video' || normalized === 'kinescope') {
+            return normalized;
+        }
+
+        return 'generic';
+    }
+
+    function getEmbedProviderLabel(value) {
+        var labels = {
+            generic: 'Универсальный',
+            rutube: 'Рутуб',
+            vk_video: 'VK Видео',
+            kinescope: 'Kinescope'
+        };
+
+        return labels[normalizeEmbedProvider(value)] || labels.generic;
+    }
+
     function getEmbedSandboxProfileLabel(value) {
         var labels = {
             strict: 'Строгий',
@@ -523,6 +555,266 @@
         };
 
         return labels[String(value || 'strict')] || labels.strict;
+    }
+
+    function getEmbedProviderPresetMap() {
+        return {
+            generic: {
+                label: 'Универсальный iframe',
+                title: 'Встраиваемый блок',
+                sandboxProfile: 'strict',
+                allowFullscreen: false,
+                hideScrollbars: false,
+                aspectRatio: 'free',
+                width: 560,
+                height: 315
+            },
+            rutube: {
+                label: 'Рутуб',
+                title: 'Видео Рутуб',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            },
+            vk_video: {
+                label: 'VK Видео',
+                title: 'Видео VK',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            },
+            kinescope: {
+                label: 'Kinescope',
+                title: 'Видео Kinescope',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            }
+        };
+    }
+
+    function resolveEmbedProvider(props) {
+        var source = String((props && (props.url || props.code)) || '');
+        var explicit = normalizeEmbedProvider(props && props.provider);
+
+        if (explicit !== 'generic') {
+            return explicit;
+        }
+
+        if (/rutube\.ru/i.test(source)) {
+            return 'rutube';
+        }
+
+        if (/(vkvideo\.ru|vk\.com\/video_ext\.php)/i.test(source)) {
+            return 'vk_video';
+        }
+
+        if (/kinescope\.io/i.test(source)) {
+            return 'kinescope';
+        }
+
+        return 'generic';
+    }
+
+    function normalizeEmbedUrl(url, provider) {
+        var value = String(url || '').trim();
+        var actualProvider = normalizeEmbedProvider(provider);
+        var match;
+
+        if (!value) {
+            return '';
+        }
+
+        if (actualProvider === 'rutube') {
+            match = value.match(/rutube\.ru\/(?:play\/embed|video)\/([a-z0-9_-]+)/i);
+            if (match) {
+                return 'https://rutube.ru/play/embed/' + match[1];
+            }
+        }
+
+        if (actualProvider === 'kinescope') {
+            match = value.match(/kinescope\.io\/(?:embed\/)?([a-z0-9]+)/i);
+            if (match) {
+                return 'https://kinescope.io/embed/' + match[1];
+            }
+        }
+
+        if (actualProvider === 'vk_video') {
+            match = value.match(/(?:vkvideo\.ru|vk\.com)\/video_ext\.php\?([^\s"']+)/i);
+            if (match) {
+                return 'https://vkvideo.ru/video_ext.php?' + match[1];
+            }
+        }
+
+        return value;
+    }
+
+    function extractEmbedCodeDetails(rawCode) {
+        var code = String(rawCode || '');
+        var iframeMatch = code.match(/<iframe[^>]*\ssrc=(['"])(.*?)\1[^>]*>/i);
+        var titleMatch = code.match(/<iframe[^>]*\stitle=(['"])(.*?)\1/i);
+        var widthMatch = code.match(/<iframe[^>]*\swidth=(['"])?(\d+)(?:\1)?/i);
+        var heightMatch = code.match(/<iframe[^>]*\sheight=(['"])?(\d+)(?:\1)?/i);
+        var details = {
+            url: iframeMatch ? iframeMatch[2] : '',
+            title: titleMatch ? titleMatch[2] : '',
+            width: widthMatch ? Number(widthMatch[2]) : 0,
+            height: heightMatch ? Number(heightMatch[2]) : 0,
+            allowFullscreen: /allowfullscreen/i.test(code),
+            hideScrollbars: /scrolling=(['"])no\1/i.test(code) || /overflow\s*:\s*hidden/i.test(code)
+        };
+
+        details.provider = resolveEmbedProvider(details);
+        details.url = normalizeEmbedUrl(details.url, details.provider);
+        return details;
+    }
+
+    function applyEmbedAspectRatioPreset(ratioKey) {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var ratios = {
+            '16:9': { w: 16, h: 9 },
+            '4:3': { w: 4, h: 3 },
+            '1:1': { w: 1, h: 1 },
+            '9:16': { w: 9, h: 16 },
+            '21:9': { w: 21, h: 9 }
+        };
+        var ratio = ratios[String(ratioKey || '')];
+        var width;
+
+        if (!element || element.type !== 'embed' || !branch || !branch.box || !branch.props) {
+            return false;
+        }
+
+        branch.props.aspectRatio = ratio ? ratioKey : 'free';
+
+        if (!ratio) {
+            return true;
+        }
+
+        width = Math.max(160, Number(branch.box.w || 560));
+        branch.box.h = Math.max(90, Math.round((width * ratio.h) / ratio.w));
+        return true;
+    }
+
+    function applyEmbedProviderPreset(providerKey) {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var preset = getEmbedProviderPresetMap()[normalizeEmbedProvider(providerKey)];
+
+        if (!element || element.type !== 'embed' || !branch || !branch.props || !preset) {
+            return false;
+        }
+
+        branch.props.provider = normalizeEmbedProvider(providerKey);
+        branch.props.sourceMode = 'url';
+        branch.props.title = preset.title;
+        branch.props.sandboxProfile = preset.sandboxProfile;
+        branch.props.allowFullscreen = preset.allowFullscreen;
+        branch.props.hideScrollbars = preset.hideScrollbars;
+        branch.props.aspectRatio = preset.aspectRatio;
+        branch.box.w = preset.width;
+        branch.box.h = preset.height;
+
+        return true;
+    }
+
+    function applyEmbedCodeAssistant() {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var props;
+        var details;
+
+        if (!element || element.type !== 'embed' || !branch || !branch.props || !branch.box) {
+            return false;
+        }
+
+        props = branch.props;
+        details = extractEmbedCodeDetails(props.code);
+
+        if (details.url) {
+            props.url = details.url;
+            props.sourceMode = 'url';
+        }
+
+        if (details.provider && details.provider !== 'generic') {
+            props.provider = details.provider;
+        } else {
+            props.provider = resolveEmbedProvider(props);
+        }
+
+        if (details.title) {
+            props.title = details.title;
+        } else if (!String(props.title || '').trim() && props.provider !== 'generic') {
+            props.title = getEmbedProviderLabel(props.provider);
+        }
+
+        if (details.allowFullscreen) {
+            props.allowFullscreen = true;
+        }
+
+        if (details.hideScrollbars) {
+            props.hideScrollbars = true;
+        }
+
+        if (details.width > 0) {
+            branch.box.w = Math.max(160, details.width);
+        }
+
+        if (details.height > 0) {
+            branch.box.h = Math.max(90, details.height);
+        }
+
+        if (branch.box.w > 0 && branch.box.h > 0) {
+            var currentRatio = Number(branch.box.w) / Number(branch.box.h);
+            if (Math.abs(currentRatio - (16 / 9)) < 0.03) {
+                props.aspectRatio = '16:9';
+            } else if (Math.abs(currentRatio - (4 / 3)) < 0.03) {
+                props.aspectRatio = '4:3';
+            } else if (Math.abs(currentRatio - 1) < 0.03) {
+                props.aspectRatio = '1:1';
+            } else if (Math.abs(currentRatio - (9 / 16)) < 0.03) {
+                props.aspectRatio = '9:16';
+            } else if (Math.abs(currentRatio - (21 / 9)) < 0.03) {
+                props.aspectRatio = '21:9';
+            } else {
+                props.aspectRatio = 'free';
+            }
+        }
+
+        if (props.provider === 'rutube' || props.provider === 'vk_video' || props.provider === 'kinescope') {
+            props.sandboxProfile = 'media';
+            props.allowFullscreen = true;
+        }
+
+        return !!(details.url || String(props.code || '').trim());
+    }
+
+    function renderEmbedProviderPresetButtons() {
+        var presets = getEmbedProviderPresetMap();
+
+        return '<div class="nbde-preset-grid">'
+            + Object.keys(presets).map(function (key) {
+                return '<button class="nbde-preset-button" type="button" data-action="apply-embed-provider-preset" data-provider="' + escapeHtml(key) + '">' + escapeHtml(presets[key].label) + '</button>';
+            }).join('')
+            + '</div>';
+    }
+
+    function renderEmbedAspectRatioButtons() {
+        return '<div class="nbde-preset-grid">'
+            + ['16:9', '4:3', '1:1', '9:16', '21:9'].map(function (key) {
+                return '<button class="nbde-preset-button" type="button" data-action="apply-embed-aspect-ratio" data-ratio="' + escapeHtml(key) + '">' + escapeHtml(key) + '</button>';
+            }).join('')
+            + '</div>';
     }
 
     function normalizeHexColor(value) {
@@ -1004,14 +1296,17 @@
             branch.props.objectFit = 'cover';
             branch.props.borderRadius = 24;
         } else if (type === 'embed') {
-            branch.box.w = 480;
-            branch.box.h = 320;
+            branch.box.w = 560;
+            branch.box.h = 315;
+            branch.props.provider = 'generic';
             branch.props.sourceMode = 'html';
             branch.props.code = '';
             branch.props.url = '';
             branch.props.title = 'Встраиваемый блок';
+            branch.props.aspectRatio = '16:9';
             branch.props.lazy = true;
             branch.props.allowFullscreen = false;
+            branch.props.hideScrollbars = false;
             branch.props.sandboxProfile = 'strict';
             branch.props.referrerPolicy = 'strict-origin-when-cross-origin';
             branch.props.backgroundColor = '#ffffff';
@@ -2413,8 +2708,81 @@
         return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><div class="nbde-picker-row"><input type="' + escapeHtml(inputType) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"><button class="nbde-mini-button nbde-picker-button" type="button" data-picker-action="open" data-picker-kind="' + escapeHtml(pickerKind) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(pickerLabel) + '</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-picker-action="clear" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(clearLabel) + '</button></div></div>';
     }
 
-    function renderTextareaField(label, scope, path, value) {
-        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea></div>';
+    function buildDeferredFieldKey(scope, path) {
+        var selectedElement = getSelectedElement();
+
+        return [
+            currentBreakpoint(),
+            selectedElement ? selectedElement.id : 'root',
+            String(scope || ''),
+            String(path || '')
+        ].join('::');
+    }
+
+    function getDeferredFieldDraft(scope, path, fallbackValue) {
+        var key = buildDeferredFieldKey(scope, path);
+
+        if (Object.prototype.hasOwnProperty.call(state.uiState.deferredFieldDrafts, key)) {
+            return state.uiState.deferredFieldDrafts[key];
+        }
+
+        return String(fallbackValue == null ? '' : fallbackValue);
+    }
+
+    function setDeferredFieldDraft(scope, path, value) {
+        state.uiState.deferredFieldDrafts[buildDeferredFieldKey(scope, path)] = String(value == null ? '' : value);
+    }
+
+    function clearDeferredFieldDraft(scope, path) {
+        delete state.uiState.deferredFieldDrafts[buildDeferredFieldKey(scope, path)];
+    }
+
+    function commitDeferredFieldDraft(scope, path) {
+        var key = buildDeferredFieldKey(scope, path);
+        var value = Object.prototype.hasOwnProperty.call(state.uiState.deferredFieldDrafts, key)
+            ? state.uiState.deferredFieldDrafts[key]
+            : getScopedValue(scope, path);
+
+        if (!scope || !path) {
+            return false;
+        }
+
+        applyScopedValue(scope, path, value);
+        clearDeferredFieldDraft(scope, path);
+        refreshAfterScopedMutation(scope, path);
+        return true;
+    }
+
+    function resetDeferredFieldDraft(scope, path) {
+        clearDeferredFieldDraft(scope, path);
+        renderPropertiesCard();
+        return true;
+    }
+
+    function renderTextareaField(label, scope, path, value, options) {
+        var textareaValue;
+        var rows;
+        var html;
+
+        options = options || {};
+
+        if (!options.deferred) {
+            return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea></div>';
+        }
+
+        textareaValue = getDeferredFieldDraft(scope, path, value);
+        rows = Math.max(6, Number(options.rows || 12));
+        html = '<div class="nbde-field"><label>' + escapeHtml(label) + '</label>';
+        html += '<textarea rows="' + rows + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" data-deferred-input="1">' + escapeHtml(textareaValue) + '</textarea>';
+        html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="commit-deferred-field" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">Применить код</button>';
+        html += '<button class="nbde-mini-button nbde-picker-button--ghost" type="button" data-action="reset-deferred-field" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">Сбросить</button>';
+        html += '</div>';
+        if (options.hint) {
+            html += '<div class="nbde-field__hint">' + escapeHtml(options.hint) + '</div>';
+        }
+        html += '</div>';
+        return html;
     }
 
     function renderSelectField(label, scope, path, value, options) {
@@ -2765,6 +3133,12 @@
                 { value: 'fill', label: 'Fill' }
             ]);
         } else if (type === 'embed') {
+            html += renderSelectField('Провайдер', 'element-props', 'provider', resolveEmbedProvider(props), [
+                { value: 'generic', label: 'Универсальный' },
+                { value: 'rutube', label: 'Рутуб' },
+                { value: 'vk_video', label: 'VK Видео' },
+                { value: 'kinescope', label: 'Kinescope' }
+            ]);
             html += renderSelectField('Источник', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
                 { value: 'html', label: 'HTML код' },
                 { value: 'url', label: 'Адрес iframe' }
@@ -2775,6 +3149,14 @@
                 html += renderTextareaField('HTML код', 'element-props', 'code', props.code || '');
             }
             html += renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string');
+            html += renderSelectField('Формат кадра', 'element-props', 'aspectRatio', props.aspectRatio || 'free', [
+                { value: 'free', label: 'Свободный' },
+                { value: '16:9', label: '16:9' },
+                { value: '4:3', label: '4:3' },
+                { value: '1:1', label: '1:1' },
+                { value: '9:16', label: '9:16' },
+                { value: '21:9', label: '21:9' }
+            ]);
         } else if (type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
             html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
@@ -2892,18 +3274,42 @@
             html += renderField('Постер', 'element-props', 'poster', props.poster || '', 'string');
             html += '</div>';
         } else if (element.type === 'embed') {
+            html += renderInspectorSubsection('Быстрые пресеты',
+                renderEmbedProviderPresetButtons()
+                + renderEmbedAspectRatioButtons()
+                + '<div class="nbde-action-grid"><button class="nbde-mini-button" type="button" data-action="parse-embed-code">Разобрать код</button></div>',
+                'Готовые пресеты для Рутуб, VK Видео и Kinescope. Размер контейнера можно точно докрутить ниже в секции «Макет».'
+            );
             html += renderInspectorSubsection('Источник',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Провайдер', 'element-props', 'provider', resolveEmbedProvider(props), [
+                    { value: 'generic', label: 'Универсальный' },
+                    { value: 'rutube', label: 'Рутуб' },
+                    { value: 'vk_video', label: 'VK Видео' },
+                    { value: 'kinescope', label: 'Kinescope' }
+                ])
                 + renderSelectField('Тип источника', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
                     { value: 'html', label: 'HTML код' },
                     { value: 'url', label: 'Адрес iframe' }
                 ])
                 + renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string')
+                + renderSelectField('Формат кадра', 'element-props', 'aspectRatio', props.aspectRatio || 'free', [
+                    { value: 'free', label: 'Свободный' },
+                    { value: '16:9', label: '16:9' },
+                    { value: '4:3', label: '4:3' },
+                    { value: '1:1', label: '1:1' },
+                    { value: '9:16', label: '9:16' },
+                    { value: '21:9', label: '21:9' }
+                ])
                 + '</div>'
                 + (resolveEmbedSourceMode(props) === 'url'
                     ? renderField('URL iframe', 'element-props', 'url', props.url || '', 'string')
-                    : renderTextareaField('HTML код', 'element-props', 'code', props.code || '')),
-                'Код не встраивается напрямую в DOM страницы. Runtime рендерит его через sandbox iframe.'
+                    : renderTextareaField('HTML код', 'element-props', 'code', props.code || '', {
+                        deferred: true,
+                        rows: 14,
+                        hint: 'Длинный HTML сначала редактируется в черновике. Чтобы записать его в состояние блока и обновить preview, нажмите «Применить код» или Ctrl+Enter.'
+                    })),
+                'Код не встраивается напрямую в DOM страницы. Runtime рендерит его через sandbox iframe. Для точной ширины и высоты используйте секцию «Макет».'
             );
             html += renderInspectorSubsection('Безопасность и runtime',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -2922,6 +3328,7 @@
                 ])
                 + renderCheckboxField('Ленивая загрузка', 'element-props', 'lazy', props.lazy !== false)
                 + renderCheckboxField('Разрешить fullscreen', 'element-props', 'allowFullscreen', !!props.allowFullscreen)
+                + renderCheckboxField('Скрывать прокрутку', 'element-props', 'hideScrollbars', !!props.hideScrollbars)
                 + '</div>',
                 'Для карт и форм обычно достаточно профиля «Формы». «Доверенный» нужен только для совместимости с более тяжёлыми внешними виджетами.'
             );
@@ -3592,7 +3999,7 @@
             html += '<div class="nbde-el__body nbde-el__body--embed" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#ffffff')) + '">';
             if (buildEmbedPreviewFrame(props)) {
                 html += buildEmbedPreviewFrame(props);
-                html += '<div class="nbde-el__embed-meta">' + escapeHtml(getEmbedSourceModeLabel(resolveEmbedSourceMode(props))) + ' · ' + escapeHtml(getEmbedSandboxProfileLabel(props.sandboxProfile || 'strict')) + '</div>';
+                html += '<div class="nbde-el__embed-meta">' + escapeHtml(getEmbedProviderLabel(resolveEmbedProvider(props))) + ' · ' + escapeHtml(getEmbedSourceModeLabel(resolveEmbedSourceMode(props))) + ' · ' + escapeHtml(getEmbedSandboxProfileLabel(props.sandboxProfile || 'strict')) + '</div>';
             } else {
                 html += '<div class="nbde-el__placeholder">Добавьте HTML код или iframe URL в свойствах элемента</div>';
             }
@@ -4736,6 +5143,11 @@
     }
 
     function applyScopedInput(input) {
+        if (input && input.dataset && input.dataset.deferredInput === '1') {
+            setDeferredFieldDraft(input.dataset.scope, input.dataset.path, input.value);
+            return false;
+        }
+
         return applyScopedValue(input.dataset.scope, input.dataset.path, coerceValue(input));
     }
 
@@ -6667,6 +7079,39 @@
             toggleElementLock(actionNode.dataset.elementId || '');
             return;
         }
+        if (action === 'apply-embed-provider-preset') {
+            if (applyEmbedProviderPreset(actionNode.dataset.provider || 'generic')) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'apply-embed-aspect-ratio') {
+            if (applyEmbedAspectRatioPreset(actionNode.dataset.ratio || 'free')) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'parse-embed-code') {
+            if (applyEmbedCodeAssistant()) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'commit-deferred-field') {
+            if (commitDeferredFieldDraft(actionNode.dataset.scope || '', actionNode.dataset.path || '')) {
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'reset-deferred-field') {
+            if (resetDeferredFieldDraft(actionNode.dataset.scope || '', actionNode.dataset.path || '')) {
+                renderPropertiesCard();
+            }
+            return;
+        }
         if (action === 'apply-object-preset') {
             if (applyObjectPreset(actionNode.dataset.preset || '')) {
                 markDirty();
@@ -7072,6 +7517,16 @@
         var active = document.activeElement;
         var tagName = active && active.tagName ? active.tagName.toLowerCase() : '';
         var editable = !!(active && active.isContentEditable);
+
+        if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 'enter') {
+            if (active && active.dataset && active.dataset.deferredInput === '1') {
+                event.preventDefault();
+                if (commitDeferredFieldDraft(active.dataset.scope || '', active.dataset.path || '')) {
+                    renderAll();
+                }
+                return;
+            }
+        }
 
         if (String(event.key || '') === ' ') {
             state.interactionState.spacePressed = true;

@@ -528,10 +528,13 @@ Builder должен отдавать:
 1. `sourceMode = html|url`;
 2. `code` только для `srcdoc`-режима и только после server-side normalizer allowlist;
 3. `url` только для iframe URL режима;
-4. `title`;
-5. `lazy` / `allowFullscreen`;
-6. `sandboxProfile` и `referrerPolicy`;
-7. markup hint: sandboxed `iframe`, а не raw HTML в DOM страницы.
+4. `provider = generic|rutube|vk_video|kinescope`;
+5. `title`;
+6. `aspectRatio = free|16:9|4:3|1:1|9:16|21:9` как editor/runtime hint для sizing preset-ов;
+7. `lazy` / `allowFullscreen` / `hideScrollbars`;
+8. `sandboxProfile` и `referrerPolicy`;
+9. provider-aware URL normalization для Rutube / VK Видео / Kinescope;
+10. markup hint: sandboxed `iframe`, а не raw HTML в DOM страницы.
 
 ---
 

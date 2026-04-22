@@ -227,6 +227,7 @@ class NordicblocksDesignBlockElementRenderer {
         $allow = self::buildEmbedAllow($props);
         $referrer_policy = trim((string) ($props['referrerPolicy'] ?? 'strict-origin-when-cross-origin'));
         $source_mode = self::resolveEmbedSourceMode($props);
+        $provider = self::resolveEmbedProvider($props);
         $frame_attrs = ' class="nb-design-embed__frame" title="' . self::attr($title) . '" loading="' . self::attr($loading) . '" referrerpolicy="' . self::attr($referrer_policy) . '"';
 
         if ($sandbox !== '') {
@@ -241,8 +242,12 @@ class NordicblocksDesignBlockElementRenderer {
             $frame_attrs .= ' allowfullscreen';
         }
 
+        if (!empty($props['hideScrollbars'])) {
+            $frame_attrs .= ' scrolling="no"';
+        }
+
         if ($source_mode === 'url') {
-            $url = trim((string) ($props['url'] ?? ''));
+            $url = self::normalizeEmbedUrl((string) ($props['url'] ?? ''), $provider);
 
             if (!preg_match('~^https?://~i', $url)) {
                 return '';
@@ -256,7 +261,7 @@ class NordicblocksDesignBlockElementRenderer {
             return '';
         }
 
-        return '<iframe' . $frame_attrs . ' srcdoc="' . self::attr(self::buildEmbedSrcdoc($code, $title)) . '"></iframe>';
+        return '<iframe' . $frame_attrs . ' srcdoc="' . self::attr(self::buildEmbedSrcdoc($code, $title, !empty($props['hideScrollbars']))) . '"></iframe>';
     }
 
     private static function resolveEmbedSourceMode(array $props) {
@@ -299,10 +304,68 @@ class NordicblocksDesignBlockElementRenderer {
         return implode('; ', array_values(array_unique($allow)));
     }
 
-    private static function buildEmbedSrcdoc($code, $title) {
+    private static function resolveEmbedProvider(array $props) {
+        $provider = trim((string) ($props['provider'] ?? 'generic'));
+
+        if (in_array($provider, ['rutube', 'vk_video', 'kinescope'], true)) {
+            return $provider;
+        }
+
+        $source = trim((string) ($props['url'] ?? ''));
+        if ($source === '') {
+            $source = trim((string) ($props['code'] ?? ''));
+        }
+
+        if (preg_match('~rutube\.ru~i', $source)) {
+            return 'rutube';
+        }
+
+        if (preg_match('~(?:vkvideo\.ru|vk\.com/video_ext\.php)~i', $source)) {
+            return 'vk_video';
+        }
+
+        if (preg_match('~kinescope\.io~i', $source)) {
+            return 'kinescope';
+        }
+
+        return 'generic';
+    }
+
+    private static function normalizeEmbedUrl($url, $provider) {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return '';
+        }
+
+        if ($provider === 'rutube') {
+            if (preg_match('~rutube\.ru/(?:play/embed|video)/([a-z0-9_-]+)~i', $url, $matches)) {
+                return 'https://rutube.ru/play/embed/' . $matches[1];
+            }
+        }
+
+        if ($provider === 'kinescope') {
+            if (preg_match('~kinescope\.io/(?:embed/)?([a-z0-9]+)~i', $url, $matches)) {
+                return 'https://kinescope.io/embed/' . $matches[1];
+            }
+        }
+
+        if ($provider === 'vk_video') {
+            if (preg_match('~(?:vkvideo\.ru|vk\.com)/video_ext\.php\?([^\s"\']+)~i', $url, $matches)) {
+                return 'https://vkvideo.ru/video_ext.php?' . $matches[1];
+            }
+        }
+
+        return $url;
+    }
+
+    private static function buildEmbedSrcdoc($code, $title, $hide_scrollbars = false) {
+        $body_overflow = $hide_scrollbars ? 'hidden' : 'auto';
+        $scrollbar_css = $hide_scrollbars ? 'body{-ms-overflow-style:none;scrollbar-width:none;}body::-webkit-scrollbar{display:none;}' : '';
+
         return '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
             . self::escape($title)
-            . '</title><style>html,body{margin:0;padding:0;background:transparent;min-height:100%;}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:auto;}iframe{max-width:100%;}img,video{max-width:100%;height:auto;display:block;}</style></head><body>'
+            . '</title><style>html,body{margin:0;padding:0;background:transparent;min-height:100%;}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:' . $body_overflow . ';}' . $scrollbar_css . 'iframe{max-width:100%;}img,video{max-width:100%;height:auto;display:block;}</style></head><body>'
             . $code
             . '</body></html>';
     }
