@@ -73,13 +73,6 @@ foreach ([$http_template, 'modern'] as $template_name) {
 
     <div class="nbde-main">
         <section class="nbde-canvas-panel">
-            <div class="nbde-canvas-panel__head">
-                <div>
-                    <strong>Холст</strong>
-                    <span></span>
-                </div>
-                <div class="nbde-canvas-chip" id="nbd-canvas-meta">Загрузка холста...</div>
-            </div>
             <div class="nbde-canvas-workarea">
                 <div class="nbde-canvas-frame nbde-canvas-frame--desktop" id="nbd-canvas-frame-wrap">
                     <div class="nbde-canvas-stage" id="nbd-canvas-stage"></div>

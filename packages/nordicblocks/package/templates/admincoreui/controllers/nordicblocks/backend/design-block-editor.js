@@ -2222,23 +2222,11 @@
     }
 
     function updateCanvasMeta() {
-        var stage = currentStageConfig();
-        var stageMetrics = currentStageMetrics();
-        var elements = getElements();
-        var selectionCount = getSelectionIds().length;
-        var viewport = state.scene.viewport;
-
         updateCanvasWorkareaClass();
 
         if (nodes.canvasMeta) {
-            nodes.canvasMeta.textContent = getBreakpointLabel(currentBreakpoint())
-                + ' • artboard ' + stageMetrics.windowWidth + 'x' + (stage.minHeight || 0) + 'px'
-                + ' • grid ' + stageMetrics.contentWidth + 'px'
-                + ' • ' + stageMetrics.columns + ' cols'
-                + ' • overflow ' + stageMetrics.overflowMode
-                + ' • view ' + Math.round(Number(viewport.zoom || 1) * 100) + '% @ ' + roundNumber(viewport.offsetX) + ',' + roundNumber(viewport.offsetY)
-                + ' • ' + elements.length + ' узл.'
-                + ' • ' + selectionCount + ' выбрано';
+            nodes.canvasMeta.hidden = true;
+            nodes.canvasMeta.textContent = '';
         }
     }
 
@@ -3455,6 +3443,34 @@
         };
     }
 
+    function constrainViewportToArtboard() {
+        var stageMetrics = currentStageMetrics();
+        var visibleRect = getVisibleCanvasRect();
+        var paddingX = Math.max(48, Math.min(240, Number(visibleRect.w || 1) * 0.18));
+        var paddingY = Math.max(48, Math.min(240, Number(visibleRect.h || 1) * 0.18));
+        var minOffsetX = -paddingX;
+        var minOffsetY = -paddingY;
+        var maxOffsetX = Number(stageMetrics.windowWidth || 1) - Number(visibleRect.w || 1) + paddingX;
+        var maxOffsetY = Number(stageMetrics.height || 1) - Number(visibleRect.h || 1) + paddingY;
+        var nextOffsetX = Number(state.scene.viewport.offsetX || 0);
+        var nextOffsetY = Number(state.scene.viewport.offsetY || 0);
+
+        if (maxOffsetX < minOffsetX) {
+            nextOffsetX = (Number(stageMetrics.windowWidth || 1) - Number(visibleRect.w || 1)) / 2;
+        } else {
+            nextOffsetX = clamp(nextOffsetX, minOffsetX, maxOffsetX);
+        }
+
+        if (maxOffsetY < minOffsetY) {
+            nextOffsetY = (Number(stageMetrics.height || 1) - Number(visibleRect.h || 1)) / 2;
+        } else {
+            nextOffsetY = clamp(nextOffsetY, minOffsetY, maxOffsetY);
+        }
+
+        state.scene.viewport.offsetX = roundNumber(nextOffsetX);
+        state.scene.viewport.offsetY = roundNumber(nextOffsetY);
+    }
+
     function revealCanvasBounds(canvasBounds, options) {
         var visibleRect;
         var padding;
@@ -3670,6 +3686,7 @@
 
         state.scene.viewport.offsetX = Number(state.scene.viewport.offsetX || 0) + (Number(screenDeltaX || 0) / zoom);
         state.scene.viewport.offsetY = Number(state.scene.viewport.offsetY || 0) + (Number(screenDeltaY || 0) / zoom);
+        constrainViewportToArtboard();
         clearGuides();
         renderCanvas();
         renderStageCard();
@@ -5288,6 +5305,7 @@
             minZoom: 0.25,
             maxZoom: 2
         });
+        constrainViewportToArtboard();
         clearGuides();
         renderCanvas();
         renderStageCard();
@@ -5297,6 +5315,7 @@
         state.scene.viewport.zoom = 1;
         state.scene.viewport.offsetX = 0;
         state.scene.viewport.offsetY = 0;
+        constrainViewportToArtboard();
         clearGuides();
         renderCanvas();
         renderStageCard();
@@ -5869,6 +5888,7 @@
         zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
         state.scene.viewport.offsetX = Number(pan.startOffsetX || 0) - ((event.clientX - pan.startClientX) / zoom);
         state.scene.viewport.offsetY = Number(pan.startOffsetY || 0) - ((event.clientY - pan.startClientY) / zoom);
+        constrainViewportToArtboard();
         renderCanvas();
         renderStageCard();
     }
@@ -6682,7 +6702,7 @@
 
         if (!hitElement) {
             clearSelection();
-            renderAll();
+            beginPan(event);
             return;
         }
 
@@ -6923,7 +6943,10 @@
             state.scene.viewport.zoom = 1;
             state.scene.viewport.offsetX = 0;
             state.scene.viewport.offsetY = 0;
-            revealSelectionInViewport(true);
+            constrainViewportToArtboard();
+            if (getSelectionIds().length) {
+                revealSelectionInViewport(true);
+            }
             clearGuides();
             renderAll();
         });

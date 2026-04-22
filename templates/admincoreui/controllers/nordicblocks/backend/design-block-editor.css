@@ -226,20 +226,11 @@
     overflow: hidden;
 }
 
-.nbde-canvas-panel__head,
 .nbde-card__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 8px;
-}
-
-.nbde-canvas-panel__head {
-    padding: 10px 12px;
-    margin: 0;
-    border-bottom: 1px solid var(--nbde-border);
-    background: var(--nbde-surface);
-    flex: 0 0 auto;
 }
 
 .nbde-card__head {
@@ -287,36 +278,22 @@
     transform: rotate(-45deg);
 }
 
-.nbde-canvas-panel__head strong,
 .nbde-card__head h3 {
     margin: 0;
     font-size: 14px;
     color: var(--nbde-text);
 }
 
-.nbde-canvas-panel__head span,
 .nbde-card__head span {
     color: var(--nbde-muted);
     font-size: 11px;
     line-height: 1.45;
 }
 
-.nbde-canvas-chip {
-    display: inline-flex;
-    align-items: center;
-    min-height: 30px;
-    padding: 6px 10px;
-    border: 1px solid var(--nbde-border);
-    background: #ffffff;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-}
-
 .nbde-canvas-workarea {
     flex: 1 1 auto;
     min-height: 0;
-    padding: 24px 24px 36px;
+    padding: 12px 24px 36px;
     overflow: auto;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0)) 0 0 / 100% 96px no-repeat,
