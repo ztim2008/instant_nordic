@@ -117,10 +117,10 @@
 
     var KNOWN_PROP_KEYS = [
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
-        'backdropBlur', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'shape', 'objectFit', 'objectPosition',
+        'backdropBlur', 'backdropSaturate', 'backdropBrightness', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'fillOpacityPct', 'shape', 'objectFit', 'objectPosition', 'objectPositionX', 'objectPositionY',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
         'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
-        'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset',
+        'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
         'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration'
@@ -137,6 +137,7 @@
     ];
 
     var AUTOSAVE_DELAY_MS = 1200;
+    var ENABLE_AUTOSAVE = false;
 
     var state = {
         editor: {
@@ -181,10 +182,22 @@
                 height: 0
             }
         },
+        clipboard: {
+            roots: [],
+            nodes: [],
+            layout: createBreakpointStore(),
+            props: createBreakpointStore()
+        },
         uiState: {
             activeBreakpoint: 'desktop',
             selectionIds: [],
             selectedElementId: null,
+            contextMenu: {
+                open: false,
+                x: 0,
+                y: 0,
+                anchorElementId: null
+            },
             addMenuOpen: false,
             rootInsertionMode: false,
             editingTextId: null,
@@ -238,7 +251,65 @@
     }
 
     function clone(value) {
-        return JSON.parse(JSON.stringify(value));
+        return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+    }
+
+    function getPath(source, path, fallback) {
+        var cursor = source;
+        var segments = Array.isArray(path) ? path : String(path || '').split('.');
+        var index;
+        var key;
+
+        for (index = 0; index < segments.length; index += 1) {
+            key = segments[index];
+
+            if (!key && key !== 0) {
+                continue;
+            }
+
+            if (!cursor || typeof cursor !== 'object' || !(key in cursor)) {
+                return fallback;
+            }
+
+            cursor = cursor[key];
+        }
+
+        return cursor === undefined ? fallback : cursor;
+    }
+
+    function setPath(target, path, value) {
+        var cursor = target;
+        var segments = Array.isArray(path) ? path : String(path || '').split('.');
+        var index;
+        var key;
+        var nextKey;
+
+        if (!cursor || typeof cursor !== 'object' || !segments.length) {
+            return target;
+        }
+
+        for (index = 0; index < segments.length; index += 1) {
+            key = segments[index];
+
+            if (!key && key !== 0) {
+                continue;
+            }
+
+            if (index === segments.length - 1) {
+                cursor[key] = value;
+                return target;
+            }
+
+            nextKey = segments[index + 1];
+
+            if (!cursor[key] || typeof cursor[key] !== 'object') {
+                cursor[key] = /^[0-9]+$/.test(String(nextKey)) ? [] : {};
+            }
+
+            cursor = cursor[key];
+        }
+
+        return target;
     }
 
     function escapeHtml(value) {
@@ -247,56 +318,11 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+            .replace(/'/g, '&#39;');
     }
 
     function textToHtml(value) {
         return escapeHtml(value).replace(/\n/g, '<br>');
-    }
-
-    function getPath(target, path, fallback) {
-        var segments = String(path || '').split('.');
-        var cursor = target;
-        var index;
-
-        for (index = 0; index < segments.length; index++) {
-            if (!segments[index]) {
-                continue;
-            }
-
-            if (!cursor || typeof cursor !== 'object' || !(segments[index] in cursor)) {
-                return fallback;
-            }
-
-            cursor = cursor[segments[index]];
-        }
-
-        return cursor;
-    }
-
-    function setPath(target, path, value) {
-        var segments = String(path || '').split('.');
-        var cursor = target;
-        var index;
-
-        for (index = 0; index < segments.length; index++) {
-            var key = segments[index];
-
-            if (!key) {
-                continue;
-            }
-
-            if (index === segments.length - 1) {
-                cursor[key] = value;
-                return;
-            }
-
-            if (!cursor[key] || typeof cursor[key] !== 'object') {
-                cursor[key] = {};
-            }
-
-            cursor = cursor[key];
-        }
     }
 
     function coerceValue(input) {
@@ -327,6 +353,13 @@
 
     function roundNumber(value) {
         return Math.round(Number(value || 0));
+    }
+
+    function roundDecimal(value, digits) {
+        var precision = Math.max(0, Number(digits || 0));
+        var factor = Math.pow(10, precision);
+
+        return Math.round(Number(value || 0) * factor) / factor;
     }
 
     function currentBreakpoint() {
@@ -481,12 +514,263 @@
         return segments.length ? segments[segments.length - 1] : '';
     }
 
+    function withAlphaColor(value, alpha) {
+        var normalized = String(value || '').trim();
+        var normalizedAlpha = Math.max(0, Math.min(1, Number(alpha)));
+        var hexValue;
+        var red;
+        var green;
+        var blue;
+
+        if (!normalized || normalizedAlpha >= 0.999 || /^rgba\(|^hsla\(/i.test(normalized)) {
+            return normalized;
+        }
+
+        hexValue = normalizeHexColor(normalized);
+        if (!hexValue) {
+            return normalized;
+        }
+
+        red = parseInt(hexValue.slice(1, 3), 16);
+        green = parseInt(hexValue.slice(3, 5), 16);
+        blue = parseInt(hexValue.slice(5, 7), 16);
+
+        return 'rgba(' + red + ',' + green + ',' + blue + ',' + roundDecimal(normalizedAlpha, 3) + ')';
+    }
+
+    function buildBackdropFilterValue(props) {
+        var parts = [];
+        var blur = Number(props && props.backdropBlur != null ? props.backdropBlur : 0);
+        var saturate = Number(props && props.backdropSaturate != null ? props.backdropSaturate : 100);
+        var brightness = Number(props && props.backdropBrightness != null ? props.backdropBrightness : 100);
+
+        if (blur > 0) {
+            parts.push('blur(' + blur + 'px)');
+        }
+        if (saturate !== 100) {
+            parts.push('saturate(' + saturate + '%)');
+        }
+        if (brightness !== 100) {
+            parts.push('brightness(' + brightness + '%)');
+        }
+
+        return parts.join(' ');
+    }
+
+    function normalizeObjectBackgroundMode(value) {
+        return String(value || 'solid') === 'gradient' ? 'gradient' : 'solid';
+    }
+
+    function resolveObjectFillAlpha(props) {
+        var rawAlpha = Math.max(0, Math.min(100, Number(props && props.fillOpacityPct != null ? props.fillOpacityPct : 100))) / 100;
+        var hasBackdropEffect = !!(props && (Number(props.backdropBlur || 0) > 0 || Number(props.backdropSaturate || 100) !== 100 || Number(props.backdropBrightness || 100) !== 100));
+
+        if (!hasBackdropEffect || rawAlpha <= 0 || rawAlpha >= 0.999) {
+            return rawAlpha;
+        }
+
+        return Math.min(1, roundDecimal(0.12 + (0.88 * Math.pow(rawAlpha, 0.72)), 3));
+    }
+
+    function getObjectGlassIntensity(props) {
+        var blurScore = Math.max(0, Number(props && props.backdropBlur != null ? props.backdropBlur : 0)) / 30;
+        var saturateScore = Math.max(0, Number(props && props.backdropSaturate != null ? props.backdropSaturate : 100) - 100) / 40;
+        var brightnessScore = Math.max(0, Number(props && props.backdropBrightness != null ? props.backdropBrightness : 100) - 100) / 12;
+        var maxScore = Math.max(blurScore, saturateScore, brightnessScore);
+
+        return clamp(roundNumber(maxScore * 100), 0, 100);
+    }
+
+    function applyObjectGlassIntensity(value) {
+        var element = getSelectedElement();
+        var intensity = clamp(Number(value || 0), 0, 100);
+
+        if (!element || element.type !== 'object') {
+            return false;
+        }
+
+        writeNodeSharedProp(element, 'backdropBlur', roundNumber((30 * intensity) / 100));
+        writeNodeSharedProp(element, 'backdropSaturate', roundNumber(100 + (40 * intensity) / 100));
+        writeNodeSharedProp(element, 'backdropBrightness', roundNumber(100 + (12 * intensity) / 100));
+        return true;
+    }
+
+    function buildObjectFillValue(props) {
+        var mode = normalizeObjectBackgroundMode(props && props.backgroundMode);
+        var alpha = resolveObjectFillAlpha(props);
+        var solidColor = withAlphaColor((props && (props.backgroundColor || props.fill)) || '#f97316', alpha);
+        var fromColor;
+        var toColor;
+        var angle;
+
+        if (mode !== 'gradient') {
+            return solidColor || '#f97316';
+        }
+
+        fromColor = withAlphaColor((props && (props.gradientFrom || props.backgroundColor || props.fill)) || '#f97316', alpha);
+        toColor = withAlphaColor((props && (props.gradientTo || props.backgroundColor || props.fill)) || '#fb7185', alpha);
+        angle = Math.max(0, Number(props && props.gradientAngle != null ? props.gradientAngle : 135));
+
+        return 'linear-gradient(' + angle + 'deg,' + fromColor + ',' + toColor + ')';
+    }
+
+    function buildObjectShadowValue(props) {
+        var rawValue = String((props && props.boxShadow) || '').trim();
+        var offsetX = Number(props && props.shadowX != null ? props.shadowX : 0);
+        var offsetY = Number(props && props.shadowY != null ? props.shadowY : 0);
+        var blur = Number(props && props.shadowBlur != null ? props.shadowBlur : 0);
+        var spread = Number(props && props.shadowSpread != null ? props.shadowSpread : 0);
+        var color = String((props && props.shadowColor) || '').trim();
+        var inset = !!(props && props.shadowInset);
+
+        if (inset || offsetX !== 0 || offsetY !== 0 || blur !== 0 || spread !== 0 || color !== '') {
+            return buildStructuredShadowValue(offsetX, offsetY, blur, spread, color, inset, 'rgba(15,23,42,0.18)');
+        }
+
+        return rawValue;
+    }
+
+    function buildObjectPreviewStyle(props, box) {
+        var styles = [];
+        var shape = String((props && props.shape) || 'rect');
+        var backdropFilterValue = buildBackdropFilterValue(props || {});
+        var shadowValue = buildObjectShadowValue(props || {});
+        var radius = shape === 'circle' || shape === 'pill'
+            ? 9999
+            : Number((props && props.borderRadius) || 0);
+
+        if (props && props.opacityPct !== undefined) {
+            styles.push('opacity:' + Math.max(0, Math.min(100, Number(props.opacityPct || 100))) / 100);
+        }
+        if (shape === 'line') {
+            styles.push('background:transparent');
+            styles.push('height:0');
+            styles.push('top:' + Math.round(Number((box && box.h) || 1) / 2) + 'px');
+            styles.push('border-top:' + Math.max(1, Number((props && props.borderWidth) || 2)) + 'px ' + String((props && props.borderStyle) || 'solid') + ' ' + String((props && (props.borderColor || props.backgroundColor || props.fill || props.gradientFrom)) || '#f97316'));
+        } else {
+            styles.push('background:' + buildObjectFillValue(props || {}));
+            styles.push('border-radius:' + radius + 'px');
+            if (props && props.borderWidth) {
+                styles.push('border:' + Number(props.borderWidth) + 'px ' + String(props.borderStyle || 'solid') + ' ' + String(props.borderColor || '#cbd5e1'));
+            }
+        }
+        if (shadowValue) {
+            styles.push('box-shadow:' + shadowValue);
+        }
+        if (props && props.blur) {
+            styles.push('filter: blur(' + Number(props.blur) + 'px)');
+        }
+        if (backdropFilterValue) {
+            styles.push('-webkit-backdrop-filter:' + backdropFilterValue);
+            styles.push('backdrop-filter:' + backdropFilterValue);
+        }
+        if (box && box.rotation) {
+            styles.push('transform: rotate(' + Number(box.rotation) + 'deg)');
+            styles.push('transform-origin: center center');
+        }
+
+        return styles.join(';');
+    }
+
+    function getObjectPresetMap() {
+        return {
+            glass: {
+                label: 'Glass',
+                values: {
+                    shape: 'rect',
+                    backgroundMode: 'solid',
+                    backgroundColor: '#ffffff',
+                    fill: '#ffffff',
+                    fillOpacityPct: 28,
+                    borderRadius: 28,
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                    borderColor: 'rgba(255,255,255,0.46)',
+                    shadowX: 0,
+                    shadowY: 18,
+                    shadowBlur: 46,
+                    shadowSpread: 0,
+                    shadowColor: 'rgba(15,23,42,0.18)',
+                    shadowInset: false,
+                    blur: 0,
+                    backdropBlur: 22,
+                    backdropSaturate: 135,
+                    backdropBrightness: 108
+                }
+            },
+            glow: {
+                label: 'Glow',
+                values: {
+                    shape: 'rect',
+                    backgroundMode: 'gradient',
+                    gradientFrom: '#60a5fa',
+                    gradientTo: '#c084fc',
+                    gradientAngle: 135,
+                    backgroundColor: '#60a5fa',
+                    fill: '#60a5fa',
+                    fillOpacityPct: 100,
+                    borderRadius: 32,
+                    borderWidth: 0,
+                    borderColor: '',
+                    shadowX: 0,
+                    shadowY: 20,
+                    shadowBlur: 60,
+                    shadowSpread: 0,
+                    shadowColor: 'rgba(96,165,250,0.45)',
+                    shadowInset: false,
+                    blur: 0,
+                    backdropBlur: 0,
+                    backdropSaturate: 100,
+                    backdropBrightness: 100
+                }
+            },
+            soft: {
+                label: 'Soft card',
+                values: {
+                    shape: 'rect',
+                    backgroundMode: 'solid',
+                    backgroundColor: '#ffffff',
+                    fill: '#ffffff',
+                    fillOpacityPct: 92,
+                    borderRadius: 24,
+                    borderWidth: 1,
+                    borderStyle: 'solid',
+                    borderColor: 'rgba(148,163,184,0.18)',
+                    shadowX: 0,
+                    shadowY: 18,
+                    shadowBlur: 36,
+                    shadowSpread: 0,
+                    shadowColor: 'rgba(15,23,42,0.12)',
+                    shadowInset: false,
+                    blur: 0,
+                    backdropBlur: 0,
+                    backdropSaturate: 100,
+                    backdropBrightness: 100
+                }
+            }
+        };
+    }
+
+    function renderObjectPresetButtons() {
+        var presets = getObjectPresetMap();
+
+        return '<div class="nbde-preset-grid">'
+            + Object.keys(presets).map(function (key) {
+                return '<button class="nbde-preset-button" type="button" data-action="apply-object-preset" data-preset="' + escapeHtml(key) + '">' + escapeHtml(presets[key].label) + '</button>';
+            }).join('')
+            + '</div>';
+    }
+
     function normalizeScrubNumberValue(path, value) {
         var tail = getPathTail(path);
         var rounded = roundNumber(value);
 
-        if (tail === 'opacityPct') {
+        if (tail === 'opacityPct' || tail === 'fillOpacityPct' || tail === 'intensityPct') {
             return clamp(rounded, 0, 100);
+        }
+
+        if (tail === 'backdropSaturate' || tail === 'backdropBrightness') {
+            return clamp(rounded, 0, 200);
         }
 
         if (tail === 'zIndex') {
@@ -497,7 +781,7 @@
             return Math.max(1, rounded);
         }
 
-        if (['borderRadius', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'gutter', 'bleedLeft', 'bleedRight', 'outerMargin', 'gridSize', 'snapThreshold', 'lineHeight', 'letterSpacing', 'gradientAngle', 'initialInsertY', 'shadowBlur', 'shadowSpread', 'hoverShadowBlur', 'hoverShadowSpread'].indexOf(tail) !== -1) {
+        if (['borderRadius', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'gutter', 'bleedLeft', 'bleedRight', 'outerMargin', 'gridSize', 'snapThreshold', 'lineHeight', 'letterSpacing', 'gradientAngle', 'initialInsertY', 'shadowBlur', 'shadowSpread', 'hoverShadowBlur', 'hoverShadowSpread', 'blur', 'backdropBlur'].indexOf(tail) !== -1) {
             return Math.max(0, rounded);
         }
 
@@ -611,8 +895,22 @@
             branch.box.h = 220;
             branch.props.fill = '#f97316';
             branch.props.backgroundColor = '#f97316';
+            branch.props.backgroundMode = 'solid';
+            branch.props.gradientFrom = '#f97316';
+            branch.props.gradientTo = '#fb7185';
+            branch.props.gradientAngle = 135;
+            branch.props.fillOpacityPct = 100;
             branch.props.borderRadius = 24;
             branch.props.shape = 'rect';
+            branch.props.shadowX = 0;
+            branch.props.shadowY = 0;
+            branch.props.shadowBlur = 0;
+            branch.props.shadowSpread = 0;
+            branch.props.shadowColor = '';
+            branch.props.shadowInset = false;
+            branch.props.backdropBlur = 0;
+            branch.props.backdropSaturate = 100;
+            branch.props.backdropBrightness = 100;
         } else if (type === 'icon') {
             branch.box.w = 72;
             branch.box.h = 72;
@@ -1275,6 +1573,8 @@
     function setRootInsertionMode() {
         state.uiState.selectionIds = [];
         state.uiState.selectedElementId = null;
+        state.uiState.contextMenu.open = false;
+        state.uiState.contextMenu.anchorElementId = null;
         state.uiState.rootInsertionMode = true;
 
         if (state.uiState.editingTextId) {
@@ -1293,6 +1593,8 @@
 
         state.uiState.selectionIds = selectionState.selectionIds;
         state.uiState.selectedElementId = selectionState.primaryId;
+        state.uiState.contextMenu.open = false;
+        state.uiState.contextMenu.anchorElementId = null;
         state.uiState.rootInsertionMode = false;
 
         if (state.uiState.editingTextId && selectionState.selectionIds.indexOf(String(state.uiState.editingTextId)) === -1) {
@@ -1414,7 +1716,12 @@
         state.uiState.isDirty = true;
         state.uiState.changeRevision += 1;
         state.uiState.lastError = '';
-        scheduleAutosave();
+        if (ENABLE_AUTOSAVE) {
+            scheduleAutosave();
+        } else {
+            clearAutosaveTimer();
+            state.uiState.isAutosaveScheduled = false;
+        }
         renderStatus();
     }
 
@@ -1428,6 +1735,12 @@
     }
 
     function scheduleAutosave() {
+        if (!ENABLE_AUTOSAVE) {
+            clearAutosaveTimer();
+            state.uiState.isAutosaveScheduled = false;
+            return;
+        }
+
         clearAutosaveTimer();
 
         if (!state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
@@ -2256,6 +2569,12 @@
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="send-to-back">Вниз</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="bring-to-front">Наверх</button>';
+        if (canGroupCurrentSelection()) {
+            html += '<button class="nbde-mini-button" type="button" data-action="group-selection">Группа</button>';
+        }
+        if (canUngroupCurrentSelection()) {
+            html += '<button class="nbde-mini-button" type="button" data-action="ungroup-selection">Разгруппа</button>';
+        }
         html += '</div>';
 
         if (nodes.layersCard) {
@@ -2609,12 +2928,74 @@
                 html += renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number');
             }
         } else if (element.type === 'object') {
-            html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
-            html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
-                { value: 'rect', label: 'Прямоугольник' },
-                { value: 'circle', label: 'Круг' },
-                { value: 'line', label: 'Линия' }
-            ]);
+            return renderInspectorSubsection('Пресеты',
+                renderObjectPresetButtons(),
+                'Быстрый старт для glass, glow и мягкой карточки.'
+            )
+            + renderInspectorSubsection('Форма и каркас',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
+                    { value: 'rect', label: 'Прямоугольник' },
+                    { value: 'pill', label: 'Пилюля' },
+                    { value: 'circle', label: 'Круг' },
+                    { value: 'line', label: 'Линия' }
+                ])
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + ((props.shape || 'rect') === 'line' ? '' : renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number'))
+                + renderField('Размытие объекта', 'element-props', 'blur', props.blur || 0, 'number')
+                + '</div>'
+            )
+            + renderInspectorSubsection('Поверхность',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Тип заливки', 'element-props', 'backgroundMode', props.backgroundMode || 'solid', [
+                    { value: 'solid', label: 'Сплошной' },
+                    { value: 'gradient', label: 'Градиент' }
+                ])
+                + renderField('Плотность поверхности %', 'element-props', 'fillOpacityPct', props.fillOpacityPct != null ? props.fillOpacityPct : 100, 'number')
+                + (((props.backgroundMode || 'solid') === 'gradient')
+                    ? renderField('Градиент от', 'element-props', 'gradientFrom', props.gradientFrom || props.backgroundColor || props.fill || '#f97316', 'string')
+                        + renderField('Градиент к', 'element-props', 'gradientTo', props.gradientTo || '#fb7185', 'string')
+                        + renderField('Угол градиента', 'element-props', 'gradientAngle', props.gradientAngle != null ? props.gradientAngle : 135, 'number')
+                    : renderField('Цвет заливки', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string'))
+                + '</div>',
+                'Плотность управляет именно цветовой поверхностью. Эффект стекла и blur фона регулируются отдельно ниже.'
+            )
+            + renderInspectorSubsection('Граница',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField((props.shape || 'rect') === 'line' ? 'Толщина линии' : 'Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderSelectField('Стиль границы', 'element-props', 'borderStyle', props.borderStyle || 'solid', [
+                    { value: 'solid', label: 'Solid' },
+                    { value: 'dashed', label: 'Dashed' },
+                    { value: 'dotted', label: 'Dotted' }
+                ])
+                + renderField((props.shape || 'rect') === 'line' ? 'Цвет линии' : 'Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + '</div>'
+            )
+            + renderInspectorSubsection('Тень',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Тень X', 'element-props', 'shadowX', props.shadowX != null ? props.shadowX : 0, 'number')
+                + renderField('Тень Y', 'element-props', 'shadowY', props.shadowY != null ? props.shadowY : 0, 'number')
+                + renderField('Размытие', 'element-props', 'shadowBlur', props.shadowBlur != null ? props.shadowBlur : 0, 'number')
+                + renderField('Spread', 'element-props', 'shadowSpread', props.shadowSpread != null ? props.shadowSpread : 0, 'number')
+                + renderField('Цвет тени', 'element-props', 'shadowColor', props.shadowColor || '', 'string')
+                + renderCheckboxField('Внутренняя тень', 'element-props', 'shadowInset', !!props.shadowInset)
+                + '</div>',
+                'Raw поле boxShadow остаётся fallback для старых сохранений.'
+            )
+            + renderInspectorSubsection('Стекло',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Сила стекла %', 'object-glass', 'intensityPct', getObjectGlassIntensity(props), 'number')
+                + renderField('Blur фона', 'element-props', 'backdropBlur', props.backdropBlur != null ? props.backdropBlur : 0, 'number')
+                + '</div>',
+                'Главный контроллер для стекла. Он согласованно двигает blur, saturate и brightness фона.'
+            )
+            + renderInspectorSubsection('Тонкая настройка стекла',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Saturate фона %', 'element-props', 'backdropSaturate', props.backdropSaturate != null ? props.backdropSaturate : 100, 'number')
+                + renderField('Brightness фона %', 'element-props', 'backdropBrightness', props.backdropBrightness != null ? props.backdropBrightness : 100, 'number')
+                + '</div>',
+                'Используйте, когда нужно отойти от мастер-контрола и вручную докрутить характер стекла.'
+            );
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
             html += renderField('Размер иконки', 'element-props', 'size', props.size || 32, 'number');
@@ -2728,8 +3109,9 @@
         if (props.blur) {
             styles.push('filter: blur(' + Number(props.blur) + 'px)');
         }
-        if (props.backdropBlur) {
-            styles.push('backdrop-filter: blur(' + Number(props.backdropBlur) + 'px)');
+        if (buildBackdropFilterValue(props)) {
+            styles.push('-webkit-backdrop-filter:' + buildBackdropFilterValue(props));
+            styles.push('backdrop-filter:' + buildBackdropFilterValue(props));
         }
         if (box && box.rotation) {
             styles.push('transform: rotate(' + Number(box.rotation) + 'deg)');
@@ -2958,7 +3340,7 @@
         } else if (element.type === 'video') {
             html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
         } else if (element.type === 'object') {
-            html += '<div class="nbde-el__body" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String((props.shape || 'rect') === 'line' ? 'transparent' : (props.backgroundColor || props.fill || '#f97316')) + ';border-radius:' + Number((props.shape || 'rect') === 'circle' ? 9999 : (props.borderRadius || 0)) + 'px;' + ((props.shape || 'rect') === 'line' ? ('border-top:' + Math.max(1, Number(props.borderWidth || 2)) + 'px solid ' + String(props.borderColor || props.backgroundColor || props.fill || '#f97316') + ';height:0;top:' + Math.round(Number(box.h || 1) / 2) + 'px;') : '')) + '"></div>';
+            html += '<div class="nbde-el__body" style="' + escapeHtml(buildObjectPreviewStyle(props, box)) + '"></div>';
         } else if (element.type === 'icon') {
             html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
         } else if (element.type === 'divider') {
@@ -3117,58 +3499,119 @@
         return '<div class="nbde-selection-box" style="left:' + roundNumber(bounds.x) + 'px;top:' + roundNumber(bounds.y) + 'px;width:' + roundNumber(bounds.w) + 'px;height:' + roundNumber(bounds.h) + 'px"></div>';
     }
 
-    function renderFloatingToolbar() {
-        var selectionIds = getSelectionIds();
+    function canGroupCurrentSelection() {
+        var selectedIds = getRootSelectionIds(getSelectionIds());
+        var selected = selectedIds.map(getElementById).filter(Boolean);
+        var parentId;
+
+        if (selected.length < 2) {
+            return false;
+        }
+
+        parentId = String(selected[0].parentId || '');
+        return !selected.some(function (element) {
+            return String(element.parentId || '') !== parentId;
+        });
+    }
+
+    function canUngroupCurrentSelection() {
         var primary = getSelectedElement();
-        var branch;
-        var props;
-        var bounds;
+
+        return !!(primary && primary.type === 'group' && getSelectionIds().length === 1);
+    }
+
+    function closeContextMenu() {
+        state.uiState.contextMenu.open = false;
+        state.uiState.contextMenu.anchorElementId = null;
+    }
+
+    function hasClipboardData() {
+        return !!(state.clipboard && state.clipboard.roots.length && state.clipboard.nodes.length);
+    }
+
+    function renderContextMenuItem(options) {
+        var className = 'nbde-context-menu__item';
+        var attrs = '';
+
+        if (options.danger) {
+            className += ' nbde-context-menu__item--danger';
+        }
+
+        if (options.iconTone) {
+            className += ' nbde-context-menu__item--' + escapeHtml(options.iconTone);
+        }
+
+        if (options.elementId) {
+            attrs += ' data-element-id="' + escapeHtml(options.elementId) + '"';
+        }
+
+        return '<button class="' + className + '" type="button" data-action="' + escapeHtml(options.action || '') + '"' + attrs + '>' +
+            '<span class="nbde-context-menu__lead"><span class="nbde-context-menu__icon nbde-context-menu__icon--' + escapeHtml(options.iconTone || 'neutral') + '">' + escapeHtml(options.icon || '') + '</span><span>' + escapeHtml(options.label || '') + '</span></span>' +
+            '<span>' + escapeHtml(options.shortcut || '') + '</span></button>';
+    }
+
+    function openContextMenu(clientX, clientY, elementId) {
+        var rect;
+
+        if (!nodes.canvasStage) {
+            return;
+        }
+
+        rect = nodes.canvasStage.getBoundingClientRect();
+        state.uiState.contextMenu.open = true;
+        state.uiState.contextMenu.x = Math.max(8, roundNumber(clientX - rect.left));
+        state.uiState.contextMenu.y = Math.max(8, roundNumber(clientY - rect.top));
+        state.uiState.contextMenu.anchorElementId = elementId ? String(elementId) : null;
+    }
+
+    function renderContextMenu() {
+        var menu = state.uiState.contextMenu || {};
+        var selectedIds = getRootSelectionIds(getSelectionIds());
+        var primary = getSelectedElement();
+        var primaryVisible = primary ? resolveBranch(primary, currentBreakpoint()).box.visible !== false : true;
         var html = '';
 
-        if (!selectionIds.length) {
+        if (!menu.open || (!selectedIds.length && !hasClipboardData())) {
             return '';
         }
 
-        bounds = projectWorldBounds(buildSelectionBounds(selectionIds, currentBreakpoint()));
-        if (!bounds) {
-            return '';
-        }
-
-        html += '<div class="nbde-toolbar" style="left:' + Math.max(8, roundNumber(bounds.x)) + 'px;top:' + Math.max(8, roundNumber(bounds.y - 46)) + 'px">';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="duplicate-element">Дубль</button>';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="delete-element">Удалить</button>';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="move-layer-backward">-1</button>';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="move-layer-forward">+1</button>';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="send-to-back">Назад</button>';
-        html += '<button class="nbde-toolbar__button" type="button" data-action="bring-to-front">Вперёд</button>';
-        if (selectionIds.length > 1) {
-            html += '<button class="nbde-toolbar__button" type="button" data-action="group-selection">Group</button>';
-        }
-        if (primary && primary.type === 'group') {
-            html += '<button class="nbde-toolbar__button" type="button" data-action="ungroup-selection">Ungroup</button>';
-        }
-
-        if (primary && selectionIds.length === 1) {
-            branch = currentEditableBranch(primary);
-            props = composeBreakpointProps(primary, currentBreakpoint());
-
-            if (primary.type === 'text' || primary.type === 'button') {
-                html += '<span class="nbde-toolbar__separator"></span>';
-                html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-text-decrease">A-</button>';
-                html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-text-increase">A+</button>';
-                html += '<label class="nbde-toolbar__color"><input type="color" data-toolbar-color="text" value="' + escapeHtml(getColorInputValue(props.color, primary.type === 'button' ? '#ffffff' : '#0f172a')) + '"></label>';
+        html += '<div class="nbde-context-menu" data-context-menu="1" style="left:' + Number(menu.x || 0) + 'px;top:' + Number(menu.y || 0) + 'px">';
+        if (selectedIds.length) {
+            html += renderContextMenuItem({ action: 'move-layer-forward', label: 'Выше', shortcut: 'Ctrl ]', icon: 'UP', iconTone: 'order' });
+            html += renderContextMenuItem({ action: 'move-layer-backward', label: 'Ниже', shortcut: 'Ctrl [', icon: 'DN', iconTone: 'order' });
+            html += renderContextMenuItem({ action: 'bring-to-front', label: 'На передний план', shortcut: ']', icon: 'FR', iconTone: 'order' });
+            html += renderContextMenuItem({ action: 'send-to-back', label: 'На задний план', shortcut: '[', icon: 'BK', iconTone: 'order' });
+            html += '<div class="nbde-context-menu__sep"></div>';
+            html += renderContextMenuItem({ action: 'copy-element', label: 'Копировать', shortcut: 'Ctrl C', icon: 'CP', iconTone: 'copy' });
+            if (hasClipboardData()) {
+                html += renderContextMenuItem({ action: 'paste-element', label: 'Вставить', shortcut: 'Ctrl V', icon: 'PT', iconTone: 'copy' });
             }
-
-            if (primary.type === 'object') {
-                html += '<span class="nbde-toolbar__separator"></span>';
-                html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-radius-decrease">R-</button>';
-                html += '<button class="nbde-toolbar__button" type="button" data-action="toolbar-radius-increase">R+</button>';
-                html += '<label class="nbde-toolbar__color"><input type="color" data-toolbar-color="fill" value="' + escapeHtml(getColorInputValue(props.backgroundColor || props.fill, '#f97316')) + '"></label>';
-            }
+            html += renderContextMenuItem({ action: 'duplicate-element', label: 'Дублировать', shortcut: 'Ctrl D', icon: 'DU', iconTone: 'copy' });
+            html += renderContextMenuItem({ action: 'delete-element', label: 'Удалить', shortcut: 'Del', icon: 'DL', iconTone: 'danger', danger: true });
+        } else if (hasClipboardData()) {
+            html += renderContextMenuItem({ action: 'paste-element', label: 'Вставить', shortcut: 'Ctrl V', icon: 'PT', iconTone: 'copy' });
         }
-
+        if (selectedIds.length && (canGroupCurrentSelection() || canUngroupCurrentSelection())) {
+            html += '<div class="nbde-context-menu__sep"></div>';
+        }
+        if (selectedIds.length && canGroupCurrentSelection()) {
+            html += renderContextMenuItem({ action: 'group-selection', label: 'Сгруппировать', shortcut: 'Ctrl G', icon: 'GR', iconTone: 'group' });
+        }
+        if (selectedIds.length && canUngroupCurrentSelection()) {
+            html += renderContextMenuItem({ action: 'ungroup-selection', label: 'Разгруппировать', shortcut: 'Shift Ctrl G', icon: 'UG', iconTone: 'group' });
+        }
+        if (selectedIds.length && primary) {
+            html += '<div class="nbde-context-menu__sep"></div>';
+            html += renderContextMenuItem({ action: 'toggle-element-lock', label: primary.locked ? 'Разблокировать' : 'Заблокировать', shortcut: 'L', icon: 'LK', iconTone: 'toggle', elementId: primary.id });
+            html += renderContextMenuItem({ action: 'toggle-element-visibility', label: primaryVisible ? 'Скрыть' : 'Показать', shortcut: 'H', icon: 'SH', iconTone: 'toggle', elementId: primary.id });
+        }
         html += '</div>';
+
         return html;
+    }
+
+    function renderFloatingToolbar() {
+        return '';
     }
 
     function buildViewportTransform(viewport) {
@@ -3432,9 +3875,9 @@
             });
         }
 
-        html += '</div></div></div>';
-        html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + '</div>';
         html += '<div class="nbde-stage__footer-controls">' + renderStageHeightResizeEdge() + renderStageHeightResizeHandle(stageMetrics) + '</div>';
+        html += '</div></div></div>';
+        html += '<div class="nbde-stage__overlay">' + buildSelectionOverlay() + renderFloatingToolbar() + renderContextMenu() + '</div>';
         html += '</div>';
 
         if (nodes.canvasStage) {
@@ -3540,6 +3983,9 @@
         if (scope === 'element-root') {
             setPath(element, path, value);
             return true;
+        }
+        if (scope === 'object-glass') {
+            return applyObjectGlassIntensity(value);
         }
         if (scope === 'element-box') {
             setPath(branch.box, path, value);
@@ -4226,6 +4672,100 @@
         renderAll();
     }
 
+    function copySelectionToClipboard() {
+        var roots = getRootSelectionIds(getSelectionIds());
+        var selectedIds = [];
+        var nodes = [];
+
+        if (!roots.length) {
+            return false;
+        }
+
+        roots.forEach(function (id) {
+            collectDescendantIds(id).forEach(function (childId) {
+                if (selectedIds.indexOf(String(childId)) === -1) {
+                    selectedIds.push(String(childId));
+                }
+            });
+        });
+
+        getElements().forEach(function (element) {
+            if (selectedIds.indexOf(String(element.id)) === -1) {
+                return;
+            }
+
+            nodes.push(clone(element));
+        });
+
+        state.clipboard.roots = roots.slice();
+        state.clipboard.nodes = nodes;
+        state.clipboard.layout = createBreakpointStore();
+        state.clipboard.props = createBreakpointStore();
+
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            nodes.forEach(function (element) {
+                state.clipboard.layout[breakpoint][element.id] = clone(state.scene.layout[breakpoint][element.id] || createLayoutEntry(element, {}, {}));
+                state.clipboard.props[breakpoint][element.id] = clone(state.scene.props[breakpoint][element.id] || {});
+            });
+        });
+
+        return true;
+    }
+
+    function pasteClipboard() {
+        var clipboard = state.clipboard || {};
+        var originalElements = getElements();
+        var originalsById = {};
+        var idMap = {};
+        var copies = [];
+
+        if (!clipboard.nodes || !clipboard.nodes.length || !clipboard.roots || !clipboard.roots.length) {
+            return false;
+        }
+
+        clipboard.nodes.forEach(function (element) {
+            originalsById[String(element.id)] = element;
+
+            var copy = clone(element);
+            copy.__originId = String(element.id);
+            copy.id = nextElementId(copy.type || 'element');
+            copy.name = (copy.name || getTypeLabel(copy.type)) + ' копия';
+            idMap[String(element.id)] = copy.id;
+            copies.push(copy);
+        });
+
+        copies.forEach(function (copy) {
+            var original = originalsById[copy.__originId];
+
+            copy.parentId = idMap[String(original.parentId || '')] || String(original.parentId || '');
+            delete copy.__originId;
+
+            ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+                var originalLayout = clone(clipboard.layout[breakpoint][original.id] || createLayoutEntry(copy, {}, {}));
+                var originalProps = clone(clipboard.props[breakpoint][original.id] || {});
+
+                if (clipboard.roots.indexOf(String(original.id)) >= 0) {
+                    originalLayout.x = Number(originalLayout.x || 0) + 36;
+                    originalLayout.y = Number(originalLayout.y || 0) + 36;
+                }
+
+                state.scene.layout[breakpoint][copy.id] = originalLayout;
+                state.scene.props[breakpoint][copy.id] = originalProps;
+            });
+        });
+
+        copies.forEach(function (copy) {
+            originalElements.push(copy);
+        });
+
+        setSelection(clipboard.roots.map(function (id) {
+            return idMap[String(id)];
+        }).filter(Boolean), clipboard.roots.length ? idMap[String(clipboard.roots[clipboard.roots.length - 1])] : null);
+        markDirty();
+        renderAll();
+        return true;
+    }
+
     function removeNodeStores(ids) {
         ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
             ids.forEach(function (id) {
@@ -4274,24 +4814,47 @@
     function shiftSelectionZIndex(delta) {
         var selectedIds = getRootSelectionIds(getSelectionIds());
         var breakpoint = currentBreakpoint();
+        var ordered;
+        var selectedLookup = {};
 
         if (!selectedIds.length) {
             return;
         }
 
-        selectedIds.forEach(function (id) {
-            var element = getElementById(id);
-            var layout;
-
-            if (!element) {
-                return;
-            }
-
-            layout = ensureLayoutEntry(element, breakpoint);
-            layout.zIndex = Number(layout.zIndex || 1) + delta;
+        ordered = getElements().slice().sort(function (left, right) {
+            return Number(resolveBranch(left, breakpoint).box.zIndex || 0) - Number(resolveBranch(right, breakpoint).box.zIndex || 0);
         });
 
-        normalizeZIndices(breakpoint);
+        selectedIds.forEach(function (id) {
+            selectedLookup[String(id)] = true;
+        });
+
+        if (delta > 0) {
+            for (var index = ordered.length - 2; index >= 0; index -= 1) {
+                if (!selectedLookup[String(ordered[index].id)] || selectedLookup[String(ordered[index + 1].id)]) {
+                    continue;
+                }
+
+                var next = ordered[index + 1];
+                ordered[index + 1] = ordered[index];
+                ordered[index] = next;
+            }
+        } else if (delta < 0) {
+            for (var backwardIndex = 1; backwardIndex < ordered.length; backwardIndex += 1) {
+                if (!selectedLookup[String(ordered[backwardIndex].id)] || selectedLookup[String(ordered[backwardIndex - 1].id)]) {
+                    continue;
+                }
+
+                var previous = ordered[backwardIndex - 1];
+                ordered[backwardIndex - 1] = ordered[backwardIndex];
+                ordered[backwardIndex] = previous;
+            }
+        }
+
+        ordered.forEach(function (element, index) {
+            ensureLayoutEntry(element, breakpoint).zIndex = index + 1;
+        });
+
         markDirty();
         renderAll();
     }
@@ -5345,6 +5908,21 @@
         return false;
     }
 
+    function applyObjectPreset(presetKey) {
+        var element = getSelectedElement();
+        var preset = getObjectPresetMap()[String(presetKey || '')];
+
+        if (!element || element.type !== 'object' || !preset) {
+            return false;
+        }
+
+        Object.keys(preset.values).forEach(function (key) {
+            writeNodeSharedProp(element, key, preset.values[key]);
+        });
+
+        return true;
+    }
+
     function applyToolbarColor(target) {
         var element = getSelectedElement();
         var role = target.dataset.toolbarColor;
@@ -5468,6 +6046,10 @@
         var serializedContract;
         var saveRevision;
         var normalizedContract;
+        var preservedViewport;
+        var preservedSelectionIds;
+        var preservedSelectedElementId;
+        var preservedRootInsertionMode;
         var requestedMode = options.mode === 'autosave' ? 'autosave' : 'manual';
 
         if (!state.editor.saveUrl || !state.documentState.contract || !state.documentState.block) {
@@ -5487,6 +6069,10 @@
         state.uiState.lastError = '';
         renderStatus();
 
+        preservedViewport = clone(state.scene.viewport || null);
+        preservedSelectionIds = getSelectionIds().slice();
+        preservedSelectedElementId = state.uiState.selectedElementId;
+        preservedRootInsertionMode = !!state.uiState.rootInsertionMode;
         serializedContract = serializeSceneIntoContract(state.documentState.contract);
         saveRevision = state.uiState.changeRevision;
 
@@ -5517,6 +6103,18 @@
             if (state.uiState.changeRevision === saveRevision) {
                 state.documentState.contract = normalizedContract;
                 state.scene = buildSceneFromContract(state.documentState.contract);
+                if (preservedViewport) {
+                    state.scene.viewport.zoom = Number(preservedViewport.zoom || 1);
+                    state.scene.viewport.offsetX = Number(preservedViewport.offsetX || 0);
+                    state.scene.viewport.offsetY = Number(preservedViewport.offsetY || 0);
+                }
+                if (preservedSelectionIds.length) {
+                    setSelection(preservedSelectionIds, preservedSelectedElementId);
+                } else {
+                    state.uiState.selectionIds = [];
+                    state.uiState.selectedElementId = null;
+                    state.uiState.rootInsertionMode = preservedRootInsertionMode;
+                }
                 state.uiState.isDirty = false;
                 renderAll();
             } else {
@@ -5537,7 +6135,7 @@
                 window.setTimeout(function () {
                     saveContract({ mode: requestedMode });
                 }, 0);
-            } else if (state.uiState.isDirty) {
+            } else if (ENABLE_AUTOSAVE && state.uiState.isDirty) {
                 scheduleAutosave();
                 renderStatus();
             }
@@ -5636,6 +6234,10 @@
 
         action = actionNode.dataset.action;
 
+        if (action !== 'toggle-add-menu') {
+            closeContextMenu();
+        }
+
         if (action === 'toggle-add-menu') {
             state.uiState.addMenuOpen = !state.uiState.addMenuOpen;
             renderBlockCard();
@@ -5689,6 +6291,14 @@
         }
         if (action === 'duplicate-element') {
             duplicateSelection();
+            return;
+        }
+        if (action === 'copy-element') {
+            copySelectionToClipboard();
+            return;
+        }
+        if (action === 'paste-element') {
+            pasteClipboard();
             return;
         }
         if (action === 'delete-element') {
@@ -5757,6 +6367,13 @@
         }
         if (action === 'toggle-element-lock') {
             toggleElementLock(actionNode.dataset.elementId || '');
+            return;
+        }
+        if (action === 'apply-object-preset') {
+            if (applyObjectPreset(actionNode.dataset.preset || '')) {
+                markDirty();
+                renderAll();
+            }
             return;
         }
         if (applyToolbarAction(action)) {
@@ -5849,6 +6466,13 @@
 
     document.addEventListener('click', function (event) {
         var colorClearTarget = event.target.closest('[data-color-clear]');
+        var insideContextMenu = event.target.closest('[data-context-menu]');
+
+        if (!insideContextMenu && state.uiState.contextMenu.open) {
+            closeContextMenu();
+            renderCanvas();
+        }
+
         if (state.uiState.addMenuOpen && !event.target.closest('[data-add-menu-root]')) {
             state.uiState.addMenuOpen = false;
             renderBlockCard();
@@ -5974,7 +6598,15 @@
             return;
         }
 
+        if (event.target.closest('[data-context-menu]')) {
+            return;
+        }
+
         updatePointerTelemetry(event);
+
+        if (event.button === 2) {
+            return;
+        }
 
         if (event.button === 1 || (state.interactionState.spacePressed && event.button === 0)) {
             event.preventDefault();
@@ -6035,6 +6667,62 @@
 
         setSelection([hitElement.id], hitElement.id);
         beginDrag(hitElement.id, event, worldPoint);
+    });
+
+    root.addEventListener('contextmenu', function (event) {
+        var stageViewport = event.target.closest('#nbd-stage-viewport');
+        var layerButton = event.target.closest('.nbde-layer-button[data-action="select-element"]');
+        var wrapper = event.target.closest('.nbde-el');
+        var inlineTextNode = event.target.closest('[data-inline-edit="text"]');
+        var worldPoint;
+        var hitElement = null;
+
+        if (inlineTextNode && wrapper && state.uiState.editingTextId === wrapper.dataset.elementId) {
+            return;
+        }
+
+        if (layerButton) {
+            event.preventDefault();
+            setSelection([layerButton.dataset.elementId || ''], layerButton.dataset.elementId || '');
+            openContextMenu(event.clientX, event.clientY, layerButton.dataset.elementId || '');
+            renderPropertiesCard();
+            renderLayersCard();
+            renderStageCard();
+            renderCanvas();
+            return;
+        }
+
+        if (!stageViewport) {
+            return;
+        }
+
+        event.preventDefault();
+        worldPoint = getWorldPointFromEvent(event);
+        hitElement = wrapper ? getElementById(wrapper.dataset.elementId || '') : null;
+
+        if (!hitElement && worldPoint) {
+            hitElement = hitTestWorldPoint(worldPoint, currentBreakpoint());
+        }
+
+        if (!hitElement) {
+            clearSelection();
+            openContextMenu(event.clientX, event.clientY, null);
+            renderPropertiesCard();
+            renderLayersCard();
+            renderStageCard();
+            renderCanvas();
+            return;
+        }
+
+        if (!isSelected(hitElement.id)) {
+            setSelection([hitElement.id], hitElement.id);
+        }
+
+        openContextMenu(event.clientX, event.clientY, hitElement.id);
+        renderPropertiesCard();
+        renderLayersCard();
+        renderStageCard();
+        renderCanvas();
     });
 
     document.addEventListener('pointermove', function (event) {
@@ -6106,11 +6794,49 @@
             return;
         }
 
+        if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 'c') {
+            if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                return;
+            }
+            event.preventDefault();
+            copySelectionToClipboard();
+            return;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 'v') {
+            if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                return;
+            }
+            event.preventDefault();
+            pasteClipboard();
+            return;
+        }
+
+        if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 'g') {
+            if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                return;
+            }
+            event.preventDefault();
+            if (event.shiftKey) {
+                ungroupSelection();
+            } else {
+                groupSelection();
+            }
+            return;
+        }
+
         if (String(event.key || '') === 'Delete') {
             if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
                 return;
             }
             deleteSelection();
+            return;
+        }
+
+        if (String(event.key || '') === 'Escape' && state.uiState.contextMenu.open) {
+            event.preventDefault();
+            closeContextMenu();
+            renderCanvas();
             return;
         }
 

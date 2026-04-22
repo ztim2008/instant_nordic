@@ -123,7 +123,7 @@ class NordicblocksDesignBlockCssBuilder {
     }
 
     private static function baseCss($section_id) {
-        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:28px}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;gap:inherit;width:100%;height:100%;padding:inherit;color:inherit;text-decoration:none;box-sizing:border-box;line-height:inherit;letter-spacing:inherit;text-transform:inherit;transition:background-color .18s ease,color .18s ease,border-color .18s ease}#' . $section_id . ' .nb-design-button__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--nb-design-button-icon-color,currentColor)}#' . $section_id . ' .nb-design-button__icon .icms-svg-icon{display:block;width:1.1em;height:1.1em;fill:currentColor}#' . $section_id . ' .nb-design-button__icon i{font-size:1em;line-height:1}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
+        return '#' . $section_id . '{position:relative;overflow:hidden;padding:clamp(1.25rem,4vw,2.5rem);border-radius:0}#' . $section_id . ' .nb-design-block__stage{position:relative;width:min(100%,var(--nb-design-stage-width));min-height:var(--nb-design-stage-min-height);padding:var(--nb-design-stage-padding-y) var(--nb-design-stage-padding-x);margin:0 auto;overflow:visible}#' . $section_id . ' .nb-design-el{box-sizing:border-box;transform-origin:center center}#' . $section_id . ' .nb-design-el--button>.nb-design-button__link{display:flex;align-items:center;justify-content:inherit;gap:inherit;width:100%;height:100%;padding:inherit;color:inherit;text-decoration:none;box-sizing:border-box;line-height:inherit;letter-spacing:inherit;text-transform:inherit;transition:background-color .18s ease,color .18s ease,border-color .18s ease}#' . $section_id . ' .nb-design-button__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--nb-design-button-icon-color,currentColor)}#' . $section_id . ' .nb-design-button__icon .icms-svg-icon{display:block;width:1.1em;height:1.1em;fill:currentColor}#' . $section_id . ' .nb-design-button__icon i{font-size:1em;line-height:1}#' . $section_id . ' .nb-design-el--image img,#' . $section_id . ' .nb-design-el--photo img,#' . $section_id . ' .nb-design-el--svg img,#' . $section_id . ' .nb-design-el--video video{width:100%;height:100%;display:block}';
     }
 
     private static function collectElementCss(array $elements, $section_id, $parent_type, $flow_child, &$desktop, &$tablet, &$mobile) {
@@ -179,8 +179,8 @@ class NordicblocksDesignBlockCssBuilder {
             $css .= 'background:' . self::css($background_color) . ';';
         }
 
-        if (!empty($props['borderRadius']) || $type === 'object' && (($props['shape'] ?? '') === 'circle')) {
-            $radius = $type === 'object' && (($props['shape'] ?? '') === 'circle') ? 9999 : (int) ($props['borderRadius'] ?? 0);
+        if (!empty($props['borderRadius']) || $type === 'object' && in_array(($props['shape'] ?? ''), ['circle', 'pill'], true)) {
+            $radius = $type === 'object' && in_array(($props['shape'] ?? ''), ['circle', 'pill'], true) ? 9999 : (int) ($props['borderRadius'] ?? 0);
             $css .= 'border-radius:' . $radius . 'px;';
         }
         if (!empty($props['borderWidth']) && !($type === 'object' && (($props['shape'] ?? '') === 'line'))) {
@@ -192,8 +192,10 @@ class NordicblocksDesignBlockCssBuilder {
         if (!empty($props['blur'])) {
             $css .= 'filter:blur(' . (int) $props['blur'] . 'px);';
         }
-        if (!empty($props['backdropBlur'])) {
-            $css .= 'backdrop-filter:blur(' . (int) $props['backdropBlur'] . 'px);';
+        $backdrop_filter = self::buildBackdropFilterCss($props);
+        if ($backdrop_filter !== '') {
+            $css .= '-webkit-backdrop-filter:' . $backdrop_filter . ';';
+            $css .= 'backdrop-filter:' . $backdrop_filter . ';';
         }
 
         if ($type === 'text') {
@@ -209,10 +211,14 @@ class NordicblocksDesignBlockCssBuilder {
         } elseif ($type === 'video') {
             $css .= 'overflow:hidden;background:#020617;';
         } elseif ($type === 'object') {
+            $object_shadow = self::buildObjectShadowCss($props);
+            if ($object_shadow !== '') {
+                $css .= 'box-shadow:' . self::css($object_shadow) . ';';
+            }
             if (($props['shape'] ?? '') === 'line') {
-                $css .= 'background:transparent;height:0;top:' . max(0, (int) round($height / 2)) . 'px;border-top:' . max(1, (int) ($props['borderWidth'] ?? 2)) . 'px solid ' . self::css((string) ($props['borderColor'] ?? $props['backgroundColor'] ?? $props['fill'] ?? '#dbeafe')) . ';';
+                $css .= 'background:transparent;height:0;top:' . max(0, (int) round($height / 2)) . 'px;border-top:' . max(1, (int) ($props['borderWidth'] ?? 2)) . 'px solid ' . self::buildObjectStrokeColor($props) . ';';
             } else {
-                $css .= 'background:' . self::css((string) ($props['fill'] ?? '#dbeafe')) . ';';
+                $css .= 'background:' . self::buildObjectFillCss($props) . ';';
             }
         } elseif ($type === 'icon') {
             $css .= 'display:flex;align-items:center;justify-content:center;color:' . self::css((string) ($props['color'] ?? '#0f172a')) . ';font-size:' . (float) ($props['size'] ?? 24) . 'px;';
@@ -314,6 +320,86 @@ class NordicblocksDesignBlockCssBuilder {
         $scale = max(0.9, min(1.2, ((float) ($props['hoverScalePct'] ?? 100) / 100)));
 
         return 'translateY(' . (-$lift) . 'px) scale(' . round($scale, 3) . ')';
+    }
+
+    private static function buildBackdropFilterCss(array $props) {
+        $parts = [];
+        $blur = (float) ($props['backdropBlur'] ?? 0);
+        $saturate = (float) ($props['backdropSaturate'] ?? 100);
+        $brightness = (float) ($props['backdropBrightness'] ?? 100);
+
+        if ($blur > 0.0) {
+            $parts[] = 'blur(' . $blur . 'px)';
+        }
+        if ($saturate !== 100.0) {
+            $parts[] = 'saturate(' . $saturate . '%)';
+        }
+        if ($brightness !== 100.0) {
+            $parts[] = 'brightness(' . $brightness . '%)';
+        }
+
+        return implode(' ', $parts);
+    }
+
+    private static function resolveObjectFillAlpha(array $props) {
+        $raw_alpha = max(0, min(100, (float) ($props['fillOpacityPct'] ?? 100))) / 100;
+        $has_backdrop_effect = (float) ($props['backdropBlur'] ?? 0) > 0
+            || (float) ($props['backdropSaturate'] ?? 100) !== 100.0
+            || (float) ($props['backdropBrightness'] ?? 100) !== 100.0;
+
+        if (!$has_backdrop_effect || $raw_alpha <= 0.0 || $raw_alpha >= 0.999) {
+            return $raw_alpha;
+        }
+
+        return min(1, round(0.12 + (0.88 * pow($raw_alpha, 0.72)), 3));
+    }
+
+    private static function buildObjectFillCss(array $props) {
+        $mode = (string) ($props['backgroundMode'] ?? 'solid');
+        $alpha = self::resolveObjectFillAlpha($props);
+        $color = self::withAlpha((string) ($props['backgroundColor'] ?? ($props['fill'] ?? '#dbeafe')), $alpha);
+
+        if ($mode === 'gradient') {
+            $angle = (float) ($props['gradientAngle'] ?? 135);
+            $from = self::withAlpha((string) ($props['gradientFrom'] ?? ($props['backgroundColor'] ?? ($props['fill'] ?? '#dbeafe'))), $alpha);
+            $to = self::withAlpha((string) ($props['gradientTo'] ?? '#60a5fa'), $alpha);
+
+            return 'linear-gradient(' . $angle . 'deg,' . self::css($from) . ',' . self::css($to) . ')';
+        }
+
+        return self::css($color);
+    }
+
+    private static function buildObjectStrokeColor(array $props) {
+        if (!empty($props['borderColor'])) {
+            return self::css((string) $props['borderColor']);
+        }
+
+        if (($props['backgroundMode'] ?? 'solid') === 'gradient') {
+            return self::css((string) ($props['gradientFrom'] ?? ($props['backgroundColor'] ?? ($props['fill'] ?? '#dbeafe'))));
+        }
+
+        return self::css((string) ($props['backgroundColor'] ?? ($props['fill'] ?? '#dbeafe')));
+    }
+
+    private static function buildObjectShadowCss(array $props) {
+        $raw = trim((string) ($props['boxShadow'] ?? ''));
+        $x = (float) ($props['shadowX'] ?? 0);
+        $y = (float) ($props['shadowY'] ?? 0);
+        $blur = max(0, (float) ($props['shadowBlur'] ?? 0));
+        $spread = (float) ($props['shadowSpread'] ?? 0);
+        $color = trim((string) ($props['shadowColor'] ?? ''));
+        $inset = !empty($props['shadowInset']);
+
+        if ($inset || $x !== 0.0 || $y !== 0.0 || $blur !== 0.0 || $spread !== 0.0 || $color !== '') {
+            if ($color === '') {
+                $color = 'rgba(15,23,42,0.18)';
+            }
+
+            return ($inset ? 'inset ' : '') . $x . 'px ' . $y . 'px ' . $blur . 'px ' . $spread . 'px ' . self::css($color);
+        }
+
+        return $raw;
     }
 
     private static function css($value) {

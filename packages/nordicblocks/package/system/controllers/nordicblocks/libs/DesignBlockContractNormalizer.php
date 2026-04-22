@@ -19,10 +19,6 @@ class NordicblocksDesignBlockContractNormalizer {
         $elements_raw = $contract['content']['section']['elements'] ?? ($payload['elements'] ?? []);
         $elements     = self::normalizeElements(is_array($elements_raw) ? $elements_raw : []);
 
-        if (!$elements) {
-            $elements = self::buildDefaultElements();
-        }
-
         return [
             'meta' => [
                 'contractVersion' => 1,
@@ -330,6 +326,19 @@ class NordicblocksDesignBlockContractNormalizer {
             return $common + [
                 'shape' => self::select($raw['shape'] ?? 'rect', ['rect', 'pill', 'circle', 'line'], 'rect'),
                 'fill'  => self::string($raw['fill'] ?? ($raw['backgroundColor'] ?? '#dbeafe'), '#dbeafe', 255),
+                'backgroundMode' => self::select($raw['backgroundMode'] ?? 'solid', ['solid', 'gradient'], 'solid'),
+                'gradientFrom' => self::string($raw['gradientFrom'] ?? ($raw['backgroundColor'] ?? ($raw['fill'] ?? '#dbeafe')), '#dbeafe', 255),
+                'gradientTo' => self::string($raw['gradientTo'] ?? '#60a5fa', '#60a5fa', 255),
+                'gradientAngle' => self::number($raw['gradientAngle'] ?? 135, 0, 360, 135),
+                'fillOpacityPct' => self::number($raw['fillOpacityPct'] ?? 100, 0, 100, 100),
+                'shadowX' => self::number($raw['shadowX'] ?? 0, -240, 240, 0),
+                'shadowY' => self::number($raw['shadowY'] ?? 0, -240, 240, 0),
+                'shadowBlur' => self::number($raw['shadowBlur'] ?? 0, 0, 320, 0),
+                'shadowSpread' => self::number($raw['shadowSpread'] ?? 0, -240, 240, 0),
+                'shadowColor' => self::string($raw['shadowColor'] ?? '', '', 255),
+                'shadowInset' => self::bool($raw['shadowInset'] ?? false, false),
+                'backdropSaturate' => self::number($raw['backdropSaturate'] ?? 100, 0, 200, 100),
+                'backdropBrightness' => self::number($raw['backdropBrightness'] ?? 100, 0, 200, 100),
             ];
         }
 
