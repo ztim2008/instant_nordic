@@ -135,7 +135,8 @@
         'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
-        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration', 'motionTrigger', 'motionPreset', 'motionDuration', 'motionDelay', 'motionEasing', 'motionAmount'
+        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration', 'motionTrigger', 'motionPreset', 'motionDuration', 'motionDelay', 'motionEasing', 'motionAmount',
+        'sequenceMode', 'sequenceId', 'sequenceRole', 'sequenceStep', 'sequenceGap', 'sequenceTrigger', 'sequenceScope', 'sequenceReplay'
     ];
 
     var DEFAULT_FONT_FAMILIES = [
@@ -3937,30 +3938,280 @@
             return '';
         }
 
-        return '<div class="nbde-field-grid nbde-field-grid--2">'
+        return '<div class="nbde-action-grid">'
+            + '<button class="nbde-mini-button" type="button" data-action="preview-motion">Проиграть на холсте</button>'
+            + '</div>'
+            + '<div class="nbde-field-grid nbde-field-grid--2">'
             + renderSelectField('Триггер', 'element-props', 'motionTrigger', props.motionTrigger || 'none', [
                 { value: 'none', label: 'Без анимации' },
                 { value: 'entry', label: 'При появлении' },
                 { value: 'scroll', label: 'При скролле' }
             ])
             + renderSelectField('Пресет', 'element-props', 'motionPreset', props.motionPreset || 'fade-up', [
-                { value: 'fade-up', label: 'Fade Up' },
-                { value: 'fade-down', label: 'Fade Down' },
-                { value: 'slide-left', label: 'Slide Left' },
-                { value: 'slide-right', label: 'Slide Right' },
-                { value: 'zoom-in', label: 'Zoom In' },
-                { value: 'soft-pop', label: 'Soft Pop' }
+                { value: 'fade-up', label: 'Снизу вверх' },
+                { value: 'fade-down', label: 'Сверху вниз' },
+                { value: 'slide-left', label: 'Сдвиг слева' },
+                { value: 'slide-right', label: 'Сдвиг справа' },
+                { value: 'zoom-in', label: 'Приближение' },
+                { value: 'soft-pop', label: 'Мягкое появление' }
             ])
-            + renderField('Длительность ms', 'element-props', 'motionDuration', props.motionDuration != null ? props.motionDuration : 650, 'number')
-            + renderField('Задержка ms', 'element-props', 'motionDelay', props.motionDelay != null ? props.motionDelay : 0, 'number')
+            + renderField('Длительность мс', 'element-props', 'motionDuration', props.motionDuration != null ? props.motionDuration : 650, 'number')
+            + renderField('Задержка мс', 'element-props', 'motionDelay', props.motionDelay != null ? props.motionDelay : 0, 'number')
             + renderSelectField('Кривая', 'element-props', 'motionEasing', props.motionEasing || 'smooth', [
-                { value: 'smooth', label: 'Smooth' },
-                { value: 'soft', label: 'Soft' },
-                { value: 'snappy', label: 'Snappy' },
-                { value: 'linear', label: 'Linear' }
+                { value: 'smooth', label: 'Плавная' },
+                { value: 'soft', label: 'Мягкая' },
+                { value: 'snappy', label: 'Резкая' },
+                { value: 'linear', label: 'Линейная' }
             ])
             + renderField('Амплитуда', 'element-props', 'motionAmount', props.motionAmount != null ? props.motionAmount : 32, 'number')
             + '</div>';
+    }
+
+    function resolveMotionPreviewTransform(props) {
+        var preset = String(props.motionPreset || 'fade-up');
+        var amount = Math.max(0, Number(props.motionAmount || 32));
+
+        if (preset === 'fade-down') {
+            return 'translate3d(0,-' + amount + 'px,0)';
+        }
+        if (preset === 'slide-left') {
+            return 'translate3d(' + amount + 'px,0,0)';
+        }
+        if (preset === 'slide-right') {
+            return 'translate3d(-' + amount + 'px,0,0)';
+        }
+        if (preset === 'zoom-in') {
+            return 'scale(' + Math.max(0.72, 1 - Math.min(0.28, amount / 200)) + ')';
+        }
+        if (preset === 'soft-pop') {
+            return 'translate3d(0,' + Math.round(amount * 0.4 * 100) / 100 + 'px,0) scale(0.96)';
+        }
+
+        return 'translate3d(0,' + amount + 'px,0)';
+    }
+
+    function resolveMotionPreviewEasing(props) {
+        var easing = String(props.motionEasing || 'smooth');
+
+        if (easing === 'soft') {
+            return 'cubic-bezier(0.16,1,0.3,1)';
+        }
+        if (easing === 'snappy') {
+            return 'cubic-bezier(0.2,0.8,0.2,1)';
+        }
+        if (easing === 'linear') {
+            return 'linear';
+        }
+
+        return 'cubic-bezier(0.22,1,0.36,1)';
+    }
+
+    function clearMotionPreview() {
+        var timers = state.uiState.motionPreviewTimers || [];
+
+        timers.forEach(function (timerId) {
+            clearTimeout(timerId);
+        });
+
+        state.uiState.motionPreviewTimers = [];
+
+        if (!nodes.canvasStage) {
+            return;
+        }
+
+        Array.prototype.forEach.call(nodes.canvasStage.querySelectorAll('.nbde-el.is-motion-previewing'), function (node) {
+            node.classList.remove('is-motion-previewing');
+            node.style.removeProperty('opacity');
+            node.style.removeProperty('transform');
+            node.style.removeProperty('transition');
+            node.style.removeProperty('will-change');
+        });
+    }
+
+    function collectMotionPreviewTargets(element, mode) {
+        var breakpoint = currentBreakpoint();
+        var props = composeBreakpointProps(element, breakpoint);
+        var sequenceId = String(props.sequenceId || '').trim();
+        var items;
+
+        if ((mode === 'group' || props.sequenceMode === 'orchestrated') && props.sequenceMode === 'orchestrated' && sequenceId) {
+            items = getElements().filter(function (candidate) {
+                var candidateProps = composeBreakpointProps(candidate, breakpoint);
+
+                return supportsMotion(candidate.type)
+                    && candidateProps.sequenceMode === 'orchestrated'
+                    && String(candidateProps.sequenceId || '').trim() === sequenceId;
+            }).map(function (candidate) {
+                var candidateProps = composeBreakpointProps(candidate, breakpoint);
+                return {
+                    element: candidate,
+                    props: candidateProps,
+                    sequenceStep: Number(candidateProps.sequenceStep || 0),
+                    sequenceGap: Number(candidateProps.sequenceGap || 80)
+                };
+            }).sort(function (left, right) {
+                return left.sequenceStep - right.sequenceStep;
+            });
+        } else {
+            items = [{
+                element: element,
+                props: props,
+                sequenceStep: 0,
+                sequenceGap: 0
+            }];
+        }
+
+        return items.filter(function (item) {
+            return String(item.props.motionTrigger || 'none') !== 'none';
+        });
+    }
+
+    function playMotionPreview(mode) {
+        var selected = getSelectedElement();
+        var previewTargets;
+        var previewNonce;
+
+        if (!selected || !nodes.canvasStage) {
+            return;
+        }
+
+        previewTargets = collectMotionPreviewTargets(selected, mode || 'auto');
+        if (!previewTargets.length) {
+            return;
+        }
+
+        clearMotionPreview();
+        previewNonce = Date.now();
+        state.uiState.motionPreviewNonce = previewNonce;
+        state.uiState.motionPreviewTimers = [];
+
+        previewTargets.forEach(function (item) {
+            var node = nodes.canvasStage.querySelector('.nbde-el[data-element-id="' + selectorEscape(item.element.id) + '"]');
+            var duration = Math.max(120, Number(item.props.motionDuration || 650));
+            var delay = Math.max(0, Number(item.props.motionDelay || 0)) + Math.max(0, item.sequenceStep) * Math.max(0, item.sequenceGap);
+            var easing = resolveMotionPreviewEasing(item.props);
+            var fromTransform = resolveMotionPreviewTransform(item.props);
+            var startTimer;
+            var cleanupTimer;
+
+            if (!node) {
+                return;
+            }
+
+            node.classList.add('is-motion-previewing');
+            node.style.opacity = '0';
+            node.style.transform = fromTransform;
+            node.style.transition = 'none';
+            node.style.willChange = 'transform, opacity';
+
+            startTimer = setTimeout(function () {
+                if (state.uiState.motionPreviewNonce !== previewNonce) {
+                    return;
+                }
+                requestAnimationFrame(function () {
+                    if (state.uiState.motionPreviewNonce !== previewNonce) {
+                        return;
+                    }
+                    node.style.transition = 'opacity ' + duration + 'ms ' + easing + ', transform ' + duration + 'ms ' + easing;
+                    node.style.opacity = '1';
+                    node.style.transform = 'none';
+                });
+            }, delay);
+
+            cleanupTimer = setTimeout(function () {
+                if (state.uiState.motionPreviewNonce !== previewNonce) {
+                    return;
+                }
+                node.classList.remove('is-motion-previewing');
+                node.style.removeProperty('opacity');
+                node.style.removeProperty('transform');
+                node.style.removeProperty('transition');
+                node.style.removeProperty('will-change');
+            }, delay + duration + 120);
+
+            state.uiState.motionPreviewTimers.push(startTimer, cleanupTimer);
+        });
+    }
+
+    function shouldAutoReplayMotionPreview(scope, path) {
+        var replayablePaths = {
+            motionTrigger: true,
+            motionPreset: true,
+            motionDuration: true,
+            motionDelay: true,
+            motionEasing: true,
+            motionAmount: true,
+            sequenceMode: true,
+            sequenceId: true,
+            sequenceStep: true,
+            sequenceGap: true,
+            sequenceTrigger: true,
+            sequenceReplay: true,
+            sequenceScope: true,
+            sequenceRole: true
+        };
+
+        return scope === 'element-props' && !!replayablePaths[String(path || '')];
+    }
+
+    function scheduleMotionPreview(mode) {
+        clearTimeout(state.uiState.motionPreviewReplayTimer || 0);
+        state.uiState.motionPreviewReplayTimer = setTimeout(function () {
+            state.uiState.motionPreviewReplayTimer = 0;
+            playMotionPreview(mode || 'auto');
+        }, 90);
+    }
+
+    function renderSequenceFields(element, props) {
+        var mode;
+        var html;
+
+        if (!supportsMotion(element.type)) {
+            return '';
+        }
+
+        mode = props.sequenceMode || 'none';
+        html = '';
+
+        if (mode === 'orchestrated') {
+            html += '<div class="nbde-action-grid">'
+                + '<button class="nbde-mini-button" type="button" data-action="preview-motion-group">Проиграть группу</button>'
+                + '</div>';
+        }
+
+        html += '<div class="nbde-field-grid nbde-field-grid--2">';
+        html += renderSelectField('Режим', 'element-props', 'sequenceMode', mode, [
+            { value: 'none', label: 'Без последовательности' },
+            { value: 'orchestrated', label: 'Последовательность v1' }
+        ]);
+
+        if (mode !== 'orchestrated') {
+            html += '<div class="nbde-field"><div class="nbde-field__label">Состояние</div><div class="nbde-card__hint">Элемент использует только базовую анимацию. Включите Последовательность v1, чтобы задать шаг и общий идентификатор группы.</div></div>';
+            html += '</div>';
+            return html;
+        }
+
+        html += renderField('Идентификатор группы', 'element-props', 'sequenceId', props.sequenceId || '', 'string');
+        html += renderField('Шаг', 'element-props', 'sequenceStep', props.sequenceStep != null ? props.sequenceStep : 0, 'number');
+        html += renderField('Интервал мс', 'element-props', 'sequenceGap', props.sequenceGap != null ? props.sequenceGap : 80, 'number');
+        html += renderSelectField('Триггер последовательности', 'element-props', 'sequenceTrigger', props.sequenceTrigger || 'inherit', [
+            { value: 'inherit', label: 'Наследовать из Анимации' },
+            { value: 'entry', label: 'При появлении' },
+            { value: 'scroll', label: 'При скролле' }
+        ]);
+        html += renderSelectField('Повтор', 'element-props', 'sequenceReplay', props.sequenceReplay || 'once', [
+            { value: 'once', label: 'Один раз' },
+            { value: 'repeat-on-reentry', label: 'Повтор при повторном входе' }
+        ]);
+        html += renderSelectField('Область', 'element-props', 'sequenceScope', props.sequenceScope || 'block', [
+            { value: 'block', label: 'Весь блок' },
+            { value: 'viewport-group', label: 'Группа в области видимости' }
+        ]);
+        html += renderField('Роль', 'element-props', 'sequenceRole', props.sequenceRole || '', 'string');
+        html += '<div class="nbde-field"><div class="nbde-field__label">Формула</div><div class="nbde-card__hint">Задержка считается как базовая задержка анимации + шаг × интервал. Триггер последовательности хранится отдельно от базовой секции Анимация.</div></div>';
+        html += '</div>';
+
+        return html;
     }
 
     function renderPropertiesCard() {
@@ -4030,7 +4281,8 @@
             html += styleSection;
         }
         if (supportsMotion(element.type)) {
-            html += renderInspectorSection('Анимация', 'Entry/scroll пресет и hover-динамика для выбранного объекта.', renderAnimationFields(element, props), { key: 'motion' });
+            html += renderInspectorSection('Анимация', 'Базовая анимация появления или скролла для выбранного объекта.', renderAnimationFields(element, props), { key: 'motion' });
+            html += renderInspectorSection('Последовательность', 'Отдельный слой оркестрации поверх базовой анимации.', renderSequenceFields(element, props), { key: 'sequence' });
         }
 
         if (nodes.propertiesCard) {
@@ -5144,6 +5396,9 @@
         }
         renderCanvas();
         renderPropertiesCard();
+        if (shouldAutoReplayMotionPreview(scope, path)) {
+            scheduleMotionPreview(String(path || '').indexOf('sequence') === 0 ? 'group' : 'auto');
+        }
     }
 
     function setStageCardExpanded(expanded) {
@@ -7478,6 +7733,16 @@
 
         if (action === 'toggle-inspector-subsection') {
             toggleInspectorSubsection(actionNode.dataset.key || '');
+            return;
+        }
+
+        if (action === 'preview-motion') {
+            playMotionPreview();
+            return;
+        }
+
+        if (action === 'preview-motion-group') {
+            playMotionPreview('group');
             return;
         }
 

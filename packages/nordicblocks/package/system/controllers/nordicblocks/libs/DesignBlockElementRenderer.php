@@ -94,6 +94,7 @@ class NordicblocksDesignBlockElementRenderer {
     private static function buildMotionAttrs(array $element) {
         $attrs = '';
         $has_motion = false;
+        $has_sequence = false;
         $desktop_trigger = 'none';
         $desktop_preset = 'fade-up';
 
@@ -101,6 +102,12 @@ class NordicblocksDesignBlockElementRenderer {
             $props = is_array($element[$breakpoint]['props'] ?? null) ? $element[$breakpoint]['props'] : [];
             $motion_trigger = (string) ($props['motionTrigger'] ?? 'none');
             $motion_preset = (string) ($props['motionPreset'] ?? 'fade-up');
+            $sequence_mode = (string) ($props['sequenceMode'] ?? 'none');
+            $sequence_id = trim((string) ($props['sequenceId'] ?? ''));
+            $sequence_step = (int) round((float) ($props['sequenceStep'] ?? 0));
+            $sequence_gap = (int) round((float) ($props['sequenceGap'] ?? 80));
+            $sequence_trigger = (string) ($props['sequenceTrigger'] ?? 'inherit');
+            $sequence_replay = (string) ($props['sequenceReplay'] ?? 'once');
 
             if ($breakpoint === 'desktop') {
                 $desktop_trigger = $motion_trigger;
@@ -111,8 +118,18 @@ class NordicblocksDesignBlockElementRenderer {
                 $has_motion = true;
             }
 
+            if ($sequence_mode === 'orchestrated' && $sequence_id !== '') {
+                $has_sequence = true;
+            }
+
             $attrs .= ' data-motion-trigger-' . $breakpoint . '="' . self::attr($motion_trigger) . '"';
             $attrs .= ' data-motion-preset-' . $breakpoint . '="' . self::attr($motion_preset) . '"';
+            $attrs .= ' data-sequence-mode-' . $breakpoint . '="' . self::attr($sequence_mode) . '"';
+            $attrs .= ' data-sequence-id-' . $breakpoint . '="' . self::attr($sequence_id) . '"';
+            $attrs .= ' data-sequence-step-' . $breakpoint . '="' . self::attr((string) $sequence_step) . '"';
+            $attrs .= ' data-sequence-gap-' . $breakpoint . '="' . self::attr((string) $sequence_gap) . '"';
+            $attrs .= ' data-sequence-trigger-' . $breakpoint . '="' . self::attr($sequence_trigger) . '"';
+            $attrs .= ' data-sequence-replay-' . $breakpoint . '="' . self::attr($sequence_replay) . '"';
         }
 
         if (!$has_motion) {
@@ -120,6 +137,10 @@ class NordicblocksDesignBlockElementRenderer {
         }
 
         $attrs .= ' data-motion="1"';
+
+        if ($has_sequence) {
+            $attrs .= ' data-sequence="1"';
+        }
 
         if (in_array($desktop_trigger, ['entry', 'scroll'], true)) {
             $attrs .= ' data-motion-active-trigger="' . self::attr($desktop_trigger) . '"';

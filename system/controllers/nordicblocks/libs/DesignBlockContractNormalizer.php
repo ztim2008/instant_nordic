@@ -243,6 +243,14 @@ class NordicblocksDesignBlockContractNormalizer {
             'motionDelay' => self::number($raw['motionDelay'] ?? 0, 0, 2400, 0),
             'motionEasing' => self::select($raw['motionEasing'] ?? 'smooth', ['smooth', 'soft', 'snappy', 'linear'], 'smooth'),
             'motionAmount' => self::number($raw['motionAmount'] ?? 32, 0, 120, 32),
+            'sequenceMode' => self::select($raw['sequenceMode'] ?? 'none', ['none', 'orchestrated'], 'none'),
+            'sequenceId' => self::string($raw['sequenceId'] ?? '', '', 120),
+            'sequenceRole' => self::string($raw['sequenceRole'] ?? '', '', 120),
+            'sequenceStep' => self::number($raw['sequenceStep'] ?? 0, 0, 120, 0),
+            'sequenceGap' => self::number($raw['sequenceGap'] ?? 80, 0, 2400, 80),
+            'sequenceTrigger' => self::select($raw['sequenceTrigger'] ?? 'inherit', ['inherit', 'entry', 'scroll'], 'inherit'),
+            'sequenceScope' => self::select($raw['sequenceScope'] ?? 'block', ['block', 'viewport-group'], 'block'),
+            'sequenceReplay' => self::select($raw['sequenceReplay'] ?? 'once', ['once', 'repeat-on-reentry'], 'once'),
         ];
 
         if ($type === 'text') {
