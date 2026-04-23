@@ -16,6 +16,11 @@ class backendNordicblocks extends cmsBackend {
                 'options' => ['icon' => 'cube']
             ],
             [
+                'title'   => 'Каталог блоков',
+                'url'     => href_to($this->root_url, 'catalog'),
+                'options' => ['icon' => 'th-large']
+            ],
+            [
                 'title'   => 'Дизайн-система',
                 'url'     => href_to($this->root_url, 'design'),
                 'options' => ['icon' => 'paint-brush']

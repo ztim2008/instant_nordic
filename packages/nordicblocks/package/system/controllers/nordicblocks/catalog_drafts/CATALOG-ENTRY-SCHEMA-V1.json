@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NordicBlocks Catalog Entry V1",
+  "type": "object",
+  "required": [
+    "slug",
+    "title",
+    "family",
+    "category",
+    "subtitle",
+    "summary",
+    "preview",
+    "availability",
+    "distributionModel",
+    "editor",
+    "curation"
+  ],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9_\\-]+$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "family": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "subtitle": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "preview": {
+      "type": "object",
+      "required": [
+        "type",
+        "layout",
+        "theme",
+        "aspectRatio",
+        "alt"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "schematic",
+            "image"
+          ]
+        },
+        "layout": {
+          "type": "string"
+        },
+        "theme": {
+          "type": "string"
+        },
+        "aspectRatio": {
+          "type": "string"
+        },
+        "alt": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "availability": {
+      "type": "string",
+      "enum": [
+        "free",
+        "coming_soon",
+        "unavailable"
+      ]
+    },
+    "distributionModel": {
+      "type": "string",
+      "enum": [
+        "local_install"
+      ]
+    },
+    "version": {
+      "type": "string"
+    },
+    "requiresVersion": {
+      "type": "string"
+    },
+    "editor": {
+      "type": "object",
+      "required": [
+        "mode",
+        "installTarget"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "design_block_managed"
+          ]
+        },
+        "installTarget": {
+          "type": "string",
+          "enum": [
+            "managed_block_entry"
+          ]
+        }
+      }
+    },
+    "curation": {
+      "type": "object",
+      "required": [
+        "status",
+        "featured",
+        "sortOrder"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "pilot_ready",
+            "concept",
+            "planned"
+          ]
+        },
+        "featured": {
+          "type": "boolean"
+        },
+        "sortOrder": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "hero_panels_editorial",
+  "title": "Hero: Editorial Split",
+  "family": "hero",
+  "category": "Hero",
+  "subtitle": "Редакционный hero с напряжённой типографикой и image-led подачей",
+  "summary": "Подходит для студий, контентных проектов и брендовых лендингов, где нужен более характерный и журнальный первый экран.",
+  "tags": [
+    "hero",
+    "editorial",
+    "brand",
+    "magazine",
+    "split"
+  ],
+  "preview": {
+    "type": "image",
+    "layout": "editorial_split",
+    "theme": "paper_ink",
+    "aspectRatio": "16:10",
+    "alt": "Превью блока Hero: Editorial Split",
+    "imageUrl": "/static/nordicblocks/catalog/hero-panels-editorial-preview.svg"
+  },
+  "availability": "free",
+  "distributionModel": "local_install",
+  "version": "1.0.0-pilot",
+  "editor": {
+    "mode": "design_block_managed",
+    "installTarget": "managed_block_entry"
+  },
+  "curation": {
+    "status": "pilot_ready",
+    "featured": true,
+    "sortOrder": 20
+  }
+}
