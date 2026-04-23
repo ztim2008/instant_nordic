@@ -1,0 +1,107 @@
+{
+    "title": "Hero: широкие панели",
+    "type": "hero_panels_wide",
+    "profile": "hero_like",
+    "category": "hero",
+    "description": "Широкий hero с фото, акцентной красной панелью, отдельным narrative-блоком и CTA на общем manifest-first runtime.",
+    "generator": {
+        "name": "nordicblocks-scaffold",
+        "managed": true,
+        "stage": 3,
+        "profile": "hero_like",
+        "designSystemMode": "global-first",
+        "sourceModeProfile": "content_item"
+    },
+    "fields": [
+        {
+            "key": "eyebrow",
+            "type": "text",
+            "default": "КРЕАТИВНАЯ СТУДИЯ"
+        },
+        {
+            "key": "heading",
+            "type": "textarea",
+            "default": "Мы создаём\nэлегантные решения"
+        },
+        {
+            "key": "subheading",
+            "type": "text",
+            "default": "РАБОТАЕМ УПОРНО, ОТДЫХАЕМ ГРОМКО"
+        },
+        {
+            "key": "body",
+            "type": "textarea",
+            "default": "Несколько предложений о подходе и стиле. Здесь удобно разместить 1-2 абзаца: что вы делаете и почему вам доверяют.\n\n«Образование начинается с осознанности — и с желания рассматривать мир внимательно.»"
+        },
+        {
+            "key": "theme",
+            "type": "select",
+            "default": "light"
+        },
+        {
+            "key": "btn_primary_label",
+            "type": "text",
+            "default": "Связаться"
+        },
+        {
+            "key": "btn_primary_url",
+            "type": "text",
+            "default": "#contact"
+        },
+        {
+            "key": "image",
+            "type": "text",
+            "default": "/upload/nordicblocks/demo/hero-panels-01-human5.png"
+        },
+        {
+            "key": "image_alt",
+            "type": "text",
+            "default": "Портрет"
+        },
+        {
+            "key": "content_width",
+            "type": "number",
+            "default": 1560
+        },
+        {
+            "key": "padding_top_desktop",
+            "type": "number",
+            "default": 20
+        },
+        {
+            "key": "padding_bottom_desktop",
+            "type": "number",
+            "default": 20
+        },
+        {
+            "key": "padding_top_mobile",
+            "type": "number",
+            "default": 12
+        },
+        {
+            "key": "padding_bottom_mobile",
+            "type": "number",
+            "default": 12
+        },
+        {
+            "key": "title_size_desktop",
+            "type": "number",
+            "default": 76
+        },
+        {
+            "key": "title_size_mobile",
+            "type": "number",
+            "default": 42
+        },
+        {
+            "key": "body_size_desktop",
+            "type": "number",
+            "default": 18
+        },
+        {
+            "key": "body_size_mobile",
+            "type": "number",
+            "default": 17
+        }
+    ]
+}

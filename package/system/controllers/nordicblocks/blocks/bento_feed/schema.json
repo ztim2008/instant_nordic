@@ -1,0 +1,177 @@
+{
+    "title": "Компактная бенто-лента",
+    "description": "Компактная news/editorial секция с управляемой бенто-сеткой, режимами Показать ещё и пагинации и подключением к content_list InstantCMS.",
+    "type": "bento_feed",
+    "profile": "card_collection",
+    "generator": {
+        "name": "nordicblocks-scaffold",
+        "managed": true,
+        "stage": 3,
+        "profile": "card_collection",
+        "designSystemMode": "global-first",
+        "sourceModeProfile": "content_list"
+    },
+    "fields": [
+        { "key": "heading", "label": "Заголовок секции", "type": "text", "default": "Компактная бенто-лента" },
+        { "key": "subheading", "label": "Описание секции", "type": "textarea", "rows": 3, "default": "Плотная news/editorial секция с неровным, но предсказуемым ритмом карточек." },
+        { "key": "section_link_label", "label": "Текст верхней ссылки", "type": "text", "default": "Все материалы" },
+        { "key": "section_link_url", "label": "URL верхней ссылки", "type": "text", "default": "/news" },
+        {
+            "key": "items",
+            "label": "Карточки",
+            "type": "repeater",
+            "default": [
+                {
+                    "category": "Редакция",
+                    "title": "Утренняя повестка собирается в один главный ритм без тяжёлого главного экрана",
+                    "excerpt": "Первый материал становится акцентной карточкой и задаёт движение всей секции, но не превращает блок в hero.",
+                    "link_label": "Читать материал",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Главный материал",
+                    "date": "20 апреля",
+                    "views": "1.2K",
+                    "comments": "18"
+                },
+                {
+                    "category": "Продукт",
+                    "title": "Блок получает отдельные колонки для desktop и mobile без второго редактора",
+                    "excerpt": "Один и тот же block type держит predictable grid на телефоне и на широком экране через общий inspector path.",
+                    "link_label": "Подробнее",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Колонки desktop и mobile",
+                    "date": "19 апреля",
+                    "views": "894",
+                    "comments": "9"
+                },
+                {
+                    "category": "Практика",
+                    "title": "Нижняя кнопка Показать ещё открывает длинную ленту по шагам без отдельного backend pager",
+                    "excerpt": "В v1 остаёмся на клиентском long-list path и не уходим в бесконечный скролл.",
+                    "link_label": "Открыть",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Load more режим",
+                    "date": "18 апреля",
+                    "views": "762",
+                    "comments": "6"
+                },
+                {
+                    "category": "Система",
+                    "title": "Сетка остаётся управляемой: не masonry, а fixed bento presets с разным весом карточек",
+                    "excerpt": "Такой подход даёт живую подачу и не ломает SSR, preview и widget placement InstantCMS.",
+                    "link_label": "Смотреть схему",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Управляемая бенто-сетка",
+                    "date": "17 апреля",
+                    "views": "645",
+                    "comments": "4"
+                },
+                {
+                    "category": "Дизайн",
+                    "title": "Плотный editorial baseline наследуется из swiss_grid, но не копируется буквально",
+                    "excerpt": "Блок использует язык news/editorial линии, а не ещё одну generic карточечную сетку.",
+                    "link_label": "Читать",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Editorial baseline",
+                    "date": "16 апреля",
+                    "views": "533",
+                    "comments": "3"
+                },
+                {
+                    "category": "Flow",
+                    "title": "Пагинация остаётся вторым штатным режимом, если клиенту нужна привычная навигация",
+                    "excerpt": "Load more остаётся продуктовым default, но pagination не блокируется архитектурно.",
+                    "link_label": "Перейти",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Pagination режим",
+                    "date": "15 апреля",
+                    "views": "418",
+                    "comments": "2"
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Рубрика", "type": "text", "default": "Новости" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новый материал" },
+                { "key": "excerpt", "label": "Анонс", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
+                { "key": "link_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },
+                { "key": "url", "label": "URL", "type": "text", "default": "/news" },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "date", "label": "Дата", "type": "text", "default": "20 апреля" },
+                { "key": "views", "label": "Просмотры", "type": "text", "default": "0" },
+                { "key": "comments", "label": "Комментарии", "type": "text", "default": "0" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание header", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "layout_preset", "label": "Preset бенто-сетки", "type": "select", "default": "editorial_mix", "options": [
+            { "value": "editorial_mix", "label": "Editorial Mix" },
+            { "value": "feature_stack", "label": "Feature Stack" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 3 },
+        { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 1 },
+        { "key": "collection_mode", "label": "Режим длинного списка", "type": "select", "default": "load_more", "options": [
+            { "value": "all", "label": "Все карточки" },
+            { "value": "load_more", "label": "Кнопка Показать ещё" },
+            { "value": "pagination", "label": "Пагинация" }
+        ] },
+        { "key": "items_initial", "label": "Карточек видно сразу", "type": "number", "default": 4 },
+        { "key": "items_per_page", "label": "Карточек на шаг или страницу", "type": "number", "default": 4 },
+        { "key": "load_more_label", "label": "Текст кнопки Показать ещё", "type": "text", "default": "Показать ещё" },
+        { "key": "show_bottom_navigation", "label": "Показывать нижнюю навигацию", "type": "boolean", "default": "1" },
+        { "key": "show_more_link", "label": "Показывать верхнюю ссылку", "type": "boolean", "default": "1" },
+        { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать рубрику", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать анонс", "type": "boolean", "default": "1" },
+        { "key": "show_item_link", "label": "Показывать CTA карточки", "type": "boolean", "default": "1" },
+        { "key": "show_date", "label": "Показывать дату", "type": "boolean", "default": "1" },
+        { "key": "show_views", "label": "Показывать просмотры", "type": "boolean", "default": "1" },
+        { "key": "show_comments", "label": "Показывать комментарии", "type": "boolean", "default": "1" },
+        { "key": "card_gap_desktop", "label": "Промежуток между карточками desktop", "type": "number", "default": 0 },
+        { "key": "card_gap_mobile", "label": "Промежуток между карточками mobile", "type": "number", "default": 0 },
+        { "key": "header_gap_desktop", "label": "Промежуток header desktop", "type": "number", "default": 18 },
+        { "key": "header_gap_mobile", "label": "Промежуток header mobile", "type": "number", "default": 14 },
+        { "key": "content_width", "label": "Ширина контента", "type": "number", "default": 1360 },
+        { "key": "padding_top_desktop", "label": "Отступ сверху desktop", "type": "number", "default": 0 },
+        { "key": "padding_bottom_desktop", "label": "Отступ снизу desktop", "type": "number", "default": 0 },
+        { "key": "padding_top_mobile", "label": "Отступ сверху mobile", "type": "number", "default": 0 },
+        { "key": "padding_bottom_mobile", "label": "Отступ снизу mobile", "type": "number", "default": 0 },
+        { "key": "media_aspect_ratio", "label": "Формат изображения", "type": "select", "default": "4:3", "options": [
+            { "value": "auto", "label": "Auto" },
+            { "value": "16:9", "label": "16:9" },
+            { "value": "4:3", "label": "4:3" },
+            { "value": "1:1", "label": "1:1" },
+            { "value": "3:4", "label": "3:4" }
+        ] },
+        { "key": "media_object_fit", "label": "Поведение изображения", "type": "select", "default": "cover", "options": [
+            { "value": "cover", "label": "Cover" },
+            { "value": "contain", "label": "Contain" }
+        ] },
+        { "key": "media_radius", "label": "Скругление изображения", "type": "number", "default": 0 },
+        { "key": "item_surface_variant", "label": "Поверхность карточек", "type": "select", "default": "card", "options": [
+            { "value": "card", "label": "Карточка" },
+            { "value": "plain", "label": "Плоская" }
+        ] },
+        { "key": "item_surface_radius", "label": "Скругление карточек", "type": "number", "default": 0 },
+        { "key": "item_surface_border_width", "label": "Толщина рамки карточки", "type": "number", "default": 1 },
+        { "key": "item_surface_border_color", "label": "Цвет рамки карточки", "type": "color", "default": "#d9dde4" },
+        { "key": "item_surface_shadow", "label": "Тень карточки", "type": "select", "default": "none", "options": [
+            { "value": "none", "label": "Нет" },
+            { "value": "sm", "label": "Мягкая" },
+            { "value": "md", "label": "Средняя" },
+            { "value": "lg", "label": "Сильная" }
+        ] }
+    ]
+}

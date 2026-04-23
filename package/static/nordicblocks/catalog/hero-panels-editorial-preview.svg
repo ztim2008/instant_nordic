@@ -1,0 +1,27 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-editorial" x1="88" y1="74" x2="1204" y2="738" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5EBDD"/>
+      <stop offset="0.52" stop-color="#DCC8B0"/>
+      <stop offset="1" stop-color="#33495D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="800" rx="36" fill="url(#bg-editorial)"/>
+  <rect x="72" y="60" width="1136" height="680" rx="28" fill="rgba(255,255,255,0.22)" stroke="rgba(33,44,57,0.12)"/>
+  <rect x="110" y="104" width="562" height="592" rx="24" fill="rgba(255,255,255,0.44)"/>
+  <rect x="714" y="104" width="454" height="592" rx="24" fill="rgba(50,68,86,0.20)"/>
+  <text x="150" y="150" fill="#42566B" font-size="18" font-family="Arial, sans-serif" letter-spacing="4">EDITORIAL SPLIT</text>
+  <text x="150" y="284" fill="#223243" font-size="102" font-weight="700" font-family="Georgia, serif">A sharper</text>
+  <text x="150" y="374" fill="#223243" font-size="102" font-weight="700" font-family="Georgia, serif">opening frame</text>
+  <text x="150" y="438" fill="#223243" font-size="102" font-weight="700" font-family="Georgia, serif">for brands</text>
+  <text x="150" y="540" fill="#55687A" font-size="30" font-family="Arial, sans-serif">Журнальная композиция для студий, брендов и контента,</text>
+  <text x="150" y="580" fill="#55687A" font-size="30" font-family="Arial, sans-serif">где важны типографика, ритм и image-led подача.</text>
+  <rect x="150" y="620" width="222" height="2" fill="#223243" fill-opacity="0.28"/>
+  <text x="150" y="666" fill="#223243" font-size="22" font-family="Arial, sans-serif">CURATED HERO PILOT</text>
+  <rect x="760" y="150" width="360" height="448" rx="24" fill="#F7F2EA"/>
+  <rect x="790" y="180" width="300" height="388" rx="18" fill="#D9C8B3"/>
+  <circle cx="942" cy="310" r="94" fill="#6D7D8A" fill-opacity="0.24"/>
+  <rect x="820" y="470" width="220" height="18" rx="9" fill="#F7F2EA"/>
+  <rect x="820" y="504" width="164" height="18" rx="9" fill="#F7F2EA"/>
+  <text x="760" y="652" fill="#F7F2EA" font-size="36" font-weight="700" font-family="Georgia, serif">Editorial Split</text>
+</svg>

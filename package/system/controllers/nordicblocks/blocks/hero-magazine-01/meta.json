@@ -1,0 +1,11 @@
+{
+  "id": "hero-magazine-01",
+  "name": "Hero Magazine 01",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Manual-first editorial hero с обложкой, мета-строкой и карточками-хайлайтами.",
+  "tags": ["hero", "manual", "magazine", "editorial"],
+  "author": "NORDIC",
+  "created": "2026-04-17"
+}

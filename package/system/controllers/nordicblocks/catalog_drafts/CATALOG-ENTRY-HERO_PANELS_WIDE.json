@@ -1,0 +1,35 @@
+{
+  "slug": "hero_panels_wide",
+  "title": "Hero: Wide Panels",
+  "family": "hero",
+  "category": "Hero",
+  "subtitle": "Широкий hero с акцентом на CTA и быстрый старт лендинга",
+  "summary": "Готовая стартовая секция для сервисов, малого бизнеса и offer-first страниц. После установки редактируется через design block editor.",
+  "tags": [
+    "hero",
+    "cta",
+    "business",
+    "landing",
+    "panels"
+  ],
+  "preview": {
+    "type": "image",
+    "layout": "wide_panels",
+    "theme": "sunstone",
+    "aspectRatio": "16:10",
+    "alt": "Превью блока Hero: Wide Panels",
+    "imageUrl": "/static/nordicblocks/catalog/hero-panels-wide-preview.svg"
+  },
+  "availability": "free",
+  "distributionModel": "local_install",
+  "version": "1.0.0-pilot",
+  "editor": {
+    "mode": "design_block_managed",
+    "installTarget": "managed_block_entry"
+  },
+  "curation": {
+    "status": "pilot_ready",
+    "featured": true,
+    "sortOrder": 10
+  }
+}

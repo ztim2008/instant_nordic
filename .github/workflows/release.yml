@@ -1,0 +1,84 @@
+name: NordicBlocks Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SemVer release version, for example 0.2.0
+        required: false
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${{ github.event.inputs.version || '' }}" ]]; then
+            version="${{ github.event.inputs.version }}"
+            bash scripts/nordicblocks-version-sync.sh "$version"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            bash scripts/nordicblocks-version-sync.sh "$version"
+          else
+            version="$(tr -d '[:space:]' < VERSION)"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build install archive
+        shell: bash
+        run: bash scripts/build-nordicblocks-package.sh
+
+      - name: Build update archive
+        shell: bash
+        run: bash scripts/build-nordicblocks-update-package.sh "${{ steps.version.outputs.version }}"
+
+      - name: Generate release notes
+        id: notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          notes_file="$(bash scripts/nordicblocks-generate-release-notes.sh "${{ steps.version.outputs.version }}")"
+          echo "notes_file=$notes_file" >> "$GITHUB_OUTPUT"
+
+      - name: Upload install artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nordicblocks-install-${{ steps.version.outputs.version }}
+          path: |
+            dist/nordicblocks/start/nordicblocks-${{ steps.version.outputs.version }}.zip
+            dist/nordicblocks/start/nordicblocks.zip
+
+      - name: Upload update artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nordicblocks-update-${{ steps.version.outputs.version }}
+          path: |
+            dist/nordicblocks/updates/${{ steps.version.outputs.version }}/nordicblocks-update-${{ steps.version.outputs.version }}.zip
+            dist/nordicblocks/updates/${{ steps.version.outputs.version }}/nordicblocks-update.zip
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: NordicBlocks v${{ steps.version.outputs.version }}
+          body_path: ${{ steps.notes.outputs.notes_file }}
+          files: |
+            dist/nordicblocks/start/nordicblocks-${{ steps.version.outputs.version }}.zip
+            dist/nordicblocks/updates/${{ steps.version.outputs.version }}/nordicblocks-update-${{ steps.version.outputs.version }}.zip

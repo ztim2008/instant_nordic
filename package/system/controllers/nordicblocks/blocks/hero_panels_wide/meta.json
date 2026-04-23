@@ -1,0 +1,11 @@
+{
+  "id": "hero_panels_wide",
+  "name": "Hero: широкие панели",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Generator-managed wide hero с фото, акцентной красной панелью, narrative-блоком и CTA поверх общего manifest-first runtime.",
+  "tags": ["hero", "managed", "panels", "wide"],
+  "author": "NORDIC",
+  "created": "2026-04-19"
+}

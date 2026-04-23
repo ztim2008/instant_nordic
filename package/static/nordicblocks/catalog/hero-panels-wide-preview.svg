@@ -1,0 +1,33 @@
+<svg width="1280" height="800" viewBox="0 0 1280 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg-wide" x1="88" y1="44" x2="1148" y2="762" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#172B49"/>
+      <stop offset="0.46" stop-color="#8C4A30"/>
+      <stop offset="1" stop-color="#E6D3B2"/>
+    </linearGradient>
+    <radialGradient id="glow-wide" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1002 168) rotate(134.338) scale(382.192 323.91)">
+      <stop stop-color="#F7E8C3" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#F7E8C3" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="800" rx="36" fill="url(#bg-wide)"/>
+  <circle cx="1012" cy="168" r="238" fill="url(#glow-wide)"/>
+  <rect x="68" y="60" width="1144" height="680" rx="28" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.18)"/>
+  <rect x="108" y="112" width="600" height="576" rx="26" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.18)"/>
+  <rect x="756" y="112" width="416" height="350" rx="30" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.18)"/>
+  <rect x="804" y="164" width="320" height="250" rx="24" fill="rgba(255,255,255,0.78)"/>
+  <rect x="756" y="494" width="416" height="152" rx="30" fill="rgba(18,30,48,0.38)" stroke="rgba(255,255,255,0.14)"/>
+  <rect x="152" y="168" width="164" height="20" rx="10" fill="#E9C27E"/>
+  <text x="152" y="158" fill="#F7EFE2" font-size="18" font-family="Georgia, serif" letter-spacing="3">CTA-READY HERO</text>
+  <text x="152" y="284" fill="#FFFFFF" font-size="86" font-weight="700" font-family="Georgia, serif">Ready to lead</text>
+  <text x="152" y="368" fill="#FFFFFF" font-size="86" font-weight="700" font-family="Georgia, serif">with wide panels</text>
+  <text x="152" y="448" fill="#E6D9C7" font-size="30" font-family="Arial, sans-serif">Массовый hero для сервисов, офферов и быстрых запусков.</text>
+  <text x="152" y="492" fill="#E6D9C7" font-size="30" font-family="Arial, sans-serif">Сильный первый экран, понятный CTA и простая адаптация.</text>
+  <rect x="152" y="562" width="214" height="62" rx="31" fill="#FFF4E0"/>
+  <text x="215" y="601" fill="#1B2E4D" font-size="24" font-weight="700" font-family="Arial, sans-serif">Запустить</text>
+  <rect x="390" y="562" width="188" height="62" rx="31" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.36)"/>
+  <text x="446" y="601" fill="#FFFFFF" font-size="24" font-weight="700" font-family="Arial, sans-serif">Подробнее</text>
+  <text x="790" y="548" fill="#F7EFE2" font-size="22" font-family="Arial, sans-serif">Story / offer / social proof</text>
+  <text x="790" y="592" fill="#FFFFFF" font-size="40" font-weight="700" font-family="Georgia, serif">Wide Panels</text>
+  <text x="790" y="628" fill="#E0D3C0" font-size="22" font-family="Arial, sans-serif">Anchor install candidate</text>
+</svg>

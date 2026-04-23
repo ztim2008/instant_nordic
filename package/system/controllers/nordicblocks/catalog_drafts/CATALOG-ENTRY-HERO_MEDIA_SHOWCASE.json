@@ -1,0 +1,35 @@
+{
+  "slug": "hero_media_showcase",
+  "title": "Hero: Media Showcase",
+  "family": "hero",
+  "category": "Hero",
+  "subtitle": "Media-first hero для product, app и showcase сценариев",
+  "summary": "Показывает более образный визуальный тип hero-блока с акцентом на mockup, product shot или медиа-носитель.",
+  "tags": [
+    "hero",
+    "media",
+    "showcase",
+    "product",
+    "launch"
+  ],
+  "preview": {
+    "type": "image",
+    "layout": "media_showcase",
+    "theme": "sea_glass",
+    "aspectRatio": "16:10",
+    "alt": "Превью блока Hero: Media Showcase",
+    "imageUrl": "/static/nordicblocks/catalog/hero-media-showcase-preview.svg"
+  },
+  "availability": "coming_soon",
+  "distributionModel": "local_install",
+  "version": "0.9.0-concept",
+  "editor": {
+    "mode": "design_block_managed",
+    "installTarget": "managed_block_entry"
+  },
+  "curation": {
+    "status": "concept",
+    "featured": false,
+    "sortOrder": 30
+  }
+}

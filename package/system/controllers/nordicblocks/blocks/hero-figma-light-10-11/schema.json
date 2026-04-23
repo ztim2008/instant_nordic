@@ -1,0 +1,296 @@
+{
+  "variant": {
+    "type": "select",
+    "label": "Вариант",
+    "default": "hero10",
+    "options": [
+      { "label": "Hero 10", "value": "hero10" },
+      { "label": "Hero 11", "value": "hero11" }
+    ],
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "content_width": {
+    "type": "number",
+    "label": "Макс. ширина композиции",
+    "default": 1280,
+    "min": 960,
+    "max": 1680,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "min_height_desktop": {
+    "type": "number",
+    "label": "Мин. высота desktop",
+    "default": 720,
+    "min": 0,
+    "max": 1400,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "min_height_mobile": {
+    "type": "number",
+    "label": "Мин. высота mobile",
+    "default": 0,
+    "min": 0,
+    "max": 1000,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "padding_top_desktop": {
+    "type": "number",
+    "label": "Отступ сверху desktop",
+    "default": 84,
+    "min": 0,
+    "max": 220,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "padding_bottom_desktop": {
+    "type": "number",
+    "label": "Отступ снизу desktop",
+    "default": 84,
+    "min": 0,
+    "max": 220,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "padding_top_mobile": {
+    "type": "number",
+    "label": "Отступ сверху mobile",
+    "default": 28,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "padding_bottom_mobile": {
+    "type": "number",
+    "label": "Отступ снизу mobile",
+    "default": 28,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Выбор варианта 10/11, ширины и высоты секции."
+  },
+  "background_mode": {
+    "type": "select",
+    "label": "Тип фона",
+    "default": "image",
+    "options": [
+      { "label": "Изображение", "value": "image" },
+      { "label": "Цвет", "value": "color" },
+      { "label": "Градиент", "value": "gradient" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_color": {
+    "type": "color",
+    "label": "Цвет фона",
+    "default": "#f7f3ec",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_gradient_from": {
+    "type": "color",
+    "label": "Градиент: начало",
+    "default": "#f8f4ed",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_gradient_to": {
+    "type": "color",
+    "label": "Градиент: конец",
+    "default": "#efe8dd",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_gradient_angle": {
+    "type": "number",
+    "label": "Угол градиента",
+    "default": 135,
+    "min": 0,
+    "max": 360,
+    "step": 1,
+    "unit": "deg",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_image": {
+    "type": "image",
+    "label": "Фоновое фото",
+    "default": "/upload/nordicblocks/demo/hero-figma-light-10-11-bg.jpg",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_image_position": {
+    "type": "select",
+    "label": "Позиция фонового фото",
+    "default": "center center",
+    "options": [
+      { "label": "По центру", "value": "center center" },
+      { "label": "Сверху", "value": "top center" },
+      { "label": "Снизу", "value": "bottom center" },
+      { "label": "Слева", "value": "center left" },
+      { "label": "Справа", "value": "center right" }
+    ],
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_overlay_color": {
+    "type": "color",
+    "label": "Цвет светлой вуали",
+    "default": "#ffffff",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "background_overlay_opacity": {
+    "type": "number",
+    "label": "Прозрачность вуали",
+    "default": 18,
+    "min": 0,
+    "max": 90,
+    "step": 1,
+    "unit": "%",
+    "section": "background",
+    "section_label": "Фон",
+    "section_hint": "Фотография, цвет или градиент секции."
+  },
+  "kicker": {
+    "type": "text",
+    "label": "Кикер",
+    "default": "",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты двух композиций 10/11."
+  },
+  "subtitle": {
+    "type": "text",
+    "label": "Подпись над заголовком",
+    "default": "Лендинг под услугу или продукт",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты двух композиций 10/11."
+  },
+  "title": {
+    "type": "textarea",
+    "label": "Заголовок",
+    "default": "Растите продажи\nс понятным предложением",
+    "rows": 4,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты двух композиций 10/11."
+  },
+  "body": {
+    "type": "textarea",
+    "label": "Основной текст",
+    "default": "Соберите страницу из готовых блоков: заголовок, выгоды, отзывы, цены и контакты. Редактируйте текст прямо на холсте и экспортируйте сайт, когда будете готовы.",
+    "rows": 5,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты двух композиций 10/11."
+  },
+  "show_primary": {
+    "type": "boolean",
+    "label": "Показать основную кнопку",
+    "default": true,
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "primary_text": {
+    "type": "text",
+    "label": "Основная кнопка: текст",
+    "default": "Начать бесплатно",
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "primary_url": {
+    "type": "text",
+    "label": "Основная кнопка: ссылка",
+    "default": "#start",
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "primary_target": {
+    "type": "select",
+    "label": "Основная кнопка: открывать ссылку",
+    "default": "_self",
+    "options": [
+      { "label": "В текущем окне", "value": "_self" },
+      { "label": "В новом окне", "value": "_blank" }
+    ],
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "show_secondary": {
+    "type": "boolean",
+    "label": "Показать вторую кнопку",
+    "default": true,
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "secondary_text": {
+    "type": "text",
+    "label": "Вторая кнопка: текст",
+    "default": "Узнать больше",
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "secondary_url": {
+    "type": "text",
+    "label": "Вторая кнопка: ссылка",
+    "default": "#more",
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  },
+  "secondary_target": {
+    "type": "select",
+    "label": "Вторая кнопка: открывать ссылку",
+    "default": "_self",
+    "options": [
+      { "label": "В текущем окне", "value": "_self" },
+      { "label": "В новом окне", "value": "_blank" }
+    ],
+    "section": "button",
+    "section_label": "Кнопки",
+    "section_hint": "Две ручные CTA-кнопки без data binding."
+  }
+}

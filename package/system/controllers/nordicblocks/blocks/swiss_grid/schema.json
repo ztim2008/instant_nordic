@@ -1,0 +1,138 @@
+{
+    "title": "Swiss Grid",
+    "category": "content",
+    "description": "Строгая швейцарская сетка карточек: без gap, с плоскими рамками, сильной типографикой и compact editorial-подачей.",
+    "version": "1.0",
+    "fields": [
+        {
+            "key": "heading",
+            "label": "Заголовок секции",
+            "type": "text",
+            "default": "Swiss Style Grid"
+        },
+        {
+            "key": "intro",
+            "label": "Подзаголовок секции",
+            "type": "textarea",
+            "rows": 2,
+            "default": "Минимализм. Порядок. Типографика."
+        },
+        {
+            "key": "items",
+            "label": "Карточки",
+            "type": "repeater",
+            "item_label": "Карточка",
+            "add_label": "Добавить карточку",
+            "default": [
+                {
+                    "category": "Проект",
+                    "category_url": "/news/category/project",
+                    "title": "Модульная сетка",
+                    "excerpt": "Строгая структура без отступов. Идеально для визуального контента.",
+                    "link_label": "Подробнее",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                },
+                {
+                    "category": "Типографика",
+                    "category_url": "/news/category/typography",
+                    "title": "Akzidenz-Grotesk",
+                    "excerpt": "Классический швейцарский гротеск. Чёткость и функциональность.",
+                    "link_label": "Изучить",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                },
+                {
+                    "category": "Цвет",
+                    "category_url": "/news/category/color",
+                    "title": "Монохром + акцент",
+                    "excerpt": "Чёрный, белый, серый и один цвет для акцентов. Минимум декора.",
+                    "link_label": "Смотреть",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                },
+                {
+                    "category": "Сетка",
+                    "category_url": "/news/category/grid",
+                    "title": "Без gap",
+                    "excerpt": "Карточки примыкают друг к другу. Только внутренние отступы.",
+                    "link_label": "Детали",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                },
+                {
+                    "category": "Контраст",
+                    "category_url": "/news/category/contrast",
+                    "title": "Тень только при ховере",
+                    "excerpt": "В обычном состоянии плоско. Фокус на контенте и ритме сетки.",
+                    "link_label": "Пример",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                },
+                {
+                    "category": "Иерархия",
+                    "category_url": "/news/category/hierarchy",
+                    "title": "Типографическая дисциплина",
+                    "excerpt": "Крупный заголовок блока, жирные карточные заголовки и лаконичные CTA.",
+                    "link_label": "Читать",
+                    "url": "/news",
+                    "image": "",
+                    "imageAlt": "",
+                    "date": "",
+                    "views": "",
+                    "comments": ""
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Метка", "type": "text", "default": "Проект" },
+                { "key": "category_url", "label": "URL рубрики", "type": "text", "default": "" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новая swiss-карточка" },
+                { "key": "excerpt", "label": "Текст", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
+                { "key": "link_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },
+                { "key": "url", "label": "URL", "type": "text", "default": "/news" },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "date", "label": "Дата", "type": "text", "default": "" },
+                { "key": "views", "label": "Просмотры", "type": "text", "default": "" },
+                { "key": "comments", "label": "Комментарии", "type": "text", "default": "" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание header", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 3 },
+        { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 1 },
+        { "key": "show_image", "label": "Показывать медиа", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать метку", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать текст", "type": "boolean", "default": "1" },
+        { "key": "show_date", "label": "Показывать дату", "type": "boolean", "default": "0" },
+        { "key": "show_views", "label": "Показывать просмотры", "type": "boolean", "default": "0" },
+        { "key": "show_comments", "label": "Показывать комментарии", "type": "boolean", "default": "0" }
+    ]
+}

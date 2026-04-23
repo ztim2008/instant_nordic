@@ -1,0 +1,11 @@
+{
+  "id": "hero-figma-light-10-11",
+  "name": "Hero: светлый 10/11",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Manual-first hero на светлом фотофоне с двумя layout-вариантами 10/11.",
+  "tags": ["hero", "manual", "figma", "light"],
+  "author": "NORDIC",
+  "created": "2026-04-17"
+}

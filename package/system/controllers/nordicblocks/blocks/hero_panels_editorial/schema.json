@@ -1,0 +1,122 @@
+{
+    "title": "Hero: editorial 12 колонок",
+    "type": "hero_panels_editorial",
+    "profile": "hero_like",
+    "category": "hero",
+    "description": "Жёсткий editorial hero на 12-колоночном ритме: широкая обложка, узкая красная колонка, narrative-блок и CTA на общем manifest-first runtime.",
+    "generator": {
+        "name": "nordicblocks-scaffold",
+        "managed": true,
+        "stage": 3,
+        "profile": "hero_like",
+        "designSystemMode": "global-first",
+        "sourceModeProfile": "content_item"
+    },
+    "fields": [
+        {
+            "key": "eyebrow",
+            "type": "text",
+            "default": "EDITORIAL HERO"
+        },
+        {
+            "key": "heading",
+            "type": "textarea",
+            "default": "Точный ритм\nпервого экрана"
+        },
+        {
+            "key": "subheading",
+            "type": "text",
+            "default": "12 КОЛОНОК, РЕДАКЦИОННАЯ ПОДАЧА, ЧЁТКАЯ ИЕРАРХИЯ"
+        },
+        {
+            "key": "body",
+            "type": "textarea",
+            "default": "Этот вариант нужен для более строгой editorial-подачи: крупная обложка, короткий акцентный месседж и отдельный narrative-блок без лишнего декора.\n\nПодходит для студий, медиа, спецпроектов и посадочных страниц, где важны ритм, дисциплина и визуальная уверенность."
+        },
+        {
+            "key": "theme",
+            "type": "select",
+            "default": "light"
+        },
+        {
+            "key": "btn_primary_label",
+            "type": "text",
+            "default": "Обсудить проект"
+        },
+        {
+            "key": "btn_primary_url",
+            "type": "text",
+            "default": "#contact"
+        },
+        {
+            "key": "image",
+            "type": "text",
+            "default": "/upload/nordicblocks/demo/hero-panels-01-human5.png"
+        },
+        {
+            "key": "image_alt",
+            "type": "text",
+            "default": "Editorial portrait"
+        },
+        {
+            "key": "layout_preset",
+            "type": "select",
+            "default": "classic"
+        },
+        {
+            "key": "content_width",
+            "type": "number",
+            "default": 1320
+        },
+        {
+            "key": "padding_top_desktop",
+            "type": "number",
+            "default": 24
+        },
+        {
+            "key": "padding_bottom_desktop",
+            "type": "number",
+            "default": 24
+        },
+        {
+            "key": "padding_top_mobile",
+            "type": "number",
+            "default": 12
+        },
+        {
+            "key": "padding_bottom_mobile",
+            "type": "number",
+            "default": 12
+        },
+        {
+            "key": "min_height_desktop",
+            "type": "number",
+            "default": 760
+        },
+        {
+            "key": "min_height_mobile",
+            "type": "number",
+            "default": 0
+        },
+        {
+            "key": "title_size_desktop",
+            "type": "number",
+            "default": 92
+        },
+        {
+            "key": "title_size_mobile",
+            "type": "number",
+            "default": 50
+        },
+        {
+            "key": "body_size_desktop",
+            "type": "number",
+            "default": 16
+        },
+        {
+            "key": "body_size_mobile",
+            "type": "number",
+            "default": 16
+        }
+    ]
+}

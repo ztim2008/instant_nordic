@@ -1,0 +1,11 @@
+{
+  "id": "hero_panels_editorial",
+  "name": "Hero: editorial 12 колонок",
+  "category": "hero",
+  "version": "1.0.0",
+  "premium": false,
+  "description": "Generator-managed editorial hero с жёстким 12-колоночным ритмом: акцентная колонка, широкая обложка, narrative-блок и CTA.",
+  "tags": ["hero", "managed", "editorial", "12-column"],
+  "author": "NORDIC",
+  "created": "2026-04-19"
+}

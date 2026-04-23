@@ -1,0 +1,133 @@
+{
+    "title": "Главная статья и лента",
+    "category": "content",
+    "description": "Акцентная журнальная секция с одной главной статьёй, продолжением ленты и выбором visual preset.",
+    "version": "1.0",
+    "fields": [
+        {
+            "key": "heading",
+            "label": "Заголовок секции",
+            "type": "text",
+            "default": "Главная статья и лента"
+        },
+        {
+            "key": "intro",
+            "label": "Описание секции",
+            "type": "textarea",
+            "rows": 3,
+            "default": "Один акцентный материал и продолжение ленты в том же блоке: удобно для главной, спецтемы и редакционных подборок."
+        },
+        {
+            "key": "more_link_label",
+            "label": "Текст ссылки",
+            "type": "text",
+            "default": "Смотреть все материалы"
+        },
+        {
+            "key": "more_link_url",
+            "label": "URL ссылки",
+            "type": "text",
+            "default": "/news"
+        },
+        {
+            "key": "layout_preset",
+            "label": "Visual preset",
+            "type": "select",
+            "default": "split",
+            "options": [
+                { "value": "split", "label": "Lead слева + лента" },
+                { "value": "stack", "label": "Lead сверху + сетка" },
+                { "value": "cover", "label": "Lead cover + сетка" }
+            ]
+        },
+        {
+            "key": "items",
+            "label": "Материалы",
+            "type": "repeater",
+            "item_label": "Материал",
+            "add_label": "Добавить материал",
+            "default": [
+                {
+                    "category": "Главная тема",
+                    "title": "Редакция собрала главную статью недели в акцентном блоке NordicBlocks",
+                    "excerpt": "Первый материал становится lead-card и задаёт настроение секции, а остальные карточки продолжают поток без второго page builder и без отдельного runtime.",
+                    "link_label": "Читать материал",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Главная статья недели",
+                    "date": "18 апреля 2026",
+                    "views": "1540",
+                    "comments": "21"
+                },
+                {
+                    "category": "Продукт",
+                    "title": "Новый блок headline_feed получил presets split, stack и cover",
+                    "excerpt": "Теперь один и тот же контентный блок можно быстро переключать между несколькими взрослыми визуальными подачами, не переписывая верстку.",
+                    "link_label": "Подробнее",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Preset split в редакторе",
+                    "date": "17 апреля 2026",
+                    "views": "1030",
+                    "comments": "14"
+                },
+                {
+                    "category": "Практика",
+                    "title": "Первая карточка стала главной статьёй, остальные продолжают ленту автоматически",
+                    "excerpt": "В manual-режиме это готовый starter preset, а в content_list роль главной статьи получает первый материал из живого списка InstantCMS.",
+                    "link_label": "Смотреть кейс",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Lead и продолжение ленты",
+                    "date": "16 апреля 2026",
+                    "views": "845",
+                    "comments": "8"
+                },
+                {
+                    "category": "Система",
+                    "title": "Preview и live остаются на одном SSR-runtime даже для сложной акцентной подачи",
+                    "excerpt": "Это важно, потому что визуально сложный блок не должен требовать отдельного preview-only слоя или ломать widget placement InstantCMS.",
+                    "link_label": "Открыть материал",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "SSR runtime для lead feed",
+                    "date": "15 апреля 2026",
+                    "views": "690",
+                    "comments": "6"
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Рубрика", "type": "text", "default": "Новости" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новый материал" },
+                { "key": "excerpt", "label": "Анонс", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
+                { "key": "link_label", "label": "Текст CTA", "type": "text", "default": "Подробнее" },
+                { "key": "url", "label": "URL", "type": "text", "default": "/news" },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "date", "label": "Дата", "type": "text", "default": "" },
+                { "key": "views", "label": "Просмотры", "type": "text", "default": "" },
+                { "key": "comments", "label": "Комментарии", "type": "text", "default": "" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки ленты desktop", "type": "number", "default": 3 },
+        { "key": "columns_mobile", "label": "Колонки ленты mobile", "type": "number", "default": 1 },
+        { "key": "card_gap_desktop", "label": "Gap desktop", "type": "number", "default": 18 },
+        { "key": "card_gap_mobile", "label": "Gap mobile", "type": "number", "default": 14 },
+        { "key": "show_more_link", "label": "Показывать ссылку", "type": "boolean", "default": "1" },
+        { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать рубрику", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать анонс", "type": "boolean", "default": "1" },
+        { "key": "show_date", "label": "Показывать дату", "type": "boolean", "default": "1" },
+        { "key": "show_views", "label": "Показывать просмотры", "type": "boolean", "default": "1" },
+        { "key": "show_comments", "label": "Показывать комментарии", "type": "boolean", "default": "1" }
+    ]
+}

@@ -1,0 +1,294 @@
+{
+  "image": {
+    "type": "image",
+    "label": "Фото",
+    "default": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+    "section": "media",
+    "section_label": "Фото",
+    "section_hint": "Основное медиа блока и его расположение."
+  },
+  "image_alt": {
+    "type": "text",
+    "label": "ALT для фото",
+    "default": "Портрет",
+    "section": "media",
+    "section_label": "Фото",
+    "section_hint": "Основное медиа блока и его расположение."
+  },
+  "media_position": {
+    "type": "select",
+    "label": "Позиция фото на desktop",
+    "default": "left",
+    "options": [
+      { "label": "Слева", "value": "left" },
+      { "label": "По центру", "value": "center" },
+      { "label": "Справа", "value": "right" }
+    ],
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "columns_preset": {
+    "type": "select",
+    "label": "Ширины колонок",
+    "default": "44-30-26",
+    "options": [
+      { "label": "44 / 30 / 26", "value": "44-30-26" },
+      { "label": "40 / 30 / 30", "value": "40-30-30" },
+      { "label": "50 / 25 / 25", "value": "50-25-25" }
+    ],
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "mobile_order_mode": {
+    "type": "select",
+    "label": "Порядок на mobile",
+    "default": "image-first",
+    "options": [
+      { "label": "Всегда фото первым", "value": "image-first" },
+      { "label": "Следовать desktop", "value": "follow-desktop" }
+    ],
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "content_width": {
+    "type": "number",
+    "label": "Макс. ширина композиции",
+    "default": 1320,
+    "min": 960,
+    "max": 1680,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "min_height_desktop": {
+    "type": "number",
+    "label": "Мин. высота desktop",
+    "default": 720,
+    "min": 0,
+    "max": 1400,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "min_height_mobile": {
+    "type": "number",
+    "label": "Мин. высота mobile",
+    "default": 0,
+    "min": 0,
+    "max": 1000,
+    "step": 10,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "padding_top_desktop": {
+    "type": "number",
+    "label": "Отступ сверху desktop",
+    "default": 28,
+    "min": 0,
+    "max": 200,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "padding_bottom_desktop": {
+    "type": "number",
+    "label": "Отступ снизу desktop",
+    "default": 28,
+    "min": 0,
+    "max": 200,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "padding_top_mobile": {
+    "type": "number",
+    "label": "Отступ сверху mobile",
+    "default": 16,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "padding_bottom_mobile": {
+    "type": "number",
+    "label": "Отступ снизу mobile",
+    "default": 16,
+    "min": 0,
+    "max": 160,
+    "step": 2,
+    "unit": "px",
+    "section": "layout",
+    "section_label": "Композиция",
+    "section_hint": "Порядок панелей и размеры на desktop/mobile."
+  },
+  "section_background": {
+    "type": "color",
+    "label": "Фон секции",
+    "default": "#f6f4ef",
+    "section": "background",
+    "section_label": "Цвета",
+    "section_hint": "Фон секции и цвета панелей."
+  },
+  "red_panel_background": {
+    "type": "color",
+    "label": "Красная панель",
+    "default": "#e12525",
+    "section": "background",
+    "section_label": "Цвета",
+    "section_hint": "Фон секции и цвета панелей."
+  },
+  "black_panel_background": {
+    "type": "color",
+    "label": "Темная панель",
+    "default": "#1d1d1f",
+    "section": "background",
+    "section_label": "Цвета",
+    "section_hint": "Фон секции и цвета панелей."
+  },
+  "kicker": {
+    "type": "text",
+    "label": "Кикер",
+    "default": "КРЕАТИВНАЯ СТУДИЯ",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты красной и темной панели."
+  },
+  "title": {
+    "type": "textarea",
+    "label": "Заголовок",
+    "default": "Мы создаём\nэлегантные решения",
+    "rows": 4,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты красной и темной панели."
+  },
+  "subtitle": {
+    "type": "text",
+    "label": "Строка под заголовком",
+    "default": "РАБОТАЕМ УПОРНО, ОТДЫХАЕМ ГРОМКО",
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты красной и темной панели."
+  },
+  "body": {
+    "type": "textarea",
+    "label": "Текст темной панели",
+    "default": "Несколько предложений о подходе и стиле. Здесь удобно разместить 1–2 абзаца: что вы делаете и почему вам доверяют.\n\n«Образование начинается с осознанности — и с желания рассматривать мир внимательно.»",
+    "rows": 7,
+    "section": "content",
+    "section_label": "Контент",
+    "section_hint": "Тексты красной и темной панели."
+  },
+  "title_size_desktop": {
+    "type": "number",
+    "label": "Заголовок desktop",
+    "default": 84,
+    "min": 28,
+    "max": 180,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для двух панелей."
+  },
+  "title_size_mobile": {
+    "type": "number",
+    "label": "Заголовок mobile",
+    "default": 42,
+    "min": 18,
+    "max": 120,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для двух панелей."
+  },
+  "body_size_desktop": {
+    "type": "number",
+    "label": "Текст панели desktop",
+    "default": 18,
+    "min": 12,
+    "max": 48,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для двух панелей."
+  },
+  "body_size_mobile": {
+    "type": "number",
+    "label": "Текст панели mobile",
+    "default": 17,
+    "min": 12,
+    "max": 40,
+    "step": 1,
+    "unit": "px",
+    "section": "typography",
+    "section_label": "Типографика",
+    "section_hint": "Размеры текста для двух панелей."
+  },
+  "show_button": {
+    "type": "boolean",
+    "label": "Показать кнопку",
+    "default": false,
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Опциональный CTA внутри красной панели."
+  },
+  "button_text": {
+    "type": "text",
+    "label": "Текст кнопки",
+    "default": "Связаться",
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Опциональный CTA внутри красной панели."
+  },
+  "button_link": {
+    "type": "text",
+    "label": "Ссылка кнопки",
+    "default": "#contact",
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Опциональный CTA внутри красной панели."
+  },
+  "button_target": {
+    "type": "select",
+    "label": "Открывать ссылку",
+    "default": "_self",
+    "options": [
+      { "label": "В текущем окне", "value": "_self" },
+      { "label": "В новом окне", "value": "_blank" }
+    ],
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Опциональный CTA внутри красной панели."
+  },
+  "button_style": {
+    "type": "select",
+    "label": "Стиль кнопки",
+    "default": "outline-white",
+    "options": [
+      { "label": "Белая заполненная", "value": "white" },
+      { "label": "Белая контурная", "value": "outline-white" }
+    ],
+    "section": "button",
+    "section_label": "Кнопка",
+    "section_hint": "Опциональный CTA внутри красной панели."
+  }
+}

@@ -1,0 +1,123 @@
+{
+    "title": "Рубрика с карточками",
+    "category": "content",
+    "description": "Компактная секция раздела с карточками материалов, ручным режимом и подключением к content_list InstantCMS.",
+    "version": "1.0",
+    "fields": [
+        {
+            "key": "eyebrow",
+            "label": "Подпись раздела",
+            "type": "text",
+            "default": "Раздел"
+        },
+        {
+            "key": "heading",
+            "label": "Заголовок секции",
+            "type": "text",
+            "default": "Рубрика недели"
+        },
+        {
+            "key": "intro",
+            "label": "Описание секции",
+            "type": "textarea",
+            "rows": 3,
+            "default": "Компактная сетка материалов для главной, которую можно наполнить вручную или подключить к данным InstantCMS."
+        },
+        {
+            "key": "more_link_label",
+            "label": "Текст ссылки",
+            "type": "text",
+            "default": "Открыть раздел"
+        },
+        {
+            "key": "more_link_url",
+            "label": "URL ссылки",
+            "type": "text",
+            "default": "/news"
+        },
+        {
+            "key": "items",
+            "label": "Карточки",
+            "type": "repeater",
+            "item_label": "Карточка",
+            "add_label": "Добавить карточку",
+            "default": [
+                {
+                    "category": "Финансы",
+                    "title": "Инвестиции для начинающих: с чего стартовать без хаоса",
+                    "excerpt": "Быстрый материал для тех, кто хочет собрать понятную стартовую стратегию и не утонуть в советах из интернета.",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Инвестиции для начинающих",
+                    "date": "18 апреля 2026",
+                    "views": "1240",
+                    "comments": "18"
+                },
+                {
+                    "category": "Бизнес",
+                    "title": "Как редакционно оформить главную без второго builder-а",
+                    "excerpt": "Показываем section-паттерн, где блок выглядит как готовая журнальная рубрика сразу после вставки.",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-bg.jpg",
+                    "imageAlt": "Редакционная главная",
+                    "date": "17 апреля 2026",
+                    "views": "980",
+                    "comments": "9"
+                },
+                {
+                    "category": "Практика",
+                    "title": "Manual-first наполнение осталось полноценным рабочим сценарием",
+                    "excerpt": "Блок можно красиво показать клиенту и без данных, а потом безболезненно перевести на content_list.",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-panels-01-human5.png",
+                    "imageAlt": "Manual first сценарий",
+                    "date": "16 апреля 2026",
+                    "views": "760",
+                    "comments": "5"
+                },
+                {
+                    "category": "Система",
+                    "title": "Один card-runtime стал базой для следующих news-блоков",
+                    "excerpt": "Это ускоряет добавление новых секций и снижает риск новых расхождений между preview и live.",
+                    "url": "/news",
+                    "image": "/upload/nordicblocks/demo/hero-magazine-01-cover.jpg",
+                    "imageAlt": "Card runtime для news family",
+                    "date": "15 апреля 2026",
+                    "views": "540",
+                    "comments": "4"
+                }
+            ],
+            "fields": [
+                { "key": "category", "label": "Рубрика", "type": "text", "default": "Новости" },
+                { "key": "title", "label": "Заголовок", "type": "text", "default": "Новая карточка раздела" },
+                { "key": "excerpt", "label": "Анонс", "type": "textarea", "rows": 4, "default": "Короткий анонс материала." },
+                { "key": "url", "label": "URL", "type": "text", "default": "/news" },
+                { "key": "image", "label": "Изображение", "type": "text", "default": "" },
+                { "key": "imageAlt", "label": "Alt", "type": "text", "default": "" },
+                { "key": "date", "label": "Дата", "type": "text", "default": "" },
+                { "key": "views", "label": "Просмотры", "type": "text", "default": "" },
+                { "key": "comments", "label": "Комментарии", "type": "text", "default": "" }
+            ]
+        },
+        { "key": "theme", "label": "Тема", "type": "select", "default": "light", "options": [
+            { "value": "light", "label": "Светлая" },
+            { "value": "alt", "label": "Мягкий фон" },
+            { "value": "dark", "label": "Тёмная" }
+        ] },
+        { "key": "align", "label": "Выравнивание", "type": "select", "default": "left", "options": [
+            { "value": "left", "label": "Слева" },
+            { "value": "center", "label": "По центру" }
+        ] },
+        { "key": "columns_desktop", "label": "Колонки desktop", "type": "number", "default": 4 },
+        { "key": "columns_mobile", "label": "Колонки mobile", "type": "number", "default": 2 },
+        { "key": "card_gap_desktop", "label": "Gap desktop", "type": "number", "default": 16 },
+        { "key": "card_gap_mobile", "label": "Gap mobile", "type": "number", "default": 12 },
+        { "key": "show_more_link", "label": "Показывать ссылку", "type": "boolean", "default": "1" },
+        { "key": "show_image", "label": "Показывать изображение", "type": "boolean", "default": "1" },
+        { "key": "show_category", "label": "Показывать рубрику", "type": "boolean", "default": "1" },
+        { "key": "show_excerpt", "label": "Показывать анонс", "type": "boolean", "default": "1" },
+        { "key": "show_date", "label": "Показывать дату", "type": "boolean", "default": "1" },
+        { "key": "show_views", "label": "Показывать просмотры", "type": "boolean", "default": "1" },
+        { "key": "show_comments", "label": "Показывать комментарии", "type": "boolean", "default": "1" }
+    ]
+}
