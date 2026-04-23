@@ -14,9 +14,8 @@
 
 Структура `dist` для NordicBlocks теперь фиксируется так:
 
-1. `dist/nordicblocks/start/` — installable baseline и его versioned копии;
-2. `dist/nordicblocks/updates/<version>/` — артефакты update-релиза для конкретной версии;
-3. плоские файлы в `dist/` сохраняются как совместимые алиасы последней сборки для старых команд и быстрых ручных smoke.
+1. `dist/nordicblocks/start/` — installable baseline текущего релиза;
+2. `dist/nordicblocks/updates/<version>/` — артефакты update-релиза для текущей версии.
 
 ## Source of truth
 
@@ -57,17 +56,13 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 
 Результат update-сборки:
 
-1. `dist/nordicblocks-update.zip`
-2. `dist/nordicblocks-update-<version>.zip`
-3. `dist/nordicblocks/updates/<version>/nordicblocks-update.zip`
-4. `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
+1. `dist/nordicblocks/updates/<version>/nordicblocks-update.zip`
+2. `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
 
 Результат installable-сборки:
 
-1. `dist/nordicblocks.zip`
-2. `dist/nordicblocks-<version>.zip`
-3. `dist/nordicblocks/start/nordicblocks.zip`
-4. `dist/nordicblocks/start/nordicblocks-<version>.zip`
+1. `dist/nordicblocks/start/nordicblocks.zip`
+2. `dist/nordicblocks/start/nordicblocks-<version>.zip`
 
 Важно: по структуре это тот же совместимый InstantCMS package, но он публикуется как update-artifact и должен ставиться поверх уже установленного базового релиза.
 
@@ -85,13 +80,13 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 7. проверить состав архива через `unzip -l`;
 8. убедиться, что в архив не попали рабочие docs, `*.md`, `*.txt`, внутренние notes;
 9. сделать manual update smoke поверх уже установленного компонента;
-10. зафиксировать release outcome в worklog.
+10. зафиксировать release outcome в release notes или GitHub Release draft.
 
 ## Минимальный проверочный контур
 
 ```bash
 bash scripts/build-nordicblocks-update-package.sh 0.1.1
-unzip -l dist/nordicblocks-update.zip
+unzip -l dist/nordicblocks/updates/0.1.1/nordicblocks-update-0.1.1.zip
 /opt/php84/bin/php -l install.php
 /opt/php84/bin/php scripts/nordicblocks-flow-smoke.php
 ```
@@ -104,3 +99,4 @@ unzip -l dist/nordicblocks-update.zip
 2. Стандартный путь релиза теперь: `base install once -> component updates`.
 3. Полный installable архив сохраняется как опорный baseline и как fallback для чистой установки.
 4. При ручной навигации по `dist/` ориентироваться сначала на `dist/nordicblocks/start/`, а для обновлений — на `dist/nordicblocks/updates/<version>/`.
+5. Исторические артефакты лучше хранить в GitHub Releases, а не накапливать в дереве репозитория.

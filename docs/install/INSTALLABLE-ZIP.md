@@ -53,8 +53,8 @@ bash scripts/build-nordicblocks-package.sh
 
 Результат:
 
-1. `dist/nordicblocks.zip`
-2. `dist/nordicblocks-<version>.zip`
+1. `dist/nordicblocks/start/nordicblocks.zip`
+2. `dist/nordicblocks/start/nordicblocks-<version>.zip`
 
 Версия архива берётся из секции `[version]` в `manifest.ru.ini`.
 
@@ -68,8 +68,8 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 
 Update-архив публикуется как:
 
-1. `dist/nordicblocks-update.zip`
-2. `dist/nordicblocks-update-<version>.zip`
+1. `dist/nordicblocks/updates/<version>/nordicblocks-update.zip`
+2. `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
 
 Отдельный release workflow зафиксирован в `docs/releases/UPDATE-RELEASE-WORKFLOW.md`.
 
@@ -90,7 +90,7 @@ Update-архив публикуется как:
 
 ```bash
 bash scripts/build-nordicblocks-package.sh
-unzip -l dist/nordicblocks.zip
+unzip -l dist/nordicblocks/start/nordicblocks-<version>.zip
 /opt/php84/bin/php -l install.php
 /opt/php84/bin/php scripts/nordicblocks-sync.php
 /opt/php84/bin/php scripts/nordicblocks-flow-smoke.php

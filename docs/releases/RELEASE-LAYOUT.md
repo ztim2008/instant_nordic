@@ -28,14 +28,11 @@ dist/
 1. dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip = primary update artifact;
 2. dist/nordicblocks/updates/<version>/nordicblocks-update.zip = convenience alias inside version folder.
 
-## Compatibility aliases
+## Public repo hygiene
 
-Flat root-level aliases may still exist:
+The repository working tree should keep only the current release payload under dist/nordicblocks/.
 
-1. dist/nordicblocks.zip
-2. dist/nordicblocks-update.zip
-
-But they should be treated as compatibility shortcuts only. Documentation and release notes should point users to the structured paths under dist/nordicblocks/.
+Historical versions should be published through GitHub Releases instead of accumulating in the repository tree.
 
 ## Release note convention
 

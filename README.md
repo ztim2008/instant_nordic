@@ -11,8 +11,8 @@ It contains:
 1. install and update package sources;
 2. runtime payload for the component;
 3. release scripts and version sync tooling;
-4. public product documentation;
-5. release artifacts in the structured dist layout.
+4. minimal public documentation for install and releases;
+5. current release artifacts in the structured dist layout.
 
 It does not contain:
 
@@ -44,7 +44,7 @@ Structured release paths:
 1. install: dist/nordicblocks/start/nordicblocks-<version>.zip
 2. update: dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip
 
-Flat files in dist/ are only compatibility aliases for the latest build and should not be treated as the main navigation path.
+Only the current release should be kept in the public repository working tree. Historical artifacts should live in GitHub Releases, not as accumulated files in dist/.
 
 ## Release Workflow
 
@@ -65,11 +65,6 @@ Quick commands:
 bash scripts/nordicblocks-version-sync.sh 0.2.0
 bash scripts/build-nordicblocks-package.sh
 bash scripts/build-nordicblocks-update-package.sh 0.2.0
-```
-
-If you are running the private product workspace contour that refreshes this staged repository, use:
-
-```bash
 bash ../scripts/nordicblocks-sync-public-staging.sh
 ```
 
@@ -98,7 +93,7 @@ That means:
 1. design block editor and runtime parity;
 2. managed block catalog and scaffold pipeline;
 3. stable install/update release flow;
-4. reusable block families for production sites.
+4. reusable production delivery for InstantCMS sites.
 
 ## Status
 
