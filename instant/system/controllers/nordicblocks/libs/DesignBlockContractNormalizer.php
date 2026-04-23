@@ -4,7 +4,7 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 
 class NordicblocksDesignBlockContractNormalizer {
 
-    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'image', 'shape'];
+    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'group', 'video', 'divider', 'svg', 'embed', 'image', 'shape'];
     private static $allowed_background_modes = ['theme', 'solid', 'gradient', 'image'];
 
     public static function supportsType($type) {
@@ -18,6 +18,10 @@ class NordicblocksDesignBlockContractNormalizer {
         $section_name = self::string($contract['content']['section']['name'] ?? ($payload['section_name'] ?? ($block['title'] ?? 'Design Block')), 'Design Block', 160);
         $elements_raw = $contract['content']['section']['elements'] ?? ($payload['elements'] ?? []);
         $elements     = self::normalizeElements(is_array($elements_raw) ? $elements_raw : []);
+
+        if (!$elements) {
+            $elements = self::buildDefaultElements();
+        }
 
         return [
             'meta' => [
@@ -243,6 +247,14 @@ class NordicblocksDesignBlockContractNormalizer {
             'motionDelay' => self::number($raw['motionDelay'] ?? 0, 0, 2400, 0),
             'motionEasing' => self::select($raw['motionEasing'] ?? 'smooth', ['smooth', 'soft', 'snappy', 'linear'], 'smooth'),
             'motionAmount' => self::number($raw['motionAmount'] ?? 32, 0, 120, 32),
+            'sequenceMode' => self::select($raw['sequenceMode'] ?? 'none', ['none', 'orchestrated'], 'none'),
+            'sequenceId' => self::string($raw['sequenceId'] ?? '', '', 120),
+            'sequenceRole' => self::string($raw['sequenceRole'] ?? '', '', 120),
+            'sequenceStep' => self::number($raw['sequenceStep'] ?? 0, 0, 120, 0),
+            'sequenceGap' => self::number($raw['sequenceGap'] ?? 80, 0, 2400, 80),
+            'sequenceTrigger' => self::select($raw['sequenceTrigger'] ?? 'inherit', ['inherit', 'entry', 'scroll'], 'inherit'),
+            'sequenceScope' => self::select($raw['sequenceScope'] ?? 'block', ['block', 'viewport-group'], 'block'),
+            'sequenceReplay' => self::select($raw['sequenceReplay'] ?? 'once', ['once', 'repeat-on-reentry'], 'once'),
         ];
 
         if ($type === 'text') {
@@ -329,6 +341,22 @@ class NordicblocksDesignBlockContractNormalizer {
             ];
         }
 
+        if ($type === 'embed') {
+            return $common + [
+                'provider' => self::select($raw['provider'] ?? 'generic', ['generic', 'rutube', 'vk_video', 'kinescope'], 'generic'),
+                'sourceMode' => self::select($raw['sourceMode'] ?? 'html', ['html', 'url'], 'html'),
+                'code' => self::string($raw['code'] ?? '', '', 30000),
+                'url' => self::string($raw['url'] ?? '', '', 2048),
+                'title' => self::string($raw['title'] ?? 'Встраиваемый блок', 'Встраиваемый блок', 255),
+                'aspectRatio' => self::select($raw['aspectRatio'] ?? 'free', ['free', '16:9', '4:3', '1:1', '9:16', '21:9'], 'free'),
+                'lazy' => self::bool($raw['lazy'] ?? true, true),
+                'allowFullscreen' => self::bool($raw['allowFullscreen'] ?? false, false),
+                'hideScrollbars' => self::bool($raw['hideScrollbars'] ?? false, false),
+                'sandboxProfile' => self::select($raw['sandboxProfile'] ?? 'strict', ['strict', 'forms', 'media', 'trusted'], 'strict'),
+                'referrerPolicy' => self::select($raw['referrerPolicy'] ?? 'strict-origin-when-cross-origin', ['no-referrer', 'origin', 'strict-origin', 'strict-origin-when-cross-origin', 'unsafe-url'], 'strict-origin-when-cross-origin'),
+            ];
+        }
+
         if ($type === 'object' || $type === 'shape') {
             return $common + [
                 'shape' => self::select($raw['shape'] ?? 'rect', ['rect', 'pill', 'circle', 'line'], 'rect'),
@@ -375,6 +403,12 @@ class NordicblocksDesignBlockContractNormalizer {
                 'paddingRight'  => self::number($raw['paddingRight'] ?? 0, 0, 240, 0),
                 'paddingBottom' => self::number($raw['paddingBottom'] ?? 0, 0, 240, 0),
                 'paddingLeft'   => self::number($raw['paddingLeft'] ?? 0, 0, 240, 0),
+            ];
+        }
+
+        if ($type === 'group') {
+            return $common + [
+                'label' => self::string($raw['label'] ?? 'Группа', 'Группа', 120),
             ];
         }
 
@@ -433,35 +467,16 @@ class NordicblocksDesignBlockContractNormalizer {
                 'role' => 'headline',
                 'parentId' => '',
                 'desktop' => [
-                    'box' => ['x' => 72, 'y' => 86, 'w' => 660, 'h' => 180, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Свободный design block для NordicBlocks', 'tag' => 'h1', 'fontSize' => 58, 'fontWeight' => 800, 'lineHeight' => 105, 'color' => '#0f172a']),
+                    'box' => ['x' => 72, 'y' => 120, 'w' => 640, 'h' => 180, 'zIndex' => 3, 'visible' => true],
+                    'props' => self::normalizeTypeProps('text', ['text' => 'Начните собирать свой блок', 'tag' => 'h1', 'fontSize' => 62, 'fontWeight' => 800, 'lineHeight' => 104, 'color' => '#0f172a']),
                 ],
                 'tablet' => [
-                    'box' => ['x' => 40, 'y' => 64, 'w' => 480, 'h' => 160, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Свободный design block для NordicBlocks', 'tag' => 'h1', 'fontSize' => 42, 'fontWeight' => 800, 'lineHeight' => 108, 'color' => '#0f172a']),
+                    'box' => ['x' => 40, 'y' => 96, 'w' => 460, 'h' => 150, 'zIndex' => 3, 'visible' => true],
+                    'props' => self::normalizeTypeProps('text', ['text' => 'Начните собирать свой блок', 'tag' => 'h1', 'fontSize' => 44, 'fontWeight' => 800, 'lineHeight' => 108, 'color' => '#0f172a']),
                 ],
                 'mobile' => [
-                    'box' => ['x' => 24, 'y' => 36, 'w' => 280, 'h' => 140, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Свободный design block для NordicBlocks', 'tag' => 'h1', 'fontSize' => 28, 'fontWeight' => 800, 'lineHeight' => 112, 'color' => '#0f172a']),
-                ],
-            ],
-            [
-                'id'   => 'description',
-                'type' => 'text',
-                'name' => 'Description',
-                'role' => 'description',
-                'parentId' => '',
-                'desktop' => [
-                    'box' => ['x' => 76, 'y' => 292, 'w' => 520, 'h' => 84, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Stage 1-3 уже активируют contract-first storage, SSR render и backend preview shell. Графический freeform editor может доехать следующим шагом поверх этого каркаса.', 'fontSize' => 18, 'fontWeight' => 400, 'lineHeight' => 145, 'color' => '#334155']),
-                ],
-                'tablet' => [
-                    'box' => ['x' => 42, 'y' => 246, 'w' => 420, 'h' => 96, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Stage 1-3 уже активируют contract-first storage, SSR render и backend preview shell.', 'fontSize' => 16, 'fontWeight' => 400, 'lineHeight' => 145, 'color' => '#334155']),
-                ],
-                'mobile' => [
-                    'box' => ['x' => 24, 'y' => 170, 'w' => 300, 'h' => 120, 'zIndex' => 3, 'visible' => true],
-                    'props' => self::normalizeTypeProps('text', ['text' => 'Stage 1-3 уже активируют contract-first storage, SSR render и backend preview shell.', 'fontSize' => 15, 'fontWeight' => 400, 'lineHeight' => 145, 'color' => '#334155']),
+                    'box' => ['x' => 24, 'y' => 88, 'w' => 270, 'h' => 120, 'zIndex' => 3, 'visible' => true],
+                    'props' => self::normalizeTypeProps('text', ['text' => 'Начните собирать свой блок', 'tag' => 'h1', 'fontSize' => 30, 'fontWeight' => 800, 'lineHeight' => 112, 'color' => '#0f172a']),
                 ],
             ],
             [
@@ -471,16 +486,16 @@ class NordicblocksDesignBlockContractNormalizer {
                 'role' => 'primary_cta',
                 'parentId' => '',
                 'desktop' => [
-                    'box' => ['x' => 76, 'y' => 412, 'w' => 220, 'h' => 56, 'zIndex' => 4, 'visible' => true],
-                    'props' => self::normalizeTypeProps('button', ['text' => 'Открыть JSON shell', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 16]),
+                    'box' => ['x' => 76, 'y' => 350, 'w' => 238, 'h' => 58, 'zIndex' => 4, 'visible' => true],
+                    'props' => self::normalizeTypeProps('button', ['text' => 'Главное действие', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 16, 'paddingRight' => 32, 'paddingLeft' => 32]),
                 ],
                 'tablet' => [
-                    'box' => ['x' => 42, 'y' => 368, 'w' => 220, 'h' => 52, 'zIndex' => 4, 'visible' => true],
-                    'props' => self::normalizeTypeProps('button', ['text' => 'Открыть JSON shell', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 15]),
+                    'box' => ['x' => 42, 'y' => 292, 'w' => 224, 'h' => 52, 'zIndex' => 4, 'visible' => true],
+                    'props' => self::normalizeTypeProps('button', ['text' => 'Главное действие', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 15, 'paddingRight' => 30, 'paddingLeft' => 30]),
                 ],
                 'mobile' => [
-                    'box' => ['x' => 24, 'y' => 316, 'w' => 182, 'h' => 48, 'zIndex' => 4, 'visible' => true],
-                    'props' => self::normalizeTypeProps('button', ['text' => 'JSON shell', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 14]),
+                    'box' => ['x' => 24, 'y' => 236, 'w' => 198, 'h' => 48, 'zIndex' => 4, 'visible' => true],
+                    'props' => self::normalizeTypeProps('button', ['text' => 'Главное действие', 'url' => '#', 'backgroundColor' => '#0f172a', 'color' => '#ffffff', 'borderRadius' => 999, 'fontSize' => 14, 'paddingRight' => 24, 'paddingLeft' => 24]),
                 ],
             ],
         ];

@@ -1,5 +1,13 @@
 # NordicBlocks Changelog
 
+## 0.2.0 - 2026-04-23
+
+- create-flow собран в один вход: отдельный пользовательский экран каталога убран из основного маршрута, curated cards перенесены в существующий modal `Создать блок`;
+- blocks screen получил верхний CTA `Собрать свой блок`, который сразу открывает create modal в режиме `design_block` с фокусом на naming + canvas start;
+- новые `design_block` больше не стартуют пустыми: normalizer теперь гарантирует starter trio из object, text и button даже для пустого контракта;
+- editor/runtime parity проверена live: для свежего блока state endpoint возвращает `3` элемента, а hydrated editor показывает `Слои • 3 элементов • Корень сцены`;
+- для релиза `0.2.0` синхронизируются package version/manifest и собираются install/update архивы NordicBlocks.
+
 ## 0.1.1 - 2026-04-22
 
 - добавлен новый element type `embed` (`Вставка`) для `design_block`;

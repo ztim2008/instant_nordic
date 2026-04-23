@@ -4,6 +4,8 @@ set -euo pipefail
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 package_dir="$root_dir/packages/nordicblocks"
 dist_dir="$root_dir/dist"
+structured_dist_dir="$dist_dir/nordicblocks"
+start_dir="$structured_dist_dir/start"
 preflight_script="$root_dir/scripts/nordicblocks-package-preflight.sh"
 
 manifest_file="$package_dir/manifest.ru.ini"
@@ -72,8 +74,11 @@ fi
 archive_name="nordicblocks.zip"
 archive_path="$dist_dir/$archive_name"
 versioned_archive_path="$dist_dir/nordicblocks-$version.zip"
+structured_archive_path="$start_dir/$archive_name"
+structured_versioned_archive_path="$start_dir/nordicblocks-$version.zip"
 
 mkdir -p "$dist_dir"
+mkdir -p "$start_dir"
 
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
@@ -89,6 +94,8 @@ find "$tmp_dir/package" -type f \( -name '*.md' -o -name '*.txt' \) -delete
 
 rm -f "$archive_path"
 rm -f "$versioned_archive_path"
+rm -f "$structured_archive_path"
+rm -f "$structured_versioned_archive_path"
 
 (
     cd "$tmp_dir"
@@ -96,6 +103,10 @@ rm -f "$versioned_archive_path"
 )
 
 cp "$archive_path" "$versioned_archive_path"
+cp "$archive_path" "$structured_archive_path"
+cp "$archive_path" "$structured_versioned_archive_path"
 
 echo "$archive_path"
 echo "$versioned_archive_path"
+echo "$structured_archive_path"
+echo "$structured_versioned_archive_path"

@@ -52,6 +52,13 @@
 - нужен ли install-архив, update-архив или оба;
 - нужен ли короткий итог для клиента или команды.
 
+## 5.1. Правило по dist
+
+- Для NordicBlocks baseline install-архивы складывать в `dist/nordicblocks/start/`.
+- Update-релизы складывать в `dist/nordicblocks/updates/<version>/`.
+- Плоские файлы в `dist/` (`nordicblocks.zip`, `nordicblocks-update.zip`) считать только совместимыми алиасами последней сборки, а не основной точкой навигации.
+- В финальном отчёте агент по умолчанию должен отдавать структурированные пути из `dist/nordicblocks/...`, если пользователь не попросил старый плоский путь.
+
 ## 6. Ожидаемый финальный ответ агента
 
 Проси, чтобы в конце агент всегда дал один и тот же минимум:
@@ -62,6 +69,11 @@
 4. что проверено;
 5. остаточные риски;
 6. rollback-точку.
+
+Предпочтительный формат путей:
+
+1. install: `dist/nordicblocks/start/nordicblocks-<version>.zip`
+2. update: `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
 
 ## 7. Быстрый практический пример
 

@@ -52,22 +52,25 @@ foreach ([$http_template, 'modern'] as $template_name) {
         <div class="nbde-topbar__main">
             <a class="nbde-ghost-button" href="<?= htmlspecialchars($back_url, ENT_QUOTES, 'UTF-8') ?>">К списку блоков</a>
             <div class="nbde-titlebox">
-                <div class="nbde-titlebox__row">
-                    <span class="nbde-badge">Дизайн-блок</span>
-                    <div class="nbde-statusline" id="nbd-status-text">Загрузка редактора...</div>
-                </div>
+                <div class="nbde-title-label">Название блока</div>
                 <input class="nbde-title-input" id="nbd-title-input" type="text" value="<?= htmlspecialchars((string) ($block['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" placeholder="Название блока">
             </div>
         </div>
         <div class="nbde-topbar__actions">
-            <div class="nbde-breakpoints" id="nbd-breakpoints">
-                <button class="nbde-breakpoint is-active" type="button" data-breakpoint="desktop">Компьютер</button>
-                <button class="nbde-breakpoint" type="button" data-breakpoint="tablet">Планшет</button>
-                <button class="nbde-breakpoint" type="button" data-breakpoint="mobile">Мобильный</button>
+            <div class="nbde-topbar__cluster">
+                <div class="nbde-breakpoints" id="nbd-breakpoints">
+                    <button class="nbde-breakpoint is-active" type="button" data-breakpoint="desktop">Компьютер</button>
+                    <button class="nbde-breakpoint" type="button" data-breakpoint="tablet">Планшет</button>
+                    <button class="nbde-breakpoint" type="button" data-breakpoint="mobile">Мобильный</button>
+                </div>
             </div>
-            <button class="nbde-ghost-button" type="button" data-action="reload-state">Перечитать с сервера</button>
-            <a class="nbde-ghost-button" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>">Разместить</a>
-            <button class="nbde-primary-button" type="button" id="nbd-save-button">Сохранить</button>
+            <div class="nbde-topbar__cluster nbde-topbar__cluster--actions">
+                <div class="nbde-statusline" id="nbd-status-text">Загрузка редактора...</div>
+                <button class="nbde-ghost-button" type="button" data-action="toggle-focus-mode" id="nbd-focus-mode-button" aria-pressed="false">Фокус-режим</button>
+                <button class="nbde-ghost-button" type="button" data-action="reload-state">Перечитать</button>
+                <a class="nbde-ghost-button" href="<?= htmlspecialchars($place_url, ENT_QUOTES, 'UTF-8') ?>">Разместить</a>
+                <button class="nbde-primary-button" type="button" id="nbd-save-button">Сохранить</button>
+            </div>
         </div>
     </header>
 
@@ -93,11 +96,14 @@ foreach ([$http_template, 'modern'] as $template_name) {
                 <div class="nbde-card__body" id="nbd-block-card"></div>
             </section>
 
-            <section class="nbde-card nbde-card--properties">
-                <div class="nbde-card__head">
-                    <h3>Свойства элемента</h3>
-                    <span id="nbd-properties-summary">Ничего не выбрано</span>
-                </div>
+            <section class="nbde-card nbde-card--properties nbde-card--accordion">
+                <button class="nbde-card__head nbde-card__head--toggle" type="button" data-action="toggle-properties-card" aria-expanded="true">
+                    <span class="nbde-card__head-copy">
+                        <h3>Свойства элемента</h3>
+                        <span id="nbd-properties-summary">Ничего не выбрано</span>
+                    </span>
+                    <span class="nbde-card__chevron" aria-hidden="true"></span>
+                </button>
                 <div class="nbde-card__body" id="nbd-properties-card"></div>
             </section>
 

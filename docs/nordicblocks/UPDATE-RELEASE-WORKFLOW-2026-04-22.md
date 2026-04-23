@@ -12,6 +12,12 @@
 2. новые поставки выпускаются как update-пакеты компонента `nordicblocks`;
 3. update-пакет собирается из того же package source-of-truth, но проходит отдельный release contour и публикуется отдельным именем архива.
 
+Структура `dist` для NordicBlocks теперь фиксируется так:
+
+1. `dist/nordicblocks/start/` — installable baseline и его versioned копии;
+2. `dist/nordicblocks/updates/<version>/` — артефакты update-релиза для конкретной версии;
+3. плоские файлы в `dist/` сохраняются как совместимые алиасы последней сборки для старых команд и быстрых ручных smoke.
+
 ## Source of truth
 
 Для update-релизов источником правды остаётся директория:
@@ -53,6 +59,15 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 
 1. `dist/nordicblocks-update.zip`
 2. `dist/nordicblocks-update-<version>.zip`
+3. `dist/nordicblocks/updates/<version>/nordicblocks-update.zip`
+4. `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
+
+Результат installable-сборки:
+
+1. `dist/nordicblocks.zip`
+2. `dist/nordicblocks-<version>.zip`
+3. `dist/nordicblocks/start/nordicblocks.zip`
+4. `dist/nordicblocks/start/nordicblocks-<version>.zip`
 
 Важно: по структуре это тот же совместимый InstantCMS package, но он публикуется как update-artifact и должен ставиться поверх уже установленного базового релиза.
 
@@ -88,3 +103,4 @@ unzip -l dist/nordicblocks-update.zip
 1. Новый full install archive не считается стандартным способом поставки после первого этапа.
 2. Стандартный путь релиза теперь: `base install once -> component updates`.
 3. Полный installable архив сохраняется как опорный baseline и как fallback для чистой установки.
+4. При ручной навигации по `dist/` ориентироваться сначала на `dist/nordicblocks/start/`, а для обновлений — на `dist/nordicblocks/updates/<version>/`.

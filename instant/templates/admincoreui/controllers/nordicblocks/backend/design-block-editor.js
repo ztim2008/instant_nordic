@@ -93,6 +93,7 @@
         video: 'Видео',
         divider: 'Разделитель',
         svg: 'SVG',
+        embed: 'Вставка',
         group: 'Группа'
     };
 
@@ -100,7 +101,8 @@
         text: true,
         button: true,
         object: true,
-        photo: true
+        photo: true,
+        embed: true
     };
 
     var CONTENT_PROP_KEYS = {
@@ -110,6 +112,16 @@
         src: true,
         alt: true,
         poster: true,
+        provider: true,
+        code: true,
+        sourceMode: true,
+        title: true,
+        aspectRatio: true,
+        sandboxProfile: true,
+        lazy: true,
+        allowFullscreen: true,
+        hideScrollbars: true,
+        referrerPolicy: true,
         iconClass: true,
         iconPosition: true,
         label: true
@@ -119,11 +131,12 @@
         'opacityPct', 'backgroundColor', 'borderRadius', 'borderWidth', 'borderColor', 'borderStyle', 'boxShadow', 'blur',
         'backdropBlur', 'backdropSaturate', 'backdropBrightness', 'color', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'textTransform', 'fill', 'fillOpacityPct', 'shape', 'objectFit', 'objectPosition', 'objectPositionX', 'objectPositionY',
         'size', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'gap', 'orientation', 'justifyContent', 'text', 'url', 'targetBlank', 'src',
-        'alt', 'poster', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
+        'alt', 'poster', 'provider', 'code', 'sourceMode', 'title', 'aspectRatio', 'sandboxProfile', 'lazy', 'allowFullscreen', 'hideScrollbars', 'referrerPolicy', 'iconClass', 'iconPosition', 'hoverColor', 'hoverBackgroundColor', 'hoverBorderColor', 'label',
         'iconColor', 'hoverIconColor', 'shadowX', 'shadowY', 'shadowBlur', 'shadowSpread', 'shadowColor', 'shadowInset', 'filterBrightness', 'filterContrast', 'filterSaturate', 'filterGrayscale',
         'hoverShadowX', 'hoverShadowY', 'hoverShadowBlur', 'hoverShadowSpread', 'hoverShadowColor', 'hoverShadowInset',
         'backgroundMode', 'gradientFrom', 'gradientTo', 'gradientAngle', 'hoverBackgroundMode', 'hoverGradientFrom', 'hoverGradientTo',
-        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration', 'motionTrigger', 'motionPreset', 'motionDuration', 'motionDelay', 'motionEasing', 'motionAmount'
+        'hoverScalePct', 'hoverLift', 'hoverShadow', 'transitionDuration', 'motionTrigger', 'motionPreset', 'motionDuration', 'motionDelay', 'motionEasing', 'motionAmount',
+        'sequenceMode', 'sequenceId', 'sequenceRole', 'sequenceStep', 'sequenceGap', 'sequenceTrigger', 'sequenceScope', 'sequenceReplay'
     ];
 
     var DEFAULT_FONT_FAMILIES = [
@@ -138,6 +151,35 @@
 
     var AUTOSAVE_DELAY_MS = 1200;
     var ENABLE_AUTOSAVE = false;
+    var FOCUS_MODE_STORAGE_KEY = 'nordicblocks.designBlockEditor.focusMode';
+
+    function readFocusModePreference() {
+        try {
+            return window.localStorage && window.localStorage.getItem(FOCUS_MODE_STORAGE_KEY) === '1';
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function writeFocusModePreference(enabled) {
+        try {
+            if (!window.localStorage) {
+                return;
+            }
+            window.localStorage.setItem(FOCUS_MODE_STORAGE_KEY, enabled ? '1' : '0');
+        } catch (error) {
+            return;
+        }
+    }
+
+    var DEFAULT_INSPECTOR_SECTION_COLLAPSE = {
+        layout: true
+    };
+
+    var DEFAULT_INSPECTOR_SUBSECTION_COLLAPSE = {
+        'content:text': true,
+        'content:semantics': true
+    };
 
     var state = {
         editor: {
@@ -191,8 +233,13 @@
         uiState: {
             activeBreakpoint: 'desktop',
             sidebarCollapsed: false,
+            focusMode: false,
+            propertiesCardExpanded: true,
+            inspectorSectionsCollapsed: {},
+            inspectorSubsectionsCollapsed: {},
             selectionIds: [],
             selectedElementId: null,
+            deferredFieldDrafts: {},
             contextMenu: {
                 open: false,
                 x: 0,
@@ -243,8 +290,11 @@
         layersCard: document.getElementById('nbd-layers-card'),
         propertiesCard: document.getElementById('nbd-properties-card'),
         saveButton: document.getElementById('nbd-save-button'),
+        focusModeButton: document.getElementById('nbd-focus-mode-button'),
         sidebar: document.getElementById('nbd-sidebar')
     };
+
+    state.uiState.focusMode = readFocusModePreference();
 
     var geometryDebugEnabled = !!(bootstrap.devFlags && bootstrap.devFlags.geometryDebug);
 
@@ -411,7 +461,397 @@
 
     function isMediaType(type) {
         type = normalizeElementType(type);
-        return type === 'photo' || type === 'svg' || type === 'video';
+        return type === 'photo' || type === 'svg' || type === 'video' || type === 'embed';
+    }
+
+    function resolveEmbedSourceMode(props) {
+        props = props || {};
+
+        if (String(props.sourceMode || '') === 'url' && String(props.url || '').trim()) {
+            return 'url';
+        }
+
+        if (String(props.code || '').trim()) {
+            return 'html';
+        }
+
+        return String(props.sourceMode || 'html') === 'url' ? 'url' : 'html';
+    }
+
+    function buildEmbedSandboxValue(profile) {
+        var profiles = {
+            strict: 'allow-scripts allow-popups',
+            forms: 'allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox',
+            media: 'allow-scripts allow-popups allow-presentation',
+            trusted: 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation allow-downloads'
+        };
+
+        return profiles[String(profile || 'strict')] || profiles.strict;
+    }
+
+    function buildEmbedAllowValue(props) {
+        var allow = ['autoplay', 'clipboard-write', 'encrypted-media', 'picture-in-picture'];
+        var profile = String((props && props.sandboxProfile) || 'strict');
+
+        if (profile === 'media' || profile === 'trusted' || !!(props && props.allowFullscreen)) {
+            allow.push('fullscreen');
+        }
+
+        if (profile === 'forms' || profile === 'trusted') {
+            allow.push('payment');
+        }
+
+        return allow.filter(function (value, index, list) {
+            return list.indexOf(value) === index;
+        }).join('; ');
+    }
+
+    function buildEmbedPreviewSrcdoc(props) {
+        var title = escapeHtml((props && props.title) || 'Встраиваемый блок');
+        var code = String((props && props.code) || '');
+
+        return '<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'
+            + title
+            + '</title><style>html,body{margin:0;padding:0;background:transparent;min-height:100%;}body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:auto;}iframe{max-width:100%;}img,video{max-width:100%;height:auto;display:block;}</style></head><body>'
+            + code
+            + '</body></html>';
+    }
+
+    function buildEmbedPreviewFrame(props) {
+        var sourceMode = resolveEmbedSourceMode(props);
+        var provider = resolveEmbedProvider(props);
+        var title = String((props && props.title) || 'Встраиваемый блок');
+        var loading = props && props.lazy === false ? 'eager' : 'lazy';
+        var sandbox = buildEmbedSandboxValue(props && props.sandboxProfile);
+        var allow = buildEmbedAllowValue(props || {});
+        var html = '<iframe class="nbde-el__embed-frame" title="' + escapeHtml(title) + '" loading="' + escapeHtml(loading) + '" sandbox="' + escapeHtml(sandbox) + '" referrerpolicy="' + escapeHtml((props && props.referrerPolicy) || 'strict-origin-when-cross-origin') + '"';
+
+        if (allow) {
+            html += ' allow="' + escapeHtml(allow) + '"';
+        }
+
+        if (props && props.allowFullscreen) {
+            html += ' allowfullscreen';
+        }
+
+        if (props && props.hideScrollbars) {
+            html += ' scrolling="no"';
+        }
+
+        if (sourceMode === 'url') {
+            var normalizedUrl = normalizeEmbedUrl((props && props.url) || '', provider);
+
+            if (!/^https?:\/\//i.test(String(normalizedUrl || ''))) {
+                return '';
+            }
+
+            html += ' src="' + escapeHtml(normalizedUrl) + '"';
+        } else {
+            if (!String((props && props.code) || '').trim()) {
+                return '';
+            }
+
+            html += ' srcdoc="' + escapeHtml(buildEmbedPreviewSrcdoc(props || {})) + '"';
+        }
+
+        html += '></iframe>';
+        return html;
+    }
+
+    function getEmbedSourceModeLabel(value) {
+        return String(value || 'html') === 'url' ? 'Адрес iframe' : 'HTML-код';
+    }
+
+    function normalizeEmbedProvider(value) {
+        var normalized = String(value || 'generic').trim();
+
+        if (normalized === 'rutube' || normalized === 'vk_video' || normalized === 'kinescope') {
+            return normalized;
+        }
+
+        return 'generic';
+    }
+
+    function getEmbedProviderLabel(value) {
+        var labels = {
+            generic: 'Универсальный',
+            rutube: 'Рутуб',
+            vk_video: 'VK Видео',
+            kinescope: 'Kinescope'
+        };
+
+        return labels[normalizeEmbedProvider(value)] || labels.generic;
+    }
+
+    function getEmbedSandboxProfileLabel(value) {
+        var labels = {
+            strict: 'Строгий',
+            forms: 'Формы',
+            media: 'Медиа',
+            trusted: 'Доверенный'
+        };
+
+        return labels[String(value || 'strict')] || labels.strict;
+    }
+
+    function getEmbedProviderPresetMap() {
+        return {
+            generic: {
+                label: 'Универсальный iframe',
+                title: 'Встраиваемый блок',
+                sandboxProfile: 'strict',
+                allowFullscreen: false,
+                hideScrollbars: false,
+                aspectRatio: 'free',
+                width: 560,
+                height: 315
+            },
+            rutube: {
+                label: 'Рутуб',
+                title: 'Видео Рутуб',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            },
+            vk_video: {
+                label: 'VK Видео',
+                title: 'Видео VK',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            },
+            kinescope: {
+                label: 'Kinescope',
+                title: 'Видео Kinescope',
+                sandboxProfile: 'media',
+                allowFullscreen: true,
+                hideScrollbars: true,
+                aspectRatio: '16:9',
+                width: 560,
+                height: 315
+            }
+        };
+    }
+
+    function resolveEmbedProvider(props) {
+        var source = String((props && (props.url || props.code)) || '');
+        var explicit = normalizeEmbedProvider(props && props.provider);
+
+        if (explicit !== 'generic') {
+            return explicit;
+        }
+
+        if (/rutube\.ru/i.test(source)) {
+            return 'rutube';
+        }
+
+        if (/(vkvideo\.ru|vk\.com\/video_ext\.php)/i.test(source)) {
+            return 'vk_video';
+        }
+
+        if (/kinescope\.io/i.test(source)) {
+            return 'kinescope';
+        }
+
+        return 'generic';
+    }
+
+    function normalizeEmbedUrl(url, provider) {
+        var value = String(url || '').trim();
+        var actualProvider = normalizeEmbedProvider(provider);
+        var match;
+
+        if (!value) {
+            return '';
+        }
+
+        if (actualProvider === 'rutube') {
+            match = value.match(/rutube\.ru\/(?:play\/embed|video)\/([a-z0-9_-]+)/i);
+            if (match) {
+                return 'https://rutube.ru/play/embed/' + match[1];
+            }
+        }
+
+        if (actualProvider === 'kinescope') {
+            match = value.match(/kinescope\.io\/(?:embed\/)?([a-z0-9]+)/i);
+            if (match) {
+                return 'https://kinescope.io/embed/' + match[1];
+            }
+        }
+
+        if (actualProvider === 'vk_video') {
+            match = value.match(/(?:vkvideo\.ru|vk\.com)\/video_ext\.php\?([^\s"']+)/i);
+            if (match) {
+                return 'https://vkvideo.ru/video_ext.php?' + match[1];
+            }
+        }
+
+        return value;
+    }
+
+    function extractEmbedCodeDetails(rawCode) {
+        var code = String(rawCode || '');
+        var iframeMatch = code.match(/<iframe[^>]*\ssrc=(['"])(.*?)\1[^>]*>/i);
+        var titleMatch = code.match(/<iframe[^>]*\stitle=(['"])(.*?)\1/i);
+        var widthMatch = code.match(/<iframe[^>]*\swidth=(['"])?(\d+)(?:\1)?/i);
+        var heightMatch = code.match(/<iframe[^>]*\sheight=(['"])?(\d+)(?:\1)?/i);
+        var details = {
+            url: iframeMatch ? iframeMatch[2] : '',
+            title: titleMatch ? titleMatch[2] : '',
+            width: widthMatch ? Number(widthMatch[2]) : 0,
+            height: heightMatch ? Number(heightMatch[2]) : 0,
+            allowFullscreen: /allowfullscreen/i.test(code),
+            hideScrollbars: /scrolling=(['"])no\1/i.test(code) || /overflow\s*:\s*hidden/i.test(code)
+        };
+
+        details.provider = resolveEmbedProvider(details);
+        details.url = normalizeEmbedUrl(details.url, details.provider);
+        return details;
+    }
+
+    function applyEmbedAspectRatioPreset(ratioKey) {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var ratios = {
+            '16:9': { w: 16, h: 9 },
+            '4:3': { w: 4, h: 3 },
+            '1:1': { w: 1, h: 1 },
+            '9:16': { w: 9, h: 16 },
+            '21:9': { w: 21, h: 9 }
+        };
+        var ratio = ratios[String(ratioKey || '')];
+        var width;
+
+        if (!element || element.type !== 'embed' || !branch || !branch.box || !branch.props) {
+            return false;
+        }
+
+        branch.props.aspectRatio = ratio ? ratioKey : 'free';
+
+        if (!ratio) {
+            return true;
+        }
+
+        width = Math.max(160, Number(branch.box.w || 560));
+        branch.box.h = Math.max(90, Math.round((width * ratio.h) / ratio.w));
+        return true;
+    }
+
+    function applyEmbedProviderPreset(providerKey) {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var preset = getEmbedProviderPresetMap()[normalizeEmbedProvider(providerKey)];
+
+        if (!element || element.type !== 'embed' || !branch || !branch.props || !preset) {
+            return false;
+        }
+
+        branch.props.provider = normalizeEmbedProvider(providerKey);
+        branch.props.sourceMode = 'url';
+        branch.props.title = preset.title;
+        branch.props.sandboxProfile = preset.sandboxProfile;
+        branch.props.allowFullscreen = preset.allowFullscreen;
+        branch.props.hideScrollbars = preset.hideScrollbars;
+        branch.props.aspectRatio = preset.aspectRatio;
+        branch.box.w = preset.width;
+        branch.box.h = preset.height;
+
+        return true;
+    }
+
+    function applyEmbedCodeAssistant() {
+        var element = getSelectedElement();
+        var branch = element ? currentEditableBranch(element) : null;
+        var props;
+        var details;
+
+        if (!element || element.type !== 'embed' || !branch || !branch.props || !branch.box) {
+            return false;
+        }
+
+        props = branch.props;
+        details = extractEmbedCodeDetails(props.code);
+
+        if (details.url) {
+            props.url = details.url;
+            props.sourceMode = 'url';
+        }
+
+        if (details.provider && details.provider !== 'generic') {
+            props.provider = details.provider;
+        } else {
+            props.provider = resolveEmbedProvider(props);
+        }
+
+        if (details.title) {
+            props.title = details.title;
+        } else if (!String(props.title || '').trim() && props.provider !== 'generic') {
+            props.title = getEmbedProviderLabel(props.provider);
+        }
+
+        if (details.allowFullscreen) {
+            props.allowFullscreen = true;
+        }
+
+        if (details.hideScrollbars) {
+            props.hideScrollbars = true;
+        }
+
+        if (details.width > 0) {
+            branch.box.w = Math.max(160, details.width);
+        }
+
+        if (details.height > 0) {
+            branch.box.h = Math.max(90, details.height);
+        }
+
+        if (branch.box.w > 0 && branch.box.h > 0) {
+            var currentRatio = Number(branch.box.w) / Number(branch.box.h);
+            if (Math.abs(currentRatio - (16 / 9)) < 0.03) {
+                props.aspectRatio = '16:9';
+            } else if (Math.abs(currentRatio - (4 / 3)) < 0.03) {
+                props.aspectRatio = '4:3';
+            } else if (Math.abs(currentRatio - 1) < 0.03) {
+                props.aspectRatio = '1:1';
+            } else if (Math.abs(currentRatio - (9 / 16)) < 0.03) {
+                props.aspectRatio = '9:16';
+            } else if (Math.abs(currentRatio - (21 / 9)) < 0.03) {
+                props.aspectRatio = '21:9';
+            } else {
+                props.aspectRatio = 'free';
+            }
+        }
+
+        if (props.provider === 'rutube' || props.provider === 'vk_video' || props.provider === 'kinescope') {
+            props.sandboxProfile = 'media';
+            props.allowFullscreen = true;
+        }
+
+        return !!(details.url || String(props.code || '').trim());
+    }
+
+    function renderEmbedProviderPresetButtons() {
+        var presets = getEmbedProviderPresetMap();
+
+        return '<div class="nbde-preset-grid">'
+            + Object.keys(presets).map(function (key) {
+                return '<button class="nbde-preset-button" type="button" data-action="apply-embed-provider-preset" data-provider="' + escapeHtml(key) + '">' + escapeHtml(presets[key].label) + '</button>';
+            }).join('')
+            + '</div>';
+    }
+
+    function renderEmbedAspectRatioButtons() {
+        return '<div class="nbde-preset-grid">'
+            + ['16:9', '4:3', '1:1', '9:16', '21:9'].map(function (key) {
+                return '<button class="nbde-preset-button" type="button" data-action="apply-embed-aspect-ratio" data-ratio="' + escapeHtml(key) + '">' + escapeHtml(key) + '</button>';
+            }).join('')
+            + '</div>';
     }
 
     function normalizeHexColor(value) {
@@ -891,6 +1331,22 @@
             branch.props.src = '';
             branch.props.poster = '';
             branch.props.objectFit = 'cover';
+            branch.props.borderRadius = 24;
+        } else if (type === 'embed') {
+            branch.box.w = 560;
+            branch.box.h = 315;
+            branch.props.provider = 'generic';
+            branch.props.sourceMode = 'html';
+            branch.props.code = '';
+            branch.props.url = '';
+            branch.props.title = 'Встраиваемый блок';
+            branch.props.aspectRatio = '16:9';
+            branch.props.lazy = true;
+            branch.props.allowFullscreen = false;
+            branch.props.hideScrollbars = false;
+            branch.props.sandboxProfile = 'strict';
+            branch.props.referrerPolicy = 'strict-origin-when-cross-origin';
+            branch.props.backgroundColor = '#ffffff';
             branch.props.borderRadius = 24;
         } else if (type === 'object') {
             branch.box.w = 220;
@@ -1603,6 +2059,11 @@
             state.uiState.editingTextId = null;
             state.uiState.pendingFocusTextId = null;
         }
+
+        setPropertiesCardExpanded(true);
+        requestAnimationFrame(function () {
+            focusPropertiesCard();
+        });
     }
 
     function toggleSelection(id) {
@@ -2141,12 +2602,11 @@
     }
 
     function renderStatus() {
-        var selectionCount = getSelectionIds().length;
-
         if (!nodes.statusText) {
             return;
         }
 
+        nodes.statusText.classList.remove('is-hidden');
         nodes.statusText.classList.remove('is-dirty');
         nodes.statusText.classList.remove('is-error');
 
@@ -2176,18 +2636,28 @@
             return;
         }
 
-        if (selectionCount > 1) {
-            nodes.statusText.textContent = 'Выбрано ' + selectionCount + ' узлов. Новая вставка пойдёт в root scope, пока не останется один primary context.';
-            return;
-        }
-
-        nodes.statusText.textContent = 'Новая вставка: ' + describeInsertionContext() + '.';
+        nodes.statusText.textContent = '';
+        nodes.statusText.classList.add('is-hidden');
     }
 
     function renderShellLayout() {
         var sidebarToggle;
+        var focusModeButton;
 
         root.classList.toggle('is-sidebar-collapsed', !!state.uiState.sidebarCollapsed);
+        root.classList.toggle('is-focus-mode', !!state.uiState.focusMode);
+
+        if (document.body) {
+            document.body.classList.toggle('nbde-focus-mode', !!state.uiState.focusMode);
+        }
+
+        focusModeButton = nodes.focusModeButton;
+
+        if (focusModeButton) {
+            focusModeButton.textContent = state.uiState.focusMode ? 'Обычный режим' : 'Фокус-режим';
+            focusModeButton.setAttribute('aria-pressed', state.uiState.focusMode ? 'true' : 'false');
+            focusModeButton.setAttribute('title', state.uiState.focusMode ? 'Вернуться к обычному виду страницы' : 'Скрыть chrome CMS и оставить редактор в фокусе');
+        }
 
         if (!nodes.sidebar) {
             return;
@@ -2289,8 +2759,89 @@
         return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><div class="nbde-picker-row"><input type="' + escapeHtml(inputType) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="' + escapeHtml(kind || 'string') + '" value="' + escapeHtml(value == null ? '' : value) + '"><button class="nbde-mini-button nbde-picker-button" type="button" data-picker-action="open" data-picker-kind="' + escapeHtml(pickerKind) + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(pickerLabel) + '</button><button class="nbde-mini-button nbde-picker-button nbde-picker-button--ghost" type="button" data-picker-action="clear" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">' + escapeHtml(clearLabel) + '</button></div></div>';
     }
 
-    function renderTextareaField(label, scope, path, value) {
-        return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea></div>';
+    function buildDeferredFieldKey(scope, path) {
+        var selectedElement = getSelectedElement();
+
+        return [
+            currentBreakpoint(),
+            selectedElement ? selectedElement.id : 'root',
+            String(scope || ''),
+            String(path || '')
+        ].join('::');
+    }
+
+    function getDeferredFieldDraft(scope, path, fallbackValue) {
+        var key = buildDeferredFieldKey(scope, path);
+
+        if (Object.prototype.hasOwnProperty.call(state.uiState.deferredFieldDrafts, key)) {
+            return state.uiState.deferredFieldDrafts[key];
+        }
+
+        return String(fallbackValue == null ? '' : fallbackValue);
+    }
+
+    function setDeferredFieldDraft(scope, path, value) {
+        state.uiState.deferredFieldDrafts[buildDeferredFieldKey(scope, path)] = String(value == null ? '' : value);
+    }
+
+    function clearDeferredFieldDraft(scope, path) {
+        delete state.uiState.deferredFieldDrafts[buildDeferredFieldKey(scope, path)];
+    }
+
+    function commitDeferredFieldDraft(scope, path) {
+        var key = buildDeferredFieldKey(scope, path);
+        var value = Object.prototype.hasOwnProperty.call(state.uiState.deferredFieldDrafts, key)
+            ? state.uiState.deferredFieldDrafts[key]
+            : getScopedValue(scope, path);
+
+        if (!scope || !path) {
+            return false;
+        }
+
+        applyScopedValue(scope, path, value);
+        clearDeferredFieldDraft(scope, path);
+        refreshAfterScopedMutation(scope, path);
+        return true;
+    }
+
+    function resetDeferredFieldDraft(scope, path) {
+        clearDeferredFieldDraft(scope, path);
+        renderPropertiesCard();
+        return true;
+    }
+
+    function renderTextareaField(label, scope, path, value, options) {
+        var textareaValue;
+        var rows;
+        var html;
+
+        options = options || {};
+        rows = Number(options.rows || 0);
+
+        if (!options.deferred) {
+            html = '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea'
+                + (rows > 0 ? ' rows="' + Math.max(3, rows) + '"' : '')
+                + ' data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea>';
+            if (options.hint) {
+                html += '<div class="nbde-field__hint">' + escapeHtml(options.hint) + '</div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        textareaValue = getDeferredFieldDraft(scope, path, value);
+        rows = Math.max(6, Number(options.rows || 12));
+        html = '<div class="nbde-field"><label>' + escapeHtml(label) + '</label>';
+        html += '<textarea rows="' + rows + '" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string" data-deferred-input="1">' + escapeHtml(textareaValue) + '</textarea>';
+        html += '<div class="nbde-action-grid">';
+        html += '<button class="nbde-mini-button" type="button" data-action="commit-deferred-field" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">Применить код</button>';
+        html += '<button class="nbde-mini-button nbde-picker-button--ghost" type="button" data-action="reset-deferred-field" data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '">Сбросить</button>';
+        html += '</div>';
+        if (options.hint) {
+            html += '<div class="nbde-field__hint">' + escapeHtml(options.hint) + '</div>';
+        }
+        html += '</div>';
+        return html;
     }
 
     function renderSelectField(label, scope, path, value, options) {
@@ -2530,7 +3081,7 @@
                 html += '<span class="nbde-layer-pill">hidden</span>';
             }
             if (locked) {
-                html += '<span class="nbde-layer-pill">lock</span>';
+                html += '<span class="nbde-layer-pill">блок</span>';
             }
             if (children.length) {
                 html += '<span class="nbde-layer-pill">' + children.length + ' child</span>';
@@ -2640,6 +3191,31 @@
                 { value: 'contain', label: 'Contain' },
                 { value: 'fill', label: 'Fill' }
             ]);
+        } else if (type === 'embed') {
+            html += renderSelectField('Провайдер', 'element-props', 'provider', resolveEmbedProvider(props), [
+                { value: 'generic', label: 'Универсальный' },
+                { value: 'rutube', label: 'Рутуб' },
+                { value: 'vk_video', label: 'VK Видео' },
+                { value: 'kinescope', label: 'Kinescope' }
+            ]);
+            html += renderSelectField('Источник', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
+                { value: 'html', label: 'HTML код' },
+                { value: 'url', label: 'Адрес iframe' }
+            ]);
+            if (resolveEmbedSourceMode(props) === 'url') {
+                html += renderField('URL iframe', 'element-props', 'url', props.url || '', 'string');
+            } else {
+                html += renderTextareaField('HTML код', 'element-props', 'code', props.code || '');
+            }
+            html += renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string');
+            html += renderSelectField('Формат кадра', 'element-props', 'aspectRatio', props.aspectRatio || 'free', [
+                { value: 'free', label: 'Свободный' },
+                { value: '16:9', label: '16:9' },
+                { value: '4:3', label: '4:3' },
+                { value: '1:1', label: '1:1' },
+                { value: '9:16', label: '9:16' },
+                { value: '21:9', label: '21:9' }
+            ]);
         } else if (type === 'object') {
             html += renderField('Заливка', 'element-props', 'backgroundColor', props.backgroundColor || props.fill || '#f97316', 'string');
             html += renderSelectField('Форма', 'element-props', 'shape', props.shape || 'rect', [
@@ -2675,36 +3251,158 @@
     }
 
     function renderInspectorSection(title, description, body) {
-        var html = '<section class="nbde-inspector-section">';
+        var options = arguments.length > 3 && arguments[3] ? arguments[3] : {};
+        var key = String(options.key || title || '').toLowerCase();
+        var collapsed = isInspectorSectionCollapsed(key);
+        var html = '<section class="nbde-inspector-section' + (collapsed ? ' is-collapsed' : '') + '">';
 
-        html += '<div class="nbde-inspector-section__head">';
+        html += '<button class="nbde-inspector-section__head nbde-inspector-section__head--toggle" type="button" data-action="toggle-inspector-section" data-key="' + escapeHtml(key) + '" aria-expanded="' + (collapsed ? 'false' : 'true') + '">';
+        html += '<span class="nbde-inspector-section__head-copy">';
         html += '<strong>' + escapeHtml(title) + '</strong>';
         if (description) {
             html += '<span>' + escapeHtml(description) + '</span>';
         }
-        html += '</div>';
+        html += '</span>';
+        html += '<span class="nbde-inspector-section__chevron" aria-hidden="true"></span>';
+        html += '</button>';
+        html += '<div class="nbde-inspector-section__body"' + (collapsed ? ' hidden' : '') + '>';
         html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Для этого блока здесь пока нет дополнительных настроек.</div>';
+        html += '</div>';
         html += '</section>';
 
         return html;
     }
 
     function renderInspectorSubsection(title, body, description) {
-        var html = '<div class="nbde-inspector-subsection">';
+        var options = arguments.length > 3 && arguments[3] ? arguments[3] : {};
+        var key = String(options.key || title || '').toLowerCase();
+        var collapsed = !!options.collapsible && isInspectorSubsectionCollapsed(key);
+        var html = '<div class="nbde-inspector-subsection' + (collapsed ? ' is-collapsed' : '') + '">';
 
-        html += '<div class="nbde-inspector-subsection__head">';
-        html += '<strong>' + escapeHtml(title) + '</strong>';
-        if (description) {
-            html += '<span>' + escapeHtml(description) + '</span>';
+        if (options.collapsible) {
+            html += '<button class="nbde-inspector-subsection__head nbde-inspector-subsection__head--toggle" type="button" data-action="toggle-inspector-subsection" data-key="' + escapeHtml(key) + '" aria-expanded="' + (collapsed ? 'false' : 'true') + '">';
+            html += '<span class="nbde-inspector-subsection__head-copy">';
+            html += '<strong>' + escapeHtml(title) + '</strong>';
+            if (description) {
+                html += '<span>' + escapeHtml(description) + '</span>';
+            }
+            html += '</span>';
+            html += '<span class="nbde-inspector-subsection__chevron" aria-hidden="true"></span>';
+            html += '</button>';
+        } else {
+            html += '<div class="nbde-inspector-subsection__head">';
+            html += '<strong>' + escapeHtml(title) + '</strong>';
+            if (description) {
+                html += '<span>' + escapeHtml(description) + '</span>';
+            }
+            html += '</div>';
         }
-        html += '</div>';
+        html += '<div class="nbde-inspector-subsection__body"' + (collapsed ? ' hidden' : '') + '>';
         html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Нет полей.</div>';
+        html += '</div>';
         html += '</div>';
 
         return html;
     }
 
+    function isInspectorSectionCollapsed(key) {
+        if (Object.prototype.hasOwnProperty.call(state.uiState.inspectorSectionsCollapsed, key)) {
+            return !!state.uiState.inspectorSectionsCollapsed[key];
+        }
+
+        return !!DEFAULT_INSPECTOR_SECTION_COLLAPSE[key];
+    }
+
+    function isInspectorSubsectionCollapsed(key) {
+        if (Object.prototype.hasOwnProperty.call(state.uiState.inspectorSubsectionsCollapsed, key)) {
+            return !!state.uiState.inspectorSubsectionsCollapsed[key];
+        }
+
+        return !!DEFAULT_INSPECTOR_SUBSECTION_COLLAPSE[key];
+    }
+
+    function toggleInspectorSection(key) {
+        state.uiState.inspectorSectionsCollapsed[key] = !isInspectorSectionCollapsed(key);
+        renderPropertiesCard();
+    }
+
+    function toggleInspectorSubsection(key) {
+        state.uiState.inspectorSubsectionsCollapsed[key] = !isInspectorSubsectionCollapsed(key);
+        renderPropertiesCard();
+    }
+
+    function focusPropertiesCard() {
+        var section;
+
+        if (!nodes.propertiesCard) {
+            return;
+        }
+
+        section = nodes.propertiesCard.closest('.nbde-card');
+
+        if (!section || typeof section.scrollIntoView !== 'function') {
+            return;
+        }
+
+        section.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    }
+
     function renderElementContentFields(element, props) {
+        if (element.type === 'text') {
+            return renderInspectorSubsection('Текст',
+                renderTextareaField('Основной текст', 'element-props', 'text', props.text || '', {
+                    rows: 6,
+                    hint: 'Здесь редактируется содержимое. Для быстрого правления прямо на сцене можно кликнуть по тексту и печатать inline.'
+                }),
+                'Главное содержимое выбранного текстового элемента.',
+                { key: 'content:text', collapsible: true }
+            ) + renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + renderSelectField('HTML тег', 'element-props', 'tag', props.tag || 'div', [
+                    { value: 'div', label: 'div' },
+                    { value: 'h1', label: 'H1' },
+                    { value: 'h2', label: 'H2' },
+                    { value: 'h3', label: 'H3' },
+                    { value: 'h4', label: 'H4' },
+                    { value: 'p', label: 'p' },
+                    { value: 'span', label: 'span' }
+                ])
+                + '</div>',
+                'Имя помогает в слоях, роль нужна для сценариев и будущих привязок, тег отвечает за смысловую разметку.',
+                { key: 'content:semantics', collapsible: true }
+            );
+        }
+
+        if (element.type === 'photo' || element.type === 'svg') {
+            return renderInspectorSubsection('Файл',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string')
+                + renderField('Alt', 'element-props', 'alt', props.alt || '', 'string')
+                + '</div>',
+                'Источник изображения и базовое описание для runtime и SEO.'
+            ) + renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + '</div>',
+                'Имя помогает в слоях, роль пригодится для сценариев и будущих привязок.',
+                { key: 'content:media-semantics', collapsible: true }
+            );
+        }
+
+        if (element.type === 'object') {
+            return renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + '</div>',
+                'Имя помогает быстро ориентироваться в слоях, роль оставляет место для сценариев и логики.',
+                { key: 'content:object-semantics', collapsible: true }
+            );
+        }
+
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
         html += renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string');
@@ -2712,17 +3410,6 @@
         html += '</div>';
 
         if (element.type === 'text') {
-            html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderSelectField('HTML тег', 'element-props', 'tag', props.tag || 'div', [
-                { value: 'div', label: 'div' },
-                { value: 'h1', label: 'H1' },
-                { value: 'h2', label: 'H2' },
-                { value: 'h3', label: 'H3' },
-                { value: 'h4', label: 'H4' },
-                { value: 'p', label: 'p' },
-                { value: 'span', label: 'span' }
-            ]);
-            html += '</div>';
             html += renderTextareaField('Текст', 'element-props', 'text', props.text || '');
         } else if (element.type === 'button') {
             html += renderInspectorSubsection('Текст и ссылка',
@@ -2746,16 +3433,70 @@
                 + '</div>',
                 'Поддерживаются системные SVG sprite tokens вида brands:telegram.'
             );
-        } else if (element.type === 'photo' || element.type === 'svg') {
-            html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
-            html += renderField('Alt', 'element-props', 'alt', props.alt || '', 'string');
-            html += '</div>';
         } else if (element.type === 'video') {
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
             html += renderField('Видео файл', 'element-props', 'src', props.src || '', 'string');
             html += renderField('Постер', 'element-props', 'poster', props.poster || '', 'string');
             html += '</div>';
+        } else if (element.type === 'embed') {
+            html += renderInspectorSubsection('Быстрые пресеты',
+                renderEmbedProviderPresetButtons()
+                + renderEmbedAspectRatioButtons()
+                + '<div class="nbde-action-grid"><button class="nbde-mini-button" type="button" data-action="parse-embed-code">Разобрать код</button></div>',
+                'Готовые пресеты для Рутуб, VK Видео и Kinescope. Размер контейнера можно точно докрутить ниже в секции «Макет».'
+            );
+            html += renderInspectorSubsection('Источник',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Провайдер', 'element-props', 'provider', resolveEmbedProvider(props), [
+                    { value: 'generic', label: 'Универсальный' },
+                    { value: 'rutube', label: 'Рутуб' },
+                    { value: 'vk_video', label: 'VK Видео' },
+                    { value: 'kinescope', label: 'Kinescope' }
+                ])
+                + renderSelectField('Тип источника', 'element-props', 'sourceMode', resolveEmbedSourceMode(props), [
+                    { value: 'html', label: 'HTML код' },
+                    { value: 'url', label: 'Адрес iframe' }
+                ])
+                + renderField('Заголовок iframe', 'element-props', 'title', props.title || 'Встраиваемый блок', 'string')
+                + renderSelectField('Формат кадра', 'element-props', 'aspectRatio', props.aspectRatio || 'free', [
+                    { value: 'free', label: 'Свободный' },
+                    { value: '16:9', label: '16:9' },
+                    { value: '4:3', label: '4:3' },
+                    { value: '1:1', label: '1:1' },
+                    { value: '9:16', label: '9:16' },
+                    { value: '21:9', label: '21:9' }
+                ])
+                + '</div>'
+                + (resolveEmbedSourceMode(props) === 'url'
+                    ? renderField('URL iframe', 'element-props', 'url', props.url || '', 'string')
+                    : renderTextareaField('HTML код', 'element-props', 'code', props.code || '', {
+                        deferred: true,
+                        rows: 14,
+                        hint: 'Длинный HTML сначала редактируется в черновике. Чтобы записать его в состояние блока и обновить preview, нажмите «Применить код» или Ctrl+Enter.'
+                    })),
+                'Код не встраивается напрямую в DOM страницы. Runtime рендерит его через sandbox iframe. Для точной ширины и высоты используйте секцию «Макет».'
+            );
+            html += renderInspectorSubsection('Безопасность и runtime',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Профиль sandbox', 'element-props', 'sandboxProfile', props.sandboxProfile || 'strict', [
+                    { value: 'strict', label: 'Строгий' },
+                    { value: 'forms', label: 'Формы' },
+                    { value: 'media', label: 'Медиа' },
+                    { value: 'trusted', label: 'Доверенный' }
+                ])
+                + renderSelectField('Политика referrer', 'element-props', 'referrerPolicy', props.referrerPolicy || 'strict-origin-when-cross-origin', [
+                    { value: 'strict-origin-when-cross-origin', label: 'Строгий origin при переходе между доменами' },
+                    { value: 'strict-origin', label: 'Только origin в строгом режиме' },
+                    { value: 'origin', label: 'Только origin' },
+                    { value: 'no-referrer', label: 'Не передавать referrer' },
+                    { value: 'unsafe-url', label: 'Полный URL' }
+                ])
+                + renderCheckboxField('Ленивая загрузка', 'element-props', 'lazy', props.lazy !== false)
+                + renderCheckboxField('Разрешить fullscreen', 'element-props', 'allowFullscreen', !!props.allowFullscreen)
+                + renderCheckboxField('Скрывать прокрутку', 'element-props', 'hideScrollbars', !!props.hideScrollbars)
+                + '</div>',
+                'Для карт и форм обычно достаточно профиля «Формы». «Доверенный» нужен только для совместимости с более тяжёлыми внешними виджетами.'
+            );
         } else if (element.type === 'icon') {
             html += renderField('Класс иконки', 'element-props', 'iconClass', props.iconClass || 'fas fa-star', 'string');
         } else if (element.type === 'divider') {
@@ -2799,6 +3540,87 @@
     }
 
     function renderElementStyleFields(element, props) {
+        if (element.type === 'text') {
+            return renderInspectorSubsection('Типографика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string')
+                + renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat')
+                + renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number')
+                + renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number')
+                + renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number')
+                + renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number')
+                + renderSelectField('Выравнивание', 'element-props', 'textAlign', props.textAlign || 'left', [
+                    { value: 'left', label: 'Слева' },
+                    { value: 'center', label: 'По центру' },
+                    { value: 'right', label: 'Справа' }
+                ])
+                + renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
+                    { value: 'none', label: 'Обычный' },
+                    { value: 'uppercase', label: 'UPPERCASE' },
+                    { value: 'lowercase', label: 'lowercase' }
+                ])
+                + '</div>',
+                'Все параметры набора текста собраны в одном месте, без прыжков между секциями.'
+            )
+            + renderInspectorSubsection('Поверхность',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string')
+                + renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number')
+                + renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string')
+                + '</div>',
+                'Фон, рамка и прозрачность текста как объекта на сцене.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderHoverFields(element, props),
+                'Цвет, фон и движение состояния при наведении.'
+            );
+        }
+
+        if (element.type === 'photo' || element.type === 'svg') {
+            return renderInspectorSubsection('Кадр',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
+                    { value: 'cover', label: 'Cover' },
+                    { value: 'contain', label: 'Contain' },
+                    { value: 'fill', label: 'Fill' },
+                    { value: 'none', label: 'None' },
+                    { value: 'scale-down', label: 'Scale down' }
+                ])
+                + renderSelectField('Позиция фото', 'element-props', 'objectPosition', props.objectPosition || 'center center', buildPhotoPositionOptions())
+                + renderField('Позиция X %', 'element-props', 'objectPositionX', props.objectPositionX != null ? props.objectPositionX : 50, 'number')
+                + renderField('Позиция Y %', 'element-props', 'objectPositionY', props.objectPositionY != null ? props.objectPositionY : 50, 'number')
+                + '</div>',
+                'Управление кадрированием и положением изображения внутри рамки.'
+            )
+            + renderInspectorSubsection('Коррекция',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Brightness %', 'element-props', 'filterBrightness', props.filterBrightness != null ? props.filterBrightness : 100, 'number')
+                + renderField('Contrast %', 'element-props', 'filterContrast', props.filterContrast != null ? props.filterContrast : 100, 'number')
+                + renderField('Saturate %', 'element-props', 'filterSaturate', props.filterSaturate != null ? props.filterSaturate : 100, 'number')
+                + renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number')
+                + '</div>',
+                'Быстрая цветокоррекция без выхода в внешний редактор.'
+            )
+            + renderInspectorSubsection('Поверхность',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string')
+                + renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number')
+                + renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string')
+                + '</div>',
+                'Рамка изображения как объекта на сцене.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderHoverFields(element, props),
+                'Масштаб, подъём, фон, граница и тень фото при наведении.'
+            );
+        }
+
         if (element.type === 'button') {
             return renderInspectorSubsection('Каркас',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -2861,7 +3683,7 @@
                 'Старое raw поле boxShadow остаётся как fallback для уже сохранённых блоков.'
             )
             + renderInspectorSubsection('Hover',
-                renderSharedHoverFields(element, props)
+                renderHoverFields(element, props)
             )
             + renderInspectorSubsection('Отступы',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -2881,25 +3703,7 @@
         html += renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string');
         html += renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string');
 
-        if (element.type === 'text') {
-            html += renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string');
-            html += renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
-            html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
-            html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number');
-            html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number');
-            html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
-            html += renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number');
-            html += renderSelectField('Выравнивание', 'element-props', 'textAlign', props.textAlign || 'left', [
-                { value: 'left', label: 'Слева' },
-                { value: 'center', label: 'По центру' },
-                { value: 'right', label: 'Справа' }
-            ]);
-            html += renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
-                { value: 'none', label: 'Обычный' },
-                { value: 'uppercase', label: 'UPPERCASE' },
-                { value: 'lowercase', label: 'lowercase' }
-            ]);
-        } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
+        if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
             if (element.type === 'photo' || element.type === 'svg') {
                 html += renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
             }
@@ -2919,6 +3723,8 @@
                 html += renderField('Saturate %', 'element-props', 'filterSaturate', props.filterSaturate != null ? props.filterSaturate : 100, 'number');
                 html += renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number');
             }
+        } else if (element.type === 'embed') {
+            html += renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '#ffffff', 'string');
         } else if (element.type === 'object') {
             return renderInspectorSubsection('Пресеты',
                 renderObjectPresetButtons(),
@@ -2987,6 +3793,10 @@
                 + renderField('Brightness фона %', 'element-props', 'backdropBrightness', props.backdropBrightness != null ? props.backdropBrightness : 100, 'number')
                 + '</div>',
                 'Используйте, когда нужно отойти от мастер-контрола и вручную докрутить характер стекла.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderSurfaceHoverFields(props),
+                'Подъём, фон, граница и тень объекта при наведении.'
             );
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
@@ -2999,14 +3809,14 @@
 
         html += '</div>';
 
-        if (supportsSharedHover(element.type)) {
-            html += renderInspectorSubsection('Hover', renderSharedHoverFields(element, props));
+        if (supportsHoverFields(element.type)) {
+            html += renderInspectorSubsection('Hover', renderHoverFields(element, props));
         }
 
         return html;
     }
 
-    function supportsSharedHover(type) {
+    function supportsHoverFields(type) {
         return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
     }
 
@@ -3014,8 +3824,19 @@
         return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
     }
 
-    function renderSharedHoverFields(element, props) {
-        var type = element.type;
+    function renderHoverFields(element, props) {
+        if (element.type === 'text') {
+            return renderTextHoverFields(props);
+        }
+
+        if (element.type === 'button') {
+            return renderButtonHoverFields(props);
+        }
+
+        return renderSurfaceHoverFields(props);
+    }
+
+    function renderTextHoverFields(props) {
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
         html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
@@ -3031,11 +3852,70 @@
             html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
 
-        if (type === 'text' || type === 'button') {
-            html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+        html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+
+        html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+        html += renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number');
+        html += renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number');
+        html += renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number');
+        html += renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number');
+        html += renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string');
+        html += renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset);
+        html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+        html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+        html += renderField('Длительность hover', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderButtonHoverFields(props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+            { value: 'inherit', label: 'Без смены' },
+            { value: 'solid', label: 'Свой цвет' },
+            { value: 'gradient', label: 'Свой градиент' }
+        ]);
+
+        if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+            html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#111827', 'string');
+            html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#2563eb', 'string');
+        } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+            html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
-        if (type === 'button') {
-            html += renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string');
+
+        html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+        html += renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string');
+        html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+        html += renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number');
+        html += renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number');
+        html += renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number');
+        html += renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number');
+        html += renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string');
+        html += renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset);
+        html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+        html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+        html += renderField('Длительность hover', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderSurfaceHoverFields(props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+            { value: 'inherit', label: 'Без смены' },
+            { value: 'solid', label: 'Свой цвет' },
+            { value: 'gradient', label: 'Свой градиент' }
+        ]);
+
+        if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+            html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#111827', 'string');
+            html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#2563eb', 'string');
+        } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+            html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
 
         html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
@@ -3058,30 +3938,280 @@
             return '';
         }
 
-        return '<div class="nbde-field-grid nbde-field-grid--2">'
+        return '<div class="nbde-action-grid">'
+            + '<button class="nbde-mini-button" type="button" data-action="preview-motion">Проиграть на холсте</button>'
+            + '</div>'
+            + '<div class="nbde-field-grid nbde-field-grid--2">'
             + renderSelectField('Триггер', 'element-props', 'motionTrigger', props.motionTrigger || 'none', [
                 { value: 'none', label: 'Без анимации' },
                 { value: 'entry', label: 'При появлении' },
                 { value: 'scroll', label: 'При скролле' }
             ])
             + renderSelectField('Пресет', 'element-props', 'motionPreset', props.motionPreset || 'fade-up', [
-                { value: 'fade-up', label: 'Fade Up' },
-                { value: 'fade-down', label: 'Fade Down' },
-                { value: 'slide-left', label: 'Slide Left' },
-                { value: 'slide-right', label: 'Slide Right' },
-                { value: 'zoom-in', label: 'Zoom In' },
-                { value: 'soft-pop', label: 'Soft Pop' }
+                { value: 'fade-up', label: 'Снизу вверх' },
+                { value: 'fade-down', label: 'Сверху вниз' },
+                { value: 'slide-left', label: 'Сдвиг слева' },
+                { value: 'slide-right', label: 'Сдвиг справа' },
+                { value: 'zoom-in', label: 'Приближение' },
+                { value: 'soft-pop', label: 'Мягкое появление' }
             ])
-            + renderField('Длительность ms', 'element-props', 'motionDuration', props.motionDuration != null ? props.motionDuration : 650, 'number')
-            + renderField('Задержка ms', 'element-props', 'motionDelay', props.motionDelay != null ? props.motionDelay : 0, 'number')
+            + renderField('Длительность мс', 'element-props', 'motionDuration', props.motionDuration != null ? props.motionDuration : 650, 'number')
+            + renderField('Задержка мс', 'element-props', 'motionDelay', props.motionDelay != null ? props.motionDelay : 0, 'number')
             + renderSelectField('Кривая', 'element-props', 'motionEasing', props.motionEasing || 'smooth', [
-                { value: 'smooth', label: 'Smooth' },
-                { value: 'soft', label: 'Soft' },
-                { value: 'snappy', label: 'Snappy' },
-                { value: 'linear', label: 'Linear' }
+                { value: 'smooth', label: 'Плавная' },
+                { value: 'soft', label: 'Мягкая' },
+                { value: 'snappy', label: 'Резкая' },
+                { value: 'linear', label: 'Линейная' }
             ])
             + renderField('Амплитуда', 'element-props', 'motionAmount', props.motionAmount != null ? props.motionAmount : 32, 'number')
             + '</div>';
+    }
+
+    function resolveMotionPreviewTransform(props) {
+        var preset = String(props.motionPreset || 'fade-up');
+        var amount = Math.max(0, Number(props.motionAmount || 32));
+
+        if (preset === 'fade-down') {
+            return 'translate3d(0,-' + amount + 'px,0)';
+        }
+        if (preset === 'slide-left') {
+            return 'translate3d(' + amount + 'px,0,0)';
+        }
+        if (preset === 'slide-right') {
+            return 'translate3d(-' + amount + 'px,0,0)';
+        }
+        if (preset === 'zoom-in') {
+            return 'scale(' + Math.max(0.72, 1 - Math.min(0.28, amount / 200)) + ')';
+        }
+        if (preset === 'soft-pop') {
+            return 'translate3d(0,' + Math.round(amount * 0.4 * 100) / 100 + 'px,0) scale(0.96)';
+        }
+
+        return 'translate3d(0,' + amount + 'px,0)';
+    }
+
+    function resolveMotionPreviewEasing(props) {
+        var easing = String(props.motionEasing || 'smooth');
+
+        if (easing === 'soft') {
+            return 'cubic-bezier(0.16,1,0.3,1)';
+        }
+        if (easing === 'snappy') {
+            return 'cubic-bezier(0.2,0.8,0.2,1)';
+        }
+        if (easing === 'linear') {
+            return 'linear';
+        }
+
+        return 'cubic-bezier(0.22,1,0.36,1)';
+    }
+
+    function clearMotionPreview() {
+        var timers = state.uiState.motionPreviewTimers || [];
+
+        timers.forEach(function (timerId) {
+            clearTimeout(timerId);
+        });
+
+        state.uiState.motionPreviewTimers = [];
+
+        if (!nodes.canvasStage) {
+            return;
+        }
+
+        Array.prototype.forEach.call(nodes.canvasStage.querySelectorAll('.nbde-el.is-motion-previewing'), function (node) {
+            node.classList.remove('is-motion-previewing');
+            node.style.removeProperty('opacity');
+            node.style.removeProperty('transform');
+            node.style.removeProperty('transition');
+            node.style.removeProperty('will-change');
+        });
+    }
+
+    function collectMotionPreviewTargets(element, mode) {
+        var breakpoint = currentBreakpoint();
+        var props = composeBreakpointProps(element, breakpoint);
+        var sequenceId = String(props.sequenceId || '').trim();
+        var items;
+
+        if ((mode === 'group' || props.sequenceMode === 'orchestrated') && props.sequenceMode === 'orchestrated' && sequenceId) {
+            items = getElements().filter(function (candidate) {
+                var candidateProps = composeBreakpointProps(candidate, breakpoint);
+
+                return supportsMotion(candidate.type)
+                    && candidateProps.sequenceMode === 'orchestrated'
+                    && String(candidateProps.sequenceId || '').trim() === sequenceId;
+            }).map(function (candidate) {
+                var candidateProps = composeBreakpointProps(candidate, breakpoint);
+                return {
+                    element: candidate,
+                    props: candidateProps,
+                    sequenceStep: Number(candidateProps.sequenceStep || 0),
+                    sequenceGap: Number(candidateProps.sequenceGap || 80)
+                };
+            }).sort(function (left, right) {
+                return left.sequenceStep - right.sequenceStep;
+            });
+        } else {
+            items = [{
+                element: element,
+                props: props,
+                sequenceStep: 0,
+                sequenceGap: 0
+            }];
+        }
+
+        return items.filter(function (item) {
+            return String(item.props.motionTrigger || 'none') !== 'none';
+        });
+    }
+
+    function playMotionPreview(mode) {
+        var selected = getSelectedElement();
+        var previewTargets;
+        var previewNonce;
+
+        if (!selected || !nodes.canvasStage) {
+            return;
+        }
+
+        previewTargets = collectMotionPreviewTargets(selected, mode || 'auto');
+        if (!previewTargets.length) {
+            return;
+        }
+
+        clearMotionPreview();
+        previewNonce = Date.now();
+        state.uiState.motionPreviewNonce = previewNonce;
+        state.uiState.motionPreviewTimers = [];
+
+        previewTargets.forEach(function (item) {
+            var node = nodes.canvasStage.querySelector('.nbde-el[data-element-id="' + selectorEscape(item.element.id) + '"]');
+            var duration = Math.max(120, Number(item.props.motionDuration || 650));
+            var delay = Math.max(0, Number(item.props.motionDelay || 0)) + Math.max(0, item.sequenceStep) * Math.max(0, item.sequenceGap);
+            var easing = resolveMotionPreviewEasing(item.props);
+            var fromTransform = resolveMotionPreviewTransform(item.props);
+            var startTimer;
+            var cleanupTimer;
+
+            if (!node) {
+                return;
+            }
+
+            node.classList.add('is-motion-previewing');
+            node.style.opacity = '0';
+            node.style.transform = fromTransform;
+            node.style.transition = 'none';
+            node.style.willChange = 'transform, opacity';
+
+            startTimer = setTimeout(function () {
+                if (state.uiState.motionPreviewNonce !== previewNonce) {
+                    return;
+                }
+                requestAnimationFrame(function () {
+                    if (state.uiState.motionPreviewNonce !== previewNonce) {
+                        return;
+                    }
+                    node.style.transition = 'opacity ' + duration + 'ms ' + easing + ', transform ' + duration + 'ms ' + easing;
+                    node.style.opacity = '1';
+                    node.style.transform = 'none';
+                });
+            }, delay);
+
+            cleanupTimer = setTimeout(function () {
+                if (state.uiState.motionPreviewNonce !== previewNonce) {
+                    return;
+                }
+                node.classList.remove('is-motion-previewing');
+                node.style.removeProperty('opacity');
+                node.style.removeProperty('transform');
+                node.style.removeProperty('transition');
+                node.style.removeProperty('will-change');
+            }, delay + duration + 120);
+
+            state.uiState.motionPreviewTimers.push(startTimer, cleanupTimer);
+        });
+    }
+
+    function shouldAutoReplayMotionPreview(scope, path) {
+        var replayablePaths = {
+            motionTrigger: true,
+            motionPreset: true,
+            motionDuration: true,
+            motionDelay: true,
+            motionEasing: true,
+            motionAmount: true,
+            sequenceMode: true,
+            sequenceId: true,
+            sequenceStep: true,
+            sequenceGap: true,
+            sequenceTrigger: true,
+            sequenceReplay: true,
+            sequenceScope: true,
+            sequenceRole: true
+        };
+
+        return scope === 'element-props' && !!replayablePaths[String(path || '')];
+    }
+
+    function scheduleMotionPreview(mode) {
+        clearTimeout(state.uiState.motionPreviewReplayTimer || 0);
+        state.uiState.motionPreviewReplayTimer = setTimeout(function () {
+            state.uiState.motionPreviewReplayTimer = 0;
+            playMotionPreview(mode || 'auto');
+        }, 90);
+    }
+
+    function renderSequenceFields(element, props) {
+        var mode;
+        var html;
+
+        if (!supportsMotion(element.type)) {
+            return '';
+        }
+
+        mode = props.sequenceMode || 'none';
+        html = '';
+
+        if (mode === 'orchestrated') {
+            html += '<div class="nbde-action-grid">'
+                + '<button class="nbde-mini-button" type="button" data-action="preview-motion-group">Проиграть группу</button>'
+                + '</div>';
+        }
+
+        html += '<div class="nbde-field-grid nbde-field-grid--2">';
+        html += renderSelectField('Режим', 'element-props', 'sequenceMode', mode, [
+            { value: 'none', label: 'Без последовательности' },
+            { value: 'orchestrated', label: 'Последовательность v1' }
+        ]);
+
+        if (mode !== 'orchestrated') {
+            html += '<div class="nbde-field"><div class="nbde-field__label">Состояние</div><div class="nbde-card__hint">Элемент использует только базовую анимацию. Включите Последовательность v1, чтобы задать шаг и общий идентификатор группы.</div></div>';
+            html += '</div>';
+            return html;
+        }
+
+        html += renderField('Идентификатор группы', 'element-props', 'sequenceId', props.sequenceId || '', 'string');
+        html += renderField('Шаг', 'element-props', 'sequenceStep', props.sequenceStep != null ? props.sequenceStep : 0, 'number');
+        html += renderField('Интервал мс', 'element-props', 'sequenceGap', props.sequenceGap != null ? props.sequenceGap : 80, 'number');
+        html += renderSelectField('Триггер последовательности', 'element-props', 'sequenceTrigger', props.sequenceTrigger || 'inherit', [
+            { value: 'inherit', label: 'Наследовать из Анимации' },
+            { value: 'entry', label: 'При появлении' },
+            { value: 'scroll', label: 'При скролле' }
+        ]);
+        html += renderSelectField('Повтор', 'element-props', 'sequenceReplay', props.sequenceReplay || 'once', [
+            { value: 'once', label: 'Один раз' },
+            { value: 'repeat-on-reentry', label: 'Повтор при повторном входе' }
+        ]);
+        html += renderSelectField('Область', 'element-props', 'sequenceScope', props.sequenceScope || 'block', [
+            { value: 'block', label: 'Весь блок' },
+            { value: 'viewport-group', label: 'Группа в области видимости' }
+        ]);
+        html += renderField('Роль', 'element-props', 'sequenceRole', props.sequenceRole || '', 'string');
+        html += '<div class="nbde-field"><div class="nbde-field__label">Формула</div><div class="nbde-card__hint">Задержка считается как базовая задержка анимации + шаг × интервал. Триггер последовательности хранится отдельно от базовой секции Анимация.</div></div>';
+        html += '</div>';
+
+        return html;
     }
 
     function renderPropertiesCard() {
@@ -3091,6 +4221,9 @@
         var branch;
         var props;
         var box;
+        var contentSection;
+        var layoutSection;
+        var styleSection;
 
         if (!selection.length || !element) {
             if (nodes.propertiesSummary) {
@@ -3128,13 +4261,28 @@
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-backward">Ниже</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="move-layer-forward">Выше</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + ((branch.box || {}).visible === false ? 'Показать' : 'Скрыть') + '</button>';
-        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Unlock' : 'Lock') + '</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Разблокировать' : 'Заблокировать') + '</button>';
         html += '</div>';
-        html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
-        html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
-        html += renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props));
+        contentSection = renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props), { key: 'content' });
+        layoutSection = renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box), { key: 'layout' });
+        styleSection = renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props), { key: 'style' });
+
+        if (element.type === 'object') {
+            html += styleSection;
+            html += layoutSection;
+            html += contentSection;
+        } else if (element.type === 'photo' || element.type === 'svg') {
+            html += contentSection;
+            html += styleSection;
+            html += layoutSection;
+        } else {
+            html += contentSection;
+            html += layoutSection;
+            html += styleSection;
+        }
         if (supportsMotion(element.type)) {
-            html += renderInspectorSection('Анимация', 'Entry/scroll пресет и hover-динамика для выбранного объекта.', renderAnimationFields(element, props));
+            html += renderInspectorSection('Анимация', 'Базовая анимация появления или скролла для выбранного объекта.', renderAnimationFields(element, props), { key: 'motion' });
+            html += renderInspectorSection('Последовательность', 'Отдельный слой оркестрации поверх базовой анимации.', renderSequenceFields(element, props), { key: 'sequence' });
         }
 
         if (nodes.propertiesCard) {
@@ -3336,15 +4484,91 @@
         styles.push('--nbde-button-hover-bg:' + buildButtonBackgroundValue(props, true));
         styles.push('--nbde-button-hover-color:' + String(props.hoverColor || props.color || '#ffffff'));
         styles.push('--nbde-button-hover-border:' + String(props.hoverBorderColor || props.borderColor || 'transparent'));
-        styles.push('--nbde-button-hover-transform:' + buildButtonHoverTransform(props));
         styles.push('--nbde-button-hover-shadow:' + String(buildButtonShadowValue(props, true) || buildButtonShadowValue(props, false) || 'none'));
-        styles.push('--nbde-button-transition-duration:' + Math.max(80, Number(props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms');
         styles.push('background:var(--nbde-button-current-bg)');
         styles.push('color:var(--nbde-button-current-color)');
         styles.push('border-color:var(--nbde-button-current-border)');
         styles.push('box-shadow:var(--nbde-button-current-shadow)');
 
         return styles.filter(Boolean).join(';');
+    }
+
+    function buildSharedHoverBackgroundValue(props, baseBackground) {
+        var mode = String((props && props.hoverBackgroundMode) || 'inherit');
+        var angle = Math.max(0, Number(props && props.gradientAngle != null ? props.gradientAngle : 135));
+        var fallbackBase = String(baseBackground || 'transparent');
+
+        if (mode === 'gradient') {
+            return 'linear-gradient(' + angle + 'deg, '
+                + String((props && (props.hoverGradientFrom || props.gradientFrom || props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase)
+                + ', '
+                + String((props && (props.hoverGradientTo || props.gradientTo || props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase)
+                + ')';
+        }
+
+        if (mode === 'solid') {
+            return String((props && (props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase);
+        }
+
+        return fallbackBase;
+    }
+
+    function buildSharedHoverShadowValue(props, baseShadow) {
+        var offsetX = Number(props && props.hoverShadowX != null ? props.hoverShadowX : 0);
+        var offsetY = Number(props && props.hoverShadowY != null ? props.hoverShadowY : 0);
+        var blur = Number(props && props.hoverShadowBlur != null ? props.hoverShadowBlur : 0);
+        var spread = Number(props && props.hoverShadowSpread != null ? props.hoverShadowSpread : 0);
+        var color = String((props && props.hoverShadowColor) || '').trim();
+        var inset = !!(props && props.hoverShadowInset);
+        var rawValue = String((props && props.hoverShadow) || '').trim();
+
+        if (inset || offsetX !== 0 || offsetY !== 0 || blur !== 0 || spread !== 0 || color !== '') {
+            return buildStructuredShadowValue(offsetX, offsetY, blur, spread, color, inset, 'rgba(15,23,42,0.18)');
+        }
+
+        return rawValue || String(baseShadow || 'none');
+    }
+
+    function buildSharedHoverTransform(props) {
+        var scale = Number(props && props.hoverScalePct != null ? props.hoverScalePct : 100) / 100;
+        var lift = Number(props && props.hoverLift != null ? props.hoverLift : 0);
+
+        return 'translateY(' + (-lift) + 'px) scale(' + roundNumber(scale, 3) + ')';
+    }
+
+    function buildSharedHoverPreviewVars(props, options) {
+        var baseBackground = String((options && options.baseBackground) || 'transparent');
+        var baseBorder = String((options && options.baseBorder) || 'transparent');
+        var baseShadow = String((options && options.baseShadow) || 'none');
+        var duration = Math.max(80, Number(props && props.transitionDuration != null ? props.transitionDuration : 220));
+
+        return [
+            '--nbde-shared-hover-base-bg:' + baseBackground,
+            '--nbde-shared-hover-target-bg:' + buildSharedHoverBackgroundValue(props || {}, baseBackground),
+            '--nbde-shared-hover-base-border:' + baseBorder,
+            '--nbde-shared-hover-target-border:' + String((props && props.hoverBorderColor) || baseBorder),
+            '--nbde-shared-hover-base-shadow:' + baseShadow,
+            '--nbde-shared-hover-target-shadow:' + buildSharedHoverShadowValue(props || {}, baseShadow),
+            '--nbde-shared-hover-transform:' + buildSharedHoverTransform(props || {}),
+            '--nbde-shared-hover-transition-duration:' + duration + 'ms'
+        ];
+    }
+
+    function buildTextHoverPreviewVars(props, options) {
+        var styles = buildSharedHoverPreviewVars(props, options);
+        var baseColor = String((options && options.baseColor) || '#0f172a');
+
+        styles.push('--nbde-text-hover-base-color:' + baseColor);
+        styles.push('--nbde-text-hover-target-color:' + String((props && props.hoverColor) || baseColor));
+
+        return styles;
+    }
+
+    function buildButtonHoverWrapperVars(props) {
+        return [
+            '--nbde-button-hover-transform:' + buildButtonHoverTransform(props),
+            '--nbde-button-transition-duration:' + Math.max(80, Number(props && props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms'
+        ];
     }
 
     function renderButtonPreviewContent(props, editing) {
@@ -3384,7 +4608,14 @@
         var selected = isSelected(element.id);
         var primary = String(state.uiState.selectedElementId || '') === String(element.id);
         var editing = String(state.uiState.editingTextId || '') === String(element.id) && isEditableType(element.type);
-        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type) + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '') + (element.locked ? ' is-locked' : '');
+        var sharedHoverable = element.type === 'photo' || element.type === 'svg' || element.type === 'object';
+        var textHoverable = element.type === 'text';
+        var buttonHoverable = element.type === 'button';
+        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type)
+            + (sharedHoverable ? ' nbde-el--shared-hover' : '')
+            + (textHoverable ? ' nbde-el--text-hover' : '')
+            + (buttonHoverable ? ' nbde-el--button-hover' : '')
+            + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '') + (element.locked ? ' is-locked' : '');
         var style = [
             'left:' + Number(box.x || 0) + 'px',
             'top:' + Number(box.y || 0) + 'px',
@@ -3393,6 +4624,33 @@
             'z-index:' + Number(box.zIndex || 1),
             'display:' + (box.visible === false ? 'none' : 'block')
         ];
+
+        if (sharedHoverable) {
+            if (element.type === 'object') {
+                style = style.concat(buildSharedHoverPreviewVars(props, {
+                    baseBackground: buildObjectFillValue(props || {}),
+                    baseBorder: String(props.borderColor || 'transparent'),
+                    baseShadow: String(buildObjectShadowValue(props || {}) || 'none')
+                }));
+            } else {
+                style = style.concat(buildSharedHoverPreviewVars(props, {
+                    baseBackground: String(props.backgroundColor || 'transparent'),
+                    baseBorder: String(props.borderColor || 'transparent'),
+                    baseShadow: String(props.boxShadow || 'none')
+                }));
+            }
+        }
+        if (textHoverable) {
+            style = style.concat(buildTextHoverPreviewVars(props, {
+                baseBackground: String(props.backgroundColor || 'transparent'),
+                baseBorder: String(props.borderColor || 'transparent'),
+                baseShadow: String(props.boxShadow || 'none'),
+                baseColor: String(props.color || '#0f172a')
+            }));
+        }
+        if (buttonHoverable) {
+            style = style.concat(buildButtonHoverWrapperVars(props));
+        }
         var html = '<div class="' + classes + '" data-element-id="' + escapeHtml(element.id) + '" data-element-type="' + escapeHtml(element.type) + '" style="' + style.join(';') + '">';
 
         if (primary && getSelectionIds().length === 1 && !element.locked) {
@@ -3404,11 +4662,15 @@
 
         if (element.type === 'text') {
             textTag = ['div', 'h1', 'h2', 'h3', 'h4', 'p', 'span'].indexOf(String(props.tag || 'div')) >= 0 ? String(props.tag || 'div') : 'div';
-            html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:' + String(props.color || '#0f172a') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none')) + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
+            html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text nbde-el__body--text-hover' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:var(--nbde-text-hover-current-color,var(--nbde-text-hover-base-color,' + String(props.color || '#0f172a') + '));background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + String(props.backgroundColor || 'transparent') + '));border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '));box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(props.boxShadow || 'none') + '));font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none') + ';transition:color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
         } else if (element.type === 'button') {
             html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildButtonPreviewStyle(props, box)) + '">' + renderButtonPreviewContent(props, editing) + '</div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
-            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box, element.type)) + '">';
+            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + ' nbde-el__body--shared-hover" style="' + escapeHtml(buildCommonBodyStyle(props, box, element.type)
+                + ';background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + String(props.backgroundColor || 'transparent') + '))'
+                + ';border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '))'
+                + ';box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(props.boxShadow || 'none') + '))'
+                + ';transition:background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '">';
             if (props.src) {
                 html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="' + escapeHtml(buildImagePreviewStyle(props)) + '">';
             } else {
@@ -3417,8 +4679,21 @@
             html += '</div>';
         } else if (element.type === 'video') {
             html += '<div class="nbde-el__body nbde-el__body--video" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#0f172a')) + '"><div class="nbde-el__placeholder">' + escapeHtml(props.src ? 'Видео подключено' : 'Укажите видео файл') + '</div></div>';
+        } else if (element.type === 'embed') {
+            html += '<div class="nbde-el__body nbde-el__body--embed" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';background:' + String(props.backgroundColor || '#ffffff')) + '">';
+            if (buildEmbedPreviewFrame(props)) {
+                html += buildEmbedPreviewFrame(props);
+                html += '<div class="nbde-el__embed-meta">' + escapeHtml(getEmbedProviderLabel(resolveEmbedProvider(props))) + ' · ' + escapeHtml(getEmbedSourceModeLabel(resolveEmbedSourceMode(props))) + ' · ' + escapeHtml(getEmbedSandboxProfileLabel(props.sandboxProfile || 'strict')) + '</div>';
+            } else {
+                html += '<div class="nbde-el__placeholder">Добавьте HTML код или iframe URL в свойствах элемента</div>';
+            }
+            html += '</div>';
         } else if (element.type === 'object') {
-            html += '<div class="nbde-el__body" style="' + escapeHtml(buildObjectPreviewStyle(props, box)) + '"></div>';
+            html += '<div class="nbde-el__body nbde-el__body--object nbde-el__body--shared-hover" style="' + escapeHtml(buildObjectPreviewStyle(props, box)
+                + ';background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + escapeHtml(buildObjectFillValue(props || {})) + '))'
+                + ';border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '))'
+                + ';box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(buildObjectShadowValue(props || {}) || 'none') + '))'
+                + ';transition:background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '"></div>';
         } else if (element.type === 'icon') {
             html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
         } else if (element.type === 'divider') {
@@ -3426,7 +4701,7 @@
         } else if (element.type === 'container' || element.type === 'group') {
             html += '<div class="nbde-el__body nbde-el__body--group" style="' + escapeHtml(buildCommonBodyStyle(props, box)) + '"></div>';
             if (element.type === 'group') {
-                html += '<div class="nbde-group-label">Group</div>';
+                html += '<div class="nbde-group-label">Группа</div>';
             }
             html += '<div class="nbde-el__children-host" style="top:' + Number(element.type === 'container' ? (props.paddingTop || 0) : 0) + 'px;right:' + Number(element.type === 'container' ? (props.paddingRight || 0) : 0) + 'px;bottom:' + Number(element.type === 'container' ? (props.paddingBottom || 0) : 0) + 'px;left:' + Number(element.type === 'container' ? (props.paddingLeft || 0) : 0) + 'px;">';
             (element.children || []).forEach(function (child) {
@@ -4121,6 +5396,9 @@
         }
         renderCanvas();
         renderPropertiesCard();
+        if (shouldAutoReplayMotionPreview(scope, path)) {
+            scheduleMotionPreview(String(path || '').indexOf('sequence') === 0 ? 'group' : 'auto');
+        }
     }
 
     function setStageCardExpanded(expanded) {
@@ -4238,6 +5516,34 @@
         }
 
         setLayersCardExpanded(section.classList.contains('is-collapsed'));
+    }
+
+    function setPropertiesCardExpanded(expanded) {
+        var section;
+        var toggle;
+
+        if (!nodes.propertiesCard) {
+            return;
+        }
+
+        section = nodes.propertiesCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        toggle = section.querySelector('[data-action="toggle-properties-card"]');
+        section.classList.toggle('is-collapsed', !expanded);
+        nodes.propertiesCard.hidden = !expanded;
+        state.uiState.propertiesCardExpanded = !!expanded;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+
+    function togglePropertiesCard() {
+        setPropertiesCardExpanded(!state.uiState.propertiesCardExpanded);
     }
 
     function beginNumberScrub(event, scrubNode) {
@@ -4556,6 +5862,11 @@
     }
 
     function applyScopedInput(input) {
+        if (input && input.dataset && input.dataset.deferredInput === '1') {
+            setDeferredFieldDraft(input.dataset.scope, input.dataset.path, input.value);
+            return false;
+        }
+
         return applyScopedValue(input.dataset.scope, input.dataset.path, coerceValue(input));
     }
 
@@ -5099,11 +6410,25 @@
             ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
                 var childLayout = ensureLayoutEntry(child, breakpoint);
                 var groupLayout = ensureLayoutEntry(group, breakpoint);
+                var siblings;
+                var orderIndex;
 
                 childLayout.x = Number(childLayout.x || 0) + Number(groupLayout.x || 0);
                 childLayout.y = Number(childLayout.y || 0) + Number(groupLayout.y || 0);
+
+                siblings = children.slice().sort(function (left, right) {
+                    return Number(ensureLayoutEntry(left, breakpoint).zIndex || 0) - Number(ensureLayoutEntry(right, breakpoint).zIndex || 0);
+                });
+                orderIndex = siblings.findIndex(function (item) {
+                    return String(item.id) === String(child.id);
+                });
+                childLayout.zIndex = Number(groupLayout.zIndex || 1) + Math.max(0, orderIndex);
             });
             child.parentId = String(group.parentId || '');
+        });
+
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            normalizeZIndices(breakpoint);
         });
 
         state.scene.nodes = getElements().filter(function (element) {
@@ -5476,10 +6801,22 @@
 
         if (element.type === 'group') {
             getElements().forEach(function (candidate) {
-                if (String(candidate.parentId || '') !== String(element.id)) {
+                var currentParent;
+
+                if (!candidate || String(candidate.id) === String(element.id)) {
                     return;
                 }
-                childBoxes[candidate.id] = clone(currentEditableBranch(candidate).box || {});
+
+                currentParent = candidate.parentId ? getElementById(candidate.parentId) : null;
+
+                while (currentParent) {
+                    if (String(currentParent.id) === String(element.id)) {
+                        childBoxes[candidate.id] = clone(currentEditableBranch(candidate).box || {});
+                        return;
+                    }
+
+                    currentParent = currentParent.parentId ? getElementById(currentParent.parentId) : null;
+                }
             });
         }
 
@@ -6362,6 +7699,13 @@
             return;
         }
 
+        if (action === 'toggle-focus-mode') {
+            state.uiState.focusMode = !state.uiState.focusMode;
+            writeFocusModePreference(state.uiState.focusMode);
+            renderShellLayout();
+            return;
+        }
+
         if (action === 'toggle-stage-card') {
             toggleStageCard();
             return;
@@ -6374,6 +7718,31 @@
 
         if (action === 'toggle-layers-card') {
             toggleLayersCard();
+            return;
+        }
+
+        if (action === 'toggle-properties-card') {
+            togglePropertiesCard();
+            return;
+        }
+
+        if (action === 'toggle-inspector-section') {
+            toggleInspectorSection(actionNode.dataset.key || '');
+            return;
+        }
+
+        if (action === 'toggle-inspector-subsection') {
+            toggleInspectorSubsection(actionNode.dataset.key || '');
+            return;
+        }
+
+        if (action === 'preview-motion') {
+            playMotionPreview();
+            return;
+        }
+
+        if (action === 'preview-motion-group') {
+            playMotionPreview('group');
             return;
         }
 
@@ -6485,6 +7854,39 @@
         }
         if (action === 'toggle-element-lock') {
             toggleElementLock(actionNode.dataset.elementId || '');
+            return;
+        }
+        if (action === 'apply-embed-provider-preset') {
+            if (applyEmbedProviderPreset(actionNode.dataset.provider || 'generic')) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'apply-embed-aspect-ratio') {
+            if (applyEmbedAspectRatioPreset(actionNode.dataset.ratio || 'free')) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'parse-embed-code') {
+            if (applyEmbedCodeAssistant()) {
+                markDirty();
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'commit-deferred-field') {
+            if (commitDeferredFieldDraft(actionNode.dataset.scope || '', actionNode.dataset.path || '')) {
+                renderAll();
+            }
+            return;
+        }
+        if (action === 'reset-deferred-field') {
+            if (resetDeferredFieldDraft(actionNode.dataset.scope || '', actionNode.dataset.path || '')) {
+                renderPropertiesCard();
+            }
             return;
         }
         if (action === 'apply-object-preset') {
@@ -6893,6 +8295,16 @@
         var tagName = active && active.tagName ? active.tagName.toLowerCase() : '';
         var editable = !!(active && active.isContentEditable);
 
+        if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 'enter') {
+            if (active && active.dataset && active.dataset.deferredInput === '1') {
+                event.preventDefault();
+                if (commitDeferredFieldDraft(active.dataset.scope || '', active.dataset.path || '')) {
+                    renderAll();
+                }
+                return;
+            }
+        }
+
         if (String(event.key || '') === ' ') {
             state.interactionState.spacePressed = true;
         }
@@ -7019,6 +8431,7 @@
     setStageCardExpanded(false);
     setSectionCardExpanded(false);
     setLayersCardExpanded(false);
+    setPropertiesCardExpanded(true);
     attachDebugApi();
     loadState();
 })();

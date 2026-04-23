@@ -64,6 +64,7 @@
 - Следующие поставки выпускать как обновления компонента `nordicblocks`, совместимые с установкой поверх базового архива.
 - Для каждой версии `nordicblocks` вести короткий список изменений в `packages/nordicblocks/CHANGELOG.md`.
 - В installable архив не включать рабочую markdown/txt документацию и внутренние notes, если они не нужны рантайму или установщику.
+- В `dist/` для NordicBlocks держать структурированный layout: `dist/nordicblocks/start/` для installable baseline и `dist/nordicblocks/updates/<version>/` для update-релизов; плоские файлы в `dist/` считать только совместимыми алиасами последней сборки.
 
 ## CLI примечание
 
