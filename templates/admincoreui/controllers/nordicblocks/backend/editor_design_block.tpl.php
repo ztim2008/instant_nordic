@@ -96,11 +96,14 @@ foreach ([$http_template, 'modern'] as $template_name) {
                 <div class="nbde-card__body" id="nbd-block-card"></div>
             </section>
 
-            <section class="nbde-card nbde-card--properties">
-                <div class="nbde-card__head">
-                    <h3>Свойства элемента</h3>
-                    <span id="nbd-properties-summary">Ничего не выбрано</span>
-                </div>
+            <section class="nbde-card nbde-card--properties nbde-card--accordion">
+                <button class="nbde-card__head nbde-card__head--toggle" type="button" data-action="toggle-properties-card" aria-expanded="true">
+                    <span class="nbde-card__head-copy">
+                        <h3>Свойства элемента</h3>
+                        <span id="nbd-properties-summary">Ничего не выбрано</span>
+                    </span>
+                    <span class="nbde-card__chevron" aria-hidden="true"></span>
+                </button>
                 <div class="nbde-card__body" id="nbd-properties-card"></div>
             </section>
 

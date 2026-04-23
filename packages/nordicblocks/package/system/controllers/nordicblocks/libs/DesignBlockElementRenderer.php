@@ -84,7 +84,7 @@ class NordicblocksDesignBlockElementRenderer {
             return '<div' . $attrs . '>' . self::renderIconMarkup((string) ($props['iconClass'] ?? 'fas fa-star')) . '</div>';
         }
 
-        if ($type === 'container') {
+        if ($type === 'container' || $type === 'group') {
             return '<div' . $attrs . '>' . self::renderElements((array) ($element['children'] ?? [])) . '</div>';
         }
 

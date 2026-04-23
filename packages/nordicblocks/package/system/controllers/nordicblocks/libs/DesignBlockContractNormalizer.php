@@ -4,7 +4,7 @@ require_once cmsConfig::get('root_path') . 'system/controllers/nordicblocks/libs
 
 class NordicblocksDesignBlockContractNormalizer {
 
-    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'video', 'divider', 'svg', 'embed', 'image', 'shape'];
+    private static $allowed_element_types = ['text', 'photo', 'button', 'object', 'icon', 'container', 'group', 'video', 'divider', 'svg', 'embed', 'image', 'shape'];
     private static $allowed_background_modes = ['theme', 'solid', 'gradient', 'image'];
 
     public static function supportsType($type) {
@@ -391,6 +391,12 @@ class NordicblocksDesignBlockContractNormalizer {
                 'paddingRight'  => self::number($raw['paddingRight'] ?? 0, 0, 240, 0),
                 'paddingBottom' => self::number($raw['paddingBottom'] ?? 0, 0, 240, 0),
                 'paddingLeft'   => self::number($raw['paddingLeft'] ?? 0, 0, 240, 0),
+            ];
+        }
+
+        if ($type === 'group') {
+            return $common + [
+                'label' => self::string($raw['label'] ?? 'Группа', 'Группа', 120),
             ];
         }
 

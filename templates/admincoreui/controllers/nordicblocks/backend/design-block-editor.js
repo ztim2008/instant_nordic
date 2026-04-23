@@ -171,6 +171,15 @@
         }
     }
 
+    var DEFAULT_INSPECTOR_SECTION_COLLAPSE = {
+        layout: true
+    };
+
+    var DEFAULT_INSPECTOR_SUBSECTION_COLLAPSE = {
+        'content:text': true,
+        'content:semantics': true
+    };
+
     var state = {
         editor: {
             stateUrl: bootstrap.stateUrl || root.dataset.stateUrl || '',
@@ -224,6 +233,9 @@
             activeBreakpoint: 'desktop',
             sidebarCollapsed: false,
             focusMode: false,
+            propertiesCardExpanded: true,
+            inspectorSectionsCollapsed: {},
+            inspectorSubsectionsCollapsed: {},
             selectionIds: [],
             selectedElementId: null,
             deferredFieldDrafts: {},
@@ -2046,6 +2058,11 @@
             state.uiState.editingTextId = null;
             state.uiState.pendingFocusTextId = null;
         }
+
+        setPropertiesCardExpanded(true);
+        requestAnimationFrame(function () {
+            focusPropertiesCard();
+        });
     }
 
     function toggleSelection(id) {
@@ -2798,9 +2815,17 @@
         var html;
 
         options = options || {};
+        rows = Number(options.rows || 0);
 
         if (!options.deferred) {
-            return '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea></div>';
+            html = '<div class="nbde-field"><label>' + escapeHtml(label) + '</label><textarea'
+                + (rows > 0 ? ' rows="' + Math.max(3, rows) + '"' : '')
+                + ' data-scope="' + escapeHtml(scope) + '" data-path="' + escapeHtml(path) + '" data-kind="string">' + escapeHtml(value == null ? '' : value) + '</textarea>';
+            if (options.hint) {
+                html += '<div class="nbde-field__hint">' + escapeHtml(options.hint) + '</div>';
+            }
+            html += '</div>';
+            return html;
         }
 
         textareaValue = getDeferredFieldDraft(scope, path, value);
@@ -3225,36 +3250,158 @@
     }
 
     function renderInspectorSection(title, description, body) {
-        var html = '<section class="nbde-inspector-section">';
+        var options = arguments.length > 3 && arguments[3] ? arguments[3] : {};
+        var key = String(options.key || title || '').toLowerCase();
+        var collapsed = isInspectorSectionCollapsed(key);
+        var html = '<section class="nbde-inspector-section' + (collapsed ? ' is-collapsed' : '') + '">';
 
-        html += '<div class="nbde-inspector-section__head">';
+        html += '<button class="nbde-inspector-section__head nbde-inspector-section__head--toggle" type="button" data-action="toggle-inspector-section" data-key="' + escapeHtml(key) + '" aria-expanded="' + (collapsed ? 'false' : 'true') + '">';
+        html += '<span class="nbde-inspector-section__head-copy">';
         html += '<strong>' + escapeHtml(title) + '</strong>';
         if (description) {
             html += '<span>' + escapeHtml(description) + '</span>';
         }
-        html += '</div>';
+        html += '</span>';
+        html += '<span class="nbde-inspector-section__chevron" aria-hidden="true"></span>';
+        html += '</button>';
+        html += '<div class="nbde-inspector-section__body"' + (collapsed ? ' hidden' : '') + '>';
         html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Для этого блока здесь пока нет дополнительных настроек.</div>';
+        html += '</div>';
         html += '</section>';
 
         return html;
     }
 
     function renderInspectorSubsection(title, body, description) {
-        var html = '<div class="nbde-inspector-subsection">';
+        var options = arguments.length > 3 && arguments[3] ? arguments[3] : {};
+        var key = String(options.key || title || '').toLowerCase();
+        var collapsed = !!options.collapsible && isInspectorSubsectionCollapsed(key);
+        var html = '<div class="nbde-inspector-subsection' + (collapsed ? ' is-collapsed' : '') + '">';
 
-        html += '<div class="nbde-inspector-subsection__head">';
-        html += '<strong>' + escapeHtml(title) + '</strong>';
-        if (description) {
-            html += '<span>' + escapeHtml(description) + '</span>';
+        if (options.collapsible) {
+            html += '<button class="nbde-inspector-subsection__head nbde-inspector-subsection__head--toggle" type="button" data-action="toggle-inspector-subsection" data-key="' + escapeHtml(key) + '" aria-expanded="' + (collapsed ? 'false' : 'true') + '">';
+            html += '<span class="nbde-inspector-subsection__head-copy">';
+            html += '<strong>' + escapeHtml(title) + '</strong>';
+            if (description) {
+                html += '<span>' + escapeHtml(description) + '</span>';
+            }
+            html += '</span>';
+            html += '<span class="nbde-inspector-subsection__chevron" aria-hidden="true"></span>';
+            html += '</button>';
+        } else {
+            html += '<div class="nbde-inspector-subsection__head">';
+            html += '<strong>' + escapeHtml(title) + '</strong>';
+            if (description) {
+                html += '<span>' + escapeHtml(description) + '</span>';
+            }
+            html += '</div>';
         }
-        html += '</div>';
+        html += '<div class="nbde-inspector-subsection__body"' + (collapsed ? ' hidden' : '') + '>';
         html += body && String(body).trim() ? body : '<div class="nbde-card__empty">Нет полей.</div>';
+        html += '</div>';
         html += '</div>';
 
         return html;
     }
 
+    function isInspectorSectionCollapsed(key) {
+        if (Object.prototype.hasOwnProperty.call(state.uiState.inspectorSectionsCollapsed, key)) {
+            return !!state.uiState.inspectorSectionsCollapsed[key];
+        }
+
+        return !!DEFAULT_INSPECTOR_SECTION_COLLAPSE[key];
+    }
+
+    function isInspectorSubsectionCollapsed(key) {
+        if (Object.prototype.hasOwnProperty.call(state.uiState.inspectorSubsectionsCollapsed, key)) {
+            return !!state.uiState.inspectorSubsectionsCollapsed[key];
+        }
+
+        return !!DEFAULT_INSPECTOR_SUBSECTION_COLLAPSE[key];
+    }
+
+    function toggleInspectorSection(key) {
+        state.uiState.inspectorSectionsCollapsed[key] = !isInspectorSectionCollapsed(key);
+        renderPropertiesCard();
+    }
+
+    function toggleInspectorSubsection(key) {
+        state.uiState.inspectorSubsectionsCollapsed[key] = !isInspectorSubsectionCollapsed(key);
+        renderPropertiesCard();
+    }
+
+    function focusPropertiesCard() {
+        var section;
+
+        if (!nodes.propertiesCard) {
+            return;
+        }
+
+        section = nodes.propertiesCard.closest('.nbde-card');
+
+        if (!section || typeof section.scrollIntoView !== 'function') {
+            return;
+        }
+
+        section.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+    }
+
     function renderElementContentFields(element, props) {
+        if (element.type === 'text') {
+            return renderInspectorSubsection('Текст',
+                renderTextareaField('Основной текст', 'element-props', 'text', props.text || '', {
+                    rows: 6,
+                    hint: 'Здесь редактируется содержимое. Для быстрого правления прямо на сцене можно кликнуть по тексту и печатать inline.'
+                }),
+                'Главное содержимое выбранного текстового элемента.',
+                { key: 'content:text', collapsible: true }
+            ) + renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + renderSelectField('HTML тег', 'element-props', 'tag', props.tag || 'div', [
+                    { value: 'div', label: 'div' },
+                    { value: 'h1', label: 'H1' },
+                    { value: 'h2', label: 'H2' },
+                    { value: 'h3', label: 'H3' },
+                    { value: 'h4', label: 'H4' },
+                    { value: 'p', label: 'p' },
+                    { value: 'span', label: 'span' }
+                ])
+                + '</div>',
+                'Имя помогает в слоях, роль нужна для сценариев и будущих привязок, тег отвечает за смысловую разметку.',
+                { key: 'content:semantics', collapsible: true }
+            );
+        }
+
+        if (element.type === 'photo' || element.type === 'svg') {
+            return renderInspectorSubsection('Файл',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string')
+                + renderField('Alt', 'element-props', 'alt', props.alt || '', 'string')
+                + '</div>',
+                'Источник изображения и базовое описание для runtime и SEO.'
+            ) + renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + '</div>',
+                'Имя помогает в слоях, роль пригодится для сценариев и будущих привязок.',
+                { key: 'content:media-semantics', collapsible: true }
+            );
+        }
+
+        if (element.type === 'object') {
+            return renderInspectorSubsection('Семантика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string')
+                + renderField('Роль', 'element-root', 'role', element.role || '', 'string')
+                + '</div>',
+                'Имя помогает быстро ориентироваться в слоях, роль оставляет место для сценариев и логики.',
+                { key: 'content:object-semantics', collapsible: true }
+            );
+        }
+
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
         html += renderField('Имя элемента', 'element-root', 'name', element.name || '', 'string');
@@ -3262,17 +3409,6 @@
         html += '</div>';
 
         if (element.type === 'text') {
-            html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderSelectField('HTML тег', 'element-props', 'tag', props.tag || 'div', [
-                { value: 'div', label: 'div' },
-                { value: 'h1', label: 'H1' },
-                { value: 'h2', label: 'H2' },
-                { value: 'h3', label: 'H3' },
-                { value: 'h4', label: 'H4' },
-                { value: 'p', label: 'p' },
-                { value: 'span', label: 'span' }
-            ]);
-            html += '</div>';
             html += renderTextareaField('Текст', 'element-props', 'text', props.text || '');
         } else if (element.type === 'button') {
             html += renderInspectorSubsection('Текст и ссылка',
@@ -3296,11 +3432,6 @@
                 + '</div>',
                 'Поддерживаются системные SVG sprite tokens вида brands:telegram.'
             );
-        } else if (element.type === 'photo' || element.type === 'svg') {
-            html += '<div class="nbde-field-grid nbde-field-grid--2">';
-            html += renderPickerField(element.type === 'svg' ? 'SVG файл' : 'Файл', 'element-props', 'src', props.src || '', 'string');
-            html += renderField('Alt', 'element-props', 'alt', props.alt || '', 'string');
-            html += '</div>';
         } else if (element.type === 'video') {
             html += '<div class="nbde-field-grid nbde-field-grid--2">';
             html += renderField('Видео файл', 'element-props', 'src', props.src || '', 'string');
@@ -3408,6 +3539,87 @@
     }
 
     function renderElementStyleFields(element, props) {
+        if (element.type === 'text') {
+            return renderInspectorSubsection('Типографика',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string')
+                + renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat')
+                + renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number')
+                + renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number')
+                + renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number')
+                + renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number')
+                + renderSelectField('Выравнивание', 'element-props', 'textAlign', props.textAlign || 'left', [
+                    { value: 'left', label: 'Слева' },
+                    { value: 'center', label: 'По центру' },
+                    { value: 'right', label: 'Справа' }
+                ])
+                + renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
+                    { value: 'none', label: 'Обычный' },
+                    { value: 'uppercase', label: 'UPPERCASE' },
+                    { value: 'lowercase', label: 'lowercase' }
+                ])
+                + '</div>',
+                'Все параметры набора текста собраны в одном месте, без прыжков между секциями.'
+            )
+            + renderInspectorSubsection('Поверхность',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string')
+                + renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number')
+                + renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string')
+                + '</div>',
+                'Фон, рамка и прозрачность текста как объекта на сцене.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderHoverFields(element, props),
+                'Цвет, фон и движение состояния при наведении.'
+            );
+        }
+
+        if (element.type === 'photo' || element.type === 'svg') {
+            return renderInspectorSubsection('Кадр',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderSelectField('Object fit', 'element-props', 'objectFit', props.objectFit || 'cover', [
+                    { value: 'cover', label: 'Cover' },
+                    { value: 'contain', label: 'Contain' },
+                    { value: 'fill', label: 'Fill' },
+                    { value: 'none', label: 'None' },
+                    { value: 'scale-down', label: 'Scale down' }
+                ])
+                + renderSelectField('Позиция фото', 'element-props', 'objectPosition', props.objectPosition || 'center center', buildPhotoPositionOptions())
+                + renderField('Позиция X %', 'element-props', 'objectPositionX', props.objectPositionX != null ? props.objectPositionX : 50, 'number')
+                + renderField('Позиция Y %', 'element-props', 'objectPositionY', props.objectPositionY != null ? props.objectPositionY : 50, 'number')
+                + '</div>',
+                'Управление кадрированием и положением изображения внутри рамки.'
+            )
+            + renderInspectorSubsection('Коррекция',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Brightness %', 'element-props', 'filterBrightness', props.filterBrightness != null ? props.filterBrightness : 100, 'number')
+                + renderField('Contrast %', 'element-props', 'filterContrast', props.filterContrast != null ? props.filterContrast : 100, 'number')
+                + renderField('Saturate %', 'element-props', 'filterSaturate', props.filterSaturate != null ? props.filterSaturate : 100, 'number')
+                + renderField('Grayscale %', 'element-props', 'filterGrayscale', props.filterGrayscale != null ? props.filterGrayscale : 0, 'number')
+                + '</div>',
+                'Быстрая цветокоррекция без выхода в внешний редактор.'
+            )
+            + renderInspectorSubsection('Поверхность',
+                '<div class="nbde-field-grid nbde-field-grid--2">'
+                + renderField('Непрозрачность %', 'element-props', 'opacityPct', props.opacityPct || 100, 'number')
+                + renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string')
+                + renderField('Скругление', 'element-props', 'borderRadius', props.borderRadius || 0, 'number')
+                + renderField('Граница', 'element-props', 'borderWidth', props.borderWidth || 0, 'number')
+                + renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string')
+                + renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string')
+                + '</div>',
+                'Рамка изображения как объекта на сцене.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderHoverFields(element, props),
+                'Масштаб, подъём, фон, граница и тень фото при наведении.'
+            );
+        }
+
         if (element.type === 'button') {
             return renderInspectorSubsection('Каркас',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -3470,7 +3682,7 @@
                 'Старое raw поле boxShadow остаётся как fallback для уже сохранённых блоков.'
             )
             + renderInspectorSubsection('Hover',
-                renderSharedHoverFields(element, props)
+                renderHoverFields(element, props)
             )
             + renderInspectorSubsection('Отступы',
                 '<div class="nbde-field-grid nbde-field-grid--2">'
@@ -3490,25 +3702,7 @@
         html += renderField('Цвет границы', 'element-props', 'borderColor', props.borderColor || '', 'string');
         html += renderField('Тень', 'element-props', 'boxShadow', props.boxShadow || '', 'string');
 
-        if (element.type === 'text') {
-            html += renderField('Цвет текста', 'element-props', 'color', props.color || '#0f172a', 'string');
-            html += renderField('Фон', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
-            html += renderFontFamilyField('Шрифт', props.fontFamily || 'montserrat');
-            html += renderField('Размер шрифта', 'element-props', 'fontSize', props.fontSize || 36, 'number');
-            html += renderField('Насыщенность', 'element-props', 'fontWeight', props.fontWeight || 800, 'number');
-            html += renderField('Межстрочный %', 'element-props', 'lineHeight', props.lineHeight || 120, 'number');
-            html += renderField('Трекинг', 'element-props', 'letterSpacing', props.letterSpacing || 0, 'number');
-            html += renderSelectField('Выравнивание', 'element-props', 'textAlign', props.textAlign || 'left', [
-                { value: 'left', label: 'Слева' },
-                { value: 'center', label: 'По центру' },
-                { value: 'right', label: 'Справа' }
-            ]);
-            html += renderSelectField('Регистр', 'element-props', 'textTransform', props.textTransform || 'none', [
-                { value: 'none', label: 'Обычный' },
-                { value: 'uppercase', label: 'UPPERCASE' },
-                { value: 'lowercase', label: 'lowercase' }
-            ]);
-        } else if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
+        if (element.type === 'photo' || element.type === 'svg' || element.type === 'video') {
             if (element.type === 'photo' || element.type === 'svg') {
                 html += renderField('Подложка', 'element-props', 'backgroundColor', props.backgroundColor || '', 'string');
             }
@@ -3598,6 +3792,10 @@
                 + renderField('Brightness фона %', 'element-props', 'backdropBrightness', props.backdropBrightness != null ? props.backdropBrightness : 100, 'number')
                 + '</div>',
                 'Используйте, когда нужно отойти от мастер-контрола и вручную докрутить характер стекла.'
+            )
+            + renderInspectorSubsection('Hover',
+                renderSurfaceHoverFields(props),
+                'Подъём, фон, граница и тень объекта при наведении.'
             );
         } else if (element.type === 'icon') {
             html += renderField('Цвет иконки', 'element-props', 'color', props.color || '#0f172a', 'string');
@@ -3610,14 +3808,14 @@
 
         html += '</div>';
 
-        if (supportsSharedHover(element.type)) {
-            html += renderInspectorSubsection('Hover', renderSharedHoverFields(element, props));
+        if (supportsHoverFields(element.type)) {
+            html += renderInspectorSubsection('Hover', renderHoverFields(element, props));
         }
 
         return html;
     }
 
-    function supportsSharedHover(type) {
+    function supportsHoverFields(type) {
         return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
     }
 
@@ -3625,8 +3823,19 @@
         return type === 'text' || type === 'button' || type === 'object' || type === 'photo' || type === 'svg';
     }
 
-    function renderSharedHoverFields(element, props) {
-        var type = element.type;
+    function renderHoverFields(element, props) {
+        if (element.type === 'text') {
+            return renderTextHoverFields(props);
+        }
+
+        if (element.type === 'button') {
+            return renderButtonHoverFields(props);
+        }
+
+        return renderSurfaceHoverFields(props);
+    }
+
+    function renderTextHoverFields(props) {
         var html = '<div class="nbde-field-grid nbde-field-grid--2">';
 
         html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
@@ -3642,11 +3851,70 @@
             html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
 
-        if (type === 'text' || type === 'button') {
-            html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+        html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+
+        html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+        html += renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number');
+        html += renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number');
+        html += renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number');
+        html += renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number');
+        html += renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string');
+        html += renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset);
+        html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+        html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+        html += renderField('Длительность hover', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderButtonHoverFields(props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+            { value: 'inherit', label: 'Без смены' },
+            { value: 'solid', label: 'Свой цвет' },
+            { value: 'gradient', label: 'Свой градиент' }
+        ]);
+
+        if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+            html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#111827', 'string');
+            html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#2563eb', 'string');
+        } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+            html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
-        if (type === 'button') {
-            html += renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string');
+
+        html += renderField('Hover цвет текста', 'element-props', 'hoverColor', props.hoverColor || '', 'string');
+        html += renderField('Hover цвет иконки', 'element-props', 'hoverIconColor', props.hoverIconColor || '', 'string');
+        html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
+        html += renderField('Hover тень X', 'element-props', 'hoverShadowX', props.hoverShadowX != null ? props.hoverShadowX : 0, 'number');
+        html += renderField('Hover тень Y', 'element-props', 'hoverShadowY', props.hoverShadowY != null ? props.hoverShadowY : 0, 'number');
+        html += renderField('Hover размытие', 'element-props', 'hoverShadowBlur', props.hoverShadowBlur != null ? props.hoverShadowBlur : 0, 'number');
+        html += renderField('Hover spread', 'element-props', 'hoverShadowSpread', props.hoverShadowSpread != null ? props.hoverShadowSpread : 0, 'number');
+        html += renderField('Hover цвет тени', 'element-props', 'hoverShadowColor', props.hoverShadowColor || '', 'string');
+        html += renderCheckboxField('Hover inset', 'element-props', 'hoverShadowInset', !!props.hoverShadowInset);
+        html += renderField('Hover масштаб %', 'element-props', 'hoverScalePct', props.hoverScalePct != null ? props.hoverScalePct : 100, 'number');
+        html += renderField('Hover подъём', 'element-props', 'hoverLift', props.hoverLift != null ? props.hoverLift : 0, 'number');
+        html += renderField('Длительность hover', 'element-props', 'transitionDuration', props.transitionDuration != null ? props.transitionDuration : 220, 'number');
+        html += '</div>';
+
+        return html;
+    }
+
+    function renderSurfaceHoverFields(props) {
+        var html = '<div class="nbde-field-grid nbde-field-grid--2">';
+
+        html += renderSelectField('Hover фон', 'element-props', 'hoverBackgroundMode', props.hoverBackgroundMode || 'inherit', [
+            { value: 'inherit', label: 'Без смены' },
+            { value: 'solid', label: 'Свой цвет' },
+            { value: 'gradient', label: 'Свой градиент' }
+        ]);
+
+        if ((props.hoverBackgroundMode || 'inherit') === 'gradient') {
+            html += renderField('Hover градиент от', 'element-props', 'hoverGradientFrom', props.hoverGradientFrom || props.gradientFrom || props.backgroundColor || '#111827', 'string');
+            html += renderField('Hover градиент к', 'element-props', 'hoverGradientTo', props.hoverGradientTo || props.gradientTo || props.backgroundColor || '#2563eb', 'string');
+        } else if ((props.hoverBackgroundMode || 'inherit') === 'solid') {
+            html += renderField('Hover фон', 'element-props', 'hoverBackgroundColor', props.hoverBackgroundColor || '', 'string');
         }
 
         html += renderField('Hover цвет границы', 'element-props', 'hoverBorderColor', props.hoverBorderColor || '', 'string');
@@ -3702,6 +3970,9 @@
         var branch;
         var props;
         var box;
+        var contentSection;
+        var layoutSection;
+        var styleSection;
 
         if (!selection.length || !element) {
             if (nodes.propertiesSummary) {
@@ -3741,11 +4012,25 @@
         html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-visibility" data-element-id="' + escapeHtml(element.id) + '">' + ((branch.box || {}).visible === false ? 'Показать' : 'Скрыть') + '</button>';
         html += '<button class="nbde-mini-button" type="button" data-action="toggle-element-lock" data-element-id="' + escapeHtml(element.id) + '">' + (element.locked ? 'Разблокировать' : 'Заблокировать') + '</button>';
         html += '</div>';
-        html += renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props));
-        html += renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box));
-        html += renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props));
+        contentSection = renderInspectorSection('Контент', 'Содержимое и смысл выбранного объекта.', renderElementContentFields(element, props), { key: 'content' });
+        layoutSection = renderInspectorSection('Макет', 'Позиция, размер и порядок в текущей сцене.', renderElementLayoutFields(element, props, box), { key: 'layout' });
+        styleSection = renderInspectorSection('Стиль', 'Визуальные свойства выбранного объекта.', renderElementStyleFields(element, props), { key: 'style' });
+
+        if (element.type === 'object') {
+            html += styleSection;
+            html += layoutSection;
+            html += contentSection;
+        } else if (element.type === 'photo' || element.type === 'svg') {
+            html += contentSection;
+            html += styleSection;
+            html += layoutSection;
+        } else {
+            html += contentSection;
+            html += layoutSection;
+            html += styleSection;
+        }
         if (supportsMotion(element.type)) {
-            html += renderInspectorSection('Анимация', 'Entry/scroll пресет и hover-динамика для выбранного объекта.', renderAnimationFields(element, props));
+            html += renderInspectorSection('Анимация', 'Entry/scroll пресет и hover-динамика для выбранного объекта.', renderAnimationFields(element, props), { key: 'motion' });
         }
 
         if (nodes.propertiesCard) {
@@ -3947,15 +4232,91 @@
         styles.push('--nbde-button-hover-bg:' + buildButtonBackgroundValue(props, true));
         styles.push('--nbde-button-hover-color:' + String(props.hoverColor || props.color || '#ffffff'));
         styles.push('--nbde-button-hover-border:' + String(props.hoverBorderColor || props.borderColor || 'transparent'));
-        styles.push('--nbde-button-hover-transform:' + buildButtonHoverTransform(props));
         styles.push('--nbde-button-hover-shadow:' + String(buildButtonShadowValue(props, true) || buildButtonShadowValue(props, false) || 'none'));
-        styles.push('--nbde-button-transition-duration:' + Math.max(80, Number(props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms');
         styles.push('background:var(--nbde-button-current-bg)');
         styles.push('color:var(--nbde-button-current-color)');
         styles.push('border-color:var(--nbde-button-current-border)');
         styles.push('box-shadow:var(--nbde-button-current-shadow)');
 
         return styles.filter(Boolean).join(';');
+    }
+
+    function buildSharedHoverBackgroundValue(props, baseBackground) {
+        var mode = String((props && props.hoverBackgroundMode) || 'inherit');
+        var angle = Math.max(0, Number(props && props.gradientAngle != null ? props.gradientAngle : 135));
+        var fallbackBase = String(baseBackground || 'transparent');
+
+        if (mode === 'gradient') {
+            return 'linear-gradient(' + angle + 'deg, '
+                + String((props && (props.hoverGradientFrom || props.gradientFrom || props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase)
+                + ', '
+                + String((props && (props.hoverGradientTo || props.gradientTo || props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase)
+                + ')';
+        }
+
+        if (mode === 'solid') {
+            return String((props && (props.hoverBackgroundColor || props.backgroundColor)) || fallbackBase);
+        }
+
+        return fallbackBase;
+    }
+
+    function buildSharedHoverShadowValue(props, baseShadow) {
+        var offsetX = Number(props && props.hoverShadowX != null ? props.hoverShadowX : 0);
+        var offsetY = Number(props && props.hoverShadowY != null ? props.hoverShadowY : 0);
+        var blur = Number(props && props.hoverShadowBlur != null ? props.hoverShadowBlur : 0);
+        var spread = Number(props && props.hoverShadowSpread != null ? props.hoverShadowSpread : 0);
+        var color = String((props && props.hoverShadowColor) || '').trim();
+        var inset = !!(props && props.hoverShadowInset);
+        var rawValue = String((props && props.hoverShadow) || '').trim();
+
+        if (inset || offsetX !== 0 || offsetY !== 0 || blur !== 0 || spread !== 0 || color !== '') {
+            return buildStructuredShadowValue(offsetX, offsetY, blur, spread, color, inset, 'rgba(15,23,42,0.18)');
+        }
+
+        return rawValue || String(baseShadow || 'none');
+    }
+
+    function buildSharedHoverTransform(props) {
+        var scale = Number(props && props.hoverScalePct != null ? props.hoverScalePct : 100) / 100;
+        var lift = Number(props && props.hoverLift != null ? props.hoverLift : 0);
+
+        return 'translateY(' + (-lift) + 'px) scale(' + roundNumber(scale, 3) + ')';
+    }
+
+    function buildSharedHoverPreviewVars(props, options) {
+        var baseBackground = String((options && options.baseBackground) || 'transparent');
+        var baseBorder = String((options && options.baseBorder) || 'transparent');
+        var baseShadow = String((options && options.baseShadow) || 'none');
+        var duration = Math.max(80, Number(props && props.transitionDuration != null ? props.transitionDuration : 220));
+
+        return [
+            '--nbde-shared-hover-base-bg:' + baseBackground,
+            '--nbde-shared-hover-target-bg:' + buildSharedHoverBackgroundValue(props || {}, baseBackground),
+            '--nbde-shared-hover-base-border:' + baseBorder,
+            '--nbde-shared-hover-target-border:' + String((props && props.hoverBorderColor) || baseBorder),
+            '--nbde-shared-hover-base-shadow:' + baseShadow,
+            '--nbde-shared-hover-target-shadow:' + buildSharedHoverShadowValue(props || {}, baseShadow),
+            '--nbde-shared-hover-transform:' + buildSharedHoverTransform(props || {}),
+            '--nbde-shared-hover-transition-duration:' + duration + 'ms'
+        ];
+    }
+
+    function buildTextHoverPreviewVars(props, options) {
+        var styles = buildSharedHoverPreviewVars(props, options);
+        var baseColor = String((options && options.baseColor) || '#0f172a');
+
+        styles.push('--nbde-text-hover-base-color:' + baseColor);
+        styles.push('--nbde-text-hover-target-color:' + String((props && props.hoverColor) || baseColor));
+
+        return styles;
+    }
+
+    function buildButtonHoverWrapperVars(props) {
+        return [
+            '--nbde-button-hover-transform:' + buildButtonHoverTransform(props),
+            '--nbde-button-transition-duration:' + Math.max(80, Number(props && props.transitionDuration != null ? props.transitionDuration : 220)) + 'ms'
+        ];
     }
 
     function renderButtonPreviewContent(props, editing) {
@@ -3995,7 +4356,14 @@
         var selected = isSelected(element.id);
         var primary = String(state.uiState.selectedElementId || '') === String(element.id);
         var editing = String(state.uiState.editingTextId || '') === String(element.id) && isEditableType(element.type);
-        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type) + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '') + (element.locked ? ' is-locked' : '');
+        var sharedHoverable = element.type === 'photo' || element.type === 'svg' || element.type === 'object';
+        var textHoverable = element.type === 'text';
+        var buttonHoverable = element.type === 'button';
+        var classes = 'nbde-el nbde-el--' + escapeHtml(element.type)
+            + (sharedHoverable ? ' nbde-el--shared-hover' : '')
+            + (textHoverable ? ' nbde-el--text-hover' : '')
+            + (buttonHoverable ? ' nbde-el--button-hover' : '')
+            + (selected ? ' is-selected' : '') + (primary ? ' is-primary' : '') + (element.hidden ? ' is-hidden' : '') + (element.locked ? ' is-locked' : '');
         var style = [
             'left:' + Number(box.x || 0) + 'px',
             'top:' + Number(box.y || 0) + 'px',
@@ -4004,6 +4372,33 @@
             'z-index:' + Number(box.zIndex || 1),
             'display:' + (box.visible === false ? 'none' : 'block')
         ];
+
+        if (sharedHoverable) {
+            if (element.type === 'object') {
+                style = style.concat(buildSharedHoverPreviewVars(props, {
+                    baseBackground: buildObjectFillValue(props || {}),
+                    baseBorder: String(props.borderColor || 'transparent'),
+                    baseShadow: String(buildObjectShadowValue(props || {}) || 'none')
+                }));
+            } else {
+                style = style.concat(buildSharedHoverPreviewVars(props, {
+                    baseBackground: String(props.backgroundColor || 'transparent'),
+                    baseBorder: String(props.borderColor || 'transparent'),
+                    baseShadow: String(props.boxShadow || 'none')
+                }));
+            }
+        }
+        if (textHoverable) {
+            style = style.concat(buildTextHoverPreviewVars(props, {
+                baseBackground: String(props.backgroundColor || 'transparent'),
+                baseBorder: String(props.borderColor || 'transparent'),
+                baseShadow: String(props.boxShadow || 'none'),
+                baseColor: String(props.color || '#0f172a')
+            }));
+        }
+        if (buttonHoverable) {
+            style = style.concat(buildButtonHoverWrapperVars(props));
+        }
         var html = '<div class="' + classes + '" data-element-id="' + escapeHtml(element.id) + '" data-element-type="' + escapeHtml(element.type) + '" style="' + style.join(';') + '">';
 
         if (primary && getSelectionIds().length === 1 && !element.locked) {
@@ -4015,11 +4410,15 @@
 
         if (element.type === 'text') {
             textTag = ['div', 'h1', 'h2', 'h3', 'h4', 'p', 'span'].indexOf(String(props.tag || 'div')) >= 0 ? String(props.tag || 'div') : 'div';
-            html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:' + String(props.color || '#0f172a') + ';font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none')) + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
+            html += '<' + textTag + ' class="nbde-el__body nbde-el__body--text nbde-el__body--text-hover' + (editing ? ' is-editing' : '') + '" contenteditable="' + (editing ? 'true' : 'false') + '" spellcheck="false" data-inline-edit="text" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';margin:0;color:var(--nbde-text-hover-current-color,var(--nbde-text-hover-base-color,' + String(props.color || '#0f172a') + '));background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + String(props.backgroundColor || 'transparent') + '));border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '));box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(props.boxShadow || 'none') + '));font-family:' + resolveFontFamilyStack(props.fontFamily || 'montserrat') + ';font-size:' + Number(props.fontSize || 36) + 'px;font-weight:' + Number(props.fontWeight || 800) + ';line-height:' + (Number(props.lineHeight || 120) / 100) + ';letter-spacing:' + Number(props.letterSpacing || 0) + 'px;text-align:' + String(props.textAlign || 'left') + ';text-transform:' + String(props.textTransform || 'none') + ';transition:color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '">' + textToHtml(props.text || '') + '</' + textTag + '>';
         } else if (element.type === 'button') {
             html += '<div class="nbde-el__body nbde-el__body--button" style="' + escapeHtml(buildButtonPreviewStyle(props, box)) + '">' + renderButtonPreviewContent(props, editing) + '</div>';
         } else if (element.type === 'photo' || element.type === 'svg') {
-            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + '" style="' + escapeHtml(buildCommonBodyStyle(props, box, element.type)) + '">';
+            html += '<div class="nbde-el__body nbde-el__body--' + escapeHtml(element.type) + ' nbde-el__body--shared-hover" style="' + escapeHtml(buildCommonBodyStyle(props, box, element.type)
+                + ';background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + String(props.backgroundColor || 'transparent') + '))'
+                + ';border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '))'
+                + ';box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(props.boxShadow || 'none') + '))'
+                + ';transition:background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '">';
             if (props.src) {
                 html += '<img src="' + escapeHtml(props.src) + '" alt="' + escapeHtml(props.alt || '') + '" style="' + escapeHtml(buildImagePreviewStyle(props)) + '">';
             } else {
@@ -4038,7 +4437,11 @@
             }
             html += '</div>';
         } else if (element.type === 'object') {
-            html += '<div class="nbde-el__body" style="' + escapeHtml(buildObjectPreviewStyle(props, box)) + '"></div>';
+            html += '<div class="nbde-el__body nbde-el__body--object nbde-el__body--shared-hover" style="' + escapeHtml(buildObjectPreviewStyle(props, box)
+                + ';background:var(--nbde-shared-hover-current-bg,var(--nbde-shared-hover-base-bg,' + escapeHtml(buildObjectFillValue(props || {})) + '))'
+                + ';border-color:var(--nbde-shared-hover-current-border,var(--nbde-shared-hover-base-border,' + String(props.borderColor || 'transparent') + '))'
+                + ';box-shadow:var(--nbde-shared-hover-current-shadow,var(--nbde-shared-hover-base-shadow,' + String(buildObjectShadowValue(props || {}) || 'none') + '))'
+                + ';transition:background var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),border-color var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1),box-shadow var(--nbde-shared-hover-transition-duration,.22s) cubic-bezier(0.22,1,0.36,1)') + '"></div>';
         } else if (element.type === 'icon') {
             html += '<div class="nbde-el__body nbde-el__body--icon" style="' + escapeHtml(buildCommonBodyStyle(props, box) + ';color:' + String(props.color || '#0f172a') + ';font-size:' + Number(props.size || 32) + 'px') + '"><i class="' + escapeHtml(props.iconClass || 'fas fa-star') + '"></i></div>';
         } else if (element.type === 'divider') {
@@ -4858,6 +5261,34 @@
         }
 
         setLayersCardExpanded(section.classList.contains('is-collapsed'));
+    }
+
+    function setPropertiesCardExpanded(expanded) {
+        var section;
+        var toggle;
+
+        if (!nodes.propertiesCard) {
+            return;
+        }
+
+        section = nodes.propertiesCard.closest('.nbde-card--accordion');
+
+        if (!section) {
+            return;
+        }
+
+        toggle = section.querySelector('[data-action="toggle-properties-card"]');
+        section.classList.toggle('is-collapsed', !expanded);
+        nodes.propertiesCard.hidden = !expanded;
+        state.uiState.propertiesCardExpanded = !!expanded;
+
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+    }
+
+    function togglePropertiesCard() {
+        setPropertiesCardExpanded(!state.uiState.propertiesCardExpanded);
     }
 
     function beginNumberScrub(event, scrubNode) {
@@ -5724,11 +6155,25 @@
             ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
                 var childLayout = ensureLayoutEntry(child, breakpoint);
                 var groupLayout = ensureLayoutEntry(group, breakpoint);
+                var siblings;
+                var orderIndex;
 
                 childLayout.x = Number(childLayout.x || 0) + Number(groupLayout.x || 0);
                 childLayout.y = Number(childLayout.y || 0) + Number(groupLayout.y || 0);
+
+                siblings = children.slice().sort(function (left, right) {
+                    return Number(ensureLayoutEntry(left, breakpoint).zIndex || 0) - Number(ensureLayoutEntry(right, breakpoint).zIndex || 0);
+                });
+                orderIndex = siblings.findIndex(function (item) {
+                    return String(item.id) === String(child.id);
+                });
+                childLayout.zIndex = Number(groupLayout.zIndex || 1) + Math.max(0, orderIndex);
             });
             child.parentId = String(group.parentId || '');
+        });
+
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            normalizeZIndices(breakpoint);
         });
 
         state.scene.nodes = getElements().filter(function (element) {
@@ -6101,10 +6546,22 @@
 
         if (element.type === 'group') {
             getElements().forEach(function (candidate) {
-                if (String(candidate.parentId || '') !== String(element.id)) {
+                var currentParent;
+
+                if (!candidate || String(candidate.id) === String(element.id)) {
                     return;
                 }
-                childBoxes[candidate.id] = clone(currentEditableBranch(candidate).box || {});
+
+                currentParent = candidate.parentId ? getElementById(candidate.parentId) : null;
+
+                while (currentParent) {
+                    if (String(currentParent.id) === String(element.id)) {
+                        childBoxes[candidate.id] = clone(currentEditableBranch(candidate).box || {});
+                        return;
+                    }
+
+                    currentParent = currentParent.parentId ? getElementById(currentParent.parentId) : null;
+                }
             });
         }
 
@@ -7009,6 +7466,21 @@
             return;
         }
 
+        if (action === 'toggle-properties-card') {
+            togglePropertiesCard();
+            return;
+        }
+
+        if (action === 'toggle-inspector-section') {
+            toggleInspectorSection(actionNode.dataset.key || '');
+            return;
+        }
+
+        if (action === 'toggle-inspector-subsection') {
+            toggleInspectorSubsection(actionNode.dataset.key || '');
+            return;
+        }
+
         if (action === 'add-element') {
             state.uiState.addMenuOpen = false;
             addElement(actionNode.dataset.type || 'text');
@@ -7694,6 +8166,7 @@
     setStageCardExpanded(false);
     setSectionCardExpanded(false);
     setLayersCardExpanded(false);
+    setPropertiesCardExpanded(true);
     attachDebugApi();
     loadState();
 })();

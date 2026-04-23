@@ -671,6 +671,36 @@ body.nbde-focus-mode .nbde-canvas-panel {
     cursor: default;
 }
 
+.nbde-el--shared-hover {
+    transform: translateY(0) scale(1);
+    transform-origin: center center;
+    transition: transform var(--nbde-shared-hover-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nbde-el--shared-hover:hover {
+    transform: var(--nbde-shared-hover-transform, translateY(0) scale(1));
+}
+
+.nbde-el--text-hover {
+    transform: translateY(0) scale(1);
+    transform-origin: center center;
+    transition: transform var(--nbde-shared-hover-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nbde-el--text-hover:hover {
+    transform: var(--nbde-shared-hover-transform, translateY(0) scale(1));
+}
+
+.nbde-el--button-hover {
+    transform: translateY(0) scale(1);
+    transform-origin: center center;
+    transition: transform var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nbde-el--button-hover:hover {
+    transform: var(--nbde-button-hover-transform, translateY(0) scale(1));
+}
+
 .nbde-el.is-hidden {
     opacity: 0.35;
 }
@@ -809,8 +839,7 @@ body.nbde-focus-mode .nbde-canvas-panel {
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    transform: translateY(0) scale(1);
-    transition: background var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), border-color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), transform var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), border-color var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1), box-shadow var(--nbde-button-transition-duration, .22s) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .nbde-el__body--button:hover {
@@ -819,7 +848,29 @@ body.nbde-focus-mode .nbde-canvas-panel {
     --nbde-button-current-icon-color: var(--nbde-button-hover-icon-color, var(--nbde-button-hover-color, currentColor));
     --nbde-button-current-border: var(--nbde-button-hover-border, var(--nbde-button-base-border, currentColor));
     --nbde-button-current-shadow: var(--nbde-button-hover-shadow, var(--nbde-button-base-shadow, none));
-    transform: var(--nbde-button-hover-transform, translateY(0) scale(1));
+}
+
+.nbde-el__body--text-hover {
+    --nbde-text-hover-current-color: var(--nbde-text-hover-base-color, currentColor);
+}
+
+.nbde-el--text-hover:hover > .nbde-el__body--text-hover {
+    --nbde-shared-hover-current-bg: var(--nbde-shared-hover-target-bg, var(--nbde-shared-hover-base-bg, transparent));
+    --nbde-shared-hover-current-border: var(--nbde-shared-hover-target-border, var(--nbde-shared-hover-base-border, transparent));
+    --nbde-shared-hover-current-shadow: var(--nbde-shared-hover-target-shadow, var(--nbde-shared-hover-base-shadow, none));
+    --nbde-text-hover-current-color: var(--nbde-text-hover-target-color, var(--nbde-text-hover-base-color, currentColor));
+}
+
+.nbde-el__body--shared-hover {
+    --nbde-shared-hover-current-bg: var(--nbde-shared-hover-base-bg, transparent);
+    --nbde-shared-hover-current-border: var(--nbde-shared-hover-base-border, transparent);
+    --nbde-shared-hover-current-shadow: var(--nbde-shared-hover-base-shadow, none);
+}
+
+.nbde-el--shared-hover:hover > .nbde-el__body--shared-hover {
+    --nbde-shared-hover-current-bg: var(--nbde-shared-hover-target-bg, var(--nbde-shared-hover-base-bg, transparent));
+    --nbde-shared-hover-current-border: var(--nbde-shared-hover-target-border, var(--nbde-shared-hover-base-border, transparent));
+    --nbde-shared-hover-current-shadow: var(--nbde-shared-hover-target-shadow, var(--nbde-shared-hover-base-shadow, none));
 }
 
 .nbde-el__button-icon {
@@ -1780,6 +1831,31 @@ body.nbde-focus-mode .nbde-canvas-panel {
     gap: 2px;
 }
 
+.nbde-inspector-section__head--toggle {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.nbde-inspector-section__head-copy,
+.nbde-inspector-subsection__head-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.nbde-inspector-section__head--toggle,
+.nbde-inspector-subsection__head--toggle {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
 .nbde-inspector-section__head strong {
     font-size: 12px;
     font-weight: 700;
@@ -1792,6 +1868,39 @@ body.nbde-focus-mode .nbde-canvas-panel {
     color: var(--nbde-muted);
     font-size: 11px;
     line-height: 1.45;
+}
+
+.nbde-inspector-section__chevron,
+.nbde-inspector-subsection__chevron {
+    position: relative;
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+}
+
+.nbde-inspector-section__chevron::before,
+.nbde-inspector-subsection__chevron::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #64748b;
+    border-bottom: 2px solid #64748b;
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+}
+
+.nbde-inspector-section.is-collapsed .nbde-inspector-section__chevron::before,
+.nbde-inspector-subsection.is-collapsed .nbde-inspector-subsection__chevron::before {
+    transform: rotate(-45deg);
+}
+
+.nbde-inspector-section__body {
+    display: grid;
+    gap: 8px;
 }
 
 .nbde-inspector-subsection {
@@ -1811,6 +1920,16 @@ body.nbde-focus-mode .nbde-canvas-panel {
     margin-bottom: 8px;
 }
 
+.nbde-inspector-subsection__head--toggle {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
 .nbde-inspector-subsection__head strong {
     font-size: 11px;
     font-weight: 700;
@@ -1820,6 +1939,22 @@ body.nbde-focus-mode .nbde-canvas-panel {
 }
 
 .nbde-inspector-subsection__head span {
+    color: var(--nbde-muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.nbde-inspector-subsection__body {
+    display: grid;
+    gap: 8px;
+}
+
+.nbde-inspector-subsection:not(.is-collapsed) .nbde-inspector-subsection__body {
+    margin-top: 8px;
+}
+
+.nbde-field__hint {
+    margin-top: 6px;
     color: var(--nbde-muted);
     font-size: 11px;
     line-height: 1.45;
