@@ -586,6 +586,18 @@ Preview iframe и live widget обязаны использовать один �
 
 Любая ветка preview-only styling считается нарушением канонического контура.
 
+Дополнение по stage geometry:
+
+1. если editor вычислил explicit stage metrics `contentWidth`, `windowWidth`, `outerMargin`, `bleedLeft`, `bleedRight`, save path не имеет права терять их при normalize/save roundtrip;
+2. runtime CSS builder должен брать stage width по цепочке `contentWidth -> width -> derived grid width`, чтобы editor и public page использовали одну и ту же semantics artboard/grid;
+3. legacy fields `width` и `grid.bleedX` считаются fallback-источником для старых contract-ов, но не должны затирать более точные explicit stage fields, если они уже пришли из editor.
+
+Практический anti-regression marker:
+
+1. если editor показывает `artboard 1440 / grid 1320 / bleed 60/60`, а public runtime после save рендерит stage `1000` или иное derived значение, это означает ошибку в normalizer/save или CSS builder parity path, а не «допустимое визуальное расхождение`.
+
+
+
 ---
 
 ## 8. Backend editor flow v1

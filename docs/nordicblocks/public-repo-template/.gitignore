@@ -1,0 +1,33 @@
+# OS and editor
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime and generated files
+cache/
+backups/
+upload/
+*.log
+*.tmp
+*.swp
+
+# Secrets and local environment
+.env
+.env.*
+system/config/config.php
+
+# Package artifacts
+dist/*.zip
+
+# Node and vendor outputs
+node_modules/
+coverage/
+
+# Python and misc tooling
+__pycache__/
+*.pyc
+
+# Keep structured release folders versioned only if intentionally committed.
+# Uncomment the next lines if release artifacts should never be committed.
+# dist/nordicblocks/start/*.zip
+# dist/nordicblocks/updates/**/*.zip

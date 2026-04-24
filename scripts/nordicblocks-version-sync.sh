@@ -9,7 +9,7 @@ manifest_ini="$package_dir/manifest.ru.ini"
 
 usage() {
     echo "Usage: bash scripts/nordicblocks-version-sync.sh [MAJOR.MINOR.PATCH]"
-    echo "If version is omitted, it will be taken from packages/nordicblocks/VERSION"
+    echo "If version is omitted, it will be taken from VERSION"
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then

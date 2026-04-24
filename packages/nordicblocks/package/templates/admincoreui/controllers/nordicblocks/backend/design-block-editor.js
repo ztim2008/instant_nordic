@@ -27,14 +27,14 @@
     var STAGE_DEFAULTS = {
         desktop: {
             windowWidth: 1440,
-            contentWidth: 1320,
+            contentWidth: 1110,
             minHeight: 680,
-            outerMargin: 60,
-            bleedLeft: 60,
-            bleedRight: 60,
+            outerMargin: 165,
+            bleedLeft: 165,
+            bleedRight: 165,
             columns: 12,
-            gutter: 24,
-            columnWidth: 88,
+            gutter: 30,
+            columnWidth: 65,
             overflowMode: 'auto',
             initialInsertX: 0,
             initialInsertY: 24,
@@ -234,6 +234,8 @@
             activeBreakpoint: 'desktop',
             sidebarCollapsed: false,
             focusMode: false,
+            stageAdvancedOpen: false,
+            selectedStageGuideKey: null,
             propertiesCardExpanded: true,
             inspectorSectionsCollapsed: {},
             inspectorSubsectionsCollapsed: {},
@@ -262,6 +264,7 @@
         interactionState: {
             guideX: null,
             guideY: null,
+            guideDrag: null,
             drag: null,
             resize: null,
             rotate: null,
@@ -300,6 +303,14 @@
 
     function createBreakpointStore() {
         return { desktop: {}, tablet: {}, mobile: {} };
+    }
+
+    function createStageGuideStore() {
+        return {
+            desktop: { x: [], y: [] },
+            tablet: { x: [], y: [] },
+            mobile: { x: [], y: [] }
+        };
     }
 
     function clone(value) {
@@ -1590,9 +1601,11 @@
             showGuides: true,
             showColumnsGrid: true,
             outsideVisibilityMode: 'show',
+            customGuides: createStageGuideStore(),
             columnsGridColor: '#0f172a',
             columnsGridOpacity: 8
         }, normalized.runtime.editor || {});
+        normalized.runtime.editor.customGuides = sanitizeStageGuideStore(normalized.runtime.editor.customGuides);
 
         return normalized;
     }
@@ -1747,6 +1760,314 @@
 
     function currentEditorRuntime() {
         return getPath(state.documentState.contract, 'runtime.editor', {});
+    }
+
+    function sanitizeGuideAxisValues(values) {
+        return uniqueSortedNumbers((values || []).filter(function (value) {
+            return isFinite(Number(value));
+        }).map(function (value) {
+            return Number(value);
+        }));
+    }
+
+    function sanitizeStageGuideStore(store) {
+        var sanitized = createStageGuideStore();
+
+        ['desktop', 'tablet', 'mobile'].forEach(function (breakpoint) {
+            var branch = store && typeof store[breakpoint] === 'object' && store[breakpoint]
+                ? store[breakpoint]
+                : {};
+            sanitized[breakpoint] = {
+                x: sanitizeGuideAxisValues(branch.x),
+                y: sanitizeGuideAxisValues(branch.y)
+            };
+        });
+
+        return sanitized;
+    }
+
+    function ensureStageGuideStore() {
+        var runtimeEditor = currentEditorRuntime();
+
+        runtimeEditor.customGuides = sanitizeStageGuideStore(runtimeEditor.customGuides);
+        return runtimeEditor.customGuides;
+    }
+
+    function currentStageGuideBranch() {
+        var store = ensureStageGuideStore();
+        var breakpoint = currentBreakpoint();
+
+        if (!store[breakpoint]) {
+            store[breakpoint] = { x: [], y: [] };
+        }
+
+        return store[breakpoint];
+    }
+
+    function buildStageGuideKey(axis, index) {
+        return String(axis || 'x') + ':' + String(index);
+    }
+
+    function parseStageGuideKey(key) {
+        var parts = String(key || '').split(':');
+        var index = Number(parts[1]);
+
+        if ((parts[0] !== 'x' && parts[0] !== 'y') || !isFinite(index) || index < 0) {
+            return null;
+        }
+
+        return {
+            axis: parts[0],
+            index: Math.floor(index)
+        };
+    }
+
+    function getSelectedStageGuide() {
+        return parseStageGuideKey(state.uiState.selectedStageGuideKey);
+    }
+
+    function selectStageGuide(axis, index) {
+        state.uiState.selectedStageGuideKey = buildStageGuideKey(axis, index);
+    }
+
+    function clearSelectedStageGuide() {
+        state.uiState.selectedStageGuideKey = null;
+    }
+
+    function getStageGuideBounds(axis, breakpoint) {
+        var metrics = buildStageMetrics(getPath(state.documentState.contract, 'layout.stage.' + breakpoint, {}), breakpoint);
+
+        if (axis === 'x') {
+            return {
+                min: -Number(metrics.bleedLeft || 0),
+                max: Number(metrics.width || 0) + Number(metrics.bleedRight || 0)
+            };
+        }
+
+        return {
+            min: 0,
+            max: Number(metrics.height || 0)
+        };
+    }
+
+    function clampStageGuidePosition(axis, value, breakpoint) {
+        var bounds = getStageGuideBounds(axis, breakpoint);
+        return clamp(roundNumber(Number(value || 0)), bounds.min, bounds.max);
+    }
+
+    function getGuidePointerPosition(axis, event) {
+        var worldPoint = getWorldPointFromEvent(event);
+
+        if (!worldPoint) {
+            return null;
+        }
+
+        return axis === 'y' ? Number(worldPoint.y) : Number(worldPoint.x);
+    }
+
+    function addStageGuide(axis, position, breakpoint) {
+        var store = ensureStageGuideStore();
+        var safeBreakpoint = breakpoint || currentBreakpoint();
+        var branch = store[safeBreakpoint] || { x: [], y: [] };
+        var target;
+
+        if (axis !== 'x' && axis !== 'y') {
+            return -1;
+        }
+
+        target = clampStageGuidePosition(axis, position, safeBreakpoint);
+        branch[axis] = sanitizeGuideAxisValues((branch[axis] || []).concat([target]));
+        store[safeBreakpoint] = branch;
+        return branch[axis].indexOf(target);
+    }
+
+    function updateStageGuide(axis, index, position, breakpoint) {
+        var store = ensureStageGuideStore();
+        var safeBreakpoint = breakpoint || currentBreakpoint();
+        var branch = store[safeBreakpoint] || { x: [], y: [] };
+        var target;
+
+        if (axis !== 'x' && axis !== 'y') {
+            return -1;
+        }
+
+        if (!Array.isArray(branch[axis]) || index < 0 || index >= branch[axis].length) {
+            return -1;
+        }
+
+        target = clampStageGuidePosition(axis, position, safeBreakpoint);
+        branch[axis] = branch[axis].slice();
+        branch[axis][index] = target;
+        branch[axis] = sanitizeGuideAxisValues(branch[axis]);
+        store[safeBreakpoint] = branch;
+        return branch[axis].indexOf(target);
+    }
+
+    function removeStageGuide(axis, index, breakpoint) {
+        var store = ensureStageGuideStore();
+        var safeBreakpoint = breakpoint || currentBreakpoint();
+        var branch = store[safeBreakpoint] || { x: [], y: [] };
+
+        if (axis !== 'x' && axis !== 'y') {
+            return false;
+        }
+
+        if (!Array.isArray(branch[axis]) || index < 0 || index >= branch[axis].length) {
+            return false;
+        }
+
+        branch[axis] = branch[axis].filter(function (_, valueIndex) {
+            return valueIndex !== index;
+        });
+        store[safeBreakpoint] = branch;
+        return true;
+    }
+
+    function deleteSelectedStageGuide() {
+        var selectedGuide = getSelectedStageGuide();
+
+        if (!selectedGuide) {
+            return false;
+        }
+
+        if (!removeStageGuide(selectedGuide.axis, selectedGuide.index, currentBreakpoint())) {
+            return false;
+        }
+
+        clearSelectedStageGuide();
+        markDirty();
+        renderCanvas();
+        renderStageCard();
+        return true;
+    }
+
+    function worldGuideToLocal(element, axis, worldPosition, breakpoint) {
+        var parent;
+        var parentBox;
+        var parentOffset;
+
+        if (worldPosition == null) {
+            return null;
+        }
+
+        parent = element && element.parentId ? getElementById(element.parentId) : null;
+        if (!parent) {
+            return Number(worldPosition);
+        }
+
+        parentBox = getAbsoluteWorldBox(parent, breakpoint);
+        parentOffset = getParentContentOffset(parent, breakpoint);
+
+        return axis === 'y'
+            ? Number(worldPosition) - Number(parentBox.y || 0) - Number(parentOffset.y || 0)
+            : Number(worldPosition) - Number(parentBox.x || 0) - Number(parentOffset.x || 0);
+    }
+
+    function buildCustomGuideCandidates(element, axis) {
+        var branch = currentStageGuideBranch();
+        var values = axis === 'y' ? branch.y : branch.x;
+
+        return (values || []).map(function (value) {
+            return worldGuideToLocal(element, axis, value, currentBreakpoint());
+        }).filter(function (value) {
+            return value != null && isFinite(Number(value));
+        });
+    }
+
+    function findStageGuideAtWorldPoint(worldPoint) {
+        var editorRuntime = currentEditorRuntime();
+        var threshold = Math.max(4, Number(editorRuntime.snapThreshold || 6));
+        var branch = currentStageGuideBranch();
+        var bestMatch = null;
+
+        if (!worldPoint) {
+            return null;
+        }
+
+        (branch.x || []).forEach(function (guide, index) {
+            var distance = Math.abs(Number(worldPoint.x) - Number(guide));
+
+            if (distance > threshold) {
+                return;
+            }
+
+            if (!bestMatch || distance < bestMatch.distance) {
+                bestMatch = { axis: 'x', index: index, distance: distance };
+            }
+        });
+
+        (branch.y || []).forEach(function (guide, index) {
+            var distance = Math.abs(Number(worldPoint.y) - Number(guide));
+
+            if (distance > threshold) {
+                return;
+            }
+
+            if (!bestMatch || distance < bestMatch.distance) {
+                bestMatch = { axis: 'y', index: index, distance: distance };
+            }
+        });
+
+        return bestMatch ? { axis: bestMatch.axis, index: bestMatch.index } : null;
+    }
+
+    function beginStageGuideDrag(event, axis, index, isNew) {
+        var safeAxis = axis === 'y' ? 'y' : 'x';
+        var breakpoint = currentBreakpoint();
+        var guideIndex = Number(index);
+        var position = getGuidePointerPosition(safeAxis, event);
+
+        if (position == null) {
+            return;
+        }
+
+        if (isNew) {
+            guideIndex = addStageGuide(safeAxis, position, breakpoint);
+        }
+
+        if (guideIndex < 0) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        acquirePointerCapture(event, 'guide', { axis: safeAxis, index: guideIndex });
+        state.interactionState.guideDrag = {
+            axis: safeAxis,
+            index: guideIndex,
+            breakpoint: breakpoint
+        };
+        selectStageGuide(safeAxis, guideIndex);
+        markDirty();
+        renderCanvas();
+        renderStageCard();
+    }
+
+    function handleStageGuideMove(event) {
+        var guideDrag = state.interactionState.guideDrag;
+        var position;
+        var nextIndex;
+
+        if (!guideDrag || !isCapturedPointerEvent(event, 'guide')) {
+            return;
+        }
+
+        position = getGuidePointerPosition(guideDrag.axis, event);
+        if (position == null) {
+            return;
+        }
+
+        nextIndex = updateStageGuide(guideDrag.axis, guideDrag.index, position, guideDrag.breakpoint);
+        if (nextIndex < 0) {
+            return;
+        }
+
+        guideDrag.index = nextIndex;
+        state.interactionState.guideDrag = guideDrag;
+        selectStageGuide(guideDrag.axis, nextIndex);
+        markDirty();
+        renderCanvas();
+        renderStageCard();
     }
 
     function sanitizeOutsideVisibilityMode(mode) {
@@ -2959,9 +3280,13 @@
         var stage = currentStageConfig();
         var stageMetrics = currentStageMetrics();
         var editorRuntime = currentEditorRuntime();
+        var stageGuides = currentStageGuideBranch();
+        var selectedGuide = getSelectedStageGuide();
         var pointerTelemetry = state.interactionState.pointerTelemetry;
         var pointerCapture = state.interactionState.pointerCapture;
         var viewport = state.scene.viewport;
+        var advancedOpen = !!state.uiState.stageAdvancedOpen;
+        var stageDefaults = STAGE_DEFAULTS[currentBreakpoint()] || STAGE_DEFAULTS.desktop;
         var html = '';
 
         html += '<div class="nbde-action-grid">';
@@ -2977,36 +3302,57 @@
         html += '</div>';
         html += '<div class="nbde-camera-stats">artboard ' + stageMetrics.windowWidth + 'x' + stageMetrics.height + 'px • grid ' + stageMetrics.contentWidth + 'px • columns ' + stageMetrics.columns + ' • gutter ' + stageMetrics.gutter + 'px • bleed ' + stageMetrics.bleedLeft + '/' + stageMetrics.bleedRight + 'px • overflow ' + stageMetrics.overflowMode + '</div>';
         html += '<div class="nbde-camera-stats">editor view ' + Math.round(Number(viewport.zoom || 1) * 100) + '% • offsetX ' + roundNumber(viewport.offsetX) + ' • offsetY ' + roundNumber(viewport.offsetY) + '</div>';
+        html += '<div class="nbde-stage-preset-bar">';
+        html += '<button class="nbde-preset-button" type="button" data-action="apply-stage-default-preset">Базовая сетка ' + Number(stageDefaults.windowWidth) + ' / ' + Number(stageDefaults.contentWidth) + ' / ' + Number(stageDefaults.columnWidth) + ' / ' + Number(stageDefaults.gutter) + '</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="toggle-stage-advanced" aria-expanded="' + (advancedOpen ? 'true' : 'false') + '">' + (advancedOpen ? 'Скрыть расширенные' : 'Расширенные настройки') + '</button>';
+        html += '</div>';
+        html += '<div class="nbde-inline-note">Для обычной сборки блока достаточно ширины экрана, контента, колонок, gutter и направляющих. Остальные параметры убраны в расширенный режим.</div>';
+        html += '<div class="nbde-stage-guides-bar">';
+        html += '<button class="nbde-mini-button" type="button" data-action="add-stage-guide" data-axis="x">+ Вертикальная</button>';
+        html += '<button class="nbde-mini-button" type="button" data-action="add-stage-guide" data-axis="y">+ Горизонтальная</button>';
+        html += '<span class="nbde-stage-guides-summary">V ' + Number((stageGuides.x || []).length) + ' • H ' + Number((stageGuides.y || []).length) + (selectedGuide ? ' • выбрана ' + (selectedGuide.axis === 'x' ? 'вертикаль' : 'горизонталь') : '') + '</span>';
+        if (selectedGuide) {
+            html += '<button class="nbde-mini-button nbde-picker-button--ghost" type="button" data-action="delete-selected-stage-guide">Удалить направляющую</button>';
+        }
+        html += '</div>';
+        html += '<div class="nbde-inline-note">Тяни направляющие с верхнего и левого края холста, как в Figma/Photoshop. Клик по линии выделяет её, Delete удаляет.</div>';
         html += '<div class="nbde-field-grid nbde-field-grid--2">';
-        html += renderField('Ширина artboard', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
-        html += renderField('Ширина grid', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
-        html += renderField('Высота artboard', 'stage', 'minHeight', stage.minHeight, 'number');
-        html += renderSelectField('Overflow artboard', 'stage', 'overflowMode', getPath(stage, 'overflowMode', stageMetrics.overflowMode), [
-            { value: 'auto', label: 'Auto' },
-            { value: 'hidden', label: 'Hidden' },
-            { value: 'visible', label: 'Visible' }
-        ]);
-        html += renderSelectField('Объекты вне блока', 'runtime-editor', 'outsideVisibilityMode', sanitizeOutsideVisibilityMode(editorRuntime.outsideVisibilityMode), [
-            { value: 'auto', label: 'Auto' },
-            { value: 'show', label: 'Показывать' },
-            { value: 'hide', label: 'Не показывать' }
-        ]);
-        html += renderField('Поле workspace', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
-        html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
-        html += renderField('Bleed справа', 'stage', 'bleedRight', getPath(stage, 'bleedRight', stageMetrics.bleedRight), 'number');
+        html += renderField('Ширина экрана', 'stage', 'windowWidth', getPath(stage, 'windowWidth', stageMetrics.windowWidth), 'number');
+        html += renderField('Ширина контента', 'stage', 'contentWidth', getPath(stage, 'contentWidth', stageMetrics.contentWidth), 'number');
+        html += renderField('Высота холста', 'stage', 'minHeight', stage.minHeight, 'number');
         html += renderField('Колонки', 'stage', 'columns', getPath(stage, 'columns', stageMetrics.columns), 'number');
         html += renderField('Gutter', 'stage', 'gutter', getPath(stage, 'gutter', stageMetrics.gutter), 'number');
         html += renderField('Колонка', 'stage', 'columnWidth', roundNumber(getPath(stage, 'columnWidth', stageMetrics.columnWidth)), 'number');
-        html += renderField('Стартовая вставка X', 'stage', 'initialInsertX', getPath(stage, 'initialInsertX', stageMetrics.initialInsertX), 'number');
-        html += renderField('Стартовая вставка Y', 'stage', 'initialInsertY', getPath(stage, 'initialInsertY', stageMetrics.initialInsertY), 'number');
-        html += renderField('Шаг сетки', 'runtime-editor', 'gridSize', editorRuntime.gridSize, 'number');
-        html += renderField('Порог привязки', 'runtime-editor', 'snapThreshold', editorRuntime.snapThreshold, 'number');
-        html += renderField('Цвет колонок', 'stage', 'gridOverlay.color', getPath(stage, 'gridOverlay.color', stageMetrics.gridColor), 'string');
-        html += renderField('Прозрачность колонок %', 'stage', 'gridOverlay.opacity', getPath(stage, 'gridOverlay.opacity', stageMetrics.gridOpacity), 'number');
         html += '</div>';
-        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="snapToGrid" data-kind="boolean" ' + (editorRuntime.snapToGrid ? 'checked' : '') + '>Привязка в world-координатах</label>';
         html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showGuides" data-kind="boolean" ' + (editorRuntime.showGuides ? 'checked' : '') + '>Показывать направляющие</label>';
         html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="showColumnsGrid" data-kind="boolean" ' + (editorRuntime.showColumnsGrid ? 'checked' : '') + '>Показывать колонную сетку</label>';
+        html += '<label class="nbde-checkbox"><input type="checkbox" data-scope="runtime-editor" data-path="snapToGrid" data-kind="boolean" ' + (editorRuntime.snapToGrid ? 'checked' : '') + '>Привязка к сетке и направляющим</label>';
+
+        if (advancedOpen) {
+            html += '<div class="nbde-stage-advanced">';
+            html += '<div class="nbde-field-grid nbde-field-grid--2">';
+            html += renderSelectField('Overflow artboard', 'stage', 'overflowMode', getPath(stage, 'overflowMode', stageMetrics.overflowMode), [
+                { value: 'auto', label: 'Auto' },
+                { value: 'hidden', label: 'Hidden' },
+                { value: 'visible', label: 'Visible' }
+            ]);
+            html += renderSelectField('Объекты вне блока', 'runtime-editor', 'outsideVisibilityMode', sanitizeOutsideVisibilityMode(editorRuntime.outsideVisibilityMode), [
+                { value: 'auto', label: 'Auto' },
+                { value: 'show', label: 'Показывать' },
+                { value: 'hide', label: 'Не показывать' }
+            ]);
+            html += renderField('Внешнее поле', 'stage', 'outerMargin', getPath(stage, 'outerMargin', stageMetrics.outerMargin), 'number');
+            html += renderField('Bleed слева', 'stage', 'bleedLeft', getPath(stage, 'bleedLeft', stageMetrics.bleedLeft), 'number');
+            html += renderField('Bleed справа', 'stage', 'bleedRight', getPath(stage, 'bleedRight', stageMetrics.bleedRight), 'number');
+            html += renderField('Стартовая вставка X', 'stage', 'initialInsertX', getPath(stage, 'initialInsertX', stageMetrics.initialInsertX), 'number');
+            html += renderField('Стартовая вставка Y', 'stage', 'initialInsertY', getPath(stage, 'initialInsertY', stageMetrics.initialInsertY), 'number');
+            html += renderField('Шаг сетки', 'runtime-editor', 'gridSize', editorRuntime.gridSize, 'number');
+            html += renderField('Порог привязки', 'runtime-editor', 'snapThreshold', editorRuntime.snapThreshold, 'number');
+            html += renderField('Цвет колонок', 'stage', 'gridOverlay.color', getPath(stage, 'gridOverlay.color', stageMetrics.gridColor), 'string');
+            html += renderField('Прозрачность колонок %', 'stage', 'gridOverlay.opacity', getPath(stage, 'gridOverlay.opacity', stageMetrics.gridOpacity), 'number');
+            html += '</div>';
+            html += '</div>';
+        }
 
         if (geometryDebugEnabled) {
             html += '<div class="nbde-inline-note">Debug: pointer capture и world/screen telemetry доступны только под dev flag.</div>';
@@ -5020,6 +5366,27 @@
         return state.documentState.contract.layout.stage[breakpoint];
     }
 
+    function applyStageDefaultPreset(breakpoint) {
+        var branch = ensureStageBranch(breakpoint);
+        var defaults = clone(STAGE_DEFAULTS[breakpoint] || STAGE_DEFAULTS.desktop);
+
+        branch.windowWidth = Number(defaults.windowWidth || branch.windowWidth || 1440);
+        branch.contentWidth = Number(defaults.contentWidth || branch.contentWidth || 1110);
+        branch.outerMargin = Number(defaults.outerMargin || branch.outerMargin || 0);
+        branch.bleedLeft = Number(defaults.bleedLeft || branch.bleedLeft || branch.outerMargin || 0);
+        branch.bleedRight = Number(defaults.bleedRight || branch.bleedRight || branch.bleedLeft || 0);
+        branch.columns = Math.max(1, Number(defaults.columns || branch.columns || 12));
+        branch.gutter = Math.max(0, Number(defaults.gutter || branch.gutter || 0));
+        branch.columnWidth = Math.max(1, Number(defaults.columnWidth || branch.columnWidth || 1));
+        branch.gridOverlay = branch.gridOverlay || {};
+        branch.gridOverlay.color = getPath(defaults, 'gridOverlay.color', branch.gridOverlay.color || '#0f172a');
+        branch.gridOverlay.opacity = getPath(defaults, 'gridOverlay.opacity', branch.gridOverlay.opacity == null ? 8 : branch.gridOverlay.opacity);
+
+        markDirty();
+        renderCanvas();
+        renderStageCard();
+    }
+
     function applyViewportScroll(screenDeltaX, screenDeltaY) {
         var zoom = Math.max(0.01, Number(state.scene.viewport.zoom || 1));
 
@@ -5237,12 +5604,20 @@
         }
 
         if (editorRuntime.showGuides) {
+            currentStageGuideBranch().x.forEach(function (guide, guideIndex) {
+                html += '<button class="nbde-stage__guide nbde-stage__guide--x nbde-stage__guide--custom' + (state.uiState.selectedStageGuideKey === buildStageGuideKey('x', guideIndex) ? ' is-selected' : '') + '" type="button" data-guide-handle="1" data-axis="x" data-guide-index="' + guideIndex + '" style="left:' + Number(guide + stageMetrics.originX) + 'px" aria-label="Вертикальная направляющая"></button>';
+            });
+            currentStageGuideBranch().y.forEach(function (guide, guideIndex) {
+                html += '<button class="nbde-stage__guide nbde-stage__guide--y nbde-stage__guide--custom' + (state.uiState.selectedStageGuideKey === buildStageGuideKey('y', guideIndex) ? ' is-selected' : '') + '" type="button" data-guide-handle="1" data-axis="y" data-guide-index="' + guideIndex + '" style="top:' + Number(guide) + 'px" aria-label="Горизонтальная направляющая"></button>';
+            });
+            html += '<button class="nbde-stage__ruler nbde-stage__ruler--x" type="button" data-action="spawn-stage-guide" data-axis="x" aria-label="Потянуть вертикальную направляющую с верхнего края"></button>';
+            html += '<button class="nbde-stage__ruler nbde-stage__ruler--y" type="button" data-action="spawn-stage-guide" data-axis="y" aria-label="Потянуть горизонтальную направляющую с левого края"></button>';
             html += '<div class="nbde-stage__guides">';
             if (state.interactionState.guideX != null) {
-                html += '<div class="nbde-stage__guide nbde-stage__guide--x" style="left:' + Number(state.interactionState.guideX + stageMetrics.originX) + 'px"></div>';
+                html += '<div class="nbde-stage__guide nbde-stage__guide--x nbde-stage__guide--snap" style="left:' + Number(state.interactionState.guideX + stageMetrics.originX) + 'px"></div>';
             }
             if (state.interactionState.guideY != null) {
-                html += '<div class="nbde-stage__guide nbde-stage__guide--y" style="top:' + Number(state.interactionState.guideY) + 'px"></div>';
+                html += '<div class="nbde-stage__guide nbde-stage__guide--y nbde-stage__guide--snap" style="top:' + Number(state.interactionState.guideY) + 'px"></div>';
             }
             html += '</div>';
         }
@@ -6588,14 +6963,21 @@
             result = buildLinearCandidates(Number(hostSize.minX || 0), Number(hostSize.width || 0), editorRuntime.gridSize);
         }
 
+        if (editorRuntime.showGuides) {
+            result = result.concat(buildCustomGuideCandidates(element, 'x'));
+        }
+
         return uniqueSortedNumbers(result.concat(buildElementAlignmentCandidates(element, 'x', excludedIds)));
     }
 
     function buildVerticalSnapCandidates(element, hostSize, editorRuntime, excludedIds) {
-        return uniqueSortedNumbers(
-            buildLinearCandidates(Number(hostSize.minY || 0), Number(hostSize.height || 0), editorRuntime.gridSize)
-                .concat(buildElementAlignmentCandidates(element, 'y', excludedIds))
-        );
+        var result = buildLinearCandidates(Number(hostSize.minY || 0), Number(hostSize.height || 0), editorRuntime.gridSize);
+
+        if (editorRuntime.showGuides) {
+            result = result.concat(buildCustomGuideCandidates(element, 'y'));
+        }
+
+        return uniqueSortedNumbers(result.concat(buildElementAlignmentCandidates(element, 'y', excludedIds)));
     }
 
     function getViewportNode() {
@@ -7303,7 +7685,7 @@
             return;
         }
 
-        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.rotate && !state.interactionState.textIntent && !state.interactionState.pan && !state.interactionState.stageResize && !state.interactionState.numberScrub) {
+        if (!state.interactionState.drag && !state.interactionState.resize && !state.interactionState.rotate && !state.interactionState.textIntent && !state.interactionState.pan && !state.interactionState.stageResize && !state.interactionState.numberScrub && !state.interactionState.guideDrag) {
             return;
         }
 
@@ -7324,6 +7706,7 @@
         state.interactionState.pan = null;
         state.interactionState.numberScrub = null;
         state.interactionState.stageResize = null;
+        state.interactionState.guideDrag = null;
         clearGuides();
         renderPropertiesCard();
         renderCanvas();
@@ -7656,8 +8039,22 @@
 
     root.addEventListener('click', function (event) {
         var actionNode = event.target.closest('[data-action]');
+        var guideHandleNode = event.target.closest('[data-guide-handle]');
         var pickerNode = event.target.closest('[data-picker-action]');
         var action;
+
+        if (guideHandleNode && Number(event.detail || 0) >= 2) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (removeStageGuide(guideHandleNode.dataset.axis || 'x', Number(guideHandleNode.dataset.guideIndex || -1), currentBreakpoint())) {
+                clearSelectedStageGuide();
+                markDirty();
+                renderCanvas();
+                renderStageCard();
+            }
+            return;
+        }
 
         if (pickerNode) {
             event.preventDefault();
@@ -7836,6 +8233,35 @@
             applyStageHeightToAllBreakpoints();
             return;
         }
+        if (action === 'apply-stage-default-preset') {
+            applyStageDefaultPreset(currentBreakpoint());
+            return;
+        }
+        if (action === 'toggle-stage-advanced') {
+            state.uiState.stageAdvancedOpen = !state.uiState.stageAdvancedOpen;
+            renderStageCard();
+            return;
+        }
+        if (action === 'add-stage-guide') {
+            var guideAxis = actionNode.dataset.axis === 'y' ? 'y' : 'x';
+            var guideBounds = getStageGuideBounds(guideAxis, currentBreakpoint());
+            var guidePosition = guideAxis === 'x'
+                ? (Number(guideBounds.min) + Number(guideBounds.max)) / 2
+                : Math.max(0, Number(guideBounds.max) / 2);
+            var guideIndex = addStageGuide(guideAxis, guidePosition, currentBreakpoint());
+
+            if (guideIndex >= 0) {
+                selectStageGuide(guideAxis, guideIndex);
+                markDirty();
+                renderCanvas();
+                renderStageCard();
+            }
+            return;
+        }
+        if (action === 'delete-selected-stage-guide') {
+            deleteSelectedStageGuide();
+            return;
+        }
         if (action === 'focus-stage-zone') {
             focusStageZone(actionNode.dataset.zone || 'content');
             return;
@@ -7903,15 +8329,42 @@
     });
 
     root.addEventListener('dblclick', function (event) {
+        var guideHandleNode = event.target.closest('[data-guide-handle]');
         var stageViewport = event.target.closest('#nbd-stage-viewport');
         var worldPoint;
+        var guideHit;
         var element;
 
         if (!stageViewport || event.target.closest('[data-inline-edit="text"]')) {
             return;
         }
 
+        if (guideHandleNode) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (removeStageGuide(guideHandleNode.dataset.axis || 'x', Number(guideHandleNode.dataset.guideIndex || -1), currentBreakpoint())) {
+                clearSelectedStageGuide();
+                markDirty();
+                renderCanvas();
+                renderStageCard();
+            }
+            return;
+        }
+
         worldPoint = getWorldPointFromEvent(event);
+        guideHit = findStageGuideAtWorldPoint(worldPoint);
+
+        if (guideHit && removeStageGuide(guideHit.axis, guideHit.index, currentBreakpoint())) {
+            event.preventDefault();
+            event.stopPropagation();
+            clearSelectedStageGuide();
+            markDirty();
+            renderCanvas();
+            renderStageCard();
+            return;
+        }
+
         element = worldPoint ? hitTestWorldPoint(worldPoint, currentBreakpoint()) : null;
 
         if (!element || element.locked || !isEditableType(element.type)) {
@@ -8108,6 +8561,8 @@
         var resizeNode = event.target.closest('[data-action="resize-element"]');
         var rotateNode = event.target.closest('[data-action="rotate-element"]');
         var stageResizeNode = event.target.closest('[data-action="resize-stage-height"]');
+        var guideHandleNode = event.target.closest('[data-guide-handle]');
+        var guideSpawnNode = event.target.closest('[data-action="spawn-stage-guide"]');
         var wrapper = event.target.closest('.nbde-el');
         var inlineTextNode = event.target.closest('[data-inline-edit="text"]');
         var stageViewport = event.target.closest('#nbd-stage-viewport');
@@ -8141,12 +8596,37 @@
             return;
         }
 
+        if (guideHandleNode) {
+            if (Number(event.detail || 0) >= 2) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (removeStageGuide(guideHandleNode.dataset.axis || 'x', Number(guideHandleNode.dataset.guideIndex || -1), currentBreakpoint())) {
+                    clearSelectedStageGuide();
+                    markDirty();
+                    renderCanvas();
+                    renderStageCard();
+                }
+                return;
+            }
+
+            beginStageGuideDrag(event, guideHandleNode.dataset.axis || 'x', Number(guideHandleNode.dataset.guideIndex || -1), false);
+            return;
+        }
+
+        if (guideSpawnNode) {
+            beginStageGuideDrag(event, guideSpawnNode.dataset.axis || 'x', -1, true);
+            return;
+        }
+
         if (rotateNode && wrapper) {
+            clearSelectedStageGuide();
             beginRotate(wrapper.dataset.elementId || '', event, worldPoint);
             return;
         }
 
         if (resizeNode && wrapper) {
+            clearSelectedStageGuide();
             beginResize(wrapper.dataset.elementId || '', resizeNode.dataset.handle || '', event, worldPoint);
             return;
         }
@@ -8167,10 +8647,13 @@
         hitElement = worldPoint ? hitTestWorldPoint(worldPoint, currentBreakpoint()) : null;
 
         if (!hitElement) {
+            clearSelectedStageGuide();
             clearSelection();
             beginPan(event);
             return;
         }
+
+        clearSelectedStageGuide();
 
         if (hitElement.locked) {
             setSelection([hitElement.id], hitElement.id);
@@ -8250,6 +8733,7 @@
         handleNumberScrubMove(event);
         handlePanMove(event);
         handleStageResizeMove(event);
+        handleStageGuideMove(event);
         handleTextIntentMove(event);
         handleRotateMove(event);
         handleResizeMove(event);
@@ -8359,6 +8843,10 @@
             if (editable || tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
                 return;
             }
+            if (deleteSelectedStageGuide()) {
+                event.preventDefault();
+                return;
+            }
             deleteSelection();
             return;
         }
@@ -8416,6 +8904,7 @@
     Array.prototype.forEach.call(root.querySelectorAll('[data-breakpoint]'), function (button) {
         button.addEventListener('click', function () {
             state.uiState.activeBreakpoint = button.dataset.breakpoint || 'desktop';
+            clearSelectedStageGuide();
             state.scene.viewport.zoom = 1;
             state.scene.viewport.offsetX = 0;
             state.scene.viewport.offsetY = 0;

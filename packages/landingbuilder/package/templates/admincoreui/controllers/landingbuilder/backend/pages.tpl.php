@@ -1447,7 +1447,7 @@ $this->addToolButton([
                     return;
                 }
 
-                const confirmed = window.confirm('Опубликовать SSR для страницы "' + pageTitle + '"?\n\nЭто обновит контент для Live-виджета nordicbuilder_render.');
+                const confirmed = window.confirm('Опубликовать SSR для страницы "' + pageTitle + '"?\n\nЭто обновит опубликованный runtime-контент страницы.');
                 if (!confirmed) {
                     return;
                 }

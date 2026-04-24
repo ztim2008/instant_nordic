@@ -252,12 +252,6 @@ class modelLandingbuilder extends cmsModel {
 	public function getPageByKey($page_key) {
 
 		$legacy_page = $this->getLegacyPageByKey($page_key);
-		$bridge_page = $this->getNordicbuilderBridgePage($page_key, $legacy_page ?: []);
-
-		if ($bridge_page) {
-			$bridge_page['widget_nodes'] = $this->extractSystemWidgetNodes($bridge_page['schema']);
-			return $bridge_page;
-		}
 
 		return $legacy_page;
 	}
@@ -470,21 +464,6 @@ class modelLandingbuilder extends cmsModel {
 	protected function getStarterSchemaForNewPage($page_key, $title = '', $template = 'nordic', $page_mode = 'instant_content_body') {
 
 		$schema = ['sections' => []];
-		$bridge_model = $this->getNordicbuilderBridgeModel();
-
-		if ($bridge_model && method_exists($bridge_model, 'buildEmptyLandingbuilderSchema')) {
-			$starter_schema = $bridge_model->buildEmptyLandingbuilderSchema($page_key, $title, $schema);
-
-			if (is_array($starter_schema)) {
-				$schema = $starter_schema;
-			}
-		} elseif ($bridge_model && method_exists($bridge_model, 'buildStarterLandingbuilderSchema')) {
-			$starter_schema = $bridge_model->buildStarterLandingbuilderSchema($page_key, $title, $schema);
-
-			if (is_array($starter_schema)) {
-				$schema = $starter_schema;
-			}
-		}
 
 		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
 			$schema['layout'] = [];
@@ -610,9 +589,7 @@ class modelLandingbuilder extends cmsModel {
 
 	public function savePageSchema($page_key, array $schema, $user_id = 0, $version_note = '') {
 
-		$bridge_model = $this->getNordicbuilderBridgeModel();
 		$legacy_page = $this->getLegacyPageByKey($page_key);
-		$bridge_page = $bridge_model ? $bridge_model->getPageDocumentByKey($page_key) : false;
 		$schema = $this->normalizeSchema($schema, $page_key);
 
 		if (!isset($schema['layout']) || !is_array($schema['layout'])) {
@@ -622,48 +599,6 @@ class modelLandingbuilder extends cmsModel {
 		$schema['layout']['page_mode'] = 'instant_content_body';
 		if (empty($schema['layout']['content_slot'])) {
 			$schema['layout']['content_slot'] = 'content_body';
-		}
-
-		if ($bridge_model && $bridge_page) {
-			$fallback_page = $legacy_page ?: $this->getDefaultPageByKey($page_key);
-			$fallback_page['mode'] = 'instant_content_body';
-			$fallback_page['page_mode'] = 'instant_content_body';
-			$fallback_page['page_type'] = 'system_overlay';
-			if (!empty($schema['layout']['template'])) {
-				$fallback_page['template'] = (string) $schema['layout']['template'];
-			}
-
-			$allowed_statuses = ['draft', 'prototype', 'idea', 'published'];
-			$status_candidates = [
-				$bridge_page['status'] ?? null,
-				$legacy_page['status'] ?? null,
-				$fallback_page['status'] ?? null
-			];
-			$effective_status = 'draft';
-
-			foreach ($status_candidates as $status_candidate) {
-				$status_candidate = is_string($status_candidate) ? trim($status_candidate) : '';
-				if (!in_array($status_candidate, $allowed_statuses, true)) {
-					continue;
-				}
-
-				if ($status_candidate === 'published') {
-					$effective_status = 'published';
-					break;
-				}
-
-				if ($effective_status === 'draft') {
-					$effective_status = $status_candidate;
-				}
-			}
-
-			$result = $bridge_model->saveBridgePageSchema($page_key, $schema, $fallback_page ?: [], $user_id, $effective_status);
-
-			if (!empty($result['is_valid'])) {
-				return $this->getPageByKey($page_key);
-			}
-
-			return false;
 		}
 
 		if (!$this->hasInstalledSchema() || !$this->db->isTableExists(self::VERSION_TABLE) || !$this->db->isTableExists(self::PAGE_WIDGET_TABLE)) {
@@ -802,36 +737,8 @@ class modelLandingbuilder extends cmsModel {
 			'sections'            => $page['schema']['sections'],
 			'widget_nodes'        => $page['widget_nodes'],
 			'versions'            => !empty($page['key']) ? $this->getPageVersionsByKey($page['key']) : [],
-			'schema_installed'    => $this->hasInstalledSchema() || (($page['storage_backend'] ?? '') === 'nordicbuilder')
+			'schema_installed'    => $this->hasInstalledSchema()
 		];
-	}
-
-	protected function getNordicbuilderBridgeModel() {
-		static $bridge_model = null;
-		static $resolved = false;
-
-		if ($resolved) {
-			return $bridge_model;
-		}
-
-		$resolved = true;
-		$bridge_model = cmsCore::getModel('nordicbuilder');
-
-		if (!$bridge_model || !method_exists($bridge_model, 'getBridgePageForLandingbuilder')) {
-			$bridge_model = false;
-		}
-
-		return $bridge_model;
-	}
-
-	protected function getNordicbuilderBridgePage($page_key, array $fallback_page = []) {
-		$bridge_model = $this->getNordicbuilderBridgeModel();
-
-		if (!$bridge_model) {
-			return false;
-		}
-
-		return $bridge_model->getBridgePageForLandingbuilder($page_key, $fallback_page);
 	}
 
 	protected function getCanvasPageShellScreen(array $page, array $shell, array $slot_map) {
@@ -2407,7 +2314,6 @@ class modelLandingbuilder extends cmsModel {
 	protected function resolvePageKeyFromBindingsByPrefix($binding_prefix, array $route_params, $fallback_page_key = '') {
 		$fallback_page_key = (string) $fallback_page_key;
 		$binding_prefix = trim((string) $binding_prefix);
-		$trace_enabled = $this->isEffectivePageKeyTraceEnabled();
 		$trace_entry = [
 			'scope'             => 'bindings-prefix',
 			'binding_prefix'    => $binding_prefix,
@@ -2422,108 +2328,11 @@ class modelLandingbuilder extends cmsModel {
 			return $fallback_page_key;
 		}
 
-		$bridge_model = $this->getNordicbuilderBridgeModel();
-		if (!$bridge_model || !method_exists($bridge_model, 'getBindingOptionsCandidatesByPrefix')) {
-			$trace_entry['result'] = $fallback_page_key;
-			$trace_entry['result_reason'] = 'bridge-model-unavailable';
-			$this->appendEffectivePageKeyTrace($trace_entry);
-			return $fallback_page_key;
-		}
-
-		$core = cmsCore::getInstance();
-		$uri = trim((string) ($core->uri ?? ''), '/');
-		$is_secure = !empty($core->request) && method_exists($core->request, 'isSecure') ? (bool) $core->request->isSecure() : false;
-		$trace_entry['uri'] = $uri;
-		$trace_entry['is_secure'] = $is_secure;
-
-		$candidates = $bridge_model->getBindingOptionsCandidatesByPrefix($binding_prefix, 50);
-		$trace_entry['candidate_count'] = is_array($candidates) ? count($candidates) : 0;
-		if (!$candidates) {
-			$trace_entry['result'] = $fallback_page_key;
-			$trace_entry['result_reason'] = 'no-binding-candidates';
-			$this->appendEffectivePageKeyTrace($trace_entry);
-			return $fallback_page_key;
-		}
-
-		$best_key = '';
-		$best_rank = null;
-		$trace_candidates = [];
-
-		foreach ($candidates as $candidate) {
-			$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
-			$binding_key = (string) (($candidate['binding_key'] ?? '') ?: ($document['key'] ?? ''));
-			$page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
-			if ($page_key === '') {
-				if ($trace_enabled && count($trace_candidates) < 20) {
-					$trace_candidates[] = [
-						'binding_key' => $binding_key,
-						'page_key'    => '',
-						'matched'     => false,
-						'reason'      => 'empty-page-key'
-					];
-				}
-				continue;
-			}
-
-			$is_match = $this->matchesBindingOptionsDocument($document, $uri, $route_params, $is_secure);
-			if (!$is_match) {
-				if ($trace_enabled && count($trace_candidates) < 20) {
-					$trace_candidates[] = [
-						'binding_key' => $binding_key,
-						'page_key'    => $page_key,
-						'matched'     => false,
-						'reason'      => 'document-mismatch'
-					];
-				}
-				continue;
-			}
-
-			$rank = $this->buildBindingOptionsRank($document, $binding_key);
-			$score = $this->scoreBindingOptionsDocument($document);
-			$candidate_trace = [
-				'binding_key' => $binding_key,
-				'page_key'    => $page_key,
-				'matched'     => true,
-				'score'       => $score,
-				'priority'    => $rank['priority']
-			];
-			if ($best_rank === null || $this->isBindingOptionsRankBetter($rank, $best_rank)) {
-				$best_rank = $rank;
-				$best_key = $page_key;
-				$candidate_trace['became_best'] = true;
-			}
-
-			if ($trace_enabled && count($trace_candidates) < 20) {
-				$trace_candidates[] = $candidate_trace;
-			}
-		}
-
-		if ($trace_enabled) {
-			$trace_entry['candidates'] = $trace_candidates;
-		}
-
-		if ($best_key !== '') {
-			if ($fallback_page_key === '' || $best_key !== $fallback_page_key) {
-				$page = $this->getPageByKey($best_key);
-				if (!$page) {
-					$trace_entry['best_key'] = $best_key;
-					$trace_entry['best_rank'] = $best_rank;
-					$trace_entry['result'] = $fallback_page_key;
-					$trace_entry['result_reason'] = 'best-key-not-found';
-					$this->appendEffectivePageKeyTrace($trace_entry);
-					return $fallback_page_key;
-				}
-			}
-		}
-
-		$result_page_key = $best_key !== '' ? $best_key : $fallback_page_key;
-		$trace_entry['best_key'] = $best_key;
-		$trace_entry['best_rank'] = $best_rank;
-		$trace_entry['result'] = $result_page_key;
-		$trace_entry['result_reason'] = $best_key !== '' ? 'best-binding-match' : 'fallback-page-key';
+		$trace_entry['result'] = $fallback_page_key;
+		$trace_entry['result_reason'] = 'binding-options-disabled';
 		$this->appendEffectivePageKeyTrace($trace_entry);
 
-		return $result_page_key;
+		return $fallback_page_key;
 	}
 
 	protected function resetEffectivePageKeyTrace() {
@@ -2762,7 +2571,7 @@ class modelLandingbuilder extends cmsModel {
 
 		// Do not render overlay for synthetic default pages.
 		// Overlay should appear only when a real page is stored
-		// in landingbuilder table or in nordicbuilder bridge documents.
+		// in landingbuilder table.
 		if (!$this->hasStoredOverlayPageByKey($page_key)) {
 			return false;
 		}
@@ -2796,14 +2605,6 @@ class modelLandingbuilder extends cmsModel {
 		if ($this->hasInstalledSchema()) {
 			$legacy_page = $this->getItemByField(self::PAGE_TABLE, 'name', $page_key);
 			if ($legacy_page) {
-				return true;
-			}
-		}
-
-		$bridge_model = $this->getNordicbuilderBridgeModel();
-		if ($bridge_model && method_exists($bridge_model, 'getPageDocumentByKey')) {
-			$stored_document = $bridge_model->getPageDocumentByKey($page_key);
-			if ($stored_document) {
 				return true;
 			}
 		}
@@ -2851,75 +2652,6 @@ class modelLandingbuilder extends cmsModel {
 	}
 
 	protected function resolveAdapterKeyFromBindingOptions($page_key) {
-
-		$page_key = (string) $page_key;
-		if ($page_key === '') {
-			return '';
-		}
-
-		$bridge_model = $this->getNordicbuilderBridgeModel();
-		if (!$bridge_model || !method_exists($bridge_model, 'getBindingOptionsCandidatesByPrefix')) {
-			return '';
-		}
-
-		$prefixes = ['overlay.user_profile', 'overlay.content_category', 'page.'];
-
-		foreach ($prefixes as $prefix) {
-			$candidates = $bridge_model->getBindingOptionsCandidatesByPrefix($prefix, 200);
-			if (!$candidates) {
-				continue;
-			}
-
-			$best_candidate = null;
-			$best_rank = null;
-
-			foreach ($candidates as $candidate) {
-				$document = isset($candidate['document']) && is_array($candidate['document']) ? $candidate['document'] : [];
-				$candidate_page_key = (string) (($candidate['page_key'] ?? '') ?: ($document['page_key'] ?? ''));
-				if ($candidate_page_key === '' || $candidate_page_key !== $page_key) {
-					continue;
-				}
-
-				$binding_key = (string) (($candidate['binding_key'] ?? '') ?: ($document['key'] ?? ''));
-				$rank = $this->buildBindingOptionsRank($document, $binding_key);
-				if ($best_rank === null || $this->isBindingOptionsRankBetter($rank, $best_rank)) {
-					$best_candidate = $candidate;
-					$best_rank = $rank;
-				}
-			}
-
-			if (!$best_candidate) {
-				continue;
-			}
-
-			$best_document = isset($best_candidate['document']) && is_array($best_candidate['document']) ? $best_candidate['document'] : [];
-			$binding_key = (string) (($best_candidate['binding_key'] ?? '') ?: ($best_document['key'] ?? ''));
-
-			if (strpos($binding_key, 'overlay.user_profile') === 0) {
-				return 'user_profile';
-			}
-			if (strpos($binding_key, 'overlay.content_category') === 0) {
-				return 'content_category_generic';
-			}
-			if (strpos($binding_key, 'page.homepage') === 0) {
-				return '';
-			}
-			if (strpos($binding_key, 'page.all_internal') === 0) {
-				return 'internal_content_generic';
-			}
-			if (strpos($binding_key, 'page.') === 0) {
-				return 'internal_content_generic';
-			}
-
-			$matching = isset($best_document['matching']) && is_array($best_document['matching']) ? $best_document['matching'] : [];
-			$route_params = isset($matching['route_params']) && is_array($matching['route_params']) ? $matching['route_params'] : [];
-			$page_type_rule = trim((string) ($route_params['page_type'] ?? ''));
-
-			if ($page_type_rule === '!homepage') {
-				return 'internal_content_generic';
-			}
-		}
-
 		return '';
 	}
 

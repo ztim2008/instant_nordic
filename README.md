@@ -54,9 +54,8 @@
    `./scripts/pre-change-checkpoint.sh "checkpoint: before <task>"`
 2. Работать маленькими, проверяемыми шагами.
 3. Для `Нордик` использовать runtime-first режим: сначала правки в рабочем InstantCMS-контуре, затем синхронизация `packages/landingbuilder/package/` на каждом стабильном шаге.
-4. Для коммерческого core-компонента `nordicbuilder` source-of-truth дистрибутива лежит в `packages/nordicbuilder/`, а installable zip собирается через `bash scripts/build-nordicbuilder-package.sh`.
-5. Обновлять docs при каждом изменении архитектуры, процесса или контракта.
-6. Если меняется блок Landing Builder, обновлять [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
+4. Обновлять docs при каждом изменении архитектуры, процесса или контракта.
+5. Если меняется блок Landing Builder, обновлять [docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json](docs/checklists/NEW_BLOCK_CHECKLIST_STATUS.json).
 
 ## Политика релизов NordicBlocks
 

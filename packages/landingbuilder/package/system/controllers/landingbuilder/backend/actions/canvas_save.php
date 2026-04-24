@@ -28,7 +28,7 @@ class actionLandingbuilderCanvasSave extends cmsAction {
         if (!$page) {
             return $this->cms_template->renderJSON([
                 'error'   => true,
-                'message' => 'Canvas save failed. Проверь builder storage layer landingbuilder/nordicbuilder.'
+                'message' => 'Canvas save failed. Проверь builder storage layer landingbuilder.'
             ]);
         }
 

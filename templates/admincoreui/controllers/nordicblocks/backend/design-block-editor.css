@@ -618,6 +618,34 @@ body.nbde-focus-mode .nbde-canvas-panel {
     pointer-events: none;
 }
 
+.nbde-stage__ruler {
+    position: absolute;
+    z-index: 2;
+    border: 0;
+    background: rgba(37, 99, 235, 0.08);
+    padding: 0;
+    cursor: crosshair;
+    pointer-events: auto;
+}
+
+.nbde-stage__ruler--x {
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 12px;
+}
+
+.nbde-stage__ruler--y {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 12px;
+}
+
+.nbde-stage__ruler:hover {
+    background: rgba(37, 99, 235, 0.14);
+}
+
 .nbde-stage__columns {
     z-index: 0;
     display: grid;
@@ -653,6 +681,23 @@ body.nbde-focus-mode .nbde-canvas-panel {
     z-index: 1;
 }
 
+.nbde-stage__guide--custom {
+    border: 0;
+    padding: 0;
+    pointer-events: auto;
+    cursor: move;
+    background: rgba(37, 99, 235, 0.84);
+    z-index: 6;
+}
+
+.nbde-stage__guide--custom.is-selected {
+    background: #f97316;
+}
+
+.nbde-stage__guide--snap {
+    background: var(--nbde-guide-strong);
+}
+
 .nbde-stage__guide--x {
     top: 0;
     bottom: 0;
@@ -663,6 +708,30 @@ body.nbde-focus-mode .nbde-canvas-panel {
     left: 0;
     right: 0;
     height: 1px;
+}
+
+.nbde-stage__guide--custom.nbde-stage__guide--x {
+    width: 2px;
+    margin-left: -1px;
+}
+
+.nbde-stage__guide--custom.nbde-stage__guide--y {
+    height: 2px;
+    margin-top: -1px;
+}
+
+.nbde-stage-guides-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 8px 0;
+}
+
+.nbde-stage-guides-summary {
+    color: var(--nbde-muted);
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .nbde-el {
@@ -1574,6 +1643,19 @@ body.nbde-focus-mode .nbde-canvas-panel {
     line-height: 1.45;
 }
 
+.nbde-stage-preset-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    margin: 8px 0;
+}
+
+.nbde-stage-advanced {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--nbde-border);
+}
+
 .nbde-context-note {
     padding: 8px 10px;
     border: 1px solid var(--nbde-border);
@@ -1986,6 +2068,10 @@ body.nbde-focus-mode .nbde-canvas-panel {
 @media (max-width: 1280px) {
     .nbde-main {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .nbde-stage-preset-bar {
+        grid-template-columns: 1fr;
     }
 
     .nbde-shell.is-sidebar-collapsed .nbde-main {

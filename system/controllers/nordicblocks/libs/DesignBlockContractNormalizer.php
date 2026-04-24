@@ -135,7 +135,7 @@ class NordicblocksDesignBlockContractNormalizer {
         $raw = is_array($raw) ? $raw : [];
         $grid = is_array($raw['grid'] ?? null) ? $raw['grid'] : $raw;
 
-        return [
+        $branch = [
             'width'      => self::number($raw['width'] ?? ($raw['stage_width'] ?? $default_width), 240, 1920, $default_width),
             'minHeight'  => self::number($raw['minHeight'] ?? ($raw['stage_min_height'] ?? $default_min_height), 160, 1800, $default_min_height),
             'paddingX'   => self::number($raw['paddingX'] ?? ($raw['stage_padding_x'] ?? $default_padding), 0, 160, $default_padding),
@@ -146,6 +146,14 @@ class NordicblocksDesignBlockContractNormalizer {
                 'bleedX'  => self::number($grid['bleedX'] ?? ($grid['bleed'] ?? $default_bleed_x), 0, 480, $default_bleed_x),
             ],
         ];
+
+        foreach (['contentWidth', 'windowWidth', 'outerMargin', 'bleedLeft', 'bleedRight'] as $key) {
+            if (is_numeric($raw[$key] ?? null)) {
+                $branch[$key] = self::number($raw[$key], 0, 2560, 0);
+            }
+        }
+
+        return $branch;
     }
 
     private static function normalizeElements(array $elements) {

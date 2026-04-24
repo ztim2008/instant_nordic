@@ -242,6 +242,12 @@ Stop/go правило:
 1. layout в live не «примерно похож», а предсказуемо совпадает по ключевым координатам и размерам;
 2. нет PHP warnings и нет явной visual деградации.
 
+Дополнительное правило для stage-geometry parity:
+
+1. если в editor менялись `Ширина artboard`, `Ширина grid`, `Поле workspace` или bleed-поля, после save нужно проверить не только визуальный центр, но и сами сохранённые stage-поля в contract/state;
+2. для `design_block` parity считается подтверждённой только если save path сохраняет explicit stage geometry (`contentWidth`, `windowWidth`, `outerMargin`, `bleedLeft`, `bleedRight`), а runtime реально использует эти поля, а не silently падает обратно в legacy width/grid fallback;
+3. practical check: сравнить editor camera stats и public runtime geometry на одном и том же block id, а не на соседнем block instance.
+
 ---
 
 ## Блок F. Stretch goal, только если всё зелёное

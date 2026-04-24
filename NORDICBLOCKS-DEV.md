@@ -455,7 +455,6 @@ system/widgets/
   nordicblocks_block/
     widget.php                   — рендер блока по block_id
   nordicblocks_page/             — legacy (страницы)
-  nordicbuilder_render/          — дополнительный виджет
 
 templates/admincoreui/controllers/nordicblocks/backend/
   blocks.tpl.php                 — список блоков

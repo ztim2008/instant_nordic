@@ -34,7 +34,7 @@
 
 Исходником installable package для NordicBlocks является директория:
 
-1. `packages/nordicblocks/`
+1. корень публичного product repo
 
 В неё должны входить:
 
@@ -53,10 +53,10 @@ bash scripts/build-nordicblocks-package.sh
 
 Результат:
 
-1. `dist/nordicblocks.zip`
-2. `dist/nordicblocks-<version>.zip`
+1. `dist/nordicblocks/start/nordicblocks.zip`
+2. `dist/nordicblocks/start/nordicblocks-<version>.zip`
 
-Версия архива берётся из секции `[version]` в `packages/nordicblocks/manifest.ru.ini`.
+Версия архива берётся из секции `[version]` в `manifest.ru.ini`.
 
 После завершения первого этапа этот installable ZIP считается базовым архивом для fresh-install.
 
@@ -68,10 +68,10 @@ bash scripts/build-nordicblocks-update-package.sh 0.1.1
 
 Update-архив публикуется как:
 
-1. `dist/nordicblocks-update.zip`
-2. `dist/nordicblocks-update-<version>.zip`
+1. `dist/nordicblocks/updates/<version>/nordicblocks-update.zip`
+2. `dist/nordicblocks/updates/<version>/nordicblocks-update-<version>.zip`
 
-Отдельный release workflow зафиксирован в `docs/nordicblocks/UPDATE-RELEASE-WORKFLOW-2026-04-22.md`.
+Отдельный release workflow зафиксирован в `docs/releases/UPDATE-RELEASE-WORKFLOW.md`.
 
 ## Что именно проверять перед поставкой
 
@@ -90,8 +90,8 @@ Update-архив публикуется как:
 
 ```bash
 bash scripts/build-nordicblocks-package.sh
-unzip -l dist/nordicblocks.zip
-/opt/php84/bin/php -l packages/nordicblocks/install.php
+unzip -l dist/nordicblocks/start/nordicblocks-<version>.zip
+/opt/php84/bin/php -l install.php
 /opt/php84/bin/php scripts/nordicblocks-sync.php
 /opt/php84/bin/php scripts/nordicblocks-flow-smoke.php
 ```

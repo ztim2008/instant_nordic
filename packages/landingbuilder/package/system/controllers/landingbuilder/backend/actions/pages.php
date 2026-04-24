@@ -114,32 +114,7 @@ class actionLandingbuilderPages extends cmsAction {
     }
 
     protected function resolvePreviewRoutesByPageKey() {
-        $routes = [];
-
-        $nordicbuilder_model = cmsCore::getModel('nordicbuilder');
-        if (!$nordicbuilder_model || !method_exists($nordicbuilder_model, 'getBindingOptionsIndex') || !method_exists($nordicbuilder_model, 'getBindingOptionsByKey')) {
-            return $routes;
-        }
-
-        $items = (array) $nordicbuilder_model->getBindingOptionsIndex(300);
-        foreach ($items as $item) {
-            $page_key = trim((string) ($item['page_key'] ?? ''));
-            $binding_key = trim((string) ($item['binding_key'] ?? ''));
-
-            if ($page_key === '' || $binding_key === '' || isset($routes[$page_key])) {
-                continue;
-            }
-
-            $binding = $nordicbuilder_model->getBindingOptionsByKey($binding_key);
-            $document = isset($binding['document']) && is_array($binding['document']) ? $binding['document'] : [];
-            $preview_url = $this->resolvePreviewUrlFromBindingDocument($document);
-
-            if ($preview_url !== '') {
-                $routes[$page_key] = $preview_url;
-            }
-        }
-
-        return $routes;
+        return [];
     }
 
     protected function resolvePreviewUrlFromBindingDocument(array $document) {
