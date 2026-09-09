@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon>
+    <name>nordicai</name>
+    <title>Nordic AI Agent</title>
+    <description>MVP AI-агент: промпт → tokens/CSS overlay patch через DeepSeek. Без правок tpl/ядра.</description>
+    <version>0.1.0</version>
+    <build>1</build>
+    <author>
+        <name>Nordic Builder</name>
+        <url>https://nordic-builder.store</url>
+        <email></email>
+    </author>
+    <dependencies>
+    </dependencies>
+    <hooks>
+        <hook controller="nordicai" name="before_print_head" />
+    </hooks>
+</addon>

@@ -1,0 +1,139 @@
+/* Nordic AI live inspector — admin only */
+#nordicai-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483000;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#nordicai-fab button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(16, 20, 27, 0.18);
+}
+
+#nordicai-fab .nordicai-fab-main {
+  background: #121826;
+  color: #fff;
+}
+
+#nordicai-fab .nordicai-fab-main.is-active {
+  background: #b42318;
+}
+
+.nordicai-pick-mode,
+.nordicai-pick-mode * {
+  cursor: crosshair !important;
+}
+
+.nordicai-hover {
+  outline: 2px dashed rgba(180, 35, 24, 0.55) !important;
+  outline-offset: 2px;
+}
+
+.nordicai-selected {
+  outline: 3px solid #b42318 !important;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(180, 35, 24, 0.12) !important;
+}
+
+#nordicai-panel {
+  position: fixed;
+  top: 72px;
+  right: 18px;
+  width: min(380px, calc(100vw - 24px));
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  z-index: 2147483001;
+  background: #fff;
+  color: #10141b;
+  border: 1px solid rgba(16, 20, 27, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(16, 20, 27, 0.18);
+  display: none;
+}
+
+#nordicai-panel.is-open {
+  display: block;
+}
+
+#nordicai-panel .nordicai-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(16, 20, 27, 0.08);
+  font: 700 14px/1.2 system-ui, sans-serif;
+}
+
+#nordicai-panel .nordicai-panel__body {
+  padding: 12px 14px 14px;
+}
+
+#nordicai-panel label {
+  display: block;
+  font: 600 12px/1.2 system-ui, sans-serif;
+  margin: 0 0 6px;
+  color: #5f6b7a;
+}
+
+#nordicai-panel .nordicai-selector,
+#nordicai-panel textarea,
+#nordicai-panel pre {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(16, 20, 27, 0.14);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #f8f9fa;
+}
+
+#nordicai-panel textarea {
+  min-height: 84px;
+  resize: vertical;
+  font-family: system-ui, sans-serif;
+}
+
+#nordicai-panel .nordicai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+#nordicai-panel .nordicai-actions button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: 600 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+#nordicai-panel .btn-gen { background: #121826; color: #fff; }
+#nordicai-panel .btn-apply { background: #eceff3; color: #10141b; }
+#nordicai-panel .btn-save { background: #b42318; color: #fff; }
+#nordicai-panel .btn-clear { background: transparent; color: #5f6b7a; border: 1px solid rgba(16,20,27,.14) !important; }
+
+#nordicai-panel .nordicai-status {
+  margin-top: 8px;
+  font: 12px/1.4 system-ui, sans-serif;
+  color: #5f6b7a;
+  min-height: 1.2em;
+}
+
+#nordicai-panel .nordicai-close {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #5f6b7a;
+}
