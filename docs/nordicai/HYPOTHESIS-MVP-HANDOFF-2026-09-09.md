@@ -119,3 +119,7 @@ When finishing a pass, report:
 2. What was verified  
 3. Remaining risks  
 4. Rollback point (commit / checkpoint)
+
+## Related idea (future)
+
+- Template kits with baked-in mini inspector (not Instant): [TEMPLATE-INSPECTOR-KIT-IDEA-2026-09-10.md](./TEMPLATE-INSPECTOR-KIT-IDEA-2026-09-10.md)
