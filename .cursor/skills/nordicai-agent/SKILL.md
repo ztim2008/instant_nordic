@@ -9,7 +9,7 @@ Use when working on `nordicai` or AI design patches for InstantCMS Modern/Nordic
 
 **Handoff (read first):** `docs/nordicai/HYPOTHESIS-MVP-HANDOFF-2026-09-09.md`  
 **Worklog:** `docs/nordicai/WORKLOG-2026-09-09.md`  
-**Future idea:** `docs/nordicai/TEMPLATE-INSPECTOR-KIT-IDEA-2026-09-10.md` (controllable templates, not Instant)
+**Future product (Template OS):** `docs/template-os/DECISION-LOCK-2026-09-10.md` — approved direction; kickoff after domain. Do not build inside InstantCMS.
 
 ## Live inspector (admin)
 1. Login as admin on the site (frontend session).

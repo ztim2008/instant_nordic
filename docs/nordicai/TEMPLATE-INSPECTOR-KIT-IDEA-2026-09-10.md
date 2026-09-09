@@ -1,8 +1,9 @@
 # Template Inspector Kit — Idea (Future Product Line)
 
-**Status:** idea only — not in implementation  
+**Status:** idea absorbed into Template OS decision lock  
 **Date:** 2026-09-10  
-**Related:** [nordicai hypothesis handoff](./HYPOTHESIS-MVP-HANDOFF-2026-09-09.md), NordicBlocks entity-first inspector
+**Canonical next doc:** [../template-os/DECISION-LOCK-2026-09-10.md](../template-os/DECISION-LOCK-2026-09-10.md)  
+**Related:** [nordicai hypothesis handoff](./HYPOTHESIS-MVP-HANDOFF-2026-09-09.md), [Template OS critique](../template-os/ARCHITECTURE-CRITIQUE-2026-09-10.md)
 
 ---
 

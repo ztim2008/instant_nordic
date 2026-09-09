@@ -2,9 +2,11 @@
 
 **Status:** product owner draft captured for agents  
 **Date:** 2026-09-10  
-**Critical companion:** [ARCHITECTURE-CRITIQUE-2026-09-10.md](./ARCHITECTURE-CRITIQUE-2026-09-10.md)
+**Critical companion:** [ARCHITECTURE-CRITIQUE-2026-09-10.md](./ARCHITECTURE-CRITIQUE-2026-09-10.md)  
+**Decision lock (overrides implementation defaults):** [DECISION-LOCK-2026-09-10.md](./DECISION-LOCK-2026-09-10.md)
 
-> This file preserves the original vision text. For architectural pushback and MVP cut recommendations, read the critique first.
+> This file preserves the original vision text.  
+> **Approved direction after critique:** keep concept, simplify architecture, decouple framework, durable Manifest, Template/Instance split day one, Validator central, tiny full-cycle first template. Kickoff when domain is ready — see Decision Lock.
 
 ---
 
