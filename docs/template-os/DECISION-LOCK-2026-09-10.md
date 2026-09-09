@@ -110,12 +110,14 @@ Pretty “golden hour” scale designs come **after** the cycle is green.
 When owner buys / assigns a **domain** (and preferably a dedicated repo/host):
 
 1. Create dedicated Template OS repository (not InstantCMS).
-2. Paste/link this Decision Lock + Philosophy + Critique into `/docs`.
-3. First PR: contract spike (manifest schema + instance boundary + validator stub) — no marketing polish.
-4. Second: tiny reference template through full cycle.
-5. Only then: richer design language / more templates.
+2. Copy into `/docs`: **MVP-IMPLEMENTATION-PLAN-v0.1.md** (primary), this Decision Lock, Critique, Philosophy.
+3. Hand agents the **Implementation Plan** — not the full Philosophy TZ.
+4. Execute stages 0→6 in that plan.
+5. Only after the thin loop is green: richer design language / more templates.
 
-Until domain kickoff: this file is the standing order for any agent who opens the topic.
+Until domain kickoff: this file + the Implementation Plan are the standing orders.
+
+**Primary work doc:** [MVP-IMPLEMENTATION-PLAN-v0.1.md](./MVP-IMPLEMENTATION-PLAN-v0.1.md)
 
 ---
 
