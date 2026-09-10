@@ -9,10 +9,13 @@
 | [PHILOSOPHY-TZ-v0.1](./PHILOSOPHY-TZ-v0.1-2026-09-10.md) | North Star — what we want long-term |
 | [ARCHITECTURE-CRITIQUE](./ARCHITECTURE-CRITIQUE-2026-09-10.md) | What was dangerous in the first stack dump |
 | [DECISION-LOCK](./DECISION-LOCK-2026-09-10.md) | Approved constraints |
+| [MARKET-ANALYSIS-2026-09-10](./MARKET-ANALYSIS-2026-09-10.md) | Shopify/Tina/… research |
+| [PRODUCT-FUNNEL-2026-09-10](./PRODUCT-FUNNEL-2026-09-10.md) | Buy / demo / DeepSeek fill / own ZIP |
+| [TEMPLATE-OS-ARCHITECTURE-v0.2](./TEMPLATE-OS-ARCHITECTURE-v0.2.md) | Ten contracts (laws) |
 | **This file** | **What we actually build next** |
 
 Do **not** start from PHILOSOPHY-TZ as the task list. Start here.  
-Open Decision Lock if a choice conflicts with vision.
+Open Decision Lock / Architecture v0.2 if a choice conflicts with vision.
 
 ---
 
@@ -43,13 +46,15 @@ One tiny reference template. No marketplace, no Next lock-in, no full CMS.
 
 | Piece | Choice |
 |-------|--------|
-| App | Vite + React + TypeScript |
-| API | tiny Hono (or equivalent) on Node |
-| Data | SQLite **or** JSON files for instance content (pick one in Stage 0 and stick) |
+| App | **Astro** + React island for Inspector (Vite+React acceptable if Astro blocks) |
+| Data | **JSON files** for instance content (SQLite optional later) |
+| Schema | Zod → emit JSON Schema |
 | Admin UI | simple forms (shadcn OK **admin only**) |
 | Public site | template’s own CSS/tokens — not shadcn look |
-| Validate | Zod + `pnpm template:validate` |
+| Validate | `pnpm template:validate` |
 | Package | pnpm |
+
+**Not MVP identity:** Next.js, Prisma, Puck, GrapesJS, Nordic cloud inside ZIP.
 
 If domain/repo is not ready at start of day: create repo skeleton locally, deploy when domain exists.
 
@@ -71,20 +76,21 @@ If domain/repo is not ready at start of day: create repo skeleton locally, deplo
 
 ---
 
-### Stage 1 — Manifest schema v0
+### Stage 1 — Manifest / Contract schema v0 (Section → Block → Entity)
 
 **Done when:**
 
-- [ ] Zod schemas for: TemplateManifest, Page, SectionInstance, EntityDefinition.  
-- [ ] Entity has: stable `id`, `type`, `label`, constraints, cardinality.  
-- [ ] Address model: `pageId` + `sectionInstanceId` + `entityId`.  
-- [ ] Capability map ≠ value store (two files/modules).  
+- [ ] Zod schemas aligned with Architecture v0.2 contracts 01–05.  
+- [ ] Section types with settings + optional blocks (`maxBlocks`, presets stub).  
+- [ ] Page = ordered **section instances** (not only flat entity map).  
+- [ ] Entity address: `pageId` + `sectionInstanceId` + optional `blockInstanceId` + `entityId`.  
+- [ ] Capability map ≠ value store.  
 - [ ] `migrations` array exists (can be `[]`).  
-- [ ] Emit/export JSON Schema for agents.  
-- [ ] Fixture: reference manifest with ≤ ~15 entities, ≤ 3 sections, 1 page.
+- [ ] Emit JSON Schema for agents.  
+- [ ] Fixture: 1 page, ≤ 3 section types, ≤ ~15 settings/entities total.
 
 **Entity types allowed in MVP:** `text` | `textarea` | `image` | `link` | `boolean` | `select`  
-(No richtext / gallery / repeater yet.)
+(No richtext / gallery / freeform repeater UI yet — blocks cover structured repeat.)
 
 ---
 
@@ -166,13 +172,13 @@ Docker/VPS nice-to-have **after** zip+local works — not a blocker for calling 
 
 ## Explicitly not tomorrow
 
-- Next.js migration  
-- Prisma “because production”  
-- SEO/Nav full CMS modules  
+- Next.js migration / Prisma  
+- Puck/Grapes as core  
+- Commerce Gateway (demo codes, DeepSeek questionnaire fill) — after package loop  
+- 7–10 section commercial landing before tiny spike is green  
+- SEO/Nav full CMS modules as blockers  
 - Template score / marketplace  
-- Update engine across versions  
-- nordicai merge  
-- Work inside InstantCMS repo as the product
+- nordicai merge / InstantCMS hosting of Template OS
 
 ---
 

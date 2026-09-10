@@ -51,8 +51,16 @@ Do **not** boil the ocean in v1.
 The **Template Contract** is framework-agnostic.
 
 - Contract must not say “Template OS = Next.js”.
-- First reference implementation may use a **light** stack (e.g. Vite + React or Astro + tiny API + SQLite/JSON).
+- Preferred first reference (market verdict): **Astro + React Inspector island + Zod/JSON Schema + JSON instance**.
 - Next.js (or others) = optional **adapter**, not the identity of the system.
+
+### 3b. Schema shape — Section → Block → Settings
+
+Flat `hero.title` aliases OK; durable model follows Shopify-like **section instances + blocks + settings** (see Market Analysis + Architecture v0.2).
+
+### 3c. Commerce Gateway is separate
+
+Demo codes, purchase, questionnaire → DeepSeek fill live on the **seller site**. Delivered ZIP must not require Nordic cloud to run. See Product Funnel.
 
 ### 4. Manifest — DURABLE FROM DAY ONE
 
